@@ -17,7 +17,7 @@ namespace sg14
 		typedef typename Container::reverse_iterator reverse_iterator;
 		typedef typename Container::const_reverse_iterator const_reverse_iterator;
 
-		rolling_queue()
+		rolling_queue() noexcept(std::is_nothrow_default_constructible<T>::value)
 			: c()
 			, count(0)
 			, next_element(std::begin(c))
@@ -33,7 +33,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(Type&& rhs)
+		rolling_queue(Type&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
 			: c(std::move(rhs.c))
 			, count(std::move(rhs.count))
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -47,7 +47,7 @@ namespace sg14
 			return (*this);
 		}
 
-		Type& operator=(Type&& rhs)
+		Type& operator=(Type&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
 		{
 			c = std::move(rhs.c);
 			return (*this);
@@ -93,12 +93,12 @@ namespace sg14
 			increase_front();
 		}
 
-		bool empty() const
+		bool empty() const noexcept
 		{
 			return (next_element == last_element);
 		}
 
-		size_type size() const
+		size_type size() const noexcept
 		{
 			return count;
 		}
@@ -125,7 +125,7 @@ namespace sg14
 			return (*it);
 		}
 
-		void swap(Type& rhs)
+		void swap(Type& rhs) noexcept
 		{
 			auto lhs_next = next_element - c.begin();
 			auto lhs_last = last_element - c.begin();
