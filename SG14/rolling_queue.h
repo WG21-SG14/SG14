@@ -103,23 +103,23 @@ namespace sg14
 			return count;
 		}
 
-		reference front()
+		reference front() noexcept
 		{
 			return (*last_element);
 		}
 
-		const_reference front() const
+		const_reference front() const noexcept
 		{
 			return (*last_element);
 		}
 
-		reference back()
+		reference back() noexcept
 		{
 			auto it = decrease(next_element);
 			return (*it);
 		}
 
-		const_reference back() const
+		const_reference back() const noexcept
 		{
 			auto it = decrease(next_element);
 			return (*it);
