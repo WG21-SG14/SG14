@@ -24,7 +24,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(const rolling_queue& rhs)
+		rolling_queue(const rolling_queue& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
 			: c(rhs.c)
 			, count(rhs.count)
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -40,7 +40,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue& operator=(const rolling_queue& rhs)
+		rolling_queue& operator=(const rolling_queue& rhs) noexcept(std::is_nothrow_copy_assignable<T>::value)
 		{
 			c = rhs.c;
 			return (*this);
@@ -52,7 +52,7 @@ namespace sg14
 			return (*this);
 		}
 
-		bool push(const value_type& from_value)
+		bool push(const value_type& from_value) noexcept(std::is_nothrow_copy_assignable<T>::value)
 		{
 			if (count == capacity)
 			{
@@ -63,7 +63,7 @@ namespace sg14
 			return true;
 		}
 
-		bool push(value_type&& from_value)
+		bool push(value_type&& from_value) noexcept(std::is_nothrow_move_assignable<T>::value)
 		{
 			if (count == capacity)
 			{
@@ -75,7 +75,8 @@ namespace sg14
 		}
 
 		template<class... FromType>
-		bool emplace(FromType&&... from_value)
+		bool emplace(FromType&&... from_value) noexcept(std::is_nothrow_constructible<T, FromType...>::value
+								&& std::is_nothrow_move_assignable<T>::value)
 		{
 			if (count == capacity)
 			{
