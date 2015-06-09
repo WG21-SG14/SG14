@@ -6,7 +6,6 @@ namespace sg14
 	class rolling_queue
 	{
 	public:
-		typedef rolling_queue<T, capacity> Type;
 		typedef std::array<T, capacity> Container;
 		typedef typename Container::value_type value_type;
 		typedef typename Container::size_type size_type;
@@ -25,7 +24,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(const Type& rhs)
+		rolling_queue(const rolling_queue& rhs)
 			: c(rhs.c)
 			, count(rhs.count)
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -33,7 +32,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(Type&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
+		rolling_queue(rolling_queue&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
 			: c(std::move(rhs.c))
 			, count(std::move(rhs.count))
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -41,13 +40,13 @@ namespace sg14
 		{
 		}
 
-		Type& operator=(const Type& rhs)
+		rolling_queue& operator=(const rolling_queue& rhs)
 		{
 			c = rhs.c;
 			return (*this);
 		}
 
-		Type& operator=(Type&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
+		rolling_queue& operator=(rolling_queue&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
 		{
 			c = std::move(rhs.c);
 			return (*this);
@@ -125,7 +124,7 @@ namespace sg14
 			return (*it);
 		}
 
-		void swap(Type& rhs) noexcept
+		void swap(rolling_queue& rhs) noexcept
 		{
 			auto lhs_next = next_element - c.begin();
 			auto lhs_last = last_element - c.begin();
