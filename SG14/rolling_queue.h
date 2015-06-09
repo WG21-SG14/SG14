@@ -2,7 +2,7 @@
 
 namespace sg14
 {
-	template<typename T, const std::size_t capacity>
+	template<typename T, std::size_t capacity>
 	class rolling_queue
 	{
 	public:
