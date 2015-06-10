@@ -2,22 +2,21 @@
 
 namespace sg14
 {
-	template<typename T, const std::size_t capacity>
+	template<typename T, std::size_t capacity>
 	class rolling_queue
 	{
 	public:
-		typedef rolling_queue<T, capacity> Type;
-		typedef std::array<T, capacity> Container;
-		typedef typename Container::value_type value_type;
-		typedef typename Container::size_type size_type;
-		typedef typename Container::reference reference;
-		typedef typename Container::const_reference const_reference;
-		typedef typename Container::iterator iterator;
-		typedef typename Container::const_iterator const_iterator;
-		typedef typename Container::reverse_iterator reverse_iterator;
-		typedef typename Container::const_reverse_iterator const_reverse_iterator;
+		typedef std::array<T, capacity> container_type;
+		typedef typename container_type::value_type value_type;
+		typedef typename container_type::size_type size_type;
+		typedef typename container_type::reference reference;
+		typedef typename container_type::const_reference const_reference;
+		typedef typename container_type::iterator iterator;
+		typedef typename container_type::const_iterator const_iterator;
+		typedef typename container_type::reverse_iterator reverse_iterator;
+		typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-		rolling_queue()
+		rolling_queue() noexcept(std::is_nothrow_default_constructible<T>::value)
 			: c()
 			, count(0)
 			, next_element(std::begin(c))
@@ -25,7 +24,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(const Type& rhs)
+		rolling_queue(const rolling_queue& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
 			: c(rhs.c)
 			, count(rhs.count)
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -33,7 +32,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(Type&& rhs)
+		rolling_queue(rolling_queue&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
 			: c(std::move(rhs.c))
 			, count(std::move(rhs.count))
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -41,19 +40,19 @@ namespace sg14
 		{
 		}
 
-		Type& operator=(const Type& rhs)
+		rolling_queue& operator=(const rolling_queue& rhs) noexcept(std::is_nothrow_copy_assignable<T>::value)
 		{
 			c = rhs.c;
 			return (*this);
 		}
 
-		Type& operator=(Type&& rhs)
+		rolling_queue& operator=(rolling_queue&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
 		{
 			c = std::move(rhs.c);
 			return (*this);
 		}
 
-		bool push(const value_type& from_value)
+		bool push(const value_type& from_value) noexcept(std::is_nothrow_copy_assignable<T>::value)
 		{
 			if (count == capacity)
 			{
@@ -64,7 +63,7 @@ namespace sg14
 			return true;
 		}
 
-		bool push(value_type&& from_value)
+		bool push(value_type&& from_value) noexcept(std::is_nothrow_move_assignable<T>::value)
 		{
 			if (count == capacity)
 			{
@@ -76,7 +75,8 @@ namespace sg14
 		}
 
 		template<class... FromType>
-		bool emplace(FromType&&... from_value)
+		bool emplace(FromType&&... from_value) noexcept(std::is_nothrow_constructible<T, FromType...>::value
+								&& std::is_nothrow_move_assignable<T>::value)
 		{
 			if (count == capacity)
 			{
@@ -93,39 +93,39 @@ namespace sg14
 			increase_front();
 		}
 
-		bool empty() const
+		bool empty() const noexcept
 		{
 			return (next_element == last_element);
 		}
 
-		size_type size() const
+		size_type size() const noexcept
 		{
 			return count;
 		}
 
-		reference front()
+		reference front() noexcept
 		{
 			return (*last_element);
 		}
 
-		const_reference front() const
+		const_reference front() const noexcept
 		{
 			return (*last_element);
 		}
 
-		reference back()
+		reference back() noexcept
 		{
 			auto it = decrease(next_element);
 			return (*it);
 		}
 
-		const_reference back() const
+		const_reference back() const noexcept
 		{
 			auto it = decrease(next_element);
 			return (*it);
 		}
 
-		void swap(Type& rhs)
+		void swap(rolling_queue& rhs) noexcept
 		{
 			auto lhs_next = next_element - c.begin();
 			auto lhs_last = last_element - c.begin();
@@ -140,7 +140,7 @@ namespace sg14
 		}
 
 	private:
-		Container c;
+		container_type c;
 		size_t count;
 		iterator next_element;
 		iterator last_element;
