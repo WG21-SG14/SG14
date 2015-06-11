@@ -1,13 +1,13 @@
 // SG14_test.cpp : Defines the entry point for the console application.
 //
 
+#include "SG14_test.h"
+
 #include "rolling_queue.h"
-#include <SDKDDKVer.h>
-#include <stdio.h>
-#include <tchar.h>
+
 #include <cassert>
 
-int _tmain(int argc, _TCHAR* argv[])
+void sg14_test::rolling_queue_test()
 {
 	sg14::rolling_queue<int, 5> Q;
 
@@ -52,7 +52,5 @@ int _tmain(int argc, _TCHAR* argv[])
 	assert(Q5.size() == 5);
 	assert(Q5.front() == 6);
 	assert(Q5.back() == 10);
-
-	return 0;
 }
 
