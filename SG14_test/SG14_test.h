@@ -4,6 +4,7 @@
 namespace sg14_test
 {
 	void rolling_queue_test();
+	void unstable_remove_test();
 }
 
 #endif

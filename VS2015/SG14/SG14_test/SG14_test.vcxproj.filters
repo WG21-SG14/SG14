@@ -17,6 +17,9 @@
     <ClCompile Include="..\..\..\SG14_test\SG14_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="unstable_remove_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\SG14_test\SG14_test.h">

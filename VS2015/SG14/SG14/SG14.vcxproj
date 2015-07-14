@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
     <ClInclude Include="..\..\..\SG14\rolling_queue.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
