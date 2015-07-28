@@ -80,6 +80,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\SG14_test\fixed_point_test.cpp" />
     <ClCompile Include="..\..\..\SG14_test\SG14_test.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
