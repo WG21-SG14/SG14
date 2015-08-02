@@ -26,13 +26,15 @@ namespace sg14
 
 		// specializations
 		template <> struct next_size<std::uint8_t> { using type = std::uint16_t; };
-		template <> struct next_size<std::uint16_t> { using type = std::uint32_t; };
-		template <> struct next_size<std::uint32_t> { using type = std::uint64_t; };
-		template <> struct next_size<std::uint64_t> { using type = unsigned __int128; };
-
 		template <> struct next_size<std::int8_t> { using type = std::int16_t; };
+
+		template <> struct next_size<std::uint16_t> { using type = std::uint32_t; };
 		template <> struct next_size<std::int16_t> { using type = std::int32_t; };
+
+		template <> struct next_size<std::uint32_t> { using type = std::uint64_t; };
 		template <> struct next_size<std::int32_t> { using type = std::int64_t; };
+
+		template <> struct next_size<std::uint64_t> { using type = unsigned __int128; };
 		template <> struct next_size<std::int64_t> { using type = __int128; };
 
 		////////////////////////////////////////////////////////////////////////////////
