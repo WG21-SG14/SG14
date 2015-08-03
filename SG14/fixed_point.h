@@ -9,6 +9,12 @@
 #include <ostream>
 #include <istream>
 
+#if defined(__clang__) || defined(__GNUG__)
+// sg14::float_point only fully supports 64-bit types with the help of 128-bit ints.
+// Clang and GCC use (__int128) and (unsigned __int128) for 128-bit ints.
+#define _SG14_FIXED_POINT_64
+#endif
+
 namespace sg14
 {
 	namespace _impl
@@ -34,18 +40,32 @@ namespace sg14
 		template <> struct next_size<std::uint32_t> { using type = std::uint64_t; };
 		template <> struct next_size<std::int32_t> { using type = std::int64_t; };
 
+#if defined(_SG14_FIXED_POINT_64)
 		template <> struct next_size<std::uint64_t> { using type = unsigned __int128; };
 		template <> struct next_size<std::int64_t> { using type = __int128; };
+#endif
 
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::is_integral
 
-		// addresses https://llvm.org/bugs/show_bug.cgi?id=23156
 		template <typename T>
-		constexpr bool is_integral() noexcept
-		{
-			return std::is_integral<T>::value || std::is_same<T, __int128>::value || std::is_same<T, unsigned __int128>::value;
-		}
+		struct is_integral;
+
+		// possible exception to std::is_integral as fixed_point<bool, X> seems pointless
+		template <>
+		struct is_integral<bool> : std::false_type { };
+
+#if defined(_SG14_FIXED_POINT_64)
+		// addresses https://llvm.org/bugs/show_bug.cgi?id=23156
+		template <>
+		struct is_integral<__int128> : std::true_type { };
+
+		template <>
+		struct is_integral<unsigned __int128> : std::true_type { };
+#endif
+
+		template <typename T>
+		struct is_integral : std::is_integral<T> { };
 
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::shift_left and sg14::_impl::shift_right
@@ -54,47 +74,91 @@ namespace sg14
 		// 1) shifting by a negative amount causes undefined behavior
 		// 2) converting between integer types of different sizes can lose significant bits during shift right
 
-		// case where EXPONENT is non-negative and sizeof(OUTPUT) <= sizeof(INPUT)
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT), int>::type dummy = 0>
-		constexpr OUTPUT shift_left(INPUT i) noexcept
+		// EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && is_unsigned<INPUT>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && std::is_unsigned<INPUT>::value, 
+				int>::type dummy = 0>
+			constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>(), "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>(), "OUTPUT must be integral type");
+			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
+			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using unsigned_type = typename std::make_unsigned<OUTPUT>::type;
+			return static_cast<OUTPUT>(i) << EXPONENT;
+		}
+
+		// EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && is_signed<INPUT>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+			EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && std::is_signed<INPUT>::value,
+			int>::type dummy = 0>
+			constexpr OUTPUT shift_left(INPUT i) noexcept
+		{
+			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
+			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
+
+			using signed_type = typename std::make_signed<OUTPUT>::type;
 
 			return (i >= 0)
 				? static_cast<OUTPUT>(i) << EXPONENT
-				: static_cast<OUTPUT>(- (static_cast<unsigned_type>(- i) << EXPONENT));
+				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
 		}
 
 		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT), int>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>(), "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>(), "OUTPUT must be integral type");
+			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
+			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 			return static_cast<OUTPUT>(i >> EXPONENT);
 		}
 
-		// case where EXPONENT is non-negative and sizeof(OUTPUT) > sizeof(INPUT)
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && ! (sizeof(OUTPUT) <= sizeof(INPUT)), char>::type dummy = 0>
+		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_unsigned<INPUT>
+		template <
+			int EXPONENT, 
+			typename OUTPUT, 
+			typename INPUT, 
+			typename std::enable_if<
+				EXPONENT >= 0 && ! (sizeof(OUTPUT) <= sizeof(INPUT)) && std::is_unsigned<INPUT>::value, 
+				char>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>(), "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>(), "OUTPUT must be integral type");
+			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
+			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using unsigned_type = typename std::make_unsigned<INPUT>::type;
+			return static_cast<OUTPUT>(i << EXPONENT);
+		}
+
+		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_signed<INPUT>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+			EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)) && std::is_signed<INPUT>::value,
+			char>::type dummy = 0>
+			constexpr OUTPUT shift_left(INPUT i) noexcept
+		{
+			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
+			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
+
+			using signed_type = typename std::make_signed<INPUT>::type;
 
 			return (i >= 0)
-				   ? static_cast<OUTPUT>(i << EXPONENT)
-				   : static_cast<OUTPUT>(- (static_cast<unsigned_type>(- i) << EXPONENT));
+				? static_cast<OUTPUT>(i << EXPONENT)
+				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
 		}
 
 		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)), char>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>(), "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>(), "OUTPUT must be integral type");
+			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
+			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 			return static_cast<OUTPUT>(i) >> EXPONENT;
 		}
 
@@ -139,31 +203,31 @@ namespace sg14
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::sqrt helper functions
 
-		template <typename REPR_TYPE, typename NEXT_TYPE = next_size_t<REPR_TYPE>>
-		constexpr NEXT_TYPE sqrt_bit(
+		template <typename REPR_TYPE>
+		constexpr next_size_t<REPR_TYPE> sqrt_bit(
 			REPR_TYPE n,
-			NEXT_TYPE bit = NEXT_TYPE(1) << (sizeof(NEXT_TYPE) * CHAR_BIT - 2)) noexcept
+			next_size_t<REPR_TYPE> bit = next_size_t<REPR_TYPE>(1) << (sizeof(next_size_t<REPR_TYPE>) * CHAR_BIT - 2)) noexcept
 		{
 			return (bit > n) ? sqrt_bit(n, bit >> 2) : bit;
 		}
 
-		template <typename REPR_TYPE, typename NEXT_TYPE = next_size_t<REPR_TYPE>>
-		constexpr REPR_TYPE sqrt_solve(
+		template <typename REPR_TYPE>
+		constexpr REPR_TYPE sqrt_solve3(
 			REPR_TYPE n,
-			NEXT_TYPE bit,
-			NEXT_TYPE result = 0) noexcept
+			next_size_t<REPR_TYPE> bit,
+			next_size_t<REPR_TYPE> result) noexcept
 		{
 			return bit
 				   ? (n >= result + bit)
-					 ? sqrt_solve(n - (result + bit), bit >> 2, (result >> 1) + bit)
-					 : sqrt_solve(n, bit >> 2, result >> 1)
+					 ? sqrt_solve3<REPR_TYPE>(n - (result + bit), bit >> 2, (result >> 1) + bit)
+					 : sqrt_solve3<REPR_TYPE>(n, bit >> 2, result >> 1)
 				   : result;
 		}
 
 		template <typename REPR_TYPE>
-		constexpr REPR_TYPE sqrt_solve(REPR_TYPE n) noexcept
+		constexpr REPR_TYPE sqrt_solve1(REPR_TYPE n) noexcept
 		{
-			return sqrt_solve(n, sqrt_bit(n));
+			return sqrt_solve3<REPR_TYPE>(n, sqrt_bit<REPR_TYPE>(n), 0);
 		}
 	}
 
@@ -182,13 +246,9 @@ namespace sg14
 
 		using repr_type = REPR_TYPE;
 
-	private:
-		using _next_repr_type = _impl::next_size_t<repr_type>;
-
 		////////////////////////////////////////////////////////////////////////////////
 		// constants
 
-	public:
 		constexpr static int exponent = EXPONENT;
 		constexpr static int digits = std::numeric_limits<repr_type>::digits;
 		constexpr static int integer_digits = digits + exponent;
@@ -208,7 +268,7 @@ namespace sg14
 		constexpr fixed_point() noexcept {}
 
 		// c'tor taking an integer type
-		template <typename S, typename std::enable_if<_impl::is_integral<S>(), int>::type dummy = 0>
+		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr fixed_point(S s) noexcept
 			: _repr(int_to_repr(s))
 		{
@@ -222,7 +282,7 @@ namespace sg14
 		}
 
 		// returns value represented as a floating-point
-		template <typename S, typename std::enable_if<_impl::is_integral<S>(), int>::type dummy = 0>
+		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr S get() const noexcept
 		{
 			return repr_to_int<S>(_repr);
@@ -294,11 +354,11 @@ namespace sg14
 		}
 		friend constexpr fixed_point operator*(fixed_point const & lhs, fixed_point const & rhs) noexcept
 		{
-			return fixed_point(_impl::shift_left<exponent, repr_type>(_next_repr_type(lhs._repr) * rhs._repr), 0);
+			return fixed_point(_impl::shift_left<exponent, repr_type>(_impl::next_size_t<repr_type>(lhs._repr) * rhs._repr), 0);
 		}
 		friend constexpr fixed_point operator/(fixed_point const & lhs, fixed_point const & rhs) noexcept
 		{
-			return fixed_point(repr_type(_impl::shift_right<exponent, _next_repr_type>(lhs._repr) / rhs._repr), 0);
+			return fixed_point(repr_type(_impl::shift_right<exponent, _impl::next_size_t<repr_type>>(lhs._repr) / rhs._repr), 0);
 		}
 
 		friend fixed_point & operator+=(fixed_point & lhs, fixed_point const & rhs) noexcept
@@ -325,7 +385,7 @@ namespace sg14
 			return _impl::pow2<S, - exponent>();
 		}
 
-		template <typename S, typename std::enable_if<_impl::is_integral<S>(), int>::type dummy = 0>
+		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		static constexpr S one() noexcept
 		{
 			return int_to_repr<S>(1);
@@ -341,7 +401,7 @@ namespace sg14
 		template <typename S>
 		static constexpr repr_type int_to_repr(S s) noexcept
 		{
-			static_assert(_impl::is_integral<S>(), "S must be unsigned integral type");
+			static_assert(_impl::is_integral<S>::value, "S must be unsigned integral type");
 
 			return _impl::shift_right<exponent, repr_type>(s);
 		}
@@ -349,7 +409,7 @@ namespace sg14
 		template <typename S>
 		static constexpr S repr_to_int(repr_type r) noexcept
 		{
-			static_assert(_impl::is_integral<S>(), "S must be unsigned integral type");
+			static_assert(_impl::is_integral<S>::value, "S must be unsigned integral type");
 
 			return _impl::shift_left<exponent, S>(r);
 		}
@@ -440,7 +500,7 @@ namespace sg14
 	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		static_assert(! EXPONENT, "only zero-exponent fixed_point specializations supported");
-		return fixed_point<REPR_TYPE, EXPONENT>::from_data(_impl::sqrt_solve(x.data()));
+		return fixed_point<REPR_TYPE, EXPONENT>::from_data(_impl::sqrt_solve1(x.data()));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
