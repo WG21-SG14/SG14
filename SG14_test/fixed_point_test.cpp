@@ -68,37 +68,37 @@ template <int E> using fp_s64 = fixed_point<std::int64_t, E>;
 // conversion
 
 // exponent == 0
-//static_assert(fp_u8<0>(12.34f).get<float>() == 12.f, "sg14::fixed_point test failed");
-//static_assert(fp_u16<0>(12.34f).get<double>() == 12.f, "sg14::fixed_point test failed");
-//static_assert(fp_u32<0>(12.34f).get<long double>() == 12.f, "sg14::fixed_point test failed");
-//static_assert(fp_u64<0>(12.34f).get<float>() == 12.f, "sg14::fixed_point test failed");
-//
-//static_assert(fp_s8<0>(-12.34f).get<double>() == -12.f, "sg14::fixed_point test failed");
-//static_assert(fp_s16<0>(-12.34f).get<long double>() == -12.f, "sg14::fixed_point test failed");
-//static_assert(fp_s32<0>(-12.34f).get<float>() == -12.f, "sg14::fixed_point test failed");
-//static_assert(fp_s64<0>(-12.34f).get<double>() == -12.f, "sg14::fixed_point test failed");
-//
-//// exponent = -1
-//static_assert(fp_u8<-1>(127.5).get<float>() == 127.5, "sg14::fixed_point test failed");
-//
-//static_assert(fp_s8<-1>(63.5).get<float>() == 63.5, "sg14::fixed_point test failed");
-//static_assert(fp_s8<-1>(-63.5).get<float>() == -63.5, "sg14::fixed_point test failed");
-//
-//// exponent == -7
-//static_assert(fp_u8<-7>(.125f).get<float>() == .125f, "sg14::fixed_point test failed");
-//static_assert(fp_u16<-7>(232.125f).get<float>() == 232.125f, "sg14::fixed_point test failed");
-//static_assert(fp_u32<-7>(232.125f).get<float>() == 232.125f, "sg14::fixed_point test failed");
-//static_assert(fp_u64<-7>(232.125f).get<float>() == 232.125f, "sg14::fixed_point test failed");
-//
-//static_assert(fp_s8<-7>(.125f).get<float>() == .125f, "sg14::fixed_point test failed");
-//static_assert(fp_s16<-7>(123.125f).get<float>() == 123.125f, "sg14::fixed_point test failed");
-//static_assert(fp_s32<-7>(123.125f).get<float>() == 123.125f, "sg14::fixed_point test failed");
-//static_assert(fp_s64<-7>(123.125f).get<float>() == 123.125f, "sg14::fixed_point test failed");
-//
-//static_assert(fp_u8<-7>(.125f).get<double>() == .125f, "sg14::fixed_point test failed");
-//static_assert(fp_u16<-7>(232.125f).get<long double>() == 232.125f, "sg14::fixed_point test failed");
-//static_assert(fp_u32<-7>(232.125f).get<double>() == 232.125f, "sg14::fixed_point test failed");
-//static_assert(fp_u64<-7>(232.125f).get<long double>() == 232.125f, "sg14::fixed_point test failed");
+static_assert(fp_u8<0>(12.34f).get<float>() == 12.f, "sg14::fixed_point test failed");
+static_assert(fp_u16<0>(12.34f).get<double>() == 12.f, "sg14::fixed_point test failed");
+static_assert(fp_u32<0>(12.34f).get<long double>() == 12.f, "sg14::fixed_point test failed");
+static_assert(fp_u64<0>(12.34f).get<float>() == 12.f, "sg14::fixed_point test failed");
+
+static_assert(fp_s8<0>(-12.34f).get<double>() == -12.f, "sg14::fixed_point test failed");
+static_assert(fp_s16<0>(-12.34f).get<long double>() == -12.f, "sg14::fixed_point test failed");
+static_assert(fp_s32<0>(-12.34f).get<float>() == -12.f, "sg14::fixed_point test failed");
+static_assert(fp_s64<0>(-12.34f).get<double>() == -12.f, "sg14::fixed_point test failed");
+
+// exponent = -1
+static_assert(fp_u8<-1>(127.5).get<float>() == 127.5, "sg14::fixed_point test failed");
+
+static_assert(fp_s8<-1>(63.5).get<float>() == 63.5, "sg14::fixed_point test failed");
+static_assert(fp_s8<-1>(-63.5).get<float>() == -63.5, "sg14::fixed_point test failed");
+
+// exponent == -7
+static_assert(fp_u8<-7>(.125f).get<float>() == .125f, "sg14::fixed_point test failed");
+static_assert(fp_u16<-7>(232.125f).get<float>() == 232.125f, "sg14::fixed_point test failed");
+static_assert(fp_u32<-7>(232.125f).get<float>() == 232.125f, "sg14::fixed_point test failed");
+static_assert(fp_u64<-7>(232.125f).get<float>() == 232.125f, "sg14::fixed_point test failed");
+
+static_assert(fp_s8<-7>(.125f).get<float>() == .125f, "sg14::fixed_point test failed");
+static_assert(fp_s16<-7>(123.125f).get<float>() == 123.125f, "sg14::fixed_point test failed");
+static_assert(fp_s32<-7>(123.125f).get<float>() == 123.125f, "sg14::fixed_point test failed");
+static_assert(fp_s64<-7>(123.125f).get<float>() == 123.125f, "sg14::fixed_point test failed");
+
+static_assert(fp_u8<-7>(.125f).get<double>() == .125f, "sg14::fixed_point test failed");
+static_assert(fp_u16<-7>(232.125f).get<long double>() == 232.125f, "sg14::fixed_point test failed");
+static_assert(fp_u32<-7>(232.125f).get<double>() == 232.125f, "sg14::fixed_point test failed");
+static_assert(fp_u64<-7>(232.125f).get<long double>() == 232.125f, "sg14::fixed_point test failed");
 
 static_assert(fp_s8<-7>(1).get<long double>() != 1.f, "sg14::fixed_point test failed");
 static_assert(fp_s8<-7>(.5).get<float>() == .5f, "sg14::fixed_point test failed");
