@@ -68,6 +68,52 @@ namespace sg14
 		struct is_integral : std::is_integral<T> { };
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::make_signed
+
+		template <typename T>
+		struct make_signed;
+
+#if defined(_SG14_FIXED_POINT_64)
+		template <>
+		struct make_signed<__int128>
+		{
+			using type = __int128;
+		};
+
+		template <>
+		struct make_signed<unsigned __int128>
+		{
+			using type = __int128;
+		};
+#endif
+
+		template <typename T>
+		struct make_signed : std::make_signed<T> { };
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::make_unsigned
+
+		template <typename T>
+		struct make_unsigned;
+
+#if defined(_SG14_FIXED_POINT_64)
+		template <>
+		struct make_unsigned<__int128>
+		{
+			using type = unsigned __int128;
+		};
+
+		template <>
+		struct make_unsigned<unsigned __int128>
+		{
+			using type = unsigned __int128;
+		};
+#endif
+
+		template <typename T>
+		struct make_unsigned : std::make_unsigned<T> { };
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::shift_left and sg14::_impl::shift_right
 
 		// performs a shift operation by a fixed number of bits avoiding two pitfalls:
@@ -103,7 +149,7 @@ namespace sg14
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using signed_type = typename std::make_signed<OUTPUT>::type;
+			using signed_type = typename _impl::make_signed<OUTPUT>::type;
 
 			return (i >= 0)
 				? static_cast<OUTPUT>(i) << EXPONENT
@@ -147,7 +193,7 @@ namespace sg14
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using signed_type = typename std::make_signed<OUTPUT>::type;
+			using signed_type = typename _impl::make_signed<OUTPUT>::type;
 
 			return (i >= 0)
 				? static_cast<OUTPUT>(i) << EXPONENT
@@ -476,12 +522,12 @@ namespace sg14
 	constexpr fixed_point<REPR_TYPE, EXPONENT> lerp(
 		fixed_point<REPR_TYPE, EXPONENT> from,
 		fixed_point<REPR_TYPE, EXPONENT> to,
-		closed_unit<typename std::make_unsigned<REPR_TYPE>::type> t)
+		closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type> t)
 	{
 		using fixed_point = fixed_point<REPR_TYPE, EXPONENT>;
 		using repr_type = typename fixed_point::repr_type;
 		using next_repr_type = typename _impl::next_size<repr_type>::type;
-		using closed_unit = closed_unit<typename std::make_unsigned<REPR_TYPE>::type>;
+		using closed_unit = closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type>;
 
 		return fixed_point::from_data(
 			_impl::shift_left<closed_unit::exponent, repr_type>(
