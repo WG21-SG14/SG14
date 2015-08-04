@@ -281,6 +281,13 @@ namespace sg14
 		{
 		}
 
+		// c'tor taking a fixed-point type
+		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+		constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+			: _repr(_impl::shift_left<(FROM_EXPONENT - EXPONENT), repr_type>(rhs.data()))
+		{
+		}
+
 		// returns value represented as a floating-point
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr S get() const noexcept

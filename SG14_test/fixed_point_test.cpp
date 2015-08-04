@@ -127,6 +127,11 @@ static_assert(fp_s8<1>(255).get<int>() == 254, "sg14::fixed_point test failed");
 static_assert(fp_s8<1>(254).get<int>() == 254, "sg14::fixed_point test failed");
 static_assert(fp_s8<1>(-5).get<int>() == -6, "sg14::fixed_point test failed");
 
+// conversion between fixed_point specializations
+static_assert(fp_u8<-4>(fp_s16<-8>(1.5)).get<float>() == 1.5, "sg14::fixed_point test failed");
+static_assert(fp_u16<-8>(fp_s8<-4>(3.25)).get<float>() == 3.25, "sg14::fixed_point test failed");
+static_assert(fp_u8<4>(fp_s16<-4>(768)).get<int>() == 768, "sg14::fixed_point test failed");
+
 // closed_unit
 template <typename T> using cu = closed_unit<T>;
 static_assert(cu<std::uint8_t>(.5).get<double>() == .5, "sg14::closed_unit test failed");
