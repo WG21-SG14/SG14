@@ -204,18 +204,18 @@ namespace sg14
 		// sg14::sqrt helper functions
 
 		template <typename REPR_TYPE>
-		constexpr next_size_t<REPR_TYPE> sqrt_bit(
+		constexpr REPR_TYPE sqrt_bit(
 			REPR_TYPE n,
-			next_size_t<REPR_TYPE> bit = next_size_t<REPR_TYPE>(1) << (sizeof(next_size_t<REPR_TYPE>) * CHAR_BIT - 2)) noexcept
+			REPR_TYPE bit = REPR_TYPE(1) << (sizeof(REPR_TYPE) * CHAR_BIT - 2)) noexcept
 		{
-			return (bit > n) ? sqrt_bit(n, bit >> 2) : bit;
+			return (bit > n) ? sqrt_bit<REPR_TYPE>(n, bit >> 2) : bit;
 		}
 
 		template <typename REPR_TYPE>
 		constexpr REPR_TYPE sqrt_solve3(
 			REPR_TYPE n,
-			next_size_t<REPR_TYPE> bit,
-			next_size_t<REPR_TYPE> result) noexcept
+			REPR_TYPE bit,
+			REPR_TYPE result) noexcept
 		{
 			return bit
 				   ? (n >= result + bit)
@@ -506,8 +506,10 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
-		static_assert(! EXPONENT, "only zero-exponent fixed_point specializations supported");
-		return fixed_point<REPR_TYPE, EXPONENT>::from_data(_impl::sqrt_solve1(x.data()));
+		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
+			static_cast<REPR_TYPE>(
+				_impl::sqrt_solve1(
+					fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>(x).data())));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////

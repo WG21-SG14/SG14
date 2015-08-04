@@ -189,7 +189,14 @@ static_assert(sg14::abs(fp_s64<0>(-9223372036854775807)).get<std::int64_t>() == 
 // sg14::sqrt
 
 static_assert(sg14::sqrt(fp_u8<0>(225)).get<int>() == 15, "sg14::sqrt test failed");
-//static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() == 1.772453851, "sg14::sqrt test failed");
+static_assert(sg14::sqrt(fp_s8<0>(81)).get<int>() == 9, "sg14::sqrt test failed");
+
+static_assert(sg14::sqrt(fp_u8<-1>(4)).get<int>() == 2, "sg14::sqrt test failed");
+static_assert(sg14::sqrt(fp_s8<-2>(9)).get<int>() == 3, "sg14::sqrt test failed");
+
+static_assert(sg14::sqrt(fp_u8<-4>(4)).get<int>() == 2, "sg14::sqrt test failed");
+static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() > 1.7724537849426, "sg14::sqrt test failed");
+static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() < 1.7724537849427, "sg14::sqrt test failed");
 #if defined(_SG14_FIXED_POINT_64)
 static_assert(sg14::sqrt(fp_s64<0>(9223372036854775807)).get<std::int64_t>() == 3037000499, "sg14::sqrt test failed");
 #endif
