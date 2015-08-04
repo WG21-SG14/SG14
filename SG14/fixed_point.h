@@ -131,7 +131,7 @@ namespace sg14
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			return static_cast<OUTPUT>(i << EXPONENT);
+			return static_cast<OUTPUT>(i) << EXPONENT;
 		}
 
 		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_signed<INPUT>
@@ -147,10 +147,10 @@ namespace sg14
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using signed_type = typename std::make_signed<INPUT>::type;
+			using signed_type = typename std::make_signed<OUTPUT>::type;
 
 			return (i >= 0)
-				? static_cast<OUTPUT>(i << EXPONENT)
+				? static_cast<OUTPUT>(i) << EXPONENT
 				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
 		}
 
@@ -284,7 +284,7 @@ namespace sg14
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
 		constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
-			: _repr(_impl::shift_left<(FROM_EXPONENT - EXPONENT), repr_type>(rhs.data()))
+			: _repr(_impl::shift_right<(EXPONENT - FROM_EXPONENT), repr_type>(rhs.data()))
 		{
 		}
 
