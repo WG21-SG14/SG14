@@ -274,7 +274,7 @@ namespace sg14
 		{
 		}
 
-		// c'tor taking an floating-point type
+		// c'tor taking a floating-point type
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
 		constexpr fixed_point(S s) noexcept
 			: _repr(float_to_repr(s))
