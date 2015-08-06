@@ -165,7 +165,7 @@ static_assert((fp_s16<-4>(123.125) - fp_s16<-4>(246.875)).get<float>() == -123.7
 // multiplication
 static_assert((fp_u8<0>(0x55) * fp_u8<0>(2)).get<int>() == 0xaa, "sg14::fixed_point test failed");
 static_assert((fp_s32<-16>(123.75) * fp_s32<-16>(44.5)).get<float>() == 5506.875, "sg14::fixed_point test failed");
-#if defined(_SG14_FIXED_POINT_64)
+#if defined(_SG14_FIXED_POINT_128)
 static_assert((fp_u64<-8>(1003006) * fp_u64<-8>(7)).get<int>() == 7021042, "sg14::fixed_point test failed");
 #endif
 
@@ -173,7 +173,7 @@ static_assert((fp_u64<-8>(1003006) * fp_u64<-8>(7)).get<int>() == 7021042, "sg14
 static_assert((fp_s8<-1>(63) / fp_s8<-1>(-4)).get<float>() == -15.5, "sg14::fixed_point test failed");
 static_assert((fp_s8<1>(-255) / fp_s8<1>(-8)).get<int>() == 32, "sg14::fixed_point test failed");
 static_assert((fp_s32<0>(-999) / fp_s32<0>(3)).get<int>() == -333, "sg14::fixed_point test failed");
-#if defined(_SG14_FIXED_POINT_64)
+#if defined(_SG14_FIXED_POINT_128)
 static_assert((fp_u64<-8>(65535) / fp_u64<-8>(256)).get<int>() == 255, "sg14::fixed_point test failed");
 #endif
 
@@ -197,7 +197,7 @@ static_assert(sg14::sqrt(fp_s8<-2>(9)).get<int>() == 3, "sg14::sqrt test failed"
 static_assert(sg14::sqrt(fp_u8<-4>(4)).get<int>() == 2, "sg14::sqrt test failed");
 static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() > 1.7724537849426, "sg14::sqrt test failed");
 static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() < 1.7724537849427, "sg14::sqrt test failed");
-#if defined(_SG14_FIXED_POINT_64)
+#if defined(_SG14_FIXED_POINT_128)
 static_assert(sg14::sqrt(fp_s64<0>(9223372036854775807)).get<std::int64_t>() == 3037000499, "sg14::sqrt test failed");
 #endif
 

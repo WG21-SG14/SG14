@@ -12,7 +12,7 @@
 #if defined(__clang__) || defined(__GNUG__)
 // sg14::float_point only fully supports 64-bit types with the help of 128-bit ints.
 // Clang and GCC use (__int128) and (unsigned __int128) for 128-bit ints.
-#define _SG14_FIXED_POINT_64
+#define _SG14_FIXED_POINT_128
 #endif
 
 namespace sg14
@@ -40,7 +40,7 @@ namespace sg14
 		template <> struct next_size<std::uint32_t> { using type = std::uint64_t; };
 		template <> struct next_size<std::int32_t> { using type = std::int64_t; };
 
-#if defined(_SG14_FIXED_POINT_64)
+#if defined(_SG14_FIXED_POINT_128)
 		template <> struct next_size<std::uint64_t> { using type = unsigned __int128; };
 		template <> struct next_size<std::int64_t> { using type = __int128; };
 #endif
@@ -55,7 +55,7 @@ namespace sg14
 		template <>
 		struct is_integral<bool> : std::false_type { };
 
-#if defined(_SG14_FIXED_POINT_64)
+#if defined(_SG14_FIXED_POINT_128)
 		// addresses https://llvm.org/bugs/show_bug.cgi?id=23156
 		template <>
 		struct is_integral<__int128> : std::true_type { };
