@@ -20,30 +20,43 @@ namespace sg14
 	namespace _impl
 	{
 		////////////////////////////////////////////////////////////////////////////////
-		// sg14::_impl::next_size
+		// sg14::_impl::get_int_t
 
-		// given an integral (except bool) type T, provides the member typedef type
-		// which is the next longest sized integer type corresponding to T
-		template <typename INT_TYPE>
-		struct next_size;
+		template <bool SIGNED, int NUM_BYTES>
+		struct get_int;
 
-		template <typename T>
-		using next_size_t = typename next_size<T>::type;
+		template <bool SIGNED, int NUM_BYTES>
+		using get_int_t = typename get_int<SIGNED, NUM_BYTES>::type;
 
 		// specializations
-		template <> struct next_size<std::uint8_t> { using type = std::uint16_t; };
-		template <> struct next_size<std::int8_t> { using type = std::int16_t; };
-
-		template <> struct next_size<std::uint16_t> { using type = std::uint32_t; };
-		template <> struct next_size<std::int16_t> { using type = std::int32_t; };
-
-		template <> struct next_size<std::uint32_t> { using type = std::uint64_t; };
-		template <> struct next_size<std::int32_t> { using type = std::int64_t; };
-
+		template <> struct get_int<false, 1> { using type = std::uint8_t; };
+		template <> struct get_int<true, 1> { using type = std::int8_t; };
+		template <> struct get_int<false, 2> { using type = std::uint16_t; };
+		template <> struct get_int<true, 2> { using type = std::int16_t; };
+		template <> struct get_int<false, 4> { using type = std::uint32_t; };
+		template <> struct get_int<true, 4> { using type = std::int32_t; };
+		template <> struct get_int<false, 8> { using type = std::uint64_t; };
+		template <> struct get_int<true, 8> { using type = std::int64_t; };
 #if defined(_SG14_FIXED_POINT_128)
-		template <> struct next_size<std::uint64_t> { using type = unsigned __int128; };
-		template <> struct next_size<std::int64_t> { using type = __int128; };
+		template <> struct get_int<false, 16> { using type = unsigned __int128_t; };
+		template <> struct get_int<true, 16> { using type = std::__int128_t; };
 #endif
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::next_size_t
+
+		// given an integral type, INT_TYPE, 
+		// provides the integral type of the equivalent type with twice the size
+		template <typename INT_TYPE>
+		using next_size_t = typename get_int_t<std::is_signed<INT_TYPE>::value, sizeof(INT_TYPE) * 2>;
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::previous_size_t
+
+		// given an integral type, INT_TYPE, 
+		// provides the integral type of the equivalent type with half the size
+		template <typename INT_TYPE>
+		using previous_size_t = typename get_int_t<std::is_signed<INT_TYPE>::value, sizeof(INT_TYPE) / 2>;
 
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::is_integral
@@ -330,7 +343,7 @@ namespace sg14
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
 		constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
-			: _repr(_impl::shift_right<(EXPONENT - FROM_EXPONENT), repr_type>(rhs.data()))
+			: _repr(_impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data()))
 		{
 		}
 
@@ -392,7 +405,7 @@ namespace sg14
 		// arithmetic
 		friend constexpr fixed_point operator-(fixed_point const & rhs) noexcept
 		{
-			static_assert(std::is_signed<REPR_TYPE>::value, "unary negation of unsigned value");
+			static_assert(std::is_signed<repr_type>::value, "unary negation of unsigned value");
 
 			return fixed_point(- rhs._repr, 0);
 		}
@@ -504,6 +517,24 @@ namespace sg14
 		1 - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_promotion_t
+
+	// given template parameters of a fixed_point specialization, 
+	// yields alternative specialization with twice the fractional bits
+	// and twice the integral/sign bits
+	template <typename REPR_TYPE, int EXPONENT>
+	using fixed_point_promotion_t = fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_demotion_t
+
+	// given template parameters of a fixed_point specialization, 
+	// yields alternative specialization with half the fractional bits
+	// and half the integral/sign bits (assuming EXPONENT is even)
+	template <typename REPR_TYPE, int EXPONENT>
+	using fixed_point_demotion_t = fixed_point<_impl::previous_size_t<REPR_TYPE>, EXPONENT / 2>;
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values
@@ -526,8 +557,8 @@ namespace sg14
 	{
 		using fixed_point = fixed_point<REPR_TYPE, EXPONENT>;
 		using repr_type = typename fixed_point::repr_type;
-		using next_repr_type = typename _impl::next_size<repr_type>::type;
-		using closed_unit = closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type>;
+		using next_repr_type = typename _impl::next_size_t<repr_type>;
+		using closed_unit = closed_unit<typename  _impl::make_unsigned<REPR_TYPE>::type>;
 
 		return fixed_point::from_data(
 			_impl::shift_left<closed_unit::exponent, repr_type>(
@@ -553,9 +584,7 @@ namespace sg14
 	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
-			static_cast<REPR_TYPE>(
-				_impl::sqrt_solve1(
-					fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>(x).data())));
+			static_cast<REPR_TYPE>(_impl::sqrt_solve1(fixed_point_promotion_t<REPR_TYPE, EXPONENT>(x).data())));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////

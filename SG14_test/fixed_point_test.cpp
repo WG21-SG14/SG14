@@ -178,6 +178,18 @@ static_assert((fp_u64<-8>(65535) / fp_u64<-8>(256)).get<int>() == 255, "sg14::fi
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::promotion
+
+static_assert(std::is_same<sg14::fixed_point_promotion_t<std::int8_t, -4>, sg14::fixed_point<std::int16_t, -8>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<sg14::fixed_point_promotion_t<std::uint32_t, 44>, sg14::fixed_point<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::demotion
+
+static_assert(std::is_same<sg14::fixed_point<std::int8_t, -4>, sg14::fixed_point_demotion_t<std::int16_t, -8>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<sg14::fixed_point<std::uint32_t, 44>, sg14::fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
 static_assert(sg14::abs(fp_s8<0>(66)).get<int>() == 66, "sg14::sqrt test failed");
