@@ -260,6 +260,25 @@ namespace sg14
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::capacity
+
+		// has value that, given a value N, 
+		// returns number of bits necessary to represent it in binary
+		template <unsigned N> struct capacity;
+
+		template <>
+		struct capacity<0>
+		{
+			static constexpr int value = 0;
+		};
+
+		template <unsigned N>
+		struct capacity
+		{
+			static constexpr int value = capacity<N / 2>::value + 1;
+		};
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::sqrt helper functions
 
 		template <typename REPR_TYPE>

@@ -49,6 +49,19 @@ static_assert(_impl::pow2<long double, 10>() == 1024, "sg14::_impl::pow2 test fa
 static_assert(_impl::pow2<float, 20>() == 1048576, "sg14::_impl::pow2 test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::_impl::capacity
+
+static_assert(_impl::capacity<0>::value == 0, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<1>::value == 1, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<2>::value == 2, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<3>::value == 2, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<4>::value == 3, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<7>::value == 3, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<8>::value == 4, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<15>::value == 4, "sg14::_impl::capacity test failed");
+static_assert(_impl::capacity<16>::value == 5, "sg14::_impl::capacity test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point
 
