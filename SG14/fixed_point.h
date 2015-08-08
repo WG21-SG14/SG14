@@ -311,7 +311,7 @@ namespace sg14
 		constexpr static int exponent = EXPONENT;
 		constexpr static int digits = std::numeric_limits<repr_type>::digits;
 		constexpr static int integer_digits = digits + exponent;
-		constexpr static int fractional_digits = digits + exponent;
+		constexpr static int fractional_digits = digits - integer_digits;
 
 		////////////////////////////////////////////////////////////////////////////////
 		// functions
