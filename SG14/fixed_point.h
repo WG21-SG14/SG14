@@ -554,6 +554,16 @@ namespace sg14
 	using fixed_point_demotion_t = fixed_point<_impl::previous_size_t<REPR_TYPE>, EXPONENT / 2>;
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_by_integer_digits_t
+
+	// yields a float_point with EXPONENT calculated such that 
+	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
+	template <typename REPR_TYPE, int INTEGER_BITS>
+	using fixed_point_by_integer_digits_t = fixed_point<
+		REPR_TYPE, 
+		INTEGER_BITS + std::is_signed<REPR_TYPE>::value - sizeof(REPR_TYPE) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values

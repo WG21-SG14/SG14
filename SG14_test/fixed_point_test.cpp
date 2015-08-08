@@ -203,6 +203,12 @@ static_assert(std::is_same<sg14::fixed_point<std::int8_t, -4>, sg14::fixed_point
 static_assert(std::is_same<sg14::fixed_point<std::uint32_t, 44>, sg14::fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::fixed_point_by_integer_digits_t
+
+static_assert(sg14::fixed_point_by_integer_digits_t<std::uint8_t, 8>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(sg14::fixed_point_by_integer_digits_t<std::int32_t, 27>::integer_digits == 27, "sg14::fixed_point_by_integer_digits_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
 static_assert(sg14::abs(fp_s8<0>(66)).get<int>() == 66, "sg14::sqrt test failed");
