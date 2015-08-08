@@ -91,11 +91,17 @@ static_assert(fp_s16<0>(-12.34f).get<long double>() == -12.f, "sg14::fixed_point
 static_assert(fp_s32<0>(-12.34f).get<float>() == -12.f, "sg14::fixed_point test failed");
 static_assert(fp_s64<0>(-12.34f).get<double>() == -12.f, "sg14::fixed_point test failed");
 
+static_assert(fp_s8<0>::integer_digits == 7, "sg14::fixed_point test failed");
+static_assert(fp_u64<0>::fractional_digits == 0, "sg14::fixed_point test failed");
+
 // exponent = -1
 static_assert(fp_u8<-1>(127.5).get<float>() == 127.5, "sg14::fixed_point test failed");
 
 static_assert(fp_s8<-1>(63.5).get<float>() == 63.5, "sg14::fixed_point test failed");
 static_assert(fp_s8<-1>(-63.5).get<float>() == -63.5, "sg14::fixed_point test failed");
+
+static_assert(fp_s32<-1>::integer_digits == 30, "sg14::fixed_point test failed");
+static_assert(fp_u16<-1>::fractional_digits == 1, "sg14::fixed_point test failed");
 
 // exponent == -7
 static_assert(fp_u8<-7>(.125f).get<float>() == .125f, "sg14::fixed_point test failed");
@@ -119,6 +125,9 @@ static_assert(fp_s8<-7>(.125f).get<long double>() == .125f, "sg14::fixed_point t
 static_assert(fp_s16<-7>(123.125f).get<int>() == 123, "sg14::fixed_point test failed");
 static_assert(fp_s32<-7>(123.125f).get<long double>() == 123.125f, "sg14::fixed_point test failed");
 static_assert(fp_s64<-7>(123.125l).get<float>() == 123.125f, "sg14::fixed_point test failed");
+
+static_assert(fp_s64<-7>::integer_digits == 56, "sg14::fixed_point test failed");
+static_assert(fp_u8<-7>::fractional_digits == 7, "sg14::fixed_point test failed");
 
 // exponent == 16
 static_assert(fp_u8<16>(65536).get<float>() == 65536.f, "sg14::fixed_point test failed");
