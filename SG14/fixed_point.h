@@ -317,7 +317,7 @@ namespace sg14
 		// functions
 
 	private:
-		// constructor taking represenation explicitly using operator++(int)-style trick
+		// constructor taking representation explicitly using operator++(int)-style trick
 		constexpr fixed_point(repr_type repr, int) noexcept
 			: _repr(repr)
 		{
