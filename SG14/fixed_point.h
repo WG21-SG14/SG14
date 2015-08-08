@@ -564,6 +564,26 @@ namespace sg14
 		INTEGER_BITS + std::is_signed<REPR_TYPE>::value - sizeof(REPR_TYPE) * CHAR_BIT>;
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_mul_result_t
+
+	// yields specialization of fixed_point with integral bits necessary to store 
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename REPR_TYPE, int EXPONENT>
+	using fixed_point_mul_result_t = fixed_point_by_integer_digits_t<
+		REPR_TYPE,
+		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_add_result_t
+
+	// yields specialization of fixed_point with integral bits necessary to store 
+	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+	using fixed_point_add_result_t = fixed_point_by_integer_digits_t<
+		REPR_TYPE,
+		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values

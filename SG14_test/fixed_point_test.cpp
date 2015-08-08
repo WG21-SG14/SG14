@@ -218,6 +218,18 @@ static_assert(sg14::fixed_point_by_integer_digits_t<std::uint8_t, 8>::integer_di
 static_assert(sg14::fixed_point_by_integer_digits_t<std::int32_t, 27>::integer_digits == 27, "sg14::fixed_point_by_integer_digits_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::fixed_point_mul_result_t
+
+static_assert(sg14::fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(sg14::fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_by_integer_digits_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::fixed_point_add_result_t
+
+static_assert(sg14::fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(sg14::fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
 static_assert(sg14::abs(fp_s8<0>(66)).get<int>() == 66, "sg14::sqrt test failed");
