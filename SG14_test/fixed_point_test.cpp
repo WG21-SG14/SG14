@@ -224,10 +224,22 @@ static_assert(sg14::fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits =
 static_assert(sg14::fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_by_integer_digits_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_multiply
+
+static_assert(sg14::safe_multiply(fp_s16<-8>(127), fp_s16<-8>(127)).get<int>() == 16129, "sg14::safe_multiply test failed");
+static_assert(sg14::safe_multiply<std::uint8_t, -4>(15.9375, 15.9375).get<int>() == 254, "sg14::safe_multiply test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_add_result_t
 
 static_assert(sg14::fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_by_integer_digits_t test failed");
 static_assert(sg14::fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_add
+
+static_assert(sg14::safe_add(fp_u8<-1>(127), fp_u8<-1>(127)).get<int>() == 254, "sg14::safe_add test failed");
+static_assert(sg14::safe_add<std::uint8_t, -4>(15, 13).get<int>() == 28, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs

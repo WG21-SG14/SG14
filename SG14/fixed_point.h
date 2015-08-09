@@ -580,7 +580,10 @@ namespace sg14
 		INTEGER_BITS + std::is_signed<REPR_TYPE>::value - sizeof(REPR_TYPE) * CHAR_BIT>;
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_mul_result_t
+	// sg14::fixed_point_mul_result_t / safe_multiply
+	//
+	// TODO: accept factors of heterogeneous specialization, e.g.:
+	//       fixed_point<char, -4> * fixed_point<short, -10> = fixed_point<short, -7>
 
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
@@ -589,8 +592,21 @@ namespace sg14
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
 
+	// as fixed_point_mul_result_t but converts parameter, factor,
+	// ready for safe binary multiply
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_mul_result_t<REPR_TYPE, EXPONENT>
+	constexpr safe_multiply(
+		fixed_point<REPR_TYPE, EXPONENT> const & factor1, 
+		fixed_point<REPR_TYPE, EXPONENT> const & factor2) noexcept
+	{
+		using output_type = fixed_point_mul_result_t<REPR_TYPE, EXPONENT>;
+		using next_type = _impl::next_size_t<REPR_TYPE>;
+		return output_type(_impl::shift_left<EXPONENT * 2, REPR_TYPE>(next_type(factor1.data()) * factor2.data()));
+	}
+
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_add_result_t
+	// sg14::fixed_point_add_result_t / safe_add
 
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
@@ -598,6 +614,14 @@ namespace sg14
 	using fixed_point_add_result_t = fixed_point_by_integer_digits_t<
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
+
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_add_result_t<REPR_TYPE, EXPONENT>
+	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, fixed_point<REPR_TYPE, EXPONENT> const & addend2)
+	{
+		using output_type = fixed_point_add_result_t<REPR_TYPE, EXPONENT>;
+		return static_cast<output_type>(addend1) + static_cast<output_type>(addend2);
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
