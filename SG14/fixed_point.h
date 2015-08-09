@@ -155,9 +155,9 @@ namespace sg14
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-			EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && std::is_signed<INPUT>::value,
-			int>::type dummy = 0>
-			constexpr OUTPUT shift_left(INPUT i) noexcept
+				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && std::is_signed<INPUT>::value,
+				int>::type dummy = 0>
+		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
