@@ -348,14 +348,14 @@ namespace sg14
 		// c'tor taking an integer type
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr fixed_point(S s) noexcept
-			: _repr(int_to_repr(s))
+			: _repr(integral_to_repr(s))
 		{
 		}
 
 		// c'tor taking a floating-point type
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
 		constexpr fixed_point(S s) noexcept
-			: _repr(float_to_repr(s))
+			: _repr(floating_point_to_repr(s))
 		{
 		}
 
@@ -370,14 +370,14 @@ namespace sg14
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr S get() const noexcept
 		{
-			return repr_to_int<S>(_repr);
+			return repr_to_integral<S>(_repr);
 		}
 
 		// returns value represented as integral
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
 		constexpr S get() const noexcept
 		{
-			return repr_to_float<S>(_repr);
+			return repr_to_floating_point<S>(_repr);
 		}
 
 		// returns internal representation of value
@@ -473,7 +473,7 @@ namespace sg14
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		static constexpr S one() noexcept
 		{
-			return int_to_repr<S>(1);
+			return integral_to_repr<S>(1);
 		}
 
 		template <typename S>
@@ -484,7 +484,7 @@ namespace sg14
 		}
 
 		template <typename S>
-		static constexpr repr_type int_to_repr(S s) noexcept
+		static constexpr repr_type integral_to_repr(S s) noexcept
 		{
 			static_assert(_impl::is_integral<S>::value, "S must be unsigned integral type");
 
@@ -492,7 +492,7 @@ namespace sg14
 		}
 
 		template <typename S>
-		static constexpr S repr_to_int(repr_type r) noexcept
+		static constexpr S repr_to_integral(repr_type r) noexcept
 		{
 			static_assert(_impl::is_integral<S>::value, "S must be unsigned integral type");
 
@@ -500,14 +500,14 @@ namespace sg14
 		}
 
 		template <typename S>
-		static constexpr repr_type float_to_repr(S s) noexcept
+		static constexpr repr_type floating_point_to_repr(S s) noexcept
 		{
 			static_assert(std::is_floating_point<S>::value, "S must be floating-point type");
 			return static_cast<repr_type>(s * one<S>());
 		}
 
 		template <typename S>
-		static constexpr S repr_to_float(repr_type r) noexcept
+		static constexpr S repr_to_floating_point(repr_type r) noexcept
 		{
 			static_assert(std::is_floating_point<S>::value, "S must be floating-point type");
 			return S(r) * inverse_one<S>();
