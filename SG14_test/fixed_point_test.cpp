@@ -202,76 +202,76 @@ static_assert((fp_u64<-8>(65535) / fp_u64<-8>(256)).get<int>() == 255, "sg14::fi
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_promotion_t
 
-static_assert(std::is_same<sg14::fixed_point_promotion_t<std::int8_t, -4>, sg14::fixed_point<std::int16_t, -8>>::value, "sg14::promotion test failed");
-static_assert(std::is_same<sg14::fixed_point_promotion_t<std::uint32_t, 44>, sg14::fixed_point<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point_promotion_t<std::int8_t, -4>, fixed_point<std::int16_t, -8>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point_promotion_t<std::uint32_t, 44>, fixed_point<std::uint64_t, 88>>::value, "sg14::promotion test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_demotion_t
 
-static_assert(std::is_same<sg14::fixed_point<std::int8_t, -4>, sg14::fixed_point_demotion_t<std::int16_t, -8>>::value, "sg14::promotion test failed");
-static_assert(std::is_same<sg14::fixed_point<std::uint32_t, 44>, sg14::fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<std::int16_t, -8>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_by_integer_digits_t
 
-static_assert(sg14::fixed_point_by_integer_digits_t<std::uint8_t, 8>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(sg14::fixed_point_by_integer_digits_t<std::int32_t, 27>::integer_digits == 27, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_by_integer_digits_t<std::uint8_t, 8>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_by_integer_digits_t<std::int32_t, 27>::integer_digits == 27, "sg14::fixed_point_by_integer_digits_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_mul_result_t
 
-static_assert(sg14::fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(sg14::fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_by_integer_digits_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_multiply
 
-static_assert(sg14::safe_multiply(fp_s16<-8>(127), fp_s16<-8>(127)).get<int>() == 16129, "sg14::safe_multiply test failed");
-static_assert(sg14::safe_multiply<std::uint8_t, -4>(15.9375, 15.9375).get<int>() == 254, "sg14::safe_multiply test failed");
+static_assert(safe_multiply(fp_s16<-8>(127), fp_s16<-8>(127)).get<int>() == 16129, "sg14::safe_multiply test failed");
+static_assert(safe_multiply<std::uint8_t, -4>(15.9375, 15.9375).get<int>() == 254, "sg14::safe_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_add_result_t
 
-static_assert(sg14::fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(sg14::fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add
 
-static_assert(sg14::safe_add(fp_u8<-1>(127), fp_u8<-1>(127)).get<int>() == 254, "sg14::safe_add test failed");
-static_assert(sg14::safe_add<std::uint8_t, -4>(15, 13).get<int>() == 28, "sg14::safe_add test failed");
+static_assert(safe_add(fp_u8<-1>(127), fp_u8<-1>(127)).get<int>() == 254, "sg14::safe_add test failed");
+static_assert(safe_add<std::uint8_t, -4>(15, 13).get<int>() == 28, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
-static_assert(sg14::abs(fp_s8<0>(66)).get<int>() == 66, "sg14::sqrt test failed");
-static_assert(sg14::abs(fp_s8<0>(-123)).get<int>() == 123, "sg14::sqrt test failed");
-static_assert(sg14::abs(fp_s64<0>(9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
-static_assert(sg14::abs(fp_s64<0>(-9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
+static_assert(abs(fp_s8<0>(66)).get<int>() == 66, "sg14::sqrt test failed");
+static_assert(abs(fp_s8<0>(-123)).get<int>() == 123, "sg14::sqrt test failed");
+static_assert(abs(fp_s64<0>(9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
+static_assert(abs(fp_s64<0>(-9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::sqrt
 
-static_assert(sg14::sqrt(fp_u8<0>(225)).get<int>() == 15, "sg14::sqrt test failed");
-static_assert(sg14::sqrt(fp_s8<0>(81)).get<int>() == 9, "sg14::sqrt test failed");
+static_assert(sqrt(fp_u8<0>(225)).get<int>() == 15, "sg14::sqrt test failed");
+static_assert(sqrt(fp_s8<0>(81)).get<int>() == 9, "sg14::sqrt test failed");
 
-static_assert(sg14::sqrt(fp_u8<-1>(4)).get<int>() == 2, "sg14::sqrt test failed");
-static_assert(sg14::sqrt(fp_s8<-2>(9)).get<int>() == 3, "sg14::sqrt test failed");
+static_assert(sqrt(fp_u8<-1>(4)).get<int>() == 2, "sg14::sqrt test failed");
+static_assert(sqrt(fp_s8<-2>(9)).get<int>() == 3, "sg14::sqrt test failed");
 
-static_assert(sg14::sqrt(fp_u8<-4>(4)).get<int>() == 2, "sg14::sqrt test failed");
-static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() > 1.7724537849426, "sg14::sqrt test failed");
-static_assert(sg14::sqrt(fp_s32<-24>(3.141592654)).get<float>() < 1.7724537849427, "sg14::sqrt test failed");
+static_assert(sqrt(fp_u8<-4>(4)).get<int>() == 2, "sg14::sqrt test failed");
+static_assert(sqrt(fp_s32<-24>(3.141592654)).get<float>() > 1.7724537849426, "sg14::sqrt test failed");
+static_assert(sqrt(fp_s32<-24>(3.141592654)).get<float>() < 1.7724537849427, "sg14::sqrt test failed");
 #if defined(_SG14_FIXED_POINT_128)
-static_assert(sg14::sqrt(fp_s64<0>(9223372036854775807)).get<std::int64_t>() == 3037000499, "sg14::sqrt test failed");
+static_assert(sqrt(fp_s64<0>(9223372036854775807)).get<std::int64_t>() == 3037000499, "sg14::sqrt test failed");
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::lerp
 
-static_assert(sg14::lerp(fp_u8<-7>(1), fp_u8<-7>(0), .5).get<float>() == .5f, "sg14::lerp test failed");
-static_assert(sg14::lerp(fp_u16<-7>(.125), fp_u16<-7>(.625), .5).get<float>() == .375f, "sg14::lerp test failed");
-static_assert(sg14::lerp(fp_u32<-16>(42123.51323), fp_u32<-16>(432.9191), .812).get<unsigned>() == 8270, "sg14::lerp test failed");
+static_assert(lerp(fp_u8<-7>(1), fp_u8<-7>(0), .5).get<float>() == .5f, "sg14::lerp test failed");
+static_assert(lerp(fp_u16<-7>(.125), fp_u16<-7>(.625), .5).get<float>() == .375f, "sg14::lerp test failed");
+static_assert(lerp(fp_u32<-16>(42123.51323), fp_u32<-16>(432.9191), .812).get<unsigned>() == 8270, "sg14::lerp test failed");
 
-static_assert(sg14::lerp(fp_s8<-6>(1), fp_s8<-6>(0), .5).get<float>() == .5f, "sg14::lerp test failed");
-static_assert(sg14::lerp(fp_s16<-10>(.125), fp_s16<-10>(.625), .5).get<float>() == .375f, "sg14::lerp test failed");
-static_assert(sg14::lerp(fp_s32<-6>(.125), fp_s32<-6>(.625), .25).get<float>() == .25f, "sg14::lerp test failed");
+static_assert(lerp(fp_s8<-6>(1), fp_s8<-6>(0), .5).get<float>() == .5f, "sg14::lerp test failed");
+static_assert(lerp(fp_s16<-10>(.125), fp_s16<-10>(.625), .5).get<float>() == .375f, "sg14::lerp test failed");
+static_assert(lerp(fp_s32<-6>(.125), fp_s32<-6>(.625), .25).get<float>() == .25f, "sg14::lerp test failed");
