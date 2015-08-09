@@ -536,7 +536,7 @@ namespace sg14
 		1 - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_promotion_t
+	// sg14::fixed_point_promotion_t / promote
 
 	// given template parameters of a fixed_point specialization, 
 	// yields alternative specialization with twice the fractional bits
@@ -544,14 +544,30 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT>
 	using fixed_point_promotion_t = fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>;
 
+	// as fixed_point_promotion_t but promotes parameter, from
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_promotion_t<REPR_TYPE, EXPONENT>
+	constexpr promote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	{
+		return from;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_demotion_t
+	// sg14::fixed_point_demotion_t / demote
 
 	// given template parameters of a fixed_point specialization, 
 	// yields alternative specialization with half the fractional bits
 	// and half the integral/sign bits (assuming EXPONENT is even)
 	template <typename REPR_TYPE, int EXPONENT>
 	using fixed_point_demotion_t = fixed_point<_impl::previous_size_t<REPR_TYPE>, EXPONENT / 2>;
+
+	// as fixed_point_demotion_t but demotes parameter, from
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_demotion_t<REPR_TYPE, EXPONENT>
+	constexpr demote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	{
+		return from;
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_by_integer_digits_t
