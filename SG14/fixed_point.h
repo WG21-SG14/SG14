@@ -673,7 +673,7 @@ namespace sg14
 	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
-			static_cast<REPR_TYPE>(_impl::sqrt_solve1(fixed_point_promotion_t<REPR_TYPE, EXPONENT>(x).data())));
+			static_cast<REPR_TYPE>(_impl::sqrt_solve1(promote(x).data())));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
