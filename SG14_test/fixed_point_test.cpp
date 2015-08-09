@@ -363,7 +363,7 @@ static_assert(ufixed64_0_t::fractional_digits == 0, "fixed_point specializations
 static_assert(fixed0_127_t::fractional_digits == 127, "fixed_point specializations test failed");
 static_assert(fixed1_126_t::fractional_digits == 126, "fixed_point specializations test failed");
 static_assert(fixed63_64_t::fractional_digits == 64, "fixed_point specializations test failed");
-static_assert(fixed64_63_t::fractional_digits == 64, "fixed_point specializations test failed");
+static_assert(fixed64_63_t::fractional_digits == 63, "fixed_point specializations test failed");
 static_assert(fixed127_0_t::fractional_digits == 0, "fixed_point specializations test failed");
 
 static_assert(ufixed0_128_t::fractional_digits == 128, "fixed_point specializations test failed");
