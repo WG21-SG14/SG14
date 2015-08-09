@@ -275,3 +275,122 @@ static_assert(lerp(fp_u32<-16>(42123.51323), fp_u32<-16>(432.9191), .812).get<un
 static_assert(lerp(fp_s8<-6>(1), fp_s8<-6>(0), .5).get<float>() == .5f, "sg14::lerp test failed");
 static_assert(lerp(fp_s16<-10>(.125), fp_s16<-10>(.625), .5).get<float>() == .375f, "sg14::lerp test failed");
 static_assert(lerp(fp_s32<-6>(.125), fp_s32<-6>(.625), .25).get<float>() == .25f, "sg14::lerp test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// fixed_point specializations
+
+// integer_digits
+static_assert(fixed0_7_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(fixed1_6_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(fixed3_4_t::integer_digits == 3, "fixed_point specializations test failed");
+static_assert(fixed4_3_t::integer_digits == 4, "fixed_point specializations test failed");
+static_assert(fixed7_0_t::integer_digits == 7, "fixed_point specializations test failed");
+
+static_assert(ufixed0_8_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(ufixed1_7_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(ufixed4_4_t::integer_digits == 4, "fixed_point specializations test failed");
+static_assert(ufixed8_0_t::integer_digits == 8, "fixed_point specializations test failed");
+
+static_assert(fixed0_15_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(fixed1_14_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(fixed7_8_t::integer_digits == 7, "fixed_point specializations test failed");
+static_assert(fixed8_7_t::integer_digits == 8, "fixed_point specializations test failed");
+static_assert(fixed15_0_t::integer_digits == 15, "fixed_point specializations test failed");
+
+static_assert(ufixed0_16_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(ufixed1_15_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(ufixed8_8_t::integer_digits == 8, "fixed_point specializations test failed");
+static_assert(ufixed16_0_t::integer_digits == 16, "fixed_point specializations test failed");
+
+static_assert(fixed0_31_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(fixed1_30_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(fixed15_16_t::integer_digits == 15, "fixed_point specializations test failed");
+static_assert(fixed16_15_t::integer_digits == 16, "fixed_point specializations test failed");
+static_assert(fixed31_0_t::integer_digits == 31, "fixed_point specializations test failed");
+
+static_assert(ufixed0_32_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(ufixed1_31_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(ufixed16_16_t::integer_digits == 16, "fixed_point specializations test failed");
+static_assert(ufixed32_0_t::integer_digits == 32, "fixed_point specializations test failed");
+
+static_assert(fixed0_63_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(fixed1_62_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(fixed31_32_t::integer_digits == 31, "fixed_point specializations test failed");
+static_assert(fixed32_31_t::integer_digits == 32, "fixed_point specializations test failed");
+static_assert(fixed63_0_t::integer_digits == 63, "fixed_point specializations test failed");
+
+static_assert(ufixed0_64_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(ufixed1_63_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(ufixed32_32_t::integer_digits == 32, "fixed_point specializations test failed");
+static_assert(ufixed64_0_t::integer_digits == 64, "fixed_point specializations test failed");
+
+#if defined(_SG14_FIXED_POINT_128)
+static_assert(fixed0_127_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(fixed1_126_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(fixed63_64_t::integer_digits == 63, "fixed_point specializations test failed");
+static_assert(fixed64_63_t::integer_digits == 64, "fixed_point specializations test failed");
+static_assert(fixed127_0_t::integer_digits == 127, "fixed_point specializations test failed");
+
+static_assert(ufixed0_128_t::integer_digits == 0, "fixed_point specializations test failed");
+static_assert(ufixed1_127_t::integer_digits == 1, "fixed_point specializations test failed");
+static_assert(ufixed64_64_t::integer_digits == 64, "fixed_point specializations test failed");
+static_assert(ufixed128_0_t::integer_digits == 128, "fixed_point specializations test failed");
+#endif
+
+// fractional_digits
+static_assert(fixed0_7_t::fractional_digits == 7, "fixed_point specializations test failed");
+static_assert(fixed1_6_t::fractional_digits == 6, "fixed_point specializations test failed");
+static_assert(fixed3_4_t::fractional_digits == 4, "fixed_point specializations test failed");
+static_assert(fixed4_3_t::fractional_digits == 3, "fixed_point specializations test failed");
+static_assert(fixed7_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(ufixed0_8_t::fractional_digits == 8, "fixed_point specializations test failed");
+static_assert(ufixed1_7_t::fractional_digits == 7, "fixed_point specializations test failed");
+static_assert(ufixed4_4_t::fractional_digits == 4, "fixed_point specializations test failed");
+static_assert(ufixed8_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(fixed0_15_t::fractional_digits == 15, "fixed_point specializations test failed");
+static_assert(fixed1_14_t::fractional_digits == 14, "fixed_point specializations test failed");
+static_assert(fixed7_8_t::fractional_digits == 8, "fixed_point specializations test failed");
+static_assert(fixed8_7_t::fractional_digits == 7, "fixed_point specializations test failed");
+static_assert(fixed15_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(ufixed0_16_t::fractional_digits == 16, "fixed_point specializations test failed");
+static_assert(ufixed1_15_t::fractional_digits == 15, "fixed_point specializations test failed");
+static_assert(ufixed8_8_t::fractional_digits == 8, "fixed_point specializations test failed");
+static_assert(ufixed16_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(fixed0_31_t::fractional_digits == 31, "fixed_point specializations test failed");
+static_assert(fixed1_30_t::fractional_digits == 30, "fixed_point specializations test failed");
+static_assert(fixed15_16_t::fractional_digits == 16, "fixed_point specializations test failed");
+static_assert(fixed16_15_t::fractional_digits == 15, "fixed_point specializations test failed");
+static_assert(fixed31_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(ufixed0_32_t::fractional_digits == 32, "fixed_point specializations test failed");
+static_assert(ufixed1_31_t::fractional_digits == 31, "fixed_point specializations test failed");
+static_assert(ufixed16_16_t::fractional_digits == 16, "fixed_point specializations test failed");
+static_assert(ufixed32_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(fixed0_63_t::fractional_digits == 63, "fixed_point specializations test failed");
+static_assert(fixed1_62_t::fractional_digits == 62, "fixed_point specializations test failed");
+static_assert(fixed31_32_t::fractional_digits == 32, "fixed_point specializations test failed");
+static_assert(fixed32_31_t::fractional_digits == 31, "fixed_point specializations test failed");
+static_assert(fixed63_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(ufixed0_64_t::fractional_digits == 64, "fixed_point specializations test failed");
+static_assert(ufixed1_63_t::fractional_digits == 63, "fixed_point specializations test failed");
+static_assert(ufixed32_32_t::fractional_digits == 32, "fixed_point specializations test failed");
+static_assert(ufixed64_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+#if defined(_SG14_FIXED_POINT_128)
+static_assert(fixed0_127_t::fractional_digits == 127, "fixed_point specializations test failed");
+static_assert(fixed1_126_t::fractional_digits == 126, "fixed_point specializations test failed");
+static_assert(fixed63_64_t::fractional_digits == 64, "fixed_point specializations test failed");
+static_assert(fixed64_63_t::fractional_digits == 64, "fixed_point specializations test failed");
+static_assert(fixed127_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+
+static_assert(ufixed0_128_t::fractional_digits == 128, "fixed_point specializations test failed");
+static_assert(ufixed1_127_t::fractional_digits == 127, "fixed_point specializations test failed");
+static_assert(ufixed64_64_t::fractional_digits == 64, "fixed_point specializations test failed");
+static_assert(ufixed128_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+#endif

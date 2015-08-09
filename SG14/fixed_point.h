@@ -693,6 +693,66 @@ namespace sg14
 		fp = ld;
 		return in;
 	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// fixed_point specializations
+
+	using fixed0_7_t = fixed_point<std::int8_t, -7>;
+	using fixed1_6_t = fixed_point<std::int8_t, -6>;
+	using fixed3_4_t = fixed_point<std::int8_t, -4>;
+	using fixed4_3_t = fixed_point<std::int8_t, -3>;
+	using fixed7_0_t = fixed_point<std::int8_t, 0>;
+
+	using ufixed0_8_t = fixed_point<std::uint8_t, -8>;
+	using ufixed1_7_t = fixed_point<std::uint8_t, -7>;
+	using ufixed4_4_t = fixed_point<std::uint8_t, -4>;
+	using ufixed8_0_t = fixed_point<std::uint8_t, 0>;
+
+	using fixed0_15_t = fixed_point<std::int16_t, -15>;
+	using fixed1_14_t = fixed_point<std::int16_t, -14>;
+	using fixed7_8_t = fixed_point<std::int16_t, -8>;
+	using fixed8_7_t = fixed_point<std::int16_t, -7>;
+	using fixed15_0_t = fixed_point<std::int16_t, 0>;
+
+	using ufixed0_16_t = fixed_point<std::uint16_t, -16>;
+	using ufixed1_15_t = fixed_point<std::uint16_t, -15>;
+	using ufixed8_8_t = fixed_point<std::uint16_t, -8>;
+	using ufixed16_0_t = fixed_point<std::uint16_t, 0>;
+
+	using fixed0_31_t = fixed_point<std::int32_t, -31>;
+	using fixed1_30_t = fixed_point<std::int32_t, -30>;
+	using fixed15_16_t = fixed_point<std::int32_t, -16>;
+	using fixed16_15_t = fixed_point<std::int32_t, -15>;
+	using fixed31_0_t = fixed_point<std::int32_t, 0>;
+
+	using ufixed0_32_t = fixed_point<std::uint32_t, -32>;
+	using ufixed1_31_t = fixed_point<std::uint32_t, -31>;
+	using ufixed16_16_t = fixed_point<std::uint32_t, -16>;
+	using ufixed32_0_t = fixed_point<std::uint32_t, 0>;
+
+	using fixed0_63_t = fixed_point<std::int64_t, -63>;
+	using fixed1_62_t = fixed_point<std::int64_t, -62>;
+	using fixed31_32_t = fixed_point<std::int64_t, -32>;
+	using fixed32_31_t = fixed_point<std::int64_t, -31>;
+	using fixed63_0_t = fixed_point<std::int64_t, 0>;
+
+	using ufixed0_64_t = fixed_point<std::uint64_t, -64>;
+	using ufixed1_63_t = fixed_point<std::uint64_t, -63>;
+	using ufixed32_32_t = fixed_point<std::uint64_t, -32>;
+	using ufixed64_0_t = fixed_point<std::uint64_t, 0>;
+
+#if defined(_SG14_FIXED_POINT_128)
+	using fixed0_127_t = fixed_point<__int128_t, -127>;
+	using fixed1_126_t = fixed_point<__int128_t, -126>;
+	using fixed63_64_t = fixed_point<__int128_t, -64>;
+	using fixed64_63_t = fixed_point<__int128_t, -64>;
+	using fixed127_0_t = fixed_point<__int128_t, 0>;
+
+	using ufixed0_128_t = fixed_point<unsigned __int128_t, -128>;
+	using ufixed1_127_t = fixed_point<unsigned __int128_t, -127>;
+	using ufixed64_64_t = fixed_point<unsigned __int128_t, -64>;
+	using ufixed128_0_t = fixed_point<unsigned __int128_t, 0>;
+#endif
 }
 
 #endif	// defined(_SG14_FIXED_POINT)
