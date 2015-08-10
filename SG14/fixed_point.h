@@ -12,7 +12,7 @@
 #if defined(__clang__) || defined(__GNUG__)
 // sg14::float_point only fully supports 64-bit types with the help of 128-bit ints.
 // Clang and GCC use (__int128) and (unsigned __int128) for 128-bit ints.
-#define _SG14_FIXED_POINT_64
+#define _SG14_FIXED_POINT_128
 #endif
 
 namespace sg14
@@ -20,29 +20,26 @@ namespace sg14
 	namespace _impl
 	{
 		////////////////////////////////////////////////////////////////////////////////
-		// sg14::_impl::next_size
+		// sg14::_impl::get_int_t
 
-		// given an integral (except bool) type T, provides the member typedef type
-		// which is the next longest sized integer type corresponding to T
-		template <typename INT_TYPE>
-		struct next_size;
+		template <bool SIGNED, int NUM_BYTES>
+		struct get_int;
 
-		template <typename T>
-		using next_size_t = typename next_size<T>::type;
+		template <bool SIGNED, int NUM_BYTES>
+		using get_int_t = typename get_int<SIGNED, NUM_BYTES>::type;
 
 		// specializations
-		template <> struct next_size<std::uint8_t> { using type = std::uint16_t; };
-		template <> struct next_size<std::int8_t> { using type = std::int16_t; };
-
-		template <> struct next_size<std::uint16_t> { using type = std::uint32_t; };
-		template <> struct next_size<std::int16_t> { using type = std::int32_t; };
-
-		template <> struct next_size<std::uint32_t> { using type = std::uint64_t; };
-		template <> struct next_size<std::int32_t> { using type = std::int64_t; };
-
-#if defined(_SG14_FIXED_POINT_64)
-		template <> struct next_size<std::uint64_t> { using type = unsigned __int128; };
-		template <> struct next_size<std::int64_t> { using type = __int128; };
+		template <> struct get_int<false, 1> { using type = std::uint8_t; };
+		template <> struct get_int<true, 1> { using type = std::int8_t; };
+		template <> struct get_int<false, 2> { using type = std::uint16_t; };
+		template <> struct get_int<true, 2> { using type = std::int16_t; };
+		template <> struct get_int<false, 4> { using type = std::uint32_t; };
+		template <> struct get_int<true, 4> { using type = std::int32_t; };
+		template <> struct get_int<false, 8> { using type = std::uint64_t; };
+		template <> struct get_int<true, 8> { using type = std::int64_t; };
+#if defined(_SG14_FIXED_POINT_128)
+		template <> struct get_int<false, 16> { using type = unsigned __int128; };
+		template <> struct get_int<true, 16> { using type = __int128; };
 #endif
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +52,7 @@ namespace sg14
 		template <>
 		struct is_integral<bool> : std::false_type { };
 
-#if defined(_SG14_FIXED_POINT_64)
+#if defined(_SG14_FIXED_POINT_128)
 		// addresses https://llvm.org/bugs/show_bug.cgi?id=23156
 		template <>
 		struct is_integral<__int128> : std::true_type { };
@@ -68,50 +65,58 @@ namespace sg14
 		struct is_integral : std::is_integral<T> { };
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::is_signed
+
+		template <typename T>
+		struct is_signed
+		{
+			static_assert(is_integral<T>::value, "sg14::_impl::is_signed only intended for use with integral types");
+			static constexpr bool value = std::is_same<typename get_int<true, sizeof(T)>::type, T>::value;
+		};
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::is_unsigned
+
+		template <typename T>
+		struct is_unsigned
+		{
+			static_assert(is_integral<T>::value, "sg14::_impl::is_unsigned only intended for use with integral types");
+			static constexpr bool value = std::is_same<typename get_int<false, sizeof(T)>::type, T>::value;
+		};
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::make_signed
 
 		template <typename T>
-		struct make_signed;
-
-#if defined(_SG14_FIXED_POINT_64)
-		template <>
-		struct make_signed<__int128>
+		struct make_signed
 		{
-			using type = __int128;
+			using type = typename get_int<true, sizeof(T)>::type;
 		};
-
-		template <>
-		struct make_signed<unsigned __int128>
-		{
-			using type = __int128;
-		};
-#endif
-
-		template <typename T>
-		struct make_signed : std::make_signed<T> { };
 
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::make_unsigned
 
 		template <typename T>
-		struct make_unsigned;
-
-#if defined(_SG14_FIXED_POINT_64)
-		template <>
-		struct make_unsigned<__int128>
+		struct make_unsigned
 		{
-			using type = unsigned __int128;
+			using type = typename get_int<false, sizeof(T)>::type;
 		};
 
-		template <>
-		struct make_unsigned<unsigned __int128>
-		{
-			using type = unsigned __int128;
-		};
-#endif
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::next_size_t
 
-		template <typename T>
-		struct make_unsigned : std::make_unsigned<T> { };
+		// given an integral type, INT_TYPE,
+		// provides the integral type of the equivalent type with twice the size
+		template <typename INT_TYPE>
+		using next_size_t = get_int_t<_impl::is_signed<INT_TYPE>::value, sizeof(INT_TYPE) * 2>;
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::previous_size_t
+
+		// given an integral type, INT_TYPE,
+		// provides the integral type of the equivalent type with half the size
+		template <typename INT_TYPE>
+		using previous_size_t = get_int_t<_impl::is_signed<INT_TYPE>::value, sizeof(INT_TYPE) / 2>;
 
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::shift_left and sg14::_impl::shift_right
@@ -126,7 +131,7 @@ namespace sg14
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && std::is_unsigned<INPUT>::value, 
+				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_unsigned<INPUT>::value,
 				int>::type dummy = 0>
 			constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
@@ -142,9 +147,9 @@ namespace sg14
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-			EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && std::is_signed<INPUT>::value,
-			int>::type dummy = 0>
-			constexpr OUTPUT shift_left(INPUT i) noexcept
+				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_signed<INPUT>::value,
+				int>::type dummy = 0>
+		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
@@ -170,7 +175,7 @@ namespace sg14
 			typename OUTPUT, 
 			typename INPUT, 
 			typename std::enable_if<
-				EXPONENT >= 0 && ! (sizeof(OUTPUT) <= sizeof(INPUT)) && std::is_unsigned<INPUT>::value, 
+				EXPONENT >= 0 && ! (sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_unsigned<INPUT>::value,
 				char>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
@@ -186,7 +191,7 @@ namespace sg14
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-			EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)) && std::is_signed<INPUT>::value,
+			EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_signed<INPUT>::value,
 			char>::type dummy = 0>
 			constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
@@ -247,6 +252,25 @@ namespace sg14
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::capacity
+
+		// has value that, given a value N, 
+		// returns number of bits necessary to represent it in binary
+		template <unsigned N> struct capacity;
+
+		template <>
+		struct capacity<0>
+		{
+			static constexpr int value = 0;
+		};
+
+		template <unsigned N>
+		struct capacity
+		{
+			static constexpr int value = capacity<N / 2>::value + 1;
+		};
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::sqrt helper functions
 
 		template <typename REPR_TYPE>
@@ -296,15 +320,15 @@ namespace sg14
 		// constants
 
 		constexpr static int exponent = EXPONENT;
-		constexpr static int digits = std::numeric_limits<repr_type>::digits;
+		constexpr static int digits = sizeof(repr_type) * CHAR_BIT - _impl::is_signed<repr_type>::value;
 		constexpr static int integer_digits = digits + exponent;
-		constexpr static int fractional_digits = digits + exponent;
+		constexpr static int fractional_digits = digits - integer_digits;
 
 		////////////////////////////////////////////////////////////////////////////////
 		// functions
 
 	private:
-		// constructor taking represenation explicitly using operator++(int)-style trick
+		// constructor taking representation explicitly using operator++(int)-style trick
 		constexpr fixed_point(repr_type repr, int) noexcept
 			: _repr(repr)
 		{
@@ -316,21 +340,21 @@ namespace sg14
 		// c'tor taking an integer type
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr fixed_point(S s) noexcept
-			: _repr(int_to_repr(s))
+			: _repr(integral_to_repr(s))
 		{
 		}
 
 		// c'tor taking a floating-point type
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
 		constexpr fixed_point(S s) noexcept
-			: _repr(float_to_repr(s))
+			: _repr(floating_point_to_repr(s))
 		{
 		}
 
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
 		constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
-			: _repr(_impl::shift_right<(EXPONENT - FROM_EXPONENT), repr_type>(rhs.data()))
+			: _repr(_impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data()))
 		{
 		}
 
@@ -338,14 +362,14 @@ namespace sg14
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		constexpr S get() const noexcept
 		{
-			return repr_to_int<S>(_repr);
+			return repr_to_integral<S>(_repr);
 		}
 
 		// returns value represented as integral
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
 		constexpr S get() const noexcept
 		{
-			return repr_to_float<S>(_repr);
+			return repr_to_floating_point<S>(_repr);
 		}
 
 		// returns internal representation of value
@@ -392,7 +416,7 @@ namespace sg14
 		// arithmetic
 		friend constexpr fixed_point operator-(fixed_point const & rhs) noexcept
 		{
-			static_assert(std::is_signed<REPR_TYPE>::value, "unary negation of unsigned value");
+			static_assert(_impl::is_signed<repr_type>::value, "unary negation of unsigned value");
 
 			return fixed_point(- rhs._repr, 0);
 		}
@@ -441,7 +465,7 @@ namespace sg14
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		static constexpr S one() noexcept
 		{
-			return int_to_repr<S>(1);
+			return integral_to_repr<S>(1);
 		}
 
 		template <typename S>
@@ -452,7 +476,7 @@ namespace sg14
 		}
 
 		template <typename S>
-		static constexpr repr_type int_to_repr(S s) noexcept
+		static constexpr repr_type integral_to_repr(S s) noexcept
 		{
 			static_assert(_impl::is_integral<S>::value, "S must be unsigned integral type");
 
@@ -460,7 +484,7 @@ namespace sg14
 		}
 
 		template <typename S>
-		static constexpr S repr_to_int(repr_type r) noexcept
+		static constexpr S repr_to_integral(repr_type r) noexcept
 		{
 			static_assert(_impl::is_integral<S>::value, "S must be unsigned integral type");
 
@@ -468,14 +492,14 @@ namespace sg14
 		}
 
 		template <typename S>
-		static constexpr repr_type float_to_repr(S s) noexcept
+		static constexpr repr_type floating_point_to_repr(S s) noexcept
 		{
 			static_assert(std::is_floating_point<S>::value, "S must be floating-point type");
 			return static_cast<repr_type>(s * one<S>());
 		}
 
 		template <typename S>
-		static constexpr S repr_to_float(repr_type r) noexcept
+		static constexpr S repr_to_floating_point(repr_type r) noexcept
 		{
 			static_assert(std::is_floating_point<S>::value, "S must be floating-point type");
 			return S(r) * inverse_one<S>();
@@ -500,8 +524,96 @@ namespace sg14
 	// a bit less precise than closed_unit
 	template <typename REPR_TYPE>
 	using closed_unit = fixed_point<
-		typename std::enable_if<std::is_unsigned<REPR_TYPE>::value, REPR_TYPE>::type,
+		typename std::enable_if<_impl::is_unsigned<REPR_TYPE>::value, REPR_TYPE>::type,
 		1 - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_promotion_t / promote
+
+	// given template parameters of a fixed_point specialization, 
+	// yields alternative specialization with twice the fractional bits
+	// and twice the integral/sign bits
+	template <typename REPR_TYPE, int EXPONENT>
+	using fixed_point_promotion_t = fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>;
+
+	// as fixed_point_promotion_t but promotes parameter, from
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_promotion_t<REPR_TYPE, EXPONENT>
+	constexpr promote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	{
+		return from;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_demotion_t / demote
+
+	// given template parameters of a fixed_point specialization, 
+	// yields alternative specialization with half the fractional bits
+	// and half the integral/sign bits (assuming EXPONENT is even)
+	template <typename REPR_TYPE, int EXPONENT>
+	using fixed_point_demotion_t = fixed_point<_impl::previous_size_t<REPR_TYPE>, EXPONENT / 2>;
+
+	// as fixed_point_demotion_t but demotes parameter, from
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_demotion_t<REPR_TYPE, EXPONENT>
+	constexpr demote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	{
+		return from;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_by_integer_digits_t
+
+	// yields a float_point with EXPONENT calculated such that 
+	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
+	template <typename REPR_TYPE, int INTEGER_BITS>
+	using fixed_point_by_integer_digits_t = fixed_point<
+		REPR_TYPE, 
+		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_mul_result_t / safe_multiply
+	//
+	// TODO: accept factors of heterogeneous specialization, e.g.:
+	//       fixed_point<char, -4> * fixed_point<short, -10> = fixed_point<short, -7>
+
+	// yields specialization of fixed_point with integral bits necessary to store 
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename REPR_TYPE, int EXPONENT>
+	using fixed_point_mul_result_t = fixed_point_by_integer_digits_t<
+		REPR_TYPE,
+		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
+
+	// as fixed_point_mul_result_t but converts parameter, factor,
+	// ready for safe binary multiply
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_mul_result_t<REPR_TYPE, EXPONENT>
+	constexpr safe_multiply(
+		fixed_point<REPR_TYPE, EXPONENT> const & factor1, 
+		fixed_point<REPR_TYPE, EXPONENT> const & factor2) noexcept
+	{
+		using output_type = fixed_point_mul_result_t<REPR_TYPE, EXPONENT>;
+		using next_type = _impl::next_size_t<REPR_TYPE>;
+		return output_type(_impl::shift_left<EXPONENT * 2, REPR_TYPE>(next_type(factor1.data()) * factor2.data()));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::fixed_point_add_result_t / safe_add
+
+	// yields specialization of fixed_point with integral bits necessary to store 
+	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+	using fixed_point_add_result_t = fixed_point_by_integer_digits_t<
+		REPR_TYPE,
+		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
+
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point_add_result_t<REPR_TYPE, EXPONENT>
+	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, fixed_point<REPR_TYPE, EXPONENT> const & addend2)
+	{
+		using output_type = fixed_point_add_result_t<REPR_TYPE, EXPONENT>;
+		return static_cast<output_type>(addend1) + static_cast<output_type>(addend2);
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
@@ -526,8 +638,8 @@ namespace sg14
 	{
 		using fixed_point = fixed_point<REPR_TYPE, EXPONENT>;
 		using repr_type = typename fixed_point::repr_type;
-		using next_repr_type = typename _impl::next_size<repr_type>::type;
-		using closed_unit = closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type>;
+		using next_repr_type = typename _impl::next_size_t<repr_type>;
+		using closed_unit = closed_unit<typename  _impl::make_unsigned<REPR_TYPE>::type>;
 
 		return fixed_point::from_data(
 			_impl::shift_left<closed_unit::exponent, repr_type>(
@@ -538,7 +650,7 @@ namespace sg14
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::abs
 
-	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<std::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
+	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<_impl::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return (x >= fixed_point<REPR_TYPE, EXPONENT>(0)) ? x.data() : - x.data();
@@ -553,9 +665,7 @@ namespace sg14
 	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
-			static_cast<REPR_TYPE>(
-				_impl::sqrt_solve1(
-					fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>(x).data())));
+			static_cast<REPR_TYPE>(_impl::sqrt_solve1(promote(x).data())));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -575,6 +685,66 @@ namespace sg14
 		fp = ld;
 		return in;
 	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// fixed_point specializations
+
+	using fixed0_7_t = fixed_point<std::int8_t, -7>;
+	using fixed1_6_t = fixed_point<std::int8_t, -6>;
+	using fixed3_4_t = fixed_point<std::int8_t, -4>;
+	using fixed4_3_t = fixed_point<std::int8_t, -3>;
+	using fixed7_0_t = fixed_point<std::int8_t, 0>;
+
+	using ufixed0_8_t = fixed_point<std::uint8_t, -8>;
+	using ufixed1_7_t = fixed_point<std::uint8_t, -7>;
+	using ufixed4_4_t = fixed_point<std::uint8_t, -4>;
+	using ufixed8_0_t = fixed_point<std::uint8_t, 0>;
+
+	using fixed0_15_t = fixed_point<std::int16_t, -15>;
+	using fixed1_14_t = fixed_point<std::int16_t, -14>;
+	using fixed7_8_t = fixed_point<std::int16_t, -8>;
+	using fixed8_7_t = fixed_point<std::int16_t, -7>;
+	using fixed15_0_t = fixed_point<std::int16_t, 0>;
+
+	using ufixed0_16_t = fixed_point<std::uint16_t, -16>;
+	using ufixed1_15_t = fixed_point<std::uint16_t, -15>;
+	using ufixed8_8_t = fixed_point<std::uint16_t, -8>;
+	using ufixed16_0_t = fixed_point<std::uint16_t, 0>;
+
+	using fixed0_31_t = fixed_point<std::int32_t, -31>;
+	using fixed1_30_t = fixed_point<std::int32_t, -30>;
+	using fixed15_16_t = fixed_point<std::int32_t, -16>;
+	using fixed16_15_t = fixed_point<std::int32_t, -15>;
+	using fixed31_0_t = fixed_point<std::int32_t, 0>;
+
+	using ufixed0_32_t = fixed_point<std::uint32_t, -32>;
+	using ufixed1_31_t = fixed_point<std::uint32_t, -31>;
+	using ufixed16_16_t = fixed_point<std::uint32_t, -16>;
+	using ufixed32_0_t = fixed_point<std::uint32_t, 0>;
+
+	using fixed0_63_t = fixed_point<std::int64_t, -63>;
+	using fixed1_62_t = fixed_point<std::int64_t, -62>;
+	using fixed31_32_t = fixed_point<std::int64_t, -32>;
+	using fixed32_31_t = fixed_point<std::int64_t, -31>;
+	using fixed63_0_t = fixed_point<std::int64_t, 0>;
+
+	using ufixed0_64_t = fixed_point<std::uint64_t, -64>;
+	using ufixed1_63_t = fixed_point<std::uint64_t, -63>;
+	using ufixed32_32_t = fixed_point<std::uint64_t, -32>;
+	using ufixed64_0_t = fixed_point<std::uint64_t, 0>;
+
+#if defined(_SG14_FIXED_POINT_128)
+	using fixed0_127_t = fixed_point<__int128, -127>;
+	using fixed1_126_t = fixed_point<__int128, -126>;
+	using fixed63_64_t = fixed_point<__int128, -64>;
+	using fixed64_63_t = fixed_point<__int128, -63>;
+	using fixed127_0_t = fixed_point<__int128, 0>;
+
+	using ufixed0_128_t = fixed_point<unsigned __int128, -128>;
+	using ufixed1_127_t = fixed_point<unsigned __int128, -127>;
+	using ufixed64_64_t = fixed_point<unsigned __int128, -64>;
+	using ufixed128_0_t = fixed_point<unsigned __int128, 0>;
+#endif
 }
 
 #endif	// defined(_SG14_FIXED_POINT)
