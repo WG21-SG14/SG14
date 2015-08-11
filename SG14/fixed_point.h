@@ -594,7 +594,7 @@ namespace sg14
 	{
 		using output_type = fixed_point_mul_result_t<REPR_TYPE, EXPONENT>;
 		using next_type = _impl::next_size_t<REPR_TYPE>;
-		return output_type(_impl::shift_left<EXPONENT * 2, REPR_TYPE>(next_type(factor1.data()) * factor2.data()));
+		return output_type(_impl::shift_left<EXPONENT * 2, next_type>(next_type(factor1.data()) * factor2.data()));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
