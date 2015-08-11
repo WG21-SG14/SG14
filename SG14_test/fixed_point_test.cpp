@@ -221,6 +221,7 @@ static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 
 
 static_assert(safe_add(fixed_point<std::uint8_t, -1>(127), fixed_point<std::uint8_t, -1>(127)).get<int>() == 254, "sg14::safe_add test failed");
 static_assert(safe_add<std::uint8_t, -4>(15, 13).get<int>() == 28, "sg14::safe_add test failed");
+static_assert(safe_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5)).get<float>() == 43.25, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs

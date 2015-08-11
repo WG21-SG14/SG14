@@ -607,12 +607,29 @@ namespace sg14
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
 
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_add_result_t<REPR_TYPE, EXPONENT>
-	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, fixed_point<REPR_TYPE, EXPONENT> const & addend2)
+	namespace _impl
 	{
-		using output_type = fixed_point_add_result_t<REPR_TYPE, EXPONENT>;
-		return static_cast<output_type>(addend1) + static_cast<output_type>(addend2);
+		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD>
+		constexpr RESULT_TYPE add(HEAD const & addend_head)
+		{
+			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
+			return static_cast<RESULT_TYPE>(addend_head);
+		}
+
+		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD, typename ... TAIL>
+		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
+		{
+			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
+			return add<RESULT_TYPE, REPR_TYPE, EXPONENT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
+		}
+	}
+
+	template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
+	fixed_point_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+	{
+		using output_type = fixed_point_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
+		return _impl::add<output_type, REPR_TYPE, EXPONENT>(addend1, addend_tail ...);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
