@@ -14,6 +14,10 @@
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
     <ClInclude Include="..\..\..\SG14\rolling_queue.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Docs\Fixed_Point_Library_Proposal.md" />
+    <None Include="..\..\..\Docs\fixed_point.md" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{71063685-C50D-4C69-AE56-7184DE4FECCB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
