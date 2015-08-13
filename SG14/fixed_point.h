@@ -670,7 +670,7 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<_impl::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
-		return (x >= fixed_point<REPR_TYPE, EXPONENT>(0)) ? x.data() : - x.data();
+		return (x >= 0) ? x : - x;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
