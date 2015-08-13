@@ -226,10 +226,11 @@ static_assert(safe_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5))
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
-static_assert(abs(fixed7_0_t(66)).get<int>() == 66, "sg14::sqrt test failed");
-static_assert(abs(fixed7_0_t(-123)).get<int>() == 123, "sg14::sqrt test failed");
-static_assert(abs(fixed63_0_t(9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
-static_assert(abs(fixed63_0_t(-9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
+static_assert(abs(fixed7_0_t(66)).get<int>() == 66, "sg14::abs test failed");
+static_assert(abs(fixed7_0_t(-123)).get<int>() == 123, "sg14::abs test failed");
+static_assert(abs(fixed63_0_t(9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::abs test failed");
+static_assert(abs(fixed63_0_t(-9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::abs test failed");
+static_assert(abs(fixed7_8_t(-5)).get<int>() == 5, "sg14::abs test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::sqrt
