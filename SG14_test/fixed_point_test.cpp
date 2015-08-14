@@ -66,6 +66,18 @@ static_assert(_impl::capacity<16>::value == 5, "sg14::_impl::capacity test faile
 // sg14::fixed_point
 
 ////////////////////////////////////////////////////////////////////////////////
+// default second template parameter
+
+static_assert(std::is_same<fixed_point<std::int8_t>, fixed_point<std::int8_t, -4>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint8_t>, fixed_point<std::uint8_t, -4>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::int16_t>, fixed_point<std::int16_t, -8>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint16_t>, fixed_point<std::uint16_t, -8>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::int32_t>, fixed_point<std::int32_t, -16>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint32_t>, fixed_point<std::uint32_t, -16>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::int64_t>, fixed_point<std::int64_t, -32>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint64_t>, fixed_point<std::uint64_t, -32>>::value, "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // conversion
 
 // exponent == 0
