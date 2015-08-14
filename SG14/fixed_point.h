@@ -541,7 +541,7 @@ namespace sg14
 	fixed_point_promotion_t<REPR_TYPE, EXPONENT>
 	constexpr promote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
 	{
-		return from;
+		return fixed_point_promotion_t<REPR_TYPE, EXPONENT>(from);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -643,7 +643,7 @@ namespace sg14
 		fixed_point<REPR_TYPE, EXPONENT> to,
 		S t)
 	{
-		using closed_unit = closed_unit<REPR_TYPE>;
+		using closed_unit = closed_unit<_impl::make_unsigned<REPR_TYPE>::type>;
 		return lerp<REPR_TYPE, EXPONENT>(from, to, closed_unit(t));
 	}
 
@@ -670,7 +670,7 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<_impl::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
-		return (x >= 0) ? x : - x;
+		return (x.data() >= 0) ? x : - x;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
