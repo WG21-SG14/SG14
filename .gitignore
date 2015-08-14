@@ -41,3 +41,21 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.tlog
+VS2015/SG14/SG14_test/Release/vc140.pdb
+*.obj
+VS2015/SG14/SG14_test/Release/SG14_test.log
+*.pdb
+VS2015/SG14/SG14_test/Debug/vc120.idb
+*.idb
+*.ipdb
+VS2015/SG14/Release/SG14_test.iobj
+*.ilk
+VS2015/SG14/Release/SG14_test.exe
+*.exe
+VS2015/SG14/.vs/SG14/v14/.suo
+*.opensdf
+VS2015/SG14/SG14.sdf
+*.suo
+VS2015/SG14/SG14.sdf
+VS2015/SG14/SG14_test/Debug/SG14_test.log

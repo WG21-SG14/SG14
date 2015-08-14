@@ -83,6 +83,7 @@
     <ClCompile Include="..\..\..\SG14_test\fixed_point_test.cpp" />
     <ClCompile Include="..\..\..\SG14_test\SG14_test.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="unstable_remove_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\SG14_test\SG14_test.h" />
