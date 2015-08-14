@@ -636,7 +636,7 @@ namespace sg14
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values
-	// given floatint-point `t` for which result is `from` when t==0 and `to` when t==1
+	// given floating-point `t` for which result is `from` when t==0 and `to` when t==1
 	template <typename REPR_TYPE, int EXPONENT, typename S, typename>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> lerp(
 		fixed_point<REPR_TYPE, EXPONENT> from,
