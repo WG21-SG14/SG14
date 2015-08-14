@@ -329,31 +329,31 @@ namespace sg14
 
 	private:
 		// constructor taking representation explicitly using operator++(int)-style trick
-		constexpr fixed_point(repr_type repr, int) noexcept
+		explicit constexpr fixed_point(repr_type repr, int) noexcept
 			: _repr(repr)
 		{
 		}
 	public:
 		// default c'tor
-		constexpr fixed_point() noexcept {}
+		explicit constexpr fixed_point() noexcept {}
 
 		// c'tor taking an integer type
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
-		constexpr fixed_point(S s) noexcept
+		explicit constexpr fixed_point(S s) noexcept
 			: _repr(integral_to_repr(s))
 		{
 		}
 
 		// c'tor taking a floating-point type
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
-		constexpr fixed_point(S s) noexcept
+		explicit constexpr fixed_point(S s) noexcept
 			: _repr(floating_point_to_repr(s))
 		{
 		}
 
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
-		constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+		explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
 			: _repr(_impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data()))
 		{
 		}
