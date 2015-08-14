@@ -3,5 +3,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\SG14\rolling_queue.h" />
     <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
+    <ClInclude Include="..\..\..\SG14\fixed_point.h" />
   </ItemGroup>
 </Project>
