@@ -165,21 +165,40 @@ In the previous example, the function template specialisation of `dot_product` r
 
 Equally, `fixed_point<uint8_t, -9>` can only represent values in the range [0, 0.5). Again, if that is what is called for, there's no reason not to allow this. Obviously, it makes conversion between different types a little more complicated but otherwise, is simpler that not allowing it.
 
-## Future Work
+## Future API Work
 
-Some rough notes on where to go next:
-* Default EXPONENT splits bits down the middle, devoting half the bits to fractional.
+Some rough notes on where to go next with the design of the API:
+
+### To Discuss
+
+* better name for `safe_` functions
+* 'number of integer digits' might make a better 2nd parameter to `fixed_point<>` itself.
+* should object be default constructed to zero value?
+* should the first template parameter default to int?
+* fixed_point::data is named after the std::vector member function but is this the best choice here?
+* With explicit ctors, operations as simple as ```fixed4_4_t(7) > 5``` do not compile.
+  Is the solution to overload operators, spare the ctors from being explicit, 
+  or live with the verbosity of ```fixed4_4_t(7).get<int>() > 5```?
+* Too many disparate ways to declare specializations of fixed_point? If so, what is a good subset?
+
+### To Do
+
 * Operators
   * unary: `!`, `~`
   * binary: `%`, `<<`, `>>`, `<<=`, `>>=`, `&`, `|`, `^`, `&&`, `||`
   * pre and post: `++`, `--`
 * many more overloads of cmath functions
+* heterogenous safe_add, safe_multiply etc.
+* safe_divide? inverse_t?
 * standard traits and `std::numeric_limits`
 * either remove `open_unit` and `closed_unit` or replace with `open_interval` and `closed_interval`
-* consider complimenting them with types that can store [-1,1] for use with trig functions
 * consider removing `lerp` as it can probably be done as well using arithmetic operations
 * streaming operators are placeholder and fall back on `long double` conversion. 
-* a routine for generating text representations in arbitrary bases.
 * better name for `fixed_point_by_integer_digits_t`
-* 'number of integer digits' might make a better 2nd parameter to `fixed_point<>` itself.
 
+### Possible Additions
+
+* an alias that creates a fixed_point specialization from a maximum, e.g.:
+  * auto n = fixed_point_can_hold_t<int16_t, 4000>();  // type of n is fixed_point<uint16_t, -3>
+* a routine for generating text representations in arbitrary bases.
+* consider complimenting them with types that can store [-1,1] for use with trig functions
