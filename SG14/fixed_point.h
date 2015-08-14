@@ -227,6 +227,15 @@ namespace sg14
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::default_exponent
+
+		template <typename REPR_TYPE>
+		constexpr int default_exponent() noexcept
+		{
+			return static_cast<signed>(sizeof(REPR_TYPE)) * CHAR_BIT / -2;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::pow2
 
 		// returns given power of 2
@@ -307,7 +316,7 @@ namespace sg14
 	// approximates a real number using a built-in integral type;
 	// somewhat like a floating-point number but - with exponent determined at run-time
 
-	template <typename REPR_TYPE, int EXPONENT = 0>
+	template <typename REPR_TYPE, int EXPONENT = _impl::default_exponent<REPR_TYPE>()>
 	class fixed_point
 	{
 	public:
@@ -329,31 +338,31 @@ namespace sg14
 
 	private:
 		// constructor taking representation explicitly using operator++(int)-style trick
-		constexpr fixed_point(repr_type repr, int) noexcept
+		explicit constexpr fixed_point(repr_type repr, int) noexcept
 			: _repr(repr)
 		{
 		}
 	public:
 		// default c'tor
-		constexpr fixed_point() noexcept {}
+		explicit constexpr fixed_point() noexcept {}
 
 		// c'tor taking an integer type
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
-		constexpr fixed_point(S s) noexcept
+		explicit constexpr fixed_point(S s) noexcept
 			: _repr(integral_to_repr(s))
 		{
 		}
 
 		// c'tor taking a floating-point type
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
-		constexpr fixed_point(S s) noexcept
+		explicit constexpr fixed_point(S s) noexcept
 			: _repr(floating_point_to_repr(s))
 		{
 		}
 
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
-		constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+		explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
 			: _repr(_impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data()))
 		{
 		}
@@ -541,7 +550,7 @@ namespace sg14
 	fixed_point_promotion_t<REPR_TYPE, EXPONENT>
 	constexpr promote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
 	{
-		return from;
+		return fixed_point_promotion_t<REPR_TYPE, EXPONENT>(from);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -636,14 +645,14 @@ namespace sg14
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values
-	// given floatint-point `t` for which result is `from` when t==0 and `to` when t==1
-	template <typename REPR_TYPE, int EXPONENT, typename S, typename>
+	// given floating-point `t` for which result is `from` when t==0 and `to` when t==1
+	template <typename REPR_TYPE, int EXPONENT, typename S>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> lerp(
 		fixed_point<REPR_TYPE, EXPONENT> from,
 		fixed_point<REPR_TYPE, EXPONENT> to,
 		S t)
 	{
-		using closed_unit = closed_unit<REPR_TYPE>;
+		using closed_unit = closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type>;
 		return lerp<REPR_TYPE, EXPONENT>(from, to, closed_unit(t));
 	}
 
@@ -670,7 +679,7 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<_impl::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
 	constexpr fixed_point<REPR_TYPE, EXPONENT> abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
-		return (x >= fixed_point<REPR_TYPE, EXPONENT>(0)) ? x.data() : - x.data();
+		return (x.data() >= 0) ? x : - x;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////

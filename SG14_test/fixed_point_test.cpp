@@ -66,6 +66,18 @@ static_assert(_impl::capacity<16>::value == 5, "sg14::_impl::capacity test faile
 // sg14::fixed_point
 
 ////////////////////////////////////////////////////////////////////////////////
+// default second template parameter
+
+static_assert(std::is_same<fixed_point<std::int8_t>, fixed_point<std::int8_t, -4>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint8_t>, fixed_point<std::uint8_t, -4>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::int16_t>, fixed_point<std::int16_t, -8>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint16_t>, fixed_point<std::uint16_t, -8>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::int32_t>, fixed_point<std::int32_t, -16>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint32_t>, fixed_point<std::uint32_t, -16>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::int64_t>, fixed_point<std::int64_t, -32>>::value, "sg14::fixed_point test failed");
+static_assert(std::is_same<fixed_point<std::uint64_t>, fixed_point<std::uint64_t, -32>>::value, "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // conversion
 
 // exponent == 0
@@ -205,7 +217,7 @@ static_assert(fixed_point_mul_result_t<std::uint8_t, 0>::integer_digits == 16, "
 // sg14::safe_multiply
 
 static_assert(safe_multiply(fixed7_8_t(127), fixed7_8_t(127)).get<int>() == 16129, "sg14::safe_multiply test failed");
-static_assert(safe_multiply<std::uint8_t, -4>(15.9375, 15.9375).get<int>() == 254, "sg14::safe_multiply test failed");
+static_assert(safe_multiply(ufixed4_4_t(15.9375), ufixed4_4_t(15.9375)).get<int>() == 254, "sg14::safe_multiply test failed");
 static_assert(safe_multiply(ufixed4_4_t(0.0625), ufixed4_4_t(0.0625)).get<float>() == 0, "sg14::safe_multiply test failed");
 static_assert(safe_multiply(ufixed8_0_t(1), ufixed8_0_t(1)).get<float>() == 0, "sg14::safe_multiply test failed");
 static_assert(safe_multiply(ufixed8_0_t(174), ufixed8_0_t(25)).get<float>() == 4096, "sg14::safe_multiply test failed");
@@ -220,16 +232,16 @@ static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 
 // sg14::safe_add
 
 static_assert(safe_add(fixed_point<std::uint8_t, -1>(127), fixed_point<std::uint8_t, -1>(127)).get<int>() == 254, "sg14::safe_add test failed");
-static_assert(safe_add<std::uint8_t, -4>(15, 13).get<int>() == 28, "sg14::safe_add test failed");
 static_assert(safe_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5)).get<float>() == 43.25, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
-static_assert(abs(fixed7_0_t(66)).get<int>() == 66, "sg14::sqrt test failed");
-static_assert(abs(fixed7_0_t(-123)).get<int>() == 123, "sg14::sqrt test failed");
-static_assert(abs(fixed63_0_t(9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
-static_assert(abs(fixed63_0_t(-9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::sqrt test failed");
+static_assert(abs(fixed7_0_t(66)).get<int>() == 66, "sg14::abs test failed");
+static_assert(abs(fixed7_0_t(-123)).get<int>() == 123, "sg14::abs test failed");
+static_assert(abs(fixed63_0_t(9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::abs test failed");
+static_assert(abs(fixed63_0_t(-9223372036854775807)).get<std::int64_t>() == 9223372036854775807, "sg14::abs test failed");
+static_assert(abs(fixed7_8_t(-5)).get<int>() == 5, "sg14::abs test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::sqrt

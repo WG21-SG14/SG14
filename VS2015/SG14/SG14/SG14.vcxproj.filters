@@ -5,4 +5,8 @@
     <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Docs\fixed_point.md" />
+    <None Include="..\..\..\Docs\Fixed_Point_Library_Proposal.md" />
+  </ItemGroup>
 </Project>
