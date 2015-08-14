@@ -16,7 +16,7 @@ SG14 has  an [unofficial](https://groups.google.com/forum/#!forum/unofficial-rea
 
 There is an [SG14 source code repository](https://github.com/WG21-SG14/SG14) including a header file, [fixed_point.h](https://github.com/WG21-SG14/SG14/blob/master/SG14/fixed_point.h), in which a proof of concept, `sg14::fixed_point`, is actively developed. Accompanying tests can be found in [fixed_point_test.cpp](https://github.com/WG21-SG14/SG14/blob/master/SG14_test/fixed_point_test.cpp).
 
-Anyone with an interest in game and low-latency development in C++ is welcome to contribute to the dicussion and the project.
+Anyone with an interest in game and low-latency development in C++ is welcome to contribute to the discussion and the project.
 
 ## 2 Overview
 
@@ -125,12 +125,12 @@ Disadvantages:
 
 #### 2.3.1 Promotion
 
-In the context of `fixed_point<>`, promotion refers to explicit convertion of one type to a compatible type of higher capacity. For example:
+In the context of `fixed_point<>`, promotion refers to explicit conversion of one type to a compatible type of higher capacity. For example:
 ```
 auto a = ufixed8_8_t(5.5);
 auto b = promote(a);  // type of b is ufixed16_16_t
 ```
-This is akin to casting from `float` to `double`. One can perform precision-critical calculations using the promoted type. Finally, the `demote` function template can be used to convert a value back to the original type. (Although in the above case, `a = b` would do the same job.)
+This is akin to casting from `float` to `double`. One can perform precision-critical calculations using the promoted type. Finally, the `demote` function template can be used to convert a value back to the original type.
 
 #### 2.3.2 'Safe' Conversion
 
@@ -144,9 +144,9 @@ Because `ufixed4_4_t` cannot store value 20, there is an overflow. The solution 
 ```
 cout << safe_multiply(ufixed4_4_t(10), ufixed4_4_t(2));  // output: 20
 ```
-This function, and it's partner, `safe_add`, ensure that the result is returned in a type of the same size which is suitable for holding the result. In the above case, `safe_multiply` returns a `ufixed8_0_t`.
+This function, and its partner, `safe_add`, ensure that the result is returned in a type of the same size which is suitable for holding the result. In the above case, `safe_multiply` returns a `ufixed8_0_t`.
 
-With liberal use of the `auto` keyword, much work can be performed this way without the worry of losing siginificant digits:
+With liberal use of the `auto` keyword, much work can be performed this way without the worry of losing significant digits:
 ```
 template <typename REPR_TYPE, int EXPONENT>
 auto constexpr dot_product(
