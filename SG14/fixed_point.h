@@ -652,7 +652,7 @@ namespace sg14
 		fixed_point<REPR_TYPE, EXPONENT> to,
 		S t)
 	{
-		using closed_unit = closed_unit<_impl::make_unsigned<REPR_TYPE>::type>;
+		using closed_unit = closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type>;
 		return lerp<REPR_TYPE, EXPONENT>(from, to, closed_unit(t));
 	}
 
