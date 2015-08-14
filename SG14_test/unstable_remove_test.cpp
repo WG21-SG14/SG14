@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "algorithm_ext.h"
 #include <cassert>
+#include <memory>
 
 struct foo
 {
