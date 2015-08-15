@@ -552,6 +552,16 @@ namespace sg14
 		(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::make_fixed_from_repr
+
+	// yields a float_point with EXPONENT calculated such that 
+	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
+	template <typename REPR_TYPE, int INTEGER_BITS>
+	using make_fixed_from_repr = fixed_point<
+		REPR_TYPE,
+		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point
 
 	// fixed-point type capable of storing values in the range [0, 1);
@@ -602,16 +612,6 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_by_integer_digits_t
-
-	// yields a float_point with EXPONENT calculated such that 
-	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
-	template <typename REPR_TYPE, int INTEGER_BITS>
-	using fixed_point_by_integer_digits_t = fixed_point<
-		REPR_TYPE, 
-		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
-
-	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_mul_result_t / safe_multiply
 	//
 	// TODO: accept factors of heterogeneous specialization, e.g.:
@@ -620,7 +620,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_mul_result_t = fixed_point_by_integer_digits_t<
+	using fixed_point_mul_result_t = make_fixed_from_repr<
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
 
@@ -643,7 +643,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-	using fixed_point_add_result_t = fixed_point_by_integer_digits_t<
+	using fixed_point_add_result_t = make_fixed_from_repr<
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
 

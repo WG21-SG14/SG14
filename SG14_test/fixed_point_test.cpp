@@ -231,10 +231,10 @@ static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<
 static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::fixed_point_by_integer_digits_t
+// sg14::make_fixed_from_repr
 
-static_assert(fixed_point_by_integer_digits_t<std::uint8_t, 8>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(fixed_point_by_integer_digits_t<std::int32_t, 27>::integer_digits == 27, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(make_fixed_from_repr<std::uint8_t, 8>::integer_digits == 8, "sg14::make_fixed_from_repr test failed");
+static_assert(make_fixed_from_repr<std::int32_t, 27>::integer_digits == 27, "sg14::make_fixed_from_repr test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_mul_result_t
