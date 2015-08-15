@@ -20,6 +20,15 @@ namespace sg14
 	namespace _impl
 	{
 		////////////////////////////////////////////////////////////////////////////////
+		// num_bits
+
+		template <typename T>
+		constexpr int num_bits()
+		{
+			return sizeof(T) * CHAR_BIT;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::get_int_t
 
 		template <bool SIGNED, int NUM_BYTES>
@@ -232,7 +241,7 @@ namespace sg14
 		template <typename REPR_TYPE>
 		constexpr int default_exponent() noexcept
 		{
-			return static_cast<signed>(sizeof(REPR_TYPE)) * CHAR_BIT / -2;
+			return num_bits<REPR_TYPE>() / -2;
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -285,7 +294,7 @@ namespace sg14
 		template <typename REPR_TYPE>
 		constexpr REPR_TYPE sqrt_bit(
 			REPR_TYPE n,
-			REPR_TYPE bit = REPR_TYPE(1) << (sizeof(REPR_TYPE) * CHAR_BIT - 2)) noexcept
+			REPR_TYPE bit = REPR_TYPE(1) << (num_bits<REPR_TYPE>() - 2)) noexcept
 		{
 			return (bit > n) ? sqrt_bit<REPR_TYPE>(n, bit >> 2) : bit;
 		}
@@ -329,7 +338,7 @@ namespace sg14
 		// constants
 
 		constexpr static int exponent = EXPONENT;
-		constexpr static int digits = sizeof(repr_type) * CHAR_BIT - _impl::is_signed<repr_type>::value;
+		constexpr static int digits = _impl::num_bits<REPR_TYPE>() - _impl::is_signed<repr_type>::value;
 		constexpr static int integer_digits = digits + exponent;
 		constexpr static int fractional_digits = digits - integer_digits;
 
@@ -526,7 +535,7 @@ namespace sg14
 	// fixed-point type capable of storing values in the range [0, 1);
 	// a bit more precise than closed_unit
 	template <typename REPR_TYPE>
-	using open_unit = fixed_point<REPR_TYPE, - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
+	using open_unit = fixed_point<REPR_TYPE, -_impl::num_bits<REPR_TYPE>()>;
 
 	// fixed-point type capable of storing values in the range [0, 1];
 	// actually storing values in the range [0, 2);
@@ -534,7 +543,7 @@ namespace sg14
 	template <typename REPR_TYPE>
 	using closed_unit = fixed_point<
 		typename std::enable_if<_impl::is_unsigned<REPR_TYPE>::value, REPR_TYPE>::type,
-		1 - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
+		1 - _impl::num_bits<REPR_TYPE>()>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_promotion_t / promote
