@@ -20,6 +20,15 @@ namespace sg14
 	namespace _impl
 	{
 		////////////////////////////////////////////////////////////////////////////////
+		// num_bits
+
+		template <typename T>
+		constexpr int num_bits()
+		{
+			return sizeof(T) * CHAR_BIT;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::get_int_t
 
 		template <bool SIGNED, int NUM_BYTES>
@@ -232,7 +241,7 @@ namespace sg14
 		template <typename REPR_TYPE>
 		constexpr int default_exponent() noexcept
 		{
-			return static_cast<signed>(sizeof(REPR_TYPE)) * CHAR_BIT / -2;
+			return num_bits<REPR_TYPE>() / -2;
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -280,12 +289,21 @@ namespace sg14
 		};
 
 		////////////////////////////////////////////////////////////////////////////////
+		// _impl::necessary_repr_t
+
+		// given a required number of bits a type should have and whether it is signed,
+		// provides a built-in integral type with necessary capacity
+		template <unsigned REQUIRED_BITS, bool IS_SIGNED>
+		using necessary_repr_t 
+			= typename get_int<IS_SIGNED, 1 << (capacity<((REQUIRED_BITS + 7) / 8) - 1>::value)>::type;
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::sqrt helper functions
 
 		template <typename REPR_TYPE>
 		constexpr REPR_TYPE sqrt_bit(
 			REPR_TYPE n,
-			REPR_TYPE bit = REPR_TYPE(1) << (sizeof(REPR_TYPE) * CHAR_BIT - 2)) noexcept
+			REPR_TYPE bit = REPR_TYPE(1) << (num_bits<REPR_TYPE>() - 2)) noexcept
 		{
 			return (bit > n) ? sqrt_bit<REPR_TYPE>(n, bit >> 2) : bit;
 		}
@@ -329,7 +347,7 @@ namespace sg14
 		// constants
 
 		constexpr static int exponent = EXPONENT;
-		constexpr static int digits = sizeof(repr_type) * CHAR_BIT - _impl::is_signed<repr_type>::value;
+		constexpr static int digits = _impl::num_bits<REPR_TYPE>() - _impl::is_signed<repr_type>::value;
 		constexpr static int integer_digits = digits + exponent;
 		constexpr static int fractional_digits = digits - integer_digits;
 
@@ -369,14 +387,14 @@ namespace sg14
 
 		// returns value represented as a floating-point
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
-		constexpr S get() const noexcept
+		explicit constexpr operator S() const noexcept
 		{
 			return repr_to_integral<S>(_repr);
 		}
 
 		// returns value represented as integral
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
-		constexpr S get() const noexcept
+		explicit constexpr operator S() const noexcept
 		{
 			return repr_to_floating_point<S>(_repr);
 		}
@@ -521,12 +539,35 @@ namespace sg14
 	};
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::make_fixed
+
+	// given the desired number of integer and fractional digits,
+	// generates a fixed_point type such that:
+	//   fixed_point<>::integer_digits == INTEGER_DIGITS,
+	// and
+	//   fixed_point<>::fractional_digits >= FRACTIONAL_DIGITS,
+	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
+	using make_fixed = fixed_point<
+		typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>,
+		(signed)(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::make_fixed_from_repr
+
+	// yields a float_point with EXPONENT calculated such that 
+	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
+	template <typename REPR_TYPE, int INTEGER_BITS>
+	using make_fixed_from_repr = fixed_point<
+		REPR_TYPE,
+		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point
 
 	// fixed-point type capable of storing values in the range [0, 1);
 	// a bit more precise than closed_unit
 	template <typename REPR_TYPE>
-	using open_unit = fixed_point<REPR_TYPE, - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
+	using open_unit = fixed_point<REPR_TYPE, -_impl::num_bits<REPR_TYPE>()>;
 
 	// fixed-point type capable of storing values in the range [0, 1];
 	// actually storing values in the range [0, 2);
@@ -534,7 +575,7 @@ namespace sg14
 	template <typename REPR_TYPE>
 	using closed_unit = fixed_point<
 		typename std::enable_if<_impl::is_unsigned<REPR_TYPE>::value, REPR_TYPE>::type,
-		1 - static_cast<int>(sizeof(REPR_TYPE)) * CHAR_BIT>;
+		1 - _impl::num_bits<REPR_TYPE>()>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_promotion_t / promote
@@ -571,16 +612,6 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_by_integer_digits_t
-
-	// yields a float_point with EXPONENT calculated such that 
-	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
-	template <typename REPR_TYPE, int INTEGER_BITS>
-	using fixed_point_by_integer_digits_t = fixed_point<
-		REPR_TYPE, 
-		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
-
-	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_mul_result_t / safe_multiply
 	//
 	// TODO: accept factors of heterogeneous specialization, e.g.:
@@ -589,7 +620,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_mul_result_t = fixed_point_by_integer_digits_t<
+	using fixed_point_mul_result_t = make_fixed_from_repr<
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
 
@@ -612,7 +643,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-	using fixed_point_add_result_t = fixed_point_by_integer_digits_t<
+	using fixed_point_add_result_t = make_fixed_from_repr<
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
 
