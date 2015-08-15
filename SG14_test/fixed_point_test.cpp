@@ -239,9 +239,9 @@ static_assert(fixed_point_by_integer_digits_t<std::int32_t, 27>::integer_digits 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_mul_result_t
 
-static_assert(fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(fixed_point_mul_result_t<std::uint8_t, 0>::integer_digits == 16, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_mul_result_t test failed");
+static_assert(fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_mul_result_t test failed");
+static_assert(fixed_point_mul_result_t<std::uint8_t, 0>::integer_digits == 16, "sg14::fixed_point_mul_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_multiply
