@@ -51,9 +51,9 @@ You can construct an object from any integral, floating-point or other fixed-poi
 
 #### 2.1.2 Converting from `fixed_point` to Built-in Types
 
-The `get` function can be used to convert the value back to a built-in type: 
+Object can be explicitly cast back to built-in types:
 ```
-cout << pi.get<float>();  // output: "3.14163"
+cout << static_cast<float>(pi);  // output: "3.14163"
 ```
 
 #### 2.1.3 Common Aliases
@@ -114,7 +114,7 @@ Some advantages to this are:
 2. Initialization of instances using literals of built-in type is likely to mean that the object is constructed with virtually no overhead.
 3. Further to this, relatively complex calculations can be performed at compile-time, e.g.:
    ```
-   enum { TWICE_THE_SQUARE_ROOT_OF_FIFTY = (ufixed16_16_t(2) * sqrt(ufixed16_16_t(50))).get<int>() };
+   enum { TWICE_THE_SQUARE_ROOT_OF_FIFTY = ufixed16_16_t(2) * sqrt(ufixed16_16_t(50)) };
    cout << TWICE_THE_SQUARE_ROOT_OF_FIFTY;  // output: 14
    ```
 
@@ -176,9 +176,6 @@ Some rough notes on where to go next with the design of the API:
 * should object be default constructed to zero value?
 * should the first template parameter default to int?
 * fixed_point::data is named after the std::vector member function but is this the best choice here?
-* With explicit ctors, operations as simple as ```fixed4_4_t(7) > 5``` do not compile.
-  Is the solution to overload operators, spare the ctors from being explicit, 
-  or live with the verbosity of ```fixed4_4_t(7).get<int>() > 5```?
 * Too many disparate ways to declare specializations of fixed_point? If so, what is a good subset?
 
 ### To Do

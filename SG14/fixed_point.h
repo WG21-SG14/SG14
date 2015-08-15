@@ -369,14 +369,14 @@ namespace sg14
 
 		// returns value represented as a floating-point
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
-		constexpr S get() const noexcept
+		explicit constexpr operator S() const noexcept
 		{
 			return repr_to_integral<S>(_repr);
 		}
 
 		// returns value represented as integral
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
-		constexpr S get() const noexcept
+		explicit constexpr operator S() const noexcept
 		{
 			return repr_to_floating_point<S>(_repr);
 		}
