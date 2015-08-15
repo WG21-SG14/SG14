@@ -35,7 +35,7 @@ static_assert(_impl::shift_right<-8, std::int16_t>(-123) == -31488, "sg14::_impl
 static_assert(_impl::shift_left<-8, std::uint16_t>((std::uint16_t)0x1234) == 0x12, "sg14::_impl::shift_left test failed");
 static_assert(_impl::shift_left<-8, std::uint16_t>((std::uint8_t)0x1234) == 0x0, "sg14::_impl::shift_left test failed");
 static_assert(_impl::shift_left<-8, std::uint8_t>((std::uint16_t)0x1234) == 0x12, "sg14::_impl::shift_left test failed");
-static_assert(_impl::shift_left<-8, std::int16_t>(-31488) == -123, "sg14::_impl::shift_right test failed");
+static_assert(_impl::shift_left<-8, std::int16_t>(-31488) == -123, "sg14::_impl::shift_left test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::_impl::pow2
