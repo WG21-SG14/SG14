@@ -289,6 +289,15 @@ namespace sg14
 		};
 
 		////////////////////////////////////////////////////////////////////////////////
+		// _impl::necessary_repr_t
+
+		// given a required number of bits a type should have and whether it is signed,
+		// provides a built-in integral type with necessary capacity
+		template <unsigned REQUIRED_BITS, bool IS_SIGNED>
+		using necessary_repr_t 
+			= typename get_int<IS_SIGNED, 1 << (capacity<((REQUIRED_BITS + 7) / 8) - 1>::value)>::type;
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::sqrt helper functions
 
 		template <typename REPR_TYPE>
@@ -528,6 +537,19 @@ namespace sg14
 
 		repr_type _repr = 0;
 	};
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::make_fixed
+
+	// given the desired number of integer and fractional digits,
+	// generates a fixed_point type such that:
+	//   fixed_point<>::integer_digits == INTEGER_DIGITS,
+	// and
+	//   fixed_point<>::fractional_digits >= FRACTIONAL_DIGITS,
+	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
+	using make_fixed = fixed_point<
+		typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>,
+		(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point

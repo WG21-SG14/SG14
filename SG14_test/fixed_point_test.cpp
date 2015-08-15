@@ -62,6 +62,36 @@ static_assert(_impl::capacity<15>::value == 4, "sg14::_impl::capacity test faile
 static_assert(_impl::capacity<16>::value == 5, "sg14::_impl::capacity test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::_impl::necessary_repr_t
+
+static_assert(std::is_same<_impl::necessary_repr_t<1, false>, std::uint8_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<1, true>, std::int8_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<8, false>, std::uint8_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<8, true>, std::int8_t>::value, "sg14::_impl::necessary_repr_t");
+
+static_assert(std::is_same<_impl::necessary_repr_t<9, false>, std::uint16_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<9, true>, std::int16_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<16, false>, std::uint16_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<16, true>, std::int16_t>::value, "sg14::_impl::necessary_repr_t");
+
+static_assert(std::is_same<_impl::necessary_repr_t<17, false>, std::uint32_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<17, true>, std::int32_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<32, false>, std::uint32_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<32, true>, std::int32_t>::value, "sg14::_impl::necessary_repr_t");
+
+static_assert(std::is_same<_impl::necessary_repr_t<33, false>, std::uint64_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<33, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<64, false>, std::uint64_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<64, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
+
+#if defined(_SG14_FIXED_POINT_128)
+static_assert(std::is_same<_impl::necessary_repr_t<65, false>, std::uint128_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<65, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<128, false>, std::uint64_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<128, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point
 
@@ -387,4 +417,65 @@ static_assert(ufixed0_128_t::fractional_digits == 128, "fixed_point specializati
 static_assert(ufixed1_127_t::fractional_digits == 127, "fixed_point specializations test failed");
 static_assert(ufixed64_64_t::fractional_digits == 64, "fixed_point specializations test failed");
 static_assert(ufixed128_0_t::fractional_digits == 0, "fixed_point specializations test failed");
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::make_fixed
+
+// integer_digits
+static_assert(std::is_same<make_fixed<0, 7, true>, fixed0_7_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 6, true>, fixed1_6_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<3, 4, true>, fixed3_4_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<4, 3, true>, fixed4_3_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<7, 0, true>, fixed7_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 8, false>, ufixed0_8_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 7, false>, ufixed1_7_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<4, 4, false>, ufixed4_4_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<8, 0, false>, ufixed8_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 15, true>, fixed0_15_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 14, true>, fixed1_14_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<7, 8, true>, fixed7_8_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<8, 7, true>, fixed8_7_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<15, 0, true>, fixed15_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 16, false>, ufixed0_16_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 15, false>, ufixed1_15_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<8, 8, false>, ufixed8_8_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<16, 0, false>, ufixed16_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 31, true>, fixed0_31_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 30, true>, fixed1_30_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<15, 16, true>, fixed15_16_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<16, 15, true>, fixed16_15_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<31, 0, true>, fixed31_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 32, false>, ufixed0_32_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 31, false>, ufixed1_31_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<16, 16, false>, ufixed16_16_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<32, 0, false>, ufixed32_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 63, true>, fixed0_63_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 62, true>, fixed1_62_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<31, 32, true>, fixed31_32_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<32, 31, true>, fixed32_31_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<63, 0, true>, fixed63_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 64, false>, ufixed0_64_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 63, false>, ufixed1_63_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<32, 32, false>, ufixed32_32_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<64, 0, false>, ufixed64_0_t>::value, "make_fixed specializations test failed");
+
+#if defined(_SG14_FIXED_POINT_128)
+static_assert(std::is_same<make_fixed<0, 127, true>, fixed0_127_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 126, true>, fixed1_126_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<63, 64, true>, fixed63_64_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<64, 63, true>, fixed64_63_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<127, 0, true>, fixed127_0_t>::value, "make_fixed specializations test failed");
+
+static_assert(std::is_same<make_fixed<0, 128, false>, ufixed0_128_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<1, 127, false>, ufixed1_127_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<64, 64, false>, ufixed64_64_t>::value, "make_fixed specializations test failed");
+static_assert(std::is_same<make_fixed<128, 0, false>, ufixed128_0_t>::value, "make_fixed specializations test failed");
 #endif
