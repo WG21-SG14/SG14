@@ -85,10 +85,10 @@ static_assert(std::is_same<_impl::necessary_repr_t<64, false>, std::uint64_t>::v
 static_assert(std::is_same<_impl::necessary_repr_t<64, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
 
 #if defined(_SG14_FIXED_POINT_128)
-static_assert(std::is_same<_impl::necessary_repr_t<65, false>, std::uint128_t>::value, "sg14::_impl::necessary_repr_t");
-static_assert(std::is_same<_impl::necessary_repr_t<65, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
-static_assert(std::is_same<_impl::necessary_repr_t<128, false>, std::uint64_t>::value, "sg14::_impl::necessary_repr_t");
-static_assert(std::is_same<_impl::necessary_repr_t<128, true>, std::int64_t>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<65, false>, unsigned __int128>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<65, true>, __int128>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<128, false>, unsigned __int128>::value, "sg14::_impl::necessary_repr_t");
+static_assert(std::is_same<_impl::necessary_repr_t<128, true>, __int128>::value, "sg14::_impl::necessary_repr_t");
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

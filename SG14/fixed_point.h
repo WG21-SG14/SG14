@@ -549,7 +549,7 @@ namespace sg14
 	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
 	using make_fixed = fixed_point<
 		typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>,
-		(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
+		(signed)(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::make_fixed_from_repr
