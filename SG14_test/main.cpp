@@ -1,11 +1,12 @@
+#if defined(_MSC_VER)
 #include <SDKDDKVer.h>
+#endif
 
 #include <stdio.h>
-#include <tchar.h>
 
 #include "SG14_test.h"
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int, char *[])
 {
 	sg14_test::rolling_queue_test();
 	sg14_test::unstable_remove_test();
