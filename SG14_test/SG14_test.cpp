@@ -3,13 +3,13 @@
 
 #include "SG14_test.h"
 
-#include "rolling_queue.h"
+#include "ring_queue.h"
 
 #include <cassert>
 
-void sg14_test::rolling_queue_test()
+void sg14_test::fixed_ring_queue_test()
 {
-	sg14::rolling_queue<int, 5> Q;
+	sg14::fixed_ring_queue<int, 5> Q;
 
 	Q.push(7);
 	Q.push(3);
@@ -28,11 +28,11 @@ void sg14_test::rolling_queue_test()
 	assert(Q3.front() == 3);
 	assert(Q3.back() == 18);
 
-	sg14::rolling_queue<int, 5> Q4(Q3);
+	sg14::fixed_ring_queue<int, 5> Q4(Q3);
 	assert(Q4.front() == 3);
 	assert(Q4.back() == 18);
 
-	sg14::rolling_queue<int, 5> Q5(std::move(Q3));
+	sg14::fixed_ring_queue<int, 5> Q5(std::move(Q3));
 	assert(Q5.front() == 3);
 	assert(Q5.back() == 18);
 	assert(Q5.size() == 2);
@@ -41,7 +41,7 @@ void sg14_test::rolling_queue_test()
 	Q5.pop();
 	assert(Q5.empty());
 
-	sg14::rolling_queue<int, 5> Q6;
+	sg14::fixed_ring_queue<int, 5> Q6;
 	Q6.push(6);
 	Q6.push(7);
 	Q6.push(8);

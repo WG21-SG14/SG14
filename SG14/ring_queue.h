@@ -3,7 +3,7 @@
 namespace sg14
 {
 	template<typename T, std::size_t capacity>
-	class rolling_queue
+	class fixed_ring_queue
 	{
 	public:
 		typedef std::array<T, capacity> container_type;
@@ -16,7 +16,7 @@ namespace sg14
 		typedef typename container_type::reverse_iterator reverse_iterator;
 		typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-		rolling_queue() noexcept(std::is_nothrow_default_constructible<T>::value)
+		fixed_ring_queue() noexcept(std::is_nothrow_default_constructible<T>::value)
 			: c()
 			, count(0)
 			, next_element(std::begin(c))
@@ -24,7 +24,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(const rolling_queue& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
+		fixed_ring_queue(const fixed_ring_queue& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
 			: c(rhs.c)
 			, count(rhs.count)
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -32,7 +32,7 @@ namespace sg14
 		{
 		}
 
-		rolling_queue(rolling_queue&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
+		fixed_ring_queue(fixed_ring_queue&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
 			: c(std::move(rhs.c))
 			, count(std::move(rhs.count))
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
@@ -40,13 +40,13 @@ namespace sg14
 		{
 		}
 
-		rolling_queue& operator=(const rolling_queue& rhs) noexcept(std::is_nothrow_copy_assignable<T>::value)
+		fixed_ring_queue& operator=(const fixed_ring_queue& rhs) noexcept(std::is_nothrow_copy_assignable<T>::value)
 		{
 			c = rhs.c;
 			return (*this);
 		}
 
-		rolling_queue& operator=(rolling_queue&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
+		fixed_ring_queue& operator=(fixed_ring_queue&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
 		{
 			c = std::move(rhs.c);
 			return (*this);
@@ -125,7 +125,7 @@ namespace sg14
 			return (*it);
 		}
 
-		void swap(rolling_queue& rhs) noexcept
+		void swap(fixed_ring_queue& rhs) noexcept
 		{
 			auto lhs_next = next_element - c.begin();
 			auto lhs_last = last_element - c.begin();

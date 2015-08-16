@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
-    <ClInclude Include="..\..\..\SG14\rolling_queue.h" />
+    <ClInclude Include="..\..\..\SG14\ring_queue.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\Docs\Fixed_Point_Library_Proposal.md" />
