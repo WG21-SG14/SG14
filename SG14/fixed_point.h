@@ -334,7 +334,7 @@ namespace sg14
 	// approximates a real number using a built-in integral type;
 	// somewhat like a floating-point number but with exponent determined at run-time
 
-	template <typename REPR_TYPE, int EXPONENT = _impl::default_exponent<REPR_TYPE>()>
+	template <typename REPR_TYPE = int, int EXPONENT = _impl::default_exponent<REPR_TYPE>()>
 	class fixed_point
 	{
 	public:

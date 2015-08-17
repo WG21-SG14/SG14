@@ -108,6 +108,11 @@ static_assert(std::is_same<fixed_point<std::int64_t>, fixed_point<std::int64_t, 
 static_assert(std::is_same<fixed_point<std::uint64_t>, fixed_point<std::uint64_t, -32>>::value, "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// default first template parameter
+
+static_assert(std::is_same<fixed_point<int, _impl::num_bits<int>() / -2>, fixed_point<>>::value, "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // conversion
 
 // exponent == 0
