@@ -249,6 +249,31 @@ static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::int16_t, -4>, f
 static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::int16_t, 0>, fixed_point<std::uint64_t, -60>>, fixed_point<int64_t, -48>>::value, "sg14::make_fixed_from_pair");
 
 ////////////////////////////////////////////////////////////////////////////////
+// comparison
+
+static_assert(fixed_point<uint8_t>(4.5) == fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) == fixed_point<int16_t>(-4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) != fixed_point<int16_t>(-4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) != fixed_point<int16_t>(4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) < fixed_point<int16_t>(5.6), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<int8_t>(-4.5) < fixed_point<int16_t>(-5.6)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.6) > fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(-4.6) < fixed_point<int16_t>(-4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) <= fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) <= fixed_point<int16_t>(-4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(-4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.6)), "sg14::fixed_point test failed");
+
+// TODO: Is this acceptable?
+static_assert(fixed_point<uint8_t, -1>(.5) == fixed_point<uint8_t, 0>(0), "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_mul_result_t
 
 static_assert(fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_mul_result_t test failed");

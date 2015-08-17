@@ -626,6 +626,53 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
+	// heterogeneous comparison operators
+	//
+	// compare two objects of different fixed_point specializations
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator ==(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) == static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator !=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) != static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator <(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) < static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator >(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) > static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator >=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) >= static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator <=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) <= static_cast<fixed_point>(rhs);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_mul_result_t / safe_multiply
 	//
 	// TODO: accept factors of heterogeneous specialization, e.g.:
