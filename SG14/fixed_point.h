@@ -1,6 +1,7 @@
 #if ! defined(_SG14_FIXED_POINT)
 #define _SG14_FIXED_POINT 1
 
+#include <algorithm>
 #include <climits>
 #include <cmath>
 #include <cinttypes>
@@ -560,6 +561,19 @@ namespace sg14
 	using make_fixed_from_repr = fixed_point<
 		REPR_TYPE,
 		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::_impl::make_fixed_from_pair
+
+	// given two fixed-point types, produces the type that is best suited to both of them
+	template <typename LHS_FP, typename RHS_FP>
+	using make_fixed_from_pair = make_fixed_from_repr<
+		typename _impl::get_int<
+		_impl::is_signed<typename LHS_FP::repr_type>::value | _impl::is_signed<typename RHS_FP::repr_type>::value,
+		std::max(sizeof(LHS_FP::repr_type), sizeof(RHS_FP::repr_type))>::type,
+		std::max(
+			LHS_FP::integer_digits,
+			RHS_FP::integer_digits)>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point

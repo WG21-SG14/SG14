@@ -242,6 +242,13 @@ static_assert(make_fixed_from_repr<std::uint8_t, 8>::integer_digits == 8, "sg14:
 static_assert(make_fixed_from_repr<std::int32_t, 27>::integer_digits == 27, "sg14::make_fixed_from_repr test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::make_fixed_from_pair
+
+static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::uint8_t, -4>, fixed_point<std::int8_t, -4>>, fixed_point<int8_t, -3>>::value, "sg14::make_fixed_from_pair");
+static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::int16_t, -4>, fixed_point<std::int32_t, -14>>, fixed_point<int32_t, -14>>::value, "sg14::make_fixed_from_pair");
+static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::int16_t, 0>, fixed_point<std::uint64_t, -60>>, fixed_point<int64_t, -48>>::value, "sg14::make_fixed_from_pair");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_mul_result_t
 
 static_assert(fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_mul_result_t test failed");
