@@ -822,7 +822,7 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT>
 	::std::ostream & operator << (::std::ostream & out, fixed_point<REPR_TYPE, EXPONENT> const & fp)
 	{
-		return out << fp.template get<long double>();
+		return out << static_cast<long double>(fp);
 	}
 
 	template <typename REPR_TYPE, int EXPONENT>
