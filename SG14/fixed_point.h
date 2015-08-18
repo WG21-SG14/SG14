@@ -382,7 +382,7 @@ namespace sg14
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
 		explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
-			: _repr(_impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data()))
+			: _repr(fixed_point_to_repr(rhs))
 		{
 		}
 
@@ -531,6 +531,12 @@ namespace sg14
 		{
 			static_assert(std::is_floating_point<S>::value, "S must be floating-point type");
 			return S(r) * inverse_one<S>();
+		}
+
+		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+		static constexpr repr_type fixed_point_to_repr(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+		{
+			return _impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data());
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
