@@ -386,6 +386,30 @@ namespace sg14
 		{
 		}
 
+		// copy assignment operator taking an integer type
+		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
+		fixed_point & operator=(S s) noexcept
+		{
+			_repr = integral_to_repr(s);
+			return *this;
+		}
+
+		// copy assignment operator taking a floating-point type
+		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
+		fixed_point & operator=(S s) noexcept
+		{
+			_repr = floating_point_to_repr(s);
+			return *this;
+		}
+
+		// copy assignement operator taking a fixed-point type
+		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+		fixed_point & operator=(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+		{
+			_repr = fixed_point_to_repr(rhs);
+			return *this;
+		}
+
 		// returns value represented as a floating-point
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
 		explicit constexpr operator S() const noexcept
