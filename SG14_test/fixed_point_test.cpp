@@ -292,8 +292,8 @@ static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(174), ufixed8_0_t(25)
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_add_result_t
 
-static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_add_result_t test failed");
+static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add
