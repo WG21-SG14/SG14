@@ -1,6 +1,31 @@
 #include "fixed_point.h"
 
+#include <cassert>
+
 using namespace sg14;
+
+namespace sg14_test
+{
+	void fixed_point_test()
+	{
+		// copy assignment from fixed_point
+		auto rhs = fixed_point<>(123.456);
+		auto lhs = rhs;
+		assert(lhs == fixed_point<>(123.456));
+
+		// copy assignment from floating-point type
+		lhs = 234.567;
+		assert(static_cast<double>(lhs) == 234.56698608398438);
+
+		// copy assignment from integer
+		lhs = 543;
+		assert(static_cast<int>(lhs) == 543);
+
+		// copy assignment from alternative specialization
+		lhs = fixed_point<uint8_t>(87.65);
+		assert(static_cast<fixed_point<uint8_t>>(lhs) == fixed_point<uint8_t>(87.65));
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
