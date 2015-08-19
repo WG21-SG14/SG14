@@ -251,14 +251,14 @@ static_assert(static_cast<int>((fixed_point<std::uint64_t, -8>(65535) / fixed_po
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_promotion_t
 
-static_assert(std::is_same<fixed_point_promotion_t<std::int8_t, -4>, fixed_point<std::int16_t, -8>>::value, "sg14::promotion test failed");
-static_assert(std::is_same<fixed_point_promotion_t<std::uint32_t, 44>, fixed_point<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point_promotion_t<std::int8_t, -4>, fixed_point<std::int16_t, -8>>::value, "sg14::fixed_point_promotion_t test failed");
+static_assert(std::is_same<fixed_point_promotion_t<std::uint32_t, 44>, fixed_point<std::uint64_t, 88>>::value, "sg14::fixed_point_promotion_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_demotion_t
 
-static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<std::int16_t, -8>>::value, "sg14::promotion test failed");
-static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<std::int16_t, -9>>::value, "sg14::fixed_point_demotion_t test failed");
+static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::fixed_point_demotion_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::make_fixed_from_repr
