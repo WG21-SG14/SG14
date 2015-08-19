@@ -271,6 +271,15 @@ namespace sg14
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::max
+
+		template <class T>
+		constexpr const T& max( const T& a, const T& b )
+		{
+			return (a < b) ? b : a;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::capacity
 
 		// has value that, given a value N, 
@@ -600,8 +609,8 @@ namespace sg14
 	using make_fixed_from_pair = make_fixed_from_repr<
 		typename _impl::get_int<
 		_impl::is_signed<typename LHS_FP::repr_type>::value | _impl::is_signed<typename RHS_FP::repr_type>::value,
-		std::max(sizeof(LHS_FP::repr_type), sizeof(RHS_FP::repr_type))>::type,
-		std::max(
+		_impl::max(sizeof(typename LHS_FP::repr_type), sizeof(typename RHS_FP::repr_type))>::type,
+		_impl::max(
 			LHS_FP::integer_digits,
 			RHS_FP::integer_digits)>;
 
