@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E492988D1B2A292C00CFE63D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E492988C1B2A292C00CFE63D /* main.cpp */; };
+		D29A8E731B85180F007EF49B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D29A8E721B85180F007EF49B /* main.cpp */; };
+		D29A8E761B85186E007EF49B /* fixed_point_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D29A8E741B85186E007EF49B /* fixed_point_test.cpp */; };
+		D29A8E771B85186E007EF49B /* unstable_remove_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D29A8E751B85186E007EF49B /* unstable_remove_test.cpp */; };
 		E49298921B2A295300CFE63D /* SG14_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E49298911B2A295300CFE63D /* SG14_test.cpp */; };
 /* End PBXBuildFile section */
 
@@ -24,8 +26,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D29A8E721B85180F007EF49B /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../SG14_test/main.cpp; sourceTree = "<group>"; };
+		D29A8E741B85186E007EF49B /* fixed_point_test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = fixed_point_test.cpp; path = ../../SG14_test/fixed_point_test.cpp; sourceTree = "<group>"; };
+		D29A8E751B85186E007EF49B /* unstable_remove_test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unstable_remove_test.cpp; path = ../../SG14_test/unstable_remove_test.cpp; sourceTree = "<group>"; };
 		E49298821B2A28E500CFE63D /* SG14_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SG14_test; sourceTree = BUILT_PRODUCTS_DIR; };
-		E492988C1B2A292C00CFE63D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		E49298901B2A294900CFE63D /* SG14_test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SG14_test.h; path = ../../SG14_test/SG14_test.h; sourceTree = "<group>"; };
 		E49298911B2A295300CFE63D /* SG14_test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SG14_test.cpp; path = ../../SG14_test/SG14_test.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -44,9 +48,11 @@
 		E49298791B2A28E500CFE63D = {
 			isa = PBXGroup;
 			children = (
+				D29A8E741B85186E007EF49B /* fixed_point_test.cpp */,
+				D29A8E751B85186E007EF49B /* unstable_remove_test.cpp */,
+				D29A8E721B85180F007EF49B /* main.cpp */,
 				E49298911B2A295300CFE63D /* SG14_test.cpp */,
 				E49298901B2A294900CFE63D /* SG14_test.h */,
-				E492988C1B2A292C00CFE63D /* main.cpp */,
 				E49298831B2A28E500CFE63D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -115,8 +121,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D29A8E731B85180F007EF49B /* main.cpp in Sources */,
+				D29A8E761B85186E007EF49B /* fixed_point_test.cpp in Sources */,
 				E49298921B2A295300CFE63D /* SG14_test.cpp in Sources */,
-				E492988D1B2A292C00CFE63D /* main.cpp in Sources */,
+				D29A8E771B85186E007EF49B /* unstable_remove_test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,6 +253,7 @@
 				E492988B1B2A28E500CFE63D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
