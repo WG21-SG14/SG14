@@ -1,6 +1,78 @@
 #include "fixed_point.h"
 
+#include <cassert>
+
 using namespace sg14;
+
+namespace sg14_test
+{
+	void fixed_point_test()
+	{
+		using namespace std;
+
+		////////////////////////////////////////////////////////////////////////////////
+		// copy assignment
+
+		// from fixed_point
+		auto rhs = fixed_point<>(123.456);
+		auto lhs = rhs;
+		assert(lhs == fixed_point<>(123.456));
+
+		// from floating-point type
+		lhs = 234.567;
+		assert(static_cast<double>(lhs) == 234.56698608398438);
+
+		// from integer
+		lhs = 543;
+		assert(static_cast<int>(lhs) == 543);
+
+		// from alternative specialization
+		lhs = fixed_point<uint8_t>(87.65);
+		assert(static_cast<fixed_point<uint8_t>>(lhs) == fixed_point<uint8_t>(87.65));
+
+		////////////////////////////////////////////////////////////////////////////////
+		// Tests of Examples in Proposal 
+
+		// Class Template
+
+		static_assert(fixed_point<uint16_t>::integer_digits == 8, "Incorrect information in proposal section, Class Template");
+		static_assert(fixed_point<uint16_t>::fractional_digits == 8, "Incorrect information in proposal section, Class Template");
+
+		static_assert(static_cast<float>(fixed_point<int32_t, -1>(10.5)) == 10.5, "Incorrect information in proposal section, Class Template");
+
+		static_assert(static_cast<float>(fixed_point<uint8_t, -8>(0)) == 0, "Incorrect information in proposal section, Class Template");
+		static_assert(static_cast<float>(fixed_point<uint8_t, -8>(.999999)) < 1, "Incorrect information in proposal section, Class Template");
+		static_assert(static_cast<float>(fixed_point<uint8_t, -8>(.999999)) > .99, "Incorrect information in proposal section, Class Template");
+		
+		static_assert(fixed_point<>::fractional_digits == _impl::num_bits<int>() / 2, "Incorrect information in proposal section, Class Template");
+
+		// Conversion
+
+		auto conversion_lhs = fixed_point<uint8_t, -4>(.006);
+		auto conversion_rhs = fixed_point<uint8_t, -4>(0);
+		static_assert(is_same<decltype(conversion_lhs), decltype(conversion_rhs)>::value, "Incorrect information in proposal section, Conversion");
+		assert(conversion_lhs == conversion_rhs);
+
+		// Names Constructors
+
+		static_assert(is_same<make_fixed<8, 11, true>, fixed_point<int32_t, -23>>::value, "Incorrect information in proposal section, Named Constructors");
+
+		// Arithmetic Operators
+
+		auto arithmetic_op = make_fixed<4, 3>(15) * make_fixed<4, 3>(15);
+		static_assert(is_same<decltype(arithmetic_op), make_fixed<4, 3>>::value, "Incorrect information in proposal section, Arithmetic Operators");
+		assert(static_cast<int>(arithmetic_op) == 1);
+
+		// Type Promotion and Demotion Functions
+		auto type_promotion = promote(fixed_point<int8_t, -2>(15.5));
+		static_assert(is_same<decltype(type_promotion), fixed_point<int16_t, -4>>::value, "Incorrect information in proposal section, Type Promotion and Demotion Functions");
+		assert(static_cast<float>(type_promotion) == 15.5);
+
+		// Named Arithmetic Functions
+		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));  // TODO: safe_square
+		assert(static_cast<double>(sq) == 254);
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +178,11 @@ static_assert(std::is_same<fixed_point<std::int32_t>, fixed_point<std::int32_t, 
 static_assert(std::is_same<fixed_point<std::uint32_t>, fixed_point<std::uint32_t, -16>>::value, "sg14::fixed_point test failed");
 static_assert(std::is_same<fixed_point<std::int64_t>, fixed_point<std::int64_t, -32>>::value, "sg14::fixed_point test failed");
 static_assert(std::is_same<fixed_point<std::uint64_t>, fixed_point<std::uint64_t, -32>>::value, "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// default first template parameter
+
+static_assert(std::is_same<fixed_point<int, _impl::num_bits<int>() / -2>, fixed_point<>>::value, "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // conversion
@@ -221,20 +298,52 @@ static_assert(static_cast<int>((fixed_point<std::uint64_t, -8>(65535) / fixed_po
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_promotion_t
 
-static_assert(std::is_same<fixed_point_promotion_t<std::int8_t, -4>, fixed_point<std::int16_t, -8>>::value, "sg14::promotion test failed");
-static_assert(std::is_same<fixed_point_promotion_t<std::uint32_t, 44>, fixed_point<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point_promotion_t<std::int8_t, -4>, fixed_point<std::int16_t, -8>>::value, "sg14::fixed_point_promotion_t test failed");
+static_assert(std::is_same<fixed_point_promotion_t<std::uint32_t, 44>, fixed_point<std::uint64_t, 88>>::value, "sg14::fixed_point_promotion_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_demotion_t
 
-static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<std::int16_t, -8>>::value, "sg14::promotion test failed");
-static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::promotion test failed");
+static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<std::int16_t, -9>>::value, "sg14::fixed_point_demotion_t test failed");
+static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::fixed_point_demotion_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::make_fixed_from_repr
 
 static_assert(make_fixed_from_repr<std::uint8_t, 8>::integer_digits == 8, "sg14::make_fixed_from_repr test failed");
 static_assert(make_fixed_from_repr<std::int32_t, 27>::integer_digits == 27, "sg14::make_fixed_from_repr test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::make_fixed_from_pair
+
+static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::uint8_t, -4>, fixed_point<std::int8_t, -4>>, fixed_point<int8_t, -3>>::value, "sg14::make_fixed_from_pair");
+static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::int16_t, -4>, fixed_point<std::int32_t, -14>>, fixed_point<int32_t, -14>>::value, "sg14::make_fixed_from_pair");
+static_assert(std::is_same<make_fixed_from_pair<fixed_point<std::int16_t, 0>, fixed_point<std::uint64_t, -60>>, fixed_point<int64_t, -48>>::value, "sg14::make_fixed_from_pair");
+
+////////////////////////////////////////////////////////////////////////////////
+// comparison
+
+static_assert(fixed_point<uint8_t>(4.5) == fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) == fixed_point<int16_t>(-4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) != fixed_point<int16_t>(-4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) != fixed_point<int16_t>(4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) < fixed_point<int16_t>(5.6), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<int8_t>(-4.5) < fixed_point<int16_t>(-5.6)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.6) > fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.6) < fixed_point<int16_t>(-4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) <= fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) <= fixed_point<int16_t>(-4.5)), "sg14::fixed_point test failed");
+
+static_assert(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.5), "sg14::fixed_point test failed");
+static_assert(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(-4.5), "sg14::fixed_point test failed");
+static_assert(!(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.6)), "sg14::fixed_point test failed");
+
+// TODO: Is this acceptable?
+static_assert(fixed_point<uint8_t, -1>(.5) == fixed_point<uint8_t, 0>(0), "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_mul_result_t
@@ -255,8 +364,8 @@ static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(174), ufixed8_0_t(25)
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_add_result_t
 
-static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_by_integer_digits_t test failed");
-static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_by_integer_digits_t test failed");
+static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_add_result_t test failed");
+static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add
