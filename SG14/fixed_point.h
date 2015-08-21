@@ -307,6 +307,16 @@ namespace sg14
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::common_repr_type
+
+		// given two integral types, produces a common type with enough capacity to
+		// store values of either EXCEPT when one is signed and both are same size
+		template <typename REPR_TYPE_1, typename REPR_TYPE_2>
+		using common_repr_type = typename _impl::get_int<
+			_impl::is_signed<REPR_TYPE_1>::value | _impl::is_signed<REPR_TYPE_2>::value,
+			_impl::max(sizeof(REPR_TYPE_1), sizeof(REPR_TYPE_2))>::type;
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::capacity
 
 		// has value that, given a value N, 
