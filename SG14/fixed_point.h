@@ -644,9 +644,7 @@ namespace sg14
 	// given two fixed-point types, produces the type that is best suited to both of them
 	template <typename LHS_FP, typename RHS_FP>
 	using make_fixed_from_pair = make_fixed_from_repr<
-		typename _impl::get_int<
-		_impl::is_signed<typename LHS_FP::repr_type>::value | _impl::is_signed<typename RHS_FP::repr_type>::value,
-		_impl::max(sizeof(typename LHS_FP::repr_type), sizeof(typename RHS_FP::repr_type))>::type,
+		_impl::common_repr_type<typename LHS_FP::repr_type, typename RHS_FP::repr_type>,
 		_impl::max(
 			LHS_FP::integer_digits,
 			RHS_FP::integer_digits)>;
@@ -673,15 +671,17 @@ namespace sg14
 	// given template parameters of a fixed_point specialization, 
 	// yields alternative specialization with twice the fractional bits
 	// and twice the integral/sign bits
-	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_promotion_t = fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>;
+	template <typename FIXED_POINT>
+	using fixed_point_promotion_t = fixed_point<
+		_impl::next_size_t<typename FIXED_POINT::repr_type>,
+		FIXED_POINT::exponent * 2>;
 
 	// as fixed_point_promotion_t but promotes parameter, from
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_promotion_t<REPR_TYPE, EXPONENT>
-	constexpr promote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	template <typename FIXED_POINT>
+	fixed_point_promotion_t<FIXED_POINT>
+	constexpr promote(const FIXED_POINT & from) noexcept
 	{
-		return fixed_point_promotion_t<REPR_TYPE, EXPONENT>(from);
+		return fixed_point_promotion_t<FIXED_POINT>(from);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -690,15 +690,17 @@ namespace sg14
 	// given template parameters of a fixed_point specialization, 
 	// yields alternative specialization with half the fractional bits
 	// and half the integral/sign bits (assuming EXPONENT is even)
-	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_demotion_t = fixed_point<_impl::previous_size_t<REPR_TYPE>, EXPONENT / 2>;
+	template <typename FIXED_POINT>
+	using fixed_point_demotion_t = fixed_point<
+		_impl::previous_size_t<typename FIXED_POINT::repr_type>,
+		FIXED_POINT::exponent / 2>;
 
 	// as fixed_point_demotion_t but demotes parameter, from
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_demotion_t<REPR_TYPE, EXPONENT>
-	constexpr demote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	template <typename FIXED_POINT>
+	fixed_point_demotion_t<FIXED_POINT>
+	constexpr demote(const FIXED_POINT & from) noexcept
 	{
-		return from;
+		return fixed_point_demotion_t<FIXED_POINT>(from);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -706,72 +708,81 @@ namespace sg14
 	//
 	// compare two objects of different fixed_point specializations
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator ==(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator ==(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) == static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator !=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator !=(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) != static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator <(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator <(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) < static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator >(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator >(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) > static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator >=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator >=(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) >= static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator <=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator <=(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) <= static_cast<fixed_point>(rhs);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_mul_result_t / safe_multiply
-	//
-	// TODO: accept factors of heterogeneous specialization, e.g.:
-	//       fixed_point<char, -4> * fixed_point<short, -10> = fixed_point<short, -7>
 
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename REPR_TYPE, int EXPONENT>
+	template <typename LHS, typename RHS = LHS>
 	using fixed_point_mul_result_t = make_fixed_from_repr<
-		REPR_TYPE,
-		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
+		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
+		LHS::integer_digits + RHS::integer_digits>;
 
 	// as fixed_point_mul_result_t but converts parameter, factor,
 	// ready for safe binary multiply
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_mul_result_t<REPR_TYPE, EXPONENT>
-	constexpr safe_multiply(
-		fixed_point<REPR_TYPE, EXPONENT> const & factor1, 
-		fixed_point<REPR_TYPE, EXPONENT> const & factor2) noexcept
+	template <typename LHS, typename RHS>
+	fixed_point_mul_result_t<LHS, RHS>
+	constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept
 	{
-		using output_type = fixed_point_mul_result_t<REPR_TYPE, EXPONENT>;
-		using next_type = _impl::next_size_t<REPR_TYPE>;
-		return output_type(_impl::shift_left<EXPONENT * 2, next_type>(next_type(factor1.data()) * factor2.data()));
+		using output_type = fixed_point_mul_result_t<LHS, RHS>;
+		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
+		using next_repr_type = _impl::next_size_t<common_repr_type>;
+		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		return output_type(static_cast<next_type>(factor1) * static_cast<next_type>(factor2));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
