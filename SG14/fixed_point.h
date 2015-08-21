@@ -821,6 +821,28 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_square_result_t / safe_square
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename FIXED_POINT>
+	using safe_square_result_t = make_fixed_from_repr<
+		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
+		FIXED_POINT::integer_digits * 2>;
+
+	// as safe_square_result_t but converts parameter, factor,
+	// ready for safe binary multiply
+	template <typename FIXED_POINT>
+	safe_square_result_t<FIXED_POINT>
+	constexpr safe_square(const FIXED_POINT & root) noexcept
+	{
+		using output_type = safe_square_result_t<FIXED_POINT>;
+		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
+		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values
