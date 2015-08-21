@@ -135,104 +135,131 @@ namespace sg14
 		// 1) shifting by a negative amount causes undefined behavior
 		// 2) converting between integer types of different sizes can lose significant bits during shift right
 
-		// EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && is_unsigned<INPUT>
+		// EXPONENT == 0
 		template <
 			int EXPONENT,
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_unsigned<INPUT>::value,
-				int>::type dummy = 0>
-			constexpr OUTPUT shift_left(INPUT i) noexcept
-		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-
-			return static_cast<OUTPUT>(i) << EXPONENT;
-		}
-
-		// EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && is_signed<INPUT>
-		template <
-			int EXPONENT,
-			typename OUTPUT,
-			typename INPUT,
-			typename std::enable_if<
-				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_signed<INPUT>::value,
+				(EXPONENT == 0),
 				int>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using signed_type = typename _impl::make_signed<OUTPUT>::type;
-
-			return (i >= 0)
-				? static_cast<OUTPUT>(i) << EXPONENT
-				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
+			// cast only
+			return static_cast<OUTPUT>(i);
 		}
 
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT), int>::type dummy = 0>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				EXPONENT == 0,
+				int>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-			return static_cast<OUTPUT>(i >> EXPONENT);
+
+			// cast only
+			return static_cast<OUTPUT>(i);
 		}
 
-		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_unsigned<INPUT>
+		// sizeof(INPUT) > sizeof(OUTPUT)
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				!(EXPONENT <= 0) && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_unsigned<INPUT>::value,
+				int>::type dummy = 0>
+			constexpr OUTPUT shift_left(INPUT i) noexcept
+		{
+			return shift_left<0, OUTPUT, INPUT>(i) << EXPONENT;
+		}
+
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				!(EXPONENT <= 0) && sizeof(OUTPUT) <= sizeof(INPUT),
+				int>::type dummy = 0>
+		constexpr OUTPUT shift_right(INPUT i) noexcept
+		{
+			return shift_right<0, OUTPUT, INPUT>(i >> EXPONENT);
+		}
+
+		// sizeof(INPUT) <= sizeof(OUTPUT)
 		template <
 			int EXPONENT, 
 			typename OUTPUT, 
 			typename INPUT, 
 			typename std::enable_if<
-				EXPONENT >= 0 && ! (sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_unsigned<INPUT>::value,
+				!(EXPONENT <= 0) && !(sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_unsigned<INPUT>::value,
 				char>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-
-			return static_cast<OUTPUT>(i) << EXPONENT;
+			return shift_left<0, OUTPUT, INPUT>(i) << EXPONENT;
 		}
 
-		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_signed<INPUT>
 		template <
 			int EXPONENT,
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-			EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_signed<INPUT>::value,
-			char>::type dummy = 0>
-			constexpr OUTPUT shift_left(INPUT i) noexcept
-		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-
-			using signed_type = typename _impl::make_signed<OUTPUT>::type;
-
-			return (i >= 0)
-				? static_cast<OUTPUT>(i) << EXPONENT
-				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
-		}
-
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)), char>::type dummy = 0>
+				!(EXPONENT <= 0) && !(sizeof(OUTPUT) <= sizeof(INPUT)),
+				char>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-			return static_cast<OUTPUT>(i) >> EXPONENT;
+			return shift_right<0, OUTPUT, INPUT>(i) >> EXPONENT;
 		}
 
-		// pass bit-shifts with negative EXPONENTS to their complimentary positive-EXPONENT equivalents
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<(EXPONENT < 0), int>::type dummy = 0>
+		// is_signed<INPUT>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				!(EXPONENT <= 0) && _impl::is_signed<INPUT>::value,
+				int>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
+			using unsigned_input = typename _impl::make_unsigned<INPUT>::type;
+			using unsigned_output = typename _impl::make_unsigned<OUTPUT>::type;
+
+			return (i >= 0)
+				? shift_left<EXPONENT, unsigned_output, unsigned_input>(i)
+				: -shift_left<EXPONENT, unsigned_output, unsigned_input>(-i);
+		}
+
+		// EXPONENT < 0
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				(EXPONENT < 0),
+				int>::type dummy = 0>
+		constexpr OUTPUT shift_left(INPUT i) noexcept
+		{
+			// negate EXPONENT and flip from left to right
 			return shift_right<-EXPONENT, OUTPUT, INPUT>(i);
 		}
 
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT < 0, int>::type dummy = 0>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				EXPONENT < 0,
+				int>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
+			// negate EXPONENT and flip from right to left
 			return shift_left<-EXPONENT, OUTPUT, INPUT>(i);
 		}
 
