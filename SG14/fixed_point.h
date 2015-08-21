@@ -856,7 +856,8 @@ namespace sg14
 	// sg14::abs
 
 	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<_impl::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
-	constexpr fixed_point<REPR_TYPE, EXPONENT> abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+	abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return (x.data() >= 0) ? x : - x;
 	}
@@ -867,7 +868,8 @@ namespace sg14
 	// https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
 	// slow when calculated at run-time?
 	template <typename REPR_TYPE, int EXPONENT>
-	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+	sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
 			static_cast<REPR_TYPE>(_impl::sqrt_solve1(promote(x).data())));
