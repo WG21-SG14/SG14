@@ -7,9 +7,9 @@
 
 ## I. Motivation
 
-Floating-point types are extremely versatile in their ability to 
+Floating-point types are highly versatile in their ability to 
 represent real numbers across a very wide range of values. However, 
-the cost of this versatility is a loss of accuracy and a variation 
+the cost of this versatility is a loss of precision and a variation 
 in accuracy across linear ranges of values. In particular, absolute 
 ranges of value with linear distribution - such as temporal and 
 spatial coordinates and unit intervals - gain very little from being
@@ -34,11 +34,6 @@ normally be used.
 This proposal is a pure library extension. It does not require 
 changes to any standard classes, functions or headers. 
 
-However, because it aims to provide an alternative to existing 
-arithmetic types which are supported by the standard library, it is
-conceivable that future proposals might specialize existing class 
-templates and overload existing functions to that end.
-
 ## III. Design Decisions
 
 The class is designed to function as closely as possible to built-in
@@ -52,10 +47,10 @@ fixed-point values.
 Fixed-point numbers are specializations of `template <typename
 REPR_TYPE, int EXPONENT> class fixed_point` where:
 
-* `REPR_TYPE` is the underlying type used to store the value. (A type
-  which satisfies `is_integral` is an appropriate choice.) Whether
-  the number is signed is determined by whether	`REPR_TYPE` is 
-  signed. The default is `int`.
+* `REPR_TYPE` is the underlying type used to store the value. A type
+  which satisfies `is_integral` is an appropriate choice. Whether the
+  number is signed is determined by whether `REPR_TYPE` is signed. 
+  The default is `int`.
 
 * `EXPONENT` is the equivalent of a floating-point exponent and
   shifts the stored value by the requisite number of bits necessary
@@ -207,7 +202,7 @@ arithmetic operators in situations where the aim is to avoid overflow
 without falling back on higher-capacity types.
 
     safe_multiply(FIXED_POINT_1, FIXED_POINT_2)
-	safe_add(FIXED_POINT_1, FIXED_POINT_2)
+    safe_add(FIXED_POINT_1, FIXED_POINT_2)
     safe_square(FIXED_POINT_1)
 
 These functions return specializations which are guaranteed to 
@@ -221,7 +216,72 @@ returns `fixed_point<uint8_t, 0>(254)`. This result is far closer to
 the correct value than the result returned by `operator *` - hence 
 the 'safe_' prefix.
 
-## IV. Future Issues
+## IV. Technical Specification
+
+### Header
+
+All proposed additions to the library are contained in header,
+`<fixed_point>`.
+
+### Class template `fixed_point`
+
+#### Header `<fixed_point>` synopsis
+
+    namespace std {
+      template <typename REPR_TYPE, int EXPONENT> class fixed_point;
+    
+      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
+        using make_fixed;
+      template <typename REPR_TYPE, int INTEGER_BITS>
+        using make_fixed_from_repr;
+      template <typename LHS_FP, typename RHS_FP>
+        using make_fixed_from_pair;
+    
+      template <typename FIXED_POINT>
+        using fixed_point_promotion_t;
+      template <typename FIXED_POINT>
+        fixed_point_promotion_t<FIXED_POINT>
+          constexpr promote(const FIXED_POINT & from) noexcept
+    
+      template <typename FIXED_POINT>
+        using fixed_point_demotion_t;
+      template <typename FIXED_POINT>
+        fixed_point_demotion_t<FIXED_POINT>
+          constexpr demote(const FIXED_POINT & from) noexcept
+    
+      template <typename LHS, typename RHS>
+        constexpr bool operator ==(LHS const & lhs, RHS const & rhs) noexcept;
+      template <typename LHS, typename RHS>
+        constexpr bool operator !=(LHS const & lhs, RHS const & rhs) noexcept;
+      template <typename LHS, typename RHS>
+        constexpr bool operator <(LHS const & lhs, RHS const & rhs) noexcept;
+      template <typename LHS, typename RHS>
+        constexpr bool operator >(LHS const & lhs, RHS const & rhs) noexcept;
+      template <typename LHS, typename RHS>
+        constexpr bool operator >=(LHS const & lhs, RHS const & rhs) noexcept;
+      template <typename LHS, typename RHS>
+        constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
+    
+      template <typename LHS, typename RHS = LHS>
+        using safe_multiply_result_t;
+      template <typename LHS, typename RHS>
+        safe_multiply_result_t<LHS, RHS>
+          constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept;
+    
+      template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+        using safe_add_result_t;
+      template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
+        safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+          constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+    
+      template <typename FIXED_POINT>
+        using safe_square_result_t;
+      template <typename FIXED_POINT>
+        safe_square_result_t<FIXED_POINT>
+          constexpr safe_square(const FIXED_POINT & root) noexcept;
+    }
+    
+## V. Future Issues
 
 ### Explicit Template Specialization of N1169 Types
 
@@ -236,9 +296,22 @@ this will not compile.)
 
 ### Library Support
 
+Because it aims to provide an alternative to existing arithmetic 
+types which are supported by the standard library, it is conceivable
+that future proposals might specialize existing class templates and 
+overload existing functions to that end.
+
 ### Keeping track of maximum values - like bounded to avoid unnecessary precision loss
 
-TODO: min, max, numeric_limits, <type_traits>, <cmath> etc.
+### TODO: min, max, <cmath> etc.
+
+But not numeric_limits, <type_traits>, right?
+
+### Run-time Checks
+
+Perhaps a type for `REPR_TYPE` could be chosen which behaves like an 
+integer but catches overflow. In this case the concern of run-time 
+checkcs could be separated from fixed-point arithmetic.
 
 ## V. Technical Specification
 
@@ -251,4 +324,4 @@ TODO
 * [fpmath](https://code.google.com/p/fpmath/) - Fixed Point Math Library
 * [boost::fixed_point](http://lists.boost.org/Archives/boost/2012/04/191987.php) - Prototype Boost Library
 * [fp](https://github.com/mizvekov/fp) - C++14 Fixed Point Library
-* [bounded)[http://doublewise.net/c++/bounded/) - C++ bounded::integer library
+* [bounded](http://doublewise.net/c++/bounded/) - C++ bounded::integer library
