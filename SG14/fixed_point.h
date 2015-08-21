@@ -763,22 +763,22 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_mul_result_t / safe_multiply
+	// sg14::safe_multiply_result_t / safe_multiply
 
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using fixed_point_mul_result_t = make_fixed_from_repr<
+	using safe_multiply_result_t = make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
 		LHS::integer_digits + RHS::integer_digits>;
 
-	// as fixed_point_mul_result_t but converts parameter, factor,
+	// as safe_multiply_result_t but converts parameter, factor,
 	// ready for safe binary multiply
 	template <typename LHS, typename RHS>
-	fixed_point_mul_result_t<LHS, RHS>
+	safe_multiply_result_t<LHS, RHS>
 	constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept
 	{
-		using output_type = fixed_point_mul_result_t<LHS, RHS>;
+		using output_type = safe_multiply_result_t<LHS, RHS>;
 		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
 		using next_repr_type = _impl::next_size_t<common_repr_type>;
 		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
@@ -786,12 +786,12 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_add_result_t / safe_add
+	// sg14::safe_add_result_t / safe_add
 
 	// yields specialization of fixed_point with integral bits necessary to store 
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-	using fixed_point_add_result_t = make_fixed_from_repr<
+	using safe_add_result_t = make_fixed_from_repr<
 		REPR_TYPE,
 		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
 
@@ -813,10 +813,10 @@ namespace sg14
 	}
 
 	template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-	fixed_point_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+	safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
 	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 	{
-		using output_type = fixed_point_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
+		using output_type = safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
 		return _impl::add<output_type, REPR_TYPE, EXPONENT>(addend1, addend_tail ...);
 	}
 

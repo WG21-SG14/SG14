@@ -346,11 +346,11 @@ static_assert(!(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.6)), "sg14::
 static_assert(fixed_point<uint8_t, -1>(.5) == fixed_point<uint8_t, 0>(0), "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::fixed_point_mul_result_t
+// sg14::safe_multiply_result_t
 
-static_assert(fixed_point_mul_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::fixed_point_mul_result_t test failed");
-static_assert(fixed_point_mul_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::fixed_point_mul_result_t test failed");
-static_assert(fixed_point_mul_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::fixed_point_mul_result_t test failed");
+static_assert(safe_multiply_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::safe_multiply_result_t test failed");
+static_assert(safe_multiply_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::safe_multiply_result_t test failed");
+static_assert(safe_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::safe_multiply_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_multiply
@@ -364,10 +364,10 @@ static_assert(static_cast<int>(safe_multiply(make_fixed<8, 0, false>(174), make_
 static_assert(static_cast<double>(safe_multiply(fixed4_3_t(15.875), make_fixed<16, 0>(65535))) == 1040368.125, "sg14::safe_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::fixed_point_add_result_t
+// sg14::safe_add_result_t
 
-static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_add_result_t test failed");
-static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_add_result_t test failed");
+static_assert(safe_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::safe_add_result_t test failed");
+static_assert(safe_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::safe_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add
