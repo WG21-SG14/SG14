@@ -313,6 +313,8 @@ Perhaps a type for `REPR_TYPE` could be chosen which behaves like an
 integer but catches overflow. In this case the concern of run-time 
 checkcs could be separated from fixed-point arithmetic.
 
+### User-Defined Literals
+
 ## V. Technical Specification
 
 TODO
