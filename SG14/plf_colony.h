@@ -1,21 +1,4 @@
 // Copyright (c) 2015, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
-//
-// This software is provided 'as-is', without any express or implied
-// warranty. In no event will the authors be held liable for any damages
-// arising from the use of this software.
-//
-// Permission is granted to anyone to use this software for any purpose,
-// including commercial applications, and to alter it and redistribute it
-// freely, subject to the following restrictions:
-//
-// 1. The origin of this software must not be misrepresented; you must not
-//    claim that you wrote the original software. If you use this software
-//    in a product, an acknowledgement in the product documentation would be
-//    appreciated but is not required.
-// 2. Altered source versions must be plainly marked as such, and must not be
-//    misrepresented as being the original software.
-// 3. This notice may not be removed or altered from any source distribution.
-
 
 #ifndef plf_colony_H
 #define plf_colony_H
@@ -25,6 +8,7 @@
 #include <cassert>	// assert
 #include <memory>	// allocators
 #include <climits>	// UINT_MAX
+#include <iterator> // inheritance for iterator
 #include <cstddef>	// ptrdiff_t for iterator typedef
 
 #include "plf_stack.h" // Includes plf::stack and compiler-specific Macro defines 
@@ -38,13 +22,6 @@
 
 namespace plf
 {
-
-// Stops me having to include iterator.h and also failing on reverse iterator under MSVC2010 when inheriting from iterator.h!
-struct input_iterator_tag {};
-struct forward_iterator_tag : public input_iterator_tag {};
-struct bidirectional_iterator_tag : public forward_iterator_tag {};
-struct random_access_iterator_tag : public bidirectional_iterator_tag {};
-
 
 
 template <class element_type, class element_allocator_type = std::allocator<element_type> > class colony
@@ -186,7 +163,7 @@ private:
 	
 
 public:
-	class iterator
+	class iterator : public std::iterator<std::bidirectional_iterator_tag, element_type, std::ptrdiff_t, element_type *, element_type &>
 	{
 	private:
 		group_pointer_type		group_pointer;
@@ -194,14 +171,9 @@ public:
 		bool_pointer_type		erasure_field;
 
 	public:
-		typedef random_access_iterator_tag	iterator_category;
-		typedef element_type				value_type;
-		typedef std::ptrdiff_t				difference_type;
-		typedef element_type *				pointer;
-		typedef element_type &				reference;
-
 		friend class colony;
 		friend class reverse_iterator;
+
 
 		inline iterator& operator = (const iterator &source) PLF_NOEXCEPT
 		{
@@ -263,7 +235,7 @@ public:
 
 
 	#ifdef PLF_GCCX64
-		iterator & operator ++ () // For some reason, this version compiles to faster code under gcc x64 4.9.2
+		iterator & operator ++ () // For some reason, this version compiles to faster code under gcc x64
 		{
 			assert(group_pointer != NULL); // covers uninitialised iterator 
 
@@ -285,7 +257,7 @@ public:
 			return *this;
 		}
 	#elif defined(PLF_GCCX86)
-		iterator & operator ++ () // For some reason, this version compiles to faster code under gcc x86 v4.9.2 - and nothing else
+		iterator & operator ++ () // For some reason, this version compiles to faster code under gcc x86 - and nothing else
 		{
 			assert(group_pointer != NULL); // covers uninitialised iterator 
 
@@ -309,7 +281,7 @@ public:
 			return *this;
 		}
 	#else
-		iterator & operator ++ () // Standard version - compiles better most other compilers
+		iterator & operator ++ () // Standard version - compiles better on most other compilers
 		{
 			assert(group_pointer != NULL); // covers uninitialised iterator 
 
@@ -364,7 +336,7 @@ public:
 		
 
 
-		inline iterator & operator += (unsigned int addition) 
+		iterator & operator += (unsigned int addition) 
 		{
 			assert(group_pointer != NULL); // covers uninitialised iterator && empty group
 			
@@ -490,7 +462,7 @@ public:
 
 			
 
-		inline iterator & operator -= (unsigned int subtraction) 
+		iterator & operator -= (unsigned int subtraction) 
 		{
 			assert(group_pointer != NULL);
 			
@@ -614,6 +586,64 @@ public:
 		}
 		
 
+	private:
+
+		const unsigned int get_current_index() const
+		{
+			group_pointer_type current_group = group_pointer;
+			unsigned int distance_to_beginning = 0;
+			
+			if (element_pointer != current_group->last_endpoint) // iterator does not point to the index one past the last element in group
+			{
+				element_pointer_type current_element = element_pointer;
+				bool_pointer_type current_erasure = erasure_field;
+
+				// process current group:
+				while (current_element != current_group->elements)
+				{
+					--current_element;
+					
+					if (!*(--current_erasure))
+					{
+						++distance_to_beginning;
+					}
+				}
+			}
+			else // Special case: iterator points to index one past the last element in the group:
+			{
+				distance_to_beginning = current_group->total_number_of_elements;
+			}
+			
+
+			current_group = current_group->previous_group;
+				
+			// process previous groups:
+			while (current_group != NULL)
+			{
+				distance_to_beginning += current_group->total_number_of_elements;
+				current_group = current_group->previous_group;
+			} 
+			
+			return distance_to_beginning;
+		}
+
+		
+
+	public:	
+
+		inline unsigned int operator + (const iterator &rh) const
+		{
+			return get_current_index() + rh.get_current_index();
+		}
+
+
+
+		inline int operator - (const iterator &rh) const
+		{
+			return (int)get_current_index() - (int)rh.get_current_index();
+		}
+		
+
 		
 		inline bool operator > (const iterator &rh) const PLF_NOEXCEPT
 		{
@@ -672,15 +702,20 @@ public:
 
 
 
-	class reverse_iterator
+	class reverse_iterator // Not inheriting from std::reverse_iterator because visual studio ruins everything for everyone. Such a useless piece of crap.
 	{
 	private:
 		iterator the_iterator;
 		
 	public:
+		struct input_iterator_tag {};
+		struct forward_iterator_tag : public input_iterator_tag {};
+		struct bidirectional_iterator_tag : public forward_iterator_tag {};
+		struct random_access_iterator_tag : public bidirectional_iterator_tag {};
+
 		typedef random_access_iterator_tag	iterator_category;
 		typedef element_type				value_type;
-		typedef std::ptrdiff_t					difference_type;
+		typedef std::ptrdiff_t				difference_type;
 		typedef element_type *				pointer;
 		typedef element_type &				reference;
 
@@ -903,6 +938,20 @@ public:
 		
 
 
+		inline unsigned int operator + (const iterator &rh) const
+		{
+			return the_iterator.get_current_index() + rh.the_iterator.get_current_index();
+		}
+
+
+
+		inline int operator - (const iterator &rh) const
+		{
+			return (int)the_iterator.get_current_index() - (int)rh.the_iterator.get_current_index();
+		}
+		
+
+		
 		inline iterator base() const
 		{
 			return the_iterator + 1;
@@ -942,8 +991,10 @@ public:
 		reverse_iterator() PLF_NOEXCEPT 
 		{}
 		
+		
 
 		~reverse_iterator() PLF_NOEXCEPT {}
+
 
 
 		reverse_iterator (const reverse_iterator &source) PLF_NOEXCEPT: the_iterator(source.the_iterator) 
@@ -1701,61 +1752,6 @@ public:
 	{
 		return !(*this == rh);
 	}
-
-
-
-
-	inline iterator find(const iterator &search_begin, const iterator &search_end, const element_type value) PLF_NOEXCEPT
-	{
-		assert(search_begin < search_end);
-		
-		for (iterator current = search_begin; current != search_end; ++current)
-		{
-			if (*current == value)
-			{
-				return current;
-			}
-		}
-	
-		return end_iterator;
-	}
-
-
-
-
-	inline iterator find(const element_type value) PLF_NOEXCEPT
-	{
-		return find(begin_iterator, end_iterator, value);
-	}
-
-
-
-
-	colony<iterator> find_all(const iterator &search_begin, const iterator &search_end, const element_type value)
-	{
-		assert(search_begin < search_end);
-		
-		colony<iterator> matched_elements(4);
-		
-		for (iterator current = search_begin; current != search_end; ++current)
-		{
-			if (*current == value)
-			{
-				matched_elements.add(current);
-			}
-		}
-	
-		return matched_elements;
-	}
-
-
-
-
-	colony<iterator> find_all(const element_type value)
-	{
-		return find_all(begin_iterator, end_iterator, value);
-	}
-
 
 
 };
