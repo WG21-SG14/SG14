@@ -7,6 +7,7 @@
 
 #include <cassert>
 
+
 void sg14_test::rolling_queue_test()
 {
 	sg14::rolling_queue<int, 5> Q;
