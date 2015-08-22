@@ -1,0 +1,442 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+  <meta name="description" content="PLF C++ Library - plf::stack">
+  <meta name="keywords"
+  content="C++, C, vector, stack, plf::stack, containers, optimize, performance, pointer, iterator, invalidation">
+  <title>PLF C++ Library - plf::stack</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<a href="index.htm">Home</a> 
+
+<h1>PLF C++ Library - plf::stack</h1>
+
+<h2>Intro</h2>
+
+<p>plf::stack is used internally by plf::colony but can also be used
+separately. It is essentially a more efficient implementation of the STL's
+std::stack container (which typically uses std::vector internally), using the
+same memory strategy as <a href="plf_colony.htm#intro">plf::colony</a>.</p>
+
+<p>Again, like colonies, the larger the object being store in the colony is,
+the greater the speed advantage over std::stack. Typically push speed is much
+faster, pop speed about the same or worse for smaller, scalar types like
+int.</p>
+
+<h2><a id="license"></a>License</h2>
+
+<p>plf::stack is under a permissive <a
+href="http://en.wikipedia.org/wiki/Zlib_License">zlib license</a>. This means:
+Software is used on 'as-is' basis. It can be modified and used in commercial
+software. Authors are not liable for any damages arising from its use. The
+distribution of a modified version of the software is subject to the following
+restrictions:</p>
+<ul>
+  <li>The authorship of the original software must not be misrepresented,</li>
+  <li>Altered source versions must not be misrepresented as being the original
+    software, and</li>
+  <li>The license notice must not be removed from source distributions.</li>
+</ul>
+
+<h2>Download</h2>
+
+<p>Download on the plf::colony page <a
+href="plf_colony.htm#download">here</a>.<br>
+Both plf::stack and plf::colony are simple .h header files, to be included with
+a #include command. The package includes both plf::colony and plf::stack.</p>
+
+<h2>Benchmarks</h2>
+
+<p style="font-size: 75%"><i>Last updated 13-7-2015 v1.70</i></p>
+
+<p>This benchmark compares performance between std::vector and plf::stack. I'm
+using std::vector instead of std::stack, as while std::stack usually uses
+std::vector internally, sometimes it doesn't depending on the implementation,
+which would make the implementation slower than if it were vector internally.
+So to make things simpler and a more fair comparison, I'm using std::vector
+directly. The benchmarks are included in the demo.cpp in the download, anyone
+can run them.</p>
+
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram. Results are
+much the same on other Intel x64 platforms. Compilers are mingw TDM GCC 5.1
+(both 32-bit and 64-bit versions), MS VC++2010 and MS VC++2013. I've forgone
+clang as the results were much the same as GCC. Release compilation settings
+only, standard release-compile settings for MS compilers, -O2;-march=native for
+GCC.</p>
+
+<p>There are three tests; one with a simple small struct consisting of 2
+doubles, 2 pointers and 2 integers, one with a larger struct containing several
+large arrays, and one with only unsigned ints ie. a scalar type. We'll start
+with the small structs. Numbers are milliseconds, lower is better.</p>
+
+<p></p>
+
+<h4>Small struct test</h4>
+
+<table style="width: 100%" border="1">
+  <caption>Push 5000000 small structs, each with a random number in an unsigned
+  int member</caption>
+  <colgroup><col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>Push duration in ms</td>
+      <td>GCC 5.1 x86</td>
+      <td>GCC 5.1 x64</td>
+      <td>MSVC 2010 x86</td>
+      <td>MSVC 2013 x64</td>
+      <td>Average</td>
+    </tr>
+    <tr>
+      <td>std::vector</td>
+      <td>331</td>
+      <td>302</td>
+      <td>456</td>
+      <td>508</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>plf::stack</td>
+      <td>134</td>
+      <td>114</td>
+      <td>185</td>
+      <td>149</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>stack vs vector performance</td>
+      <td>2.5x</td>
+      <td>2.7x</td>
+      <td>2.5x</td>
+      <td>3.4x</td>
+      <td>2.8x</td>
+    </tr>
+  </tbody>
+</table>
+
+<table style="width: 100%" border="1">
+  <caption>Read and pop all elements</caption>
+  <colgroup><col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>Back + Pop duration in ms</td>
+      <td>GCC 5.1 x86</td>
+      <td>GCC 5.1 x64</td>
+      <td>MSVC 2010 x86</td>
+      <td>MSVC 2013 x64</td>
+      <td>Average</td>
+    </tr>
+    <tr>
+      <td>std::vector</td>
+      <td>45</td>
+      <td>38</td>
+      <td>52</td>
+      <td>42</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>plf::stack</td>
+      <td>46</td>
+      <td>38</td>
+      <td>53</td>
+      <td>44</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>stack vs vector performance</td>
+      <td>0.98x</td>
+      <td>1.0x</td>
+      <td>0.98x</td>
+      <td>0.96x</td>
+      <td>0.98x</td>
+    </tr>
+  </tbody>
+</table>
+
+<p></p>
+
+<p></p>
+
+<h4>Large struct test</h4>
+
+<table style="width: 100%" border="1">
+  <caption>Push 10000 large structs, each with a random number in an unsigned
+  int member</caption>
+  <colgroup><col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>Total push duration in ms</td>
+      <td>GCC 5.1 x86</td>
+      <td>GCC 5.1 x64</td>
+      <td>MSVC 2010 x86</td>
+      <td>MSVC 2013 x64</td>
+      <td>Average</td>
+    </tr>
+    <tr>
+      <td>std::vector</td>
+      <td>313</td>
+      <td>262</td>
+      <td>438</td>
+      <td>460</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>plf::stack</td>
+      <td>97</td>
+      <td>101</td>
+      <td>99</td>
+      <td>104</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>stack vs vector performance</td>
+      <td>3.2x</td>
+      <td>2.6x</td>
+      <td>4.4x</td>
+      <td>4.4x</td>
+      <td>3.7x</td>
+    </tr>
+  </tbody>
+</table>
+
+<table style="width: 100%" border="1">
+  <caption>Read and pop all elements</caption>
+  <colgroup><col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>Total back + pop duration in ms</td>
+      <td>GCC 5.1 x86</td>
+      <td>GCC 5.1 x64</td>
+      <td>MSVC 2010 x86</td>
+      <td>MSVC 2013 x64</td>
+      <td>Average</td>
+    </tr>
+    <tr>
+      <td>std::vector</td>
+      <td>35</td>
+      <td>34</td>
+      <td>34</td>
+      <td>37</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>plf::stack</td>
+      <td>34</td>
+      <td>33</td>
+      <td>33</td>
+      <td>36</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>stack vs vector performance</td>
+      <td>1.03x</td>
+      <td>1.03x</td>
+      <td>1.03x</td>
+      <td>1.03x</td>
+      <td>1.03x</td>
+    </tr>
+  </tbody>
+</table>
+
+<p></p>
+
+<h4>Unsigned int test (small scalar type)</h4>
+
+<table style="width: 100%" border="1">
+  <caption>Push 10000000 random unsigned ints</caption>
+  <colgroup><col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>Total push duration in ms</td>
+      <td>GCC 5.1 x86</td>
+      <td>GCC 5.1 x64</td>
+      <td>MSVC 2010 x86</td>
+      <td>MSVC 2013 x64</td>
+      <td>Average</td>
+    </tr>
+    <tr>
+      <td>std::vector</td>
+      <td>188</td>
+      <td>163</td>
+      <td>263</td>
+      <td>233</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>plf::stack</td>
+      <td>136</td>
+      <td>135</td>
+      <td>228</td>
+      <td>160</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>stack vs vector performance</td>
+      <td>1.4x</td>
+      <td>1.2x</td>
+      <td>1.2x</td>
+      <td>1.5x</td>
+      <td>1.3x</td>
+    </tr>
+  </tbody>
+</table>
+
+<table style="width: 100%" border="1">
+  <caption>Read and pop all elements</caption>
+  <colgroup><col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>Total back + pop duration in ms</td>
+      <td>GCC 5.1 x86</td>
+      <td>GCC 5.1 x64</td>
+      <td>MSVC 2010 x86</td>
+      <td>MSVC 2013 x64</td>
+      <td>Average</td>
+    </tr>
+    <tr>
+      <td>std::vector</td>
+      <td>24</td>
+      <td>9</td>
+      <td>10</td>
+      <td>29</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>plf::stack</td>
+      <td>25</td>
+      <td>17</td>
+      <td>17</td>
+      <td>34</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>stack vs vector performance</td>
+      <td>0.96x</td>
+      <td>0.53x</td>
+      <td>0.59x</td>
+      <td>0.85x</td>
+      <td>0.73x</td>
+    </tr>
+  </tbody>
+</table>
+
+<p></p>
+
+<h2>Function Descriptions and syntax</h2>
+
+<p>Functions and functionality mostly match the STL's std::stack, but push
+performance is typically twice as fast (pop is usually more-or-less the same).
+Only additional function is reinitialize.</p>
+
+<h3>Constructors</h3>
+<ul>
+  <li><code>stack&lt;the_type&gt; a_stack</code> 
+    <p>Default constructor - group size is initially 8 <br>
+    Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack;</code>
+    </p>
+  </li>
+  <li><code>stack&lt;the_type, custom_allocator&lt;the_type&gt; &gt;
+    a_stack</code> 
+    <p>Default constructor, but using a custom allocator eg. something other
+    than std::allocator. Custom allocators can also be used with all the
+    definitions below, of course. <br>
+    Example: <code style="color: brown">plf::stack&lt;int,
+    tbb::allocator&lt;int&gt; &gt; int_stack;</code> </p>
+  </li>
+  <li><code>stack&lt;the_type&gt; a_stack(initial_group_size)</code> 
+    <p>Directed constructor - this sets the initial first group size - for
+    example, to 50 (unlike a vector, these 50 elements are not constructed,
+    only the memory is allocated and the initial group-size set at 50 instead
+    of 8) - which may yield a minor performance advantage if you know roughly
+    how many elements are going to be stored in your stack in advance.<br>
+    Example: <code style="color: brown">plf::stack&lt;int&gt;
+    int_stack(62);</code></p>
+  </li>
+  <li><code>stack&lt;the_type&gt; a_stack(initial_group_size,
+    max_group_size)</code> 
+    <p>Directed constructor - this sets the initial first group size like the
+    above, and the maximum group size - this can be useful if you want to limit
+    memory usage.<br>
+    Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack(64,
+    512);</code></p>
+  </li>
+  <li><code>stack&lt;the_type&gt; a_stack(another_stack)</code> 
+    <p>Copy constructor - copies all contents from another_stack. Initial group
+    size is the total size of another_stack. <br>
+    Example: <code style="color: brown">plf::stack&lt;int&gt;
+    int_stack_2(int_stack_1);</code></p>
+  </li>
+  <li><code>stack&lt;the_type&gt; a_stack(std::move(another_stack))</code> 
+    <p>Move constructor - moves all contents from another_stack, does not alter
+    any group sizes. Another_stack is now void of contents, can be safely
+    destructed. <br>
+    Example: <code style="color: brown">plf::stack&lt;int&gt;
+    int_stack_2(std::move(int_stack_1));</code></p>
+  </li>
+</ul>
+
+<p>Other functions matching STL functionality: push, back, pop, size, empty,
+clear, =, ==, !=, move assignment.</p>
+
+<p>Other functions matching plf::colony functionality: reinitialize, emplace
+(does not return iterator, access via back() function, the same as push()).</p>
+
+<p>Other functions:<br>
+</p>
+<ul>
+  <li><code>push()</code> 
+    <p>Similar to plf::colony's empty add() function, this is semantically the
+    same as push(the_type()). For a scalar datatype it leaves it uninitialised,
+    for a type with a constructor it requires a default, parameterless
+    constructor. Useful for when you want to write an element directly within
+    the stack, without constructing one separately and copying it in. Unlike
+    plf:colony's add(), this does not return an iterator. Like push(the_type)
+    you must access the newly-created element via the back() command.</p>
+  </li>
+</ul>
+<br>
+<br>
+
+
+<p>Contact: <img src="footer.gif"><br>
+plf:: library and this site Copyright (c) 2015, Matthew Bentley</p>
+</body>
+</html>
