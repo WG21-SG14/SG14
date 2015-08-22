@@ -53,6 +53,22 @@ namespace sg14
 #endif
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::get_float_t
+
+		template <int NUM_BYTES>
+		struct get_float;
+
+		template <int NUM_BYTES>
+		using get_float_t = typename get_float<NUM_BYTES>::type;
+
+		// specializations
+		template <> struct get_float<1> { using type = float; };
+		template <> struct get_float<2> { using type = float; };
+		template <> struct get_float<4> { using type = float; };
+		template <> struct get_float<8> { using type = double; };
+		template <> struct get_float<16> { using type = long double; };
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::is_integral
 
 		template <typename T>
@@ -895,6 +911,38 @@ namespace sg14
 	{
 		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
 			static_cast<REPR_TYPE>(_impl::sqrt_solve1(promote(x).data())));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::trig
+	//
+	// Placeholder implementations fall back on <cmath> functions which is slow
+	// due to conversion to and from floating-point types; also inconvenient as
+	// many <cmath> functions are not constexpr.
+
+	namespace _impl
+	{
+		template <typename REPR_TYPE, int EXPONENT, _impl::get_float_t<sizeof(REPR_TYPE)>(*F)(_impl::get_float_t<sizeof(REPR_TYPE)>)>
+		constexpr fixed_point<REPR_TYPE, EXPONENT>
+			crib(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+		{
+			using floating_point = _impl::get_float_t<sizeof(REPR_TYPE)>;
+			return static_cast<fixed_point<REPR_TYPE, EXPONENT>>(F(static_cast<floating_point>(x)));
+		}
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+		sin(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	{
+		return _impl::crib<REPR_TYPE, EXPONENT, std::sin>(x);
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+		cos(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	{
+		return _impl::crib<REPR_TYPE, EXPONENT, std::cos>(x);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
