@@ -1,8 +1,15 @@
 #include "fixed_point.h"
 
 #include <cassert>
+#include <iostream>
 
 using namespace sg14;
+
+#define ASSERT_EQUAL(A, B) \
+	if ((A) != (B)) { \
+		cout << "Failed: " << (A) << "==" << (B) << endl; \
+		assert(false); \
+	}
 
 namespace sg14_test
 {
@@ -16,19 +23,19 @@ namespace sg14_test
 		// from fixed_point
 		auto rhs = fixed_point<>(123.456);
 		auto lhs = rhs;
-		assert(lhs == fixed_point<>(123.456));
+		ASSERT_EQUAL(lhs, fixed_point<>(123.456));
 
 		// from floating-point type
 		lhs = 234.567;
-		assert(static_cast<double>(lhs) == 234.56698608398438);
+		ASSERT_EQUAL(static_cast<double>(lhs), 234.56698608398438);
 
 		// from integer
 		lhs = 543;
-		assert(static_cast<int>(lhs) == 543);
+		ASSERT_EQUAL(static_cast<int>(lhs), 543);
 
 		// from alternative specialization
 		lhs = fixed_point<uint8_t>(87.65);
-		assert(static_cast<fixed_point<uint8_t>>(lhs) == fixed_point<uint8_t>(87.65));
+		ASSERT_EQUAL(static_cast<fixed_point<uint8_t>>(lhs), fixed_point<uint8_t>(87.65));
 
 		////////////////////////////////////////////////////////////////////////////////
 		// Tests of Examples in Proposal 
@@ -51,7 +58,7 @@ namespace sg14_test
 		auto conversion_lhs = fixed_point<uint8_t, -4>(.006);
 		auto conversion_rhs = fixed_point<uint8_t, -4>(0);
 		static_assert(is_same<decltype(conversion_lhs), decltype(conversion_rhs)>::value, "Incorrect information in proposal section, Conversion");
-		assert(conversion_lhs == conversion_rhs);
+		ASSERT_EQUAL(conversion_lhs, conversion_rhs);
 
 		// Names Constructors
 
@@ -61,16 +68,16 @@ namespace sg14_test
 
 		auto arithmetic_op = make_fixed<4, 3>(15) * make_fixed<4, 3>(15);
 		static_assert(is_same<decltype(arithmetic_op), make_fixed<4, 3>>::value, "Incorrect information in proposal section, Arithmetic Operators");
-		assert(static_cast<int>(arithmetic_op) == 1);
+		ASSERT_EQUAL(static_cast<int>(arithmetic_op), 1);
 
 		// Type Promotion and Demotion Functions
 		auto type_promotion = promote(fixed_point<int8_t, -2>(15.5));
 		static_assert(is_same<decltype(type_promotion), fixed_point<int16_t, -4>>::value, "Incorrect information in proposal section, Type Promotion and Demotion Functions");
-		assert(static_cast<float>(type_promotion) == 15.5);
+		ASSERT_EQUAL(static_cast<float>(type_promotion), 15.5);
 
 		// Named Arithmetic Functions
 		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));  // TODO: safe_square
-		assert(static_cast<double>(sq) == 254);
+		ASSERT_EQUAL(static_cast<double>(sq), 254);
 	}
 }
 
