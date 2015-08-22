@@ -361,7 +361,7 @@ static_assert(static_cast<float>(safe_multiply(ufixed4_4_t(0.0625), ufixed4_4_t(
 static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(1), ufixed8_0_t(1))) == 0, "sg14::safe_multiply test failed");
 static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(174), ufixed8_0_t(25))) == 4096, "sg14::safe_multiply test failed");
 static_assert(static_cast<int>(safe_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::safe_multiply test failed");
-static_assert(static_cast<double>(safe_multiply(fixed4_3_t(15.875), make_fixed<16, 0>(65535))) == 1040368.125, "sg14::safe_multiply test failed");
+static_assert(static_cast<double>(safe_multiply(fixed4_3_t(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::safe_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add_result_t

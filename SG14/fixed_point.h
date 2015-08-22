@@ -229,11 +229,11 @@ namespace sg14
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
 			using unsigned_input = typename _impl::make_unsigned<INPUT>::type;
-			using unsigned_output = typename _impl::make_unsigned<OUTPUT>::type;
+			using signed_output = typename _impl::make_signed<OUTPUT>::type;
 
 			return (i >= 0)
-				? shift_left<EXPONENT, unsigned_output, unsigned_input>(i)
-				: -shift_left<EXPONENT, unsigned_output, unsigned_input>(-i);
+				? shift_left<EXPONENT, signed_output, unsigned_input>(i)
+				: -shift_left<EXPONENT, signed_output, unsigned_input>(-i);
 		}
 
 		// EXPONENT < 0
