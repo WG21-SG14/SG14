@@ -953,6 +953,27 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_sqrt_result_t / safe_sqrt
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// the positive result of a square root operation on an object of type,
+	// fixed_point<REPR_TYPE, EXPONENT>
+	template <typename FIXED_POINT>
+	using safe_sqrt_result_t = make_fixed_from_repr<
+		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
+		(FIXED_POINT::integer_digits + 1) / 2>;
+
+	// as safe_sqrt_result_t but converts parameter, factor,
+	// ready for safe sqrt operation
+	template <typename FIXED_POINT>
+	safe_sqrt_result_t<FIXED_POINT>
+	constexpr safe_sqrt(const FIXED_POINT & square) noexcept
+	{
+		using output_type = safe_sqrt_result_t<FIXED_POINT>;
+		return output_type(sqrt(square));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point streaming - (placeholder implementation)
 
 	template <typename REPR_TYPE, int EXPONENT>

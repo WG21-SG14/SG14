@@ -102,7 +102,7 @@ namespace sg14_test
 		ASSERT_EQUAL(static_cast<float>(type_promotion), 15.5);
 
 		// Named Arithmetic Functions
-		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));  // TODO: safe_square
+		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));
 		ASSERT_EQUAL(static_cast<double>(sq), 254);
 	}
 }
@@ -426,6 +426,18 @@ static_assert(std::is_same<safe_square_result_t<fixed_point<std::int32_t, -25>>,
 
 static_assert(static_cast<int>(safe_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::safe_add test failed");
 static_assert(static_cast<float>(safe_square(ufixed4_4_t(15.5))) == 240, "sg14::safe_add test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_sqrt_result_t
+
+static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, -6>>::value, "sg14::safe_sqrt_result_t test failed");
+static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::int32_t, -16>>, fixed_point<std::uint32_t, -24>>::value, "sg14::safe_sqrt_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_sqrt
+
+static_assert(static_cast<int>(safe_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::safe_add test failed");
+static_assert(static_cast<float>(safe_sqrt(ufixed8_0_t(240))) == 15, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
