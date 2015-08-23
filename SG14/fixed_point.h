@@ -1,6 +1,7 @@
 #if ! defined(_SG14_FIXED_POINT)
 #define _SG14_FIXED_POINT 1
 
+#include <algorithm>
 #include <climits>
 #include <cmath>
 #include <cinttypes>
@@ -270,6 +271,15 @@ namespace sg14
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::max
+
+		template <class T>
+		constexpr const T& max( const T& a, const T& b )
+		{
+			return (a < b) ? b : a;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::capacity
 
 		// has value that, given a value N, 
@@ -332,9 +342,9 @@ namespace sg14
 	// sg14::fixed_point class template definition
 	//
 	// approximates a real number using a built-in integral type;
-	// somewhat like a floating-point number but - with exponent determined at run-time
+	// somewhat like a floating-point number but with exponent determined at run-time
 
-	template <typename REPR_TYPE, int EXPONENT = _impl::default_exponent<REPR_TYPE>()>
+	template <typename REPR_TYPE = int, int EXPONENT = _impl::default_exponent<REPR_TYPE>()>
 	class fixed_point
 	{
 	public:
@@ -381,8 +391,32 @@ namespace sg14
 		// c'tor taking a fixed-point type
 		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
 		explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
-			: _repr(_impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data()))
+			: _repr(fixed_point_to_repr(rhs))
 		{
+		}
+
+		// copy assignment operator taking an integer type
+		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
+		fixed_point & operator=(S s) noexcept
+		{
+			_repr = integral_to_repr(s);
+			return *this;
+		}
+
+		// copy assignment operator taking a floating-point type
+		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
+		fixed_point & operator=(S s) noexcept
+		{
+			_repr = floating_point_to_repr(s);
+			return *this;
+		}
+
+		// copy assignement operator taking a fixed-point type
+		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+		fixed_point & operator=(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+		{
+			_repr = fixed_point_to_repr(rhs);
+			return *this;
 		}
 
 		// returns value represented as a floating-point
@@ -532,6 +566,12 @@ namespace sg14
 			return S(r) * inverse_one<S>();
 		}
 
+		template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+		static constexpr repr_type fixed_point_to_repr(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+		{
+			return _impl::shift_right<(exponent - FROM_EXPONENT), repr_type>(rhs.data());
+		}
+
 		////////////////////////////////////////////////////////////////////////////////
 		// variables
 
@@ -560,6 +600,19 @@ namespace sg14
 	using make_fixed_from_repr = fixed_point<
 		REPR_TYPE,
 		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::_impl::make_fixed_from_pair
+
+	// given two fixed-point types, produces the type that is best suited to both of them
+	template <typename LHS_FP, typename RHS_FP>
+	using make_fixed_from_pair = make_fixed_from_repr<
+		typename _impl::get_int<
+		_impl::is_signed<typename LHS_FP::repr_type>::value | _impl::is_signed<typename RHS_FP::repr_type>::value,
+		_impl::max(sizeof(typename LHS_FP::repr_type), sizeof(typename RHS_FP::repr_type))>::type,
+		_impl::max(
+			LHS_FP::integer_digits,
+			RHS_FP::integer_digits)>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point
@@ -609,6 +662,53 @@ namespace sg14
 	constexpr demote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
 	{
 		return from;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// heterogeneous comparison operators
+	//
+	// compare two objects of different fixed_point specializations
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator ==(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) == static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator !=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) != static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator <(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) < static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator >(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) > static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator >=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) >= static_cast<fixed_point>(rhs);
+	}
+
+	template <typename LHS_FP, typename RHS_FP>
+	constexpr bool operator <=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	{
+		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		return static_cast<fixed_point>(lhs) <= static_cast<fixed_point>(rhs);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -731,7 +831,7 @@ namespace sg14
 	template <typename REPR_TYPE, int EXPONENT>
 	::std::ostream & operator << (::std::ostream & out, fixed_point<REPR_TYPE, EXPONENT> const & fp)
 	{
-		return out << fp.template get<long double>();
+		return out << static_cast<long double>(fp);
 	}
 
 	template <typename REPR_TYPE, int EXPONENT>

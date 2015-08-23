@@ -4,9 +4,7 @@
     <ClInclude Include="..\..\..\SG14\rolling_queue.h" />
     <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\Docs\fixed_point.md" />
-    <None Include="..\..\..\Docs\Fixed_Point_Library_Proposal.md" />
+    <ClInclude Include="..\..\..\SG14\plf_colony.h" />
+    <ClInclude Include="..\..\..\SG14\plf_stack.h" />
   </ItemGroup>
 </Project>

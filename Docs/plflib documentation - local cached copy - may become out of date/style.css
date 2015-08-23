@@ -1,0 +1,181 @@
+/* Modern style for Amaya Editor Lite */
+
+/* default rules for the whole document */
+body {
+    font-size: 12pt;
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    color: black;
+    background-color: white;
+    line-height: 1.2em;
+    margin-left: 4em;
+    margin-right: 2em;
+   }
+
+/* paragraphs */
+p  {
+    padding: 0;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    text-align: left;
+   }
+
+/* paragraphs */
+table  {
+    margin-top: 3.8em;
+    margin-bottom: 2em;
+    text-align: left;
+   }
+/* headings */
+h1 {
+    font-size: 195%;
+    font-weight: bold;
+    font-style: normal;
+    font-variant: small-caps;
+    text-align: left;
+    padding: 0;
+    margin-top: 3.5em;
+    margin-bottom: 1.7em;
+   }
+h2 {
+    font-size: 122%;
+    font-weight: bold;
+    font-style: normal;
+    padding: 0;
+    margin-top: 4.5em;
+    margin-bottom: 1.1em;
+   }
+h3 {
+    font-size: 109%;
+    font-weight: bold;
+    font-style: normal;
+    padding: 0;
+    margin-top: 4em;
+    margin-bottom: 1.1em;
+   }
+h4 {
+    font-size: 104%;
+    font-weight: bold;
+    font-style: normal;
+    padding: 0;
+    margin-top: 4em;
+    margin-bottom: 1.1em;
+   }
+h5 {
+    font-size: 100%;
+    font-weight: bold;
+    font-style: italic;
+    padding: 0;
+    margin-top: 2em;
+    margin-bottom: 1em;
+   }
+h6 {
+    font-size: 100%;
+    font-weight: normal;
+    font-style: italic;
+    padding: 0;
+    margin-top: 1em;
+    margin-bottom: 1em;
+   }
+
+/* divisions */
+div {
+    padding: 0;
+    margin-top: 0em;
+    margin-bottom: 0em;
+   }
+
+/* lists */
+ul, ol {
+    padding: 0 0 0 1.5em;
+    margin-top: 1em;
+    margin-bottom: 3em;
+   }
+ul ul, ol ol, ul ol, ol ul {
+    margin-top: 1em;
+    margin-bottom: 1em;
+   }
+li {
+    padding: 0;
+    margin-top: 1em;
+    margin-bottom: 2em;
+    text-align: left;
+   }
+li p {
+    margin-top: .8em;
+    margin-bottom: 2em;
+   }
+dl {
+    padding: 0;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 1em;
+   }
+dl dl {
+    margin-top: 0em;
+    margin-bottom: 0em;
+   }
+dt {
+    padding: 0;
+    font-weight: bold;
+    margin-top: .3em;
+    margin-bottom: .3em;
+   }
+dd {
+    padding: 0;
+    margin-top: .3em;
+    margin-left: 3em;
+    margin-bottom: .3em;
+   }
+dl p {
+    margin-top: .3em;
+    margin-bottom: .3em;
+   }
+
+/* inline */
+strong {
+    font-weight: bold;
+   }
+em {
+    font-style: italic;
+   }
+code {
+    font-family: Courier New, Courier, monospace;
+    font-size: 90%;
+    padding: 0 0 0 0em;
+   }
+ins {
+    background-color: yellow;
+    text-decoration: underline;
+   }
+del {
+    text-decoration: line-through;
+   }
+
+
+		a:hover {
+		  color: #4398E1;
+		  }
+
+		a:active {
+		  color: #4598E1;
+		  text-decoration: none;
+		  }
+
+		a:link.review {
+		  color: #AAAAAF;
+		  }
+
+		a:hover.review {
+		  color: #4398E1;
+		  }
+
+		a:visited.review {
+		  color: #444444;
+		  }
+
+		a:active.review {
+		  color: #AAAAAF;
+		  text-decoration: none;
+		  }
