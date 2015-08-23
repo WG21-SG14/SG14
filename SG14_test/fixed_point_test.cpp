@@ -302,6 +302,13 @@ static_assert(static_cast<float>(open_unit<std::uint16_t>(.640625l)) == .640625,
 static_assert(static_cast<float>(open_unit<std::uint16_t>(1)) == 0, "sg14::closed_unit test failed");	// dropped bit
 
 ////////////////////////////////////////////////////////////////////////////////
+// boolean
+
+static_assert(fixed_point<>(-1), "sg14::fixed_point test failed");
+static_assert(fixed_point<>(1024), "sg14::fixed_point test failed");
+static_assert(! fixed_point<>(0), "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // arithmetic
 
 // addition
