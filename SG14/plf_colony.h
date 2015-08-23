@@ -588,7 +588,7 @@ public:
 
 	private:
 
-		const unsigned int get_current_index() const
+		unsigned int get_current_index() const
 		{
 			group_pointer_type current_group = group_pointer;
 			unsigned int distance_to_beginning = 0;
@@ -1629,7 +1629,7 @@ private:
 
 public:
 
-	const inline bool empty() const PLF_NOEXCEPT
+	inline bool empty() const PLF_NOEXCEPT
 	{
 		return total_size == 0;
 	}
