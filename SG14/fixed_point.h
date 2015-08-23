@@ -785,86 +785,6 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_multiply_result_t / safe_multiply
-
-	// yields specialization of fixed_point with integral bits necessary to store 
-	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename LHS, typename RHS = LHS>
-	using safe_multiply_result_t = make_fixed_from_repr<
-		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
-		LHS::integer_digits + RHS::integer_digits>;
-
-	// as safe_multiply_result_t but converts parameter, factor,
-	// ready for safe binary multiply
-	template <typename LHS, typename RHS>
-	safe_multiply_result_t<LHS, RHS>
-	constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept
-	{
-		using output_type = safe_multiply_result_t<LHS, RHS>;
-		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
-		using next_repr_type = _impl::next_size_t<common_repr_type>;
-		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
-		return output_type(static_cast<next_type>(factor1) * static_cast<next_type>(factor2));
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_add_result_t / safe_add
-
-	// yields specialization of fixed_point with integral bits necessary to store 
-	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-	using safe_add_result_t = make_fixed_from_repr<
-		REPR_TYPE,
-		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
-
-	namespace _impl
-	{
-		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD>
-		constexpr RESULT_TYPE add(HEAD const & addend_head)
-		{
-			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
-			return static_cast<RESULT_TYPE>(addend_head);
-		}
-
-		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD, typename ... TAIL>
-		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
-		{
-			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
-			return add<RESULT_TYPE, REPR_TYPE, EXPONENT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
-		}
-	}
-
-	template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-	safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
-	{
-		using output_type = safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
-		return _impl::add<output_type, REPR_TYPE, EXPONENT>(addend1, addend_tail ...);
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_square_result_t / safe_square
-
-	// yields specialization of fixed_point with integral bits necessary to store
-	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename FIXED_POINT>
-	using safe_square_result_t = make_fixed_from_repr<
-		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
-		FIXED_POINT::integer_digits * 2>;
-
-	// as safe_square_result_t but converts parameter, factor,
-	// ready for safe binary multiply
-	template <typename FIXED_POINT>
-	safe_square_result_t<FIXED_POINT>
-	constexpr safe_square(const FIXED_POINT & root) noexcept
-	{
-		using output_type = safe_square_result_t<FIXED_POINT>;
-		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
-		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
-		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
 	// sg14::lerp
 
 	// linear interpolation between two fixed_point values
@@ -949,6 +869,87 @@ namespace sg14
 		cos(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return _impl::crib<REPR_TYPE, EXPONENT, std::cos>(x);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_add_result_t / safe_add
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+	using safe_add_result_t = make_fixed_from_repr<
+		REPR_TYPE,
+		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
+
+	namespace _impl
+	{
+		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD>
+		constexpr RESULT_TYPE add(HEAD const & addend_head)
+		{
+			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
+			return static_cast<RESULT_TYPE>(addend_head);
+		}
+
+		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD, typename ... TAIL>
+		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
+		{
+			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
+			return add<RESULT_TYPE, REPR_TYPE, EXPONENT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
+		}
+	}
+
+	template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
+	safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+	{
+		using output_type = safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
+		return _impl::add<output_type, REPR_TYPE, EXPONENT>(addend1, addend_tail ...);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_multiply_result_t / safe_multiply
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename LHS, typename RHS = LHS>
+	using safe_multiply_result_t = make_fixed_from_repr<
+		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
+		LHS::integer_digits + RHS::integer_digits>;
+
+	// as safe_multiply_result_t but converts parameter, factor,
+	// ready for safe binary multiply
+	template <typename LHS, typename RHS>
+	safe_multiply_result_t<LHS, RHS>
+	constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept
+	{
+		using output_type = safe_multiply_result_t<LHS, RHS>;
+		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
+		using next_repr_type = _impl::next_size_t<common_repr_type>;
+		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		return output_type(static_cast<next_type>(factor1) * static_cast<next_type>(factor2));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_square_result_t / safe_square
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	// whose sign bit is set to the same value
+	template <typename FIXED_POINT>
+	using safe_square_result_t = make_fixed_from_repr<
+		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
+		FIXED_POINT::integer_digits * 2>;
+
+	// as safe_square_result_t but converts parameter, factor,
+	// ready for safe binary multiply-by-self
+	template <typename FIXED_POINT>
+	safe_square_result_t<FIXED_POINT>
+	constexpr safe_square(const FIXED_POINT & root) noexcept
+	{
+		using output_type = safe_square_result_t<FIXED_POINT>;
+		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
+		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
