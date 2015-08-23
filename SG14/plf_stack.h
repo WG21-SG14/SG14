@@ -452,14 +452,14 @@ public:
 
 
 
-	inline const bool empty() const PLF_NOEXCEPT
+	inline bool empty() const PLF_NOEXCEPT
 	{
 		return total_size == 0;
 	}
 
 
 	
-	inline const unsigned int size() const PLF_NOEXCEPT
+	inline unsigned int size() const PLF_NOEXCEPT
 	{
 		return total_size;
 	}
