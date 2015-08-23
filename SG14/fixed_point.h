@@ -74,7 +74,7 @@ namespace sg14
 		template <typename T>
 		struct is_integral;
 
-		// possible exception to std::is_integral as fixed_point<bool, X> seems pointless
+		// exception to std::is_integral as fixed_point::operator bool is a special case
 		template <>
 		struct is_integral<bool> : std::false_type { };
 
@@ -484,6 +484,12 @@ namespace sg14
 		explicit constexpr operator S() const noexcept
 		{
 			return repr_to_floating_point<S>(_repr);
+		}
+
+		// returns non-zeroness represented as boolean
+		explicit constexpr operator bool() const noexcept
+		{
+			return _repr;
 		}
 
 		// returns internal representation of value
