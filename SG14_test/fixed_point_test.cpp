@@ -7,7 +7,13 @@ using namespace sg14;
 
 #define ASSERT_EQUAL(A, B) \
 	if ((A) != (B)) { \
-		cout << "Failed: " << (A) << "==" << (B) << endl; \
+		cout << "Failed: \"" << #A " == " #B << "\", i.e. " << (A) << " != " << (B) << endl; \
+		assert(false); \
+	}
+
+#define ASSERT_TRUE(A) \
+	if (!(A)) { \
+		cout << "Failed: (" << #A << ") where (" #A "==" << (A) << ')' << endl; \
 		assert(false); \
 	}
 
