@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>Extending memory management tools</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+</HEAD>
+<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>15 August 2015
+<BR>No doc number</FONT>
+
+<H1>Extending memory management tools</H1>
+
+
+<H2>I. Motivation</H2>
+
+<p>When implementing containers it is often necessary to manage memory directly. This paper seeks to fill gaps in the standard library's memory management utilities.</p>
+
+<H2>II. Impact On the Standard</H2>
+
+<p>This proposal adds new function templates to &lt;functional&gt;. It does not depend on any other proposals. However, algorithmic changes proposed in the "range" proposals should be mirrored if both are accepted.</p>
+
+
+<H2>III. Summary</H2>
+
+<p>
+The function template destroy calls the destructor for specified elements.<br>
+The function template uninitialized_move performs move construction of elements over a range of memory, similar to uninitialized_copy.<br>
+The function template uninitialized_value_construct performs value-construction of objects over a range of memory.<br>
+The function template uninitialized_default_construct performs default-construction of objects over a range of memory.<br><br>
+
+It is notable that <code>destroy</code> first appeared in SGI's Standard Template Library.
+</p>
+
+<H2>IV. Proposed Text</H2>
+
+<p>Make the following changes in [specialized.algorithm]: <br>
+<p>Modify: In the algorithm<u>s</u> uninitialized_copy <u>and uninitialized_move</u>, the template parameter InputIterator is required...</p>
+<p>Modify: In the following algorithms <u> other than destruct</u>, if an exception is thrown there are no effects.</p>
+Add:
+<blockquote><pre><code>
+	template&lt;class ForwardIterator&gt;
+	void destruct(ForwardIterator begin, ForwardIterator end);
+	
+	<i>Effects:</i>
+		typedef typename iterator_traits&lt;ForwardIterator&gt;::value_type __t;
+		while (begin != end)
+		{
+			begin-&gt;~__t();
+			++begin;
+		}
+
+		
+	template &lt;class InputIterator, class ForwardIterator&gt;
+	ForwardIterator uninitialized_move(InputIterator first, InputIterator last, ForwardIterator result);
+	
+	<i>Effects:</i>
+		for (; first != last; ++result, ++first)
+			::new (static_cast&lt;void*&gt;(addressof(*result)))
+				typename iterator_traits&lt;ForwardIterator&gt;::value_type(std::move(*first));
+		return result;
+	
+	template&lt;class ForwardIterator&gt;
+	FwdIt uninitialized_value_construct(ForwardIterator first, ForwardIterator last);
+	
+	<i>Effects:</i>
+		for (; first != last; ++first)
+			::new (static_cast&lt;void*&gt;(addressof(*first)))
+				typename iterator_traits&lt;ForwardIterator&gt;::value_type();
+		return first;
+	
+	template&lt;class ForwardIterator&gt;
+	FwdIt uninitialized_default_construct(ForwardIterator first, ForwardIterator last);
+	
+	<i>Effects:</i>
+		for (; first != last; ++first)
+			::new (static_cast&lt;void*&gt;(addressof(*first)))
+				typename iterator_traits&lt;ForwardIterator&gt;::value_type;
+		return first;
+	
+</code></pre></blockquote>
+
+</BODY></HTML>
