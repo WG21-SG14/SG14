@@ -28,7 +28,7 @@
 	}
 
 
-namespace sg14
+namespace sg14_test
 {
 
 	void plf_test_suite()
