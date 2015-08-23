@@ -204,6 +204,7 @@ without falling back on higher-capacity types.
     safe_multiply(FIXED_POINT_1, FIXED_POINT_2)
     safe_add(FIXED_POINT_1, FIXED_POINT_2)
     safe_square(FIXED_POINT_1)
+    safe_sqrt(FIXED_POINT_1)
 
 These functions return specializations which are guaranteed to 
 accommodate the result of the operations. However, the capacity of
