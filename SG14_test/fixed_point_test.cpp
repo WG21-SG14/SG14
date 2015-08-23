@@ -109,6 +109,28 @@ namespace sg14_test
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+// language assumptions
+
+// default rounding style is truncation
+static_assert(static_cast<int>(3.9) == 3, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(3.0) == 3, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(2.9) == 2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(2.0) == 2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(1.9) == 1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(1.0) == 1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(0.9) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(0.0) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-0.0) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-0.9) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-1.0) == -1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-1.9) == -1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-2.0) == -2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-2.9) == -2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-3.0) == -3, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-3.9) == -3, "incorrect assumption about default rounding");
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // sg14::_impl
 
 ////////////////////////////////////////////////////////////////////////////////
