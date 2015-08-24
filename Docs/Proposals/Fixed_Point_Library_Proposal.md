@@ -217,6 +217,38 @@ returns `fixed_point<uint8_t, 0>(254)`. This result is far closer to
 the correct value than the result returned by `operator *` - hence 
 the 'safe_' prefix.
 
+### Overflow and Underflow
+
+The major disadvantage of `safe_` functions preserving the more 
+significant digits of their input values is that less significant
+digits are sacrificed. In the extreme case of underflow, all the bits
+are lost and the value becomes zero. 
+
+For example,
+
+    safe_square(fixed_pointuint8_t, 0>(15))
+    
+causes the object to be flushed to zero.
+
+While often not as serious as overflow, underflow can cause knock-on 
+effects, such as when a flushed value is subsequently used as a
+divisor.
+
+There is a strong desire to catch situations where a `fixed_point` 
+value transitions to a flushed state to causes any bits to overflow. 
+However, it is unacceptable that this should necessarily require a 
+run-time check. Additionally it is not net established by which 
+method an error should be flagged.
+
+For this reason, it is left to the user to avoid flush events and for 
+such events to result in undefined behavior. This is not an ideal 
+solution but is necessary to ensure that future extension to the API 
+involving the option of run-time checks has enough freedom to 
+implement a satisfactory solution.
+
+See the 'Future Issues' section below for discussion on possible
+future strategies for catching overflow and underflow events.
+
 ## IV. Technical Specification
 
 ### Header

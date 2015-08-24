@@ -104,6 +104,11 @@ namespace sg14_test
 		// Named Arithmetic Functions
 		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));
 		ASSERT_EQUAL(static_cast<double>(sq), 254);
+
+		// Overflow and Underflow
+		auto underflow = safe_square(fixed_point<uint8_t, 0>(15));
+		static_assert(is_same<decltype(underflow), fixed_point<uint8_t, 8>>::value, "unexpected type returned by safe_square");
+		ASSERT_TRUE(! underflow);
 	}
 }
 
