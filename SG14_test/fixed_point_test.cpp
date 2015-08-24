@@ -433,8 +433,8 @@ static_assert(static_cast<double>(safe_multiply(fixed4_3_t(15.875), make_fixed<1
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add_result_t
 
-static_assert(safe_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::safe_add_result_t test failed");
-static_assert(safe_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::safe_add_result_t test failed");
+static_assert(safe_add_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 5, "sg14::safe_add_result_t test failed");
+static_assert(safe_add_result_t<fixed_point<std::int32_t, -25>, 4>::integer_digits == 8, "sg14::safe_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add

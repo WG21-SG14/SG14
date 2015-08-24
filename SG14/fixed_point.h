@@ -876,34 +876,37 @@ namespace sg14
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+	template <typename FIXED_POINT, unsigned N = 2>
 	using safe_add_result_t = make_fixed_from_repr<
-		REPR_TYPE,
-		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
+		typename FIXED_POINT::repr_type,
+		fixed_point<
+			typename FIXED_POINT::repr_type,
+			FIXED_POINT::exponent>::integer_digits + _impl::capacity<N - 1>::value>;
 
 	namespace _impl
 	{
-		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD>
+		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD>
 		constexpr RESULT_TYPE add(HEAD const & addend_head)
 		{
-			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched safe_add parameters");
 			return static_cast<RESULT_TYPE>(addend_head);
 		}
 
-		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD, typename ... TAIL>
+		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD, typename ... TAIL>
 		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
 		{
-			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
-			return add<RESULT_TYPE, REPR_TYPE, EXPONENT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched safe_add parameters");
+			return add<RESULT_TYPE, FIXED_POINT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
 		}
 	}
 
-	template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-	safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+	template <typename FIXED_POINT, typename ... TAIL>
+	safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>
+	constexpr safe_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
 	{
-		using output_type = safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
-		return _impl::add<output_type, REPR_TYPE, EXPONENT>(addend1, addend_tail ...);
+		using output_type = safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
+		//return output_type(addend1);
+		return _impl::add<output_type, FIXED_POINT>(addend1, addend_tail ...);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
