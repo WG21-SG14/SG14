@@ -19,6 +19,16 @@ using namespace sg14;
 
 namespace sg14_test
 {
+	namespace
+	{
+		template <typename FP>
+		constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
+		-> decltype(safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z))))
+		{
+			return safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z)));
+		}
+	}
+
 	void fixed_point_test()
 	{
 		using namespace std;
@@ -109,6 +119,12 @@ namespace sg14_test
 		auto underflow = safe_square(fixed_point<uint8_t, 0>(15));
 		static_assert(is_same<decltype(underflow), fixed_point<uint8_t, 8>>::value, "unexpected type returned by safe_square");
 		ASSERT_TRUE(! underflow);
+
+		// Examples
+		static_assert(static_cast<double>(magnitude(
+			fixed_point<uint16_t, -12>(1),
+			fixed_point<uint16_t, -12>(4),
+			fixed_point<uint16_t, -12>(9))) == 9.890625, "unexpected result from magnitude");
 	}
 }
 

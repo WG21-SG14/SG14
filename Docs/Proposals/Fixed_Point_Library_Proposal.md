@@ -249,6 +249,26 @@ implement a satisfactory solution.
 See the 'Future Issues' section below for discussion on possible
 future strategies for catching overflow and underflow events.
 
+### Example
+
+The following example calculates the magnitude of a 3-dimensional vector.
+
+    template <typename FP>
+    constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
+    -> decltype(safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z))))
+    {
+        return safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z)));
+    }
+    
+Calling the above function as follows
+
+    static_cast<double>(magnitude(
+        fixed_point<uint16_t, -12>(1),
+        fixed_point<uint16_t, -12>(4),
+        fixed_point<uint16_t, -12>(9)));
+
+returns the value, 9.890625.
+
 ## IV. Technical Specification
 
 ### Header
