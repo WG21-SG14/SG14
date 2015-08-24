@@ -18,29 +18,48 @@ struct foo
 		return result;
 	}
 };
-template<class T, class U>
-void* operator new(size_t s, std::raw_storage_iterator<T, U> it)
-{
-	return ::operator new(s, it.base());
-}
+
 
 void sg14_test::unstable_remove_test()
 {
 #if 0
-	std::vector<foo> list1;
-	std::generate_n(std::back_inserter(list1), 3000000, foo::make);
-	auto list2 = list1;
+	auto makelist = []
+	{
+		std::vector<foo> list;
+		std::generate_n(std::back_inserter(list), 3000000, foo::make);
+		return list;
+	};
 
 	auto cmp = [](foo& f) {return f.info[0] & 1; };
-	auto t0 = clock();
-	stdext::partition(list2.begin(), list2.end(), cmp);
-	auto t1 = clock();
-	stdext::unstable_remove_if(list1.begin(), list1.end(), cmp);
 
-	auto t2 = clock();
+	auto partitionfn = [&](std::vector<foo>& f)
+	{
+		stdext::partition(f.begin(), f.end(), cmp);
+	};
+	auto unstablefn = [&](std::vector<foo>& f)
+	{
+		stdext::unstable_remove_if(f.begin(), f.end(), cmp);
+	};
+	auto removefn = [&](std::vector<foo>& f)
+	{
+		stdext::remove_if(f.begin(), f.end(), cmp);
+	};
+	auto time = [&](auto&& f)
+	{
+		auto list = makelist();
+		auto t0 = clock();
+		f(list);
+		auto t1 = clock();
+		return t1 - t0;
+	};
 
-	std::cout << "partition: " << t1 - t0 << "\n";
-	std::cout << "unstable: " << t2 - t1 << "\n";
+	auto partition = time(partitionfn);
+	auto unstable_remove_if = time(unstablefn);
+	auto remove_if = time(removefn);
+
+	std::cout << "partition: " << partition << "\n";
+	std::cout << "unstable: " << unstable_remove_if << "\n";
+	std::cout << "remove_if: " << remove_if << "\n";
 	std::cin.get();
 #endif
 }

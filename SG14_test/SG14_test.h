@@ -5,6 +5,7 @@ namespace sg14_test
 {
 	void rolling_queue_test();
 	void unstable_remove_test();
+	void uninitialized();
 	void fixed_point_test();
 	void plf_test_suite();
 }
