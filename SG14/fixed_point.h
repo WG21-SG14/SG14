@@ -489,7 +489,7 @@ namespace sg14
 		// returns non-zeroness represented as boolean
 		explicit constexpr operator bool() const noexcept
 		{
-			return _repr;
+			return _repr != 0;
 		}
 
 		// returns internal representation of value
