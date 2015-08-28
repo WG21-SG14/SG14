@@ -5,7 +5,7 @@ namespace stdext
 	template<class ForwardIterator>
 	void destruct(ForwardIterator begin, ForwardIterator end)
 	{
-		typedef typename iterator_traits<ForwardIterator>::value_type _T;
+		typedef typename std::iterator_traits<ForwardIterator>::value_type _T;
 		while (begin != end)
 		{
 			begin->~_T();
@@ -22,7 +22,7 @@ namespace stdext
 		{
 			while (SrcBegin != SrcEnd)
 			{
-				::new (static_cast<void*>(std::addressof(*current))) typename iterator_traits<FwdIt>::value_type(std::move(*SrcBegin));
+				::new (static_cast<void*>(std::addressof(*current))) typename std::iterator_traits<FwdIt>::value_type(std::move(*SrcBegin));
 				++current;
 				++SrcBegin;
 			}
@@ -44,7 +44,7 @@ namespace stdext
 		{
 			while (current != last)
 			{
-				::new (static_cast<void*>(std::addressof(*current))) typename iterator_traits<FwdIt>::value_type();
+				::new (static_cast<void*>(std::addressof(*current))) typename std::iterator_traits<FwdIt>::value_type();
 				++current;
 			}
 			return current;
@@ -65,7 +65,7 @@ namespace stdext
 		{
 			while (current != last)
 			{
-				::new (static_cast<void*>(std::addressof(*current))) typename iterator_traits<FwdIt>::value_type;
+				::new (static_cast<void*>(std::addressof(*current))) typename std::iterator_traits<FwdIt>::value_type;
 				++current;
 			}
 			return current;
