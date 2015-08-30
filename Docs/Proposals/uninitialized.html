@@ -11,11 +11,7 @@
 <H2>I. Motivation</H2>
 
 <p>When implementing containers it is often necessary to manage memory directly. This paper seeks to fill gaps in the standard library's memory management utilities.</p>
-
-<H2>II. Impact On the Standard</H2>
-
-<p>This proposal adds new function templates to &lt;memory&gt;. It does not depend on any other proposals. However, algorithmic changes proposed in the "range" proposals should be mirrored if both are accepted.</p>
-
+<p>Algorithmic changes proposed in the "range" proposals should be mirrored if both are accepted.</p>
 
 <H2>III. Summary</H2>
 
@@ -32,11 +28,11 @@ It is notable that <code>destroy</code> first appeared in SGI's Standard Templat
 
 <p>Make the following changes in [specialized.algorithm]: <br>
 <p>Modify: In the algorithm<u>s</u> uninitialized_copy <u>and uninitialized_move</u>, the template parameter InputIterator is required...</p>
-<p>Modify: In the following algorithms <u> other than destruct</u>, if an exception is thrown there are no effects.</p>
+<p>Modify: In the following algorithms <u> other than destroy</u>, if an exception is thrown there are no effects.</p>
 Add:
 <blockquote><pre><code>
 	template&lt;class ForwardIterator&gt;
-	void destruct(ForwardIterator begin, ForwardIterator end);
+	void destroy(ForwardIterator begin, ForwardIterator end);
 	
 	<i>Effects:</i>
 		typedef typename iterator_traits&lt;ForwardIterator&gt;::value_type __t;
