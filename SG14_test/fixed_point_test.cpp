@@ -338,11 +338,29 @@ static_assert(static_cast<float>(closed_unit<std::uint16_t>(1.640625)) == 1.6406
 static_assert(static_cast<std::uint64_t>(closed_unit<std::uint16_t>(1u)) == 1, "sg14::closed_unit test failed");
 static_assert(static_cast<float>(closed_unit<std::uint16_t>(2)) != 2, "sg14::closed_unit test failed");	// out-of-range test
 
+static_assert(static_cast<double>(closed_unit<std::int8_t>(.5)) == .5, "sg14::closed_unit test failed");
+static_assert(static_cast<float>(closed_unit<std::int16_t>(.125f)) == .125f, "sg14::closed_unit test failed");
+static_assert(static_cast<float>(closed_unit<std::int16_t>(.640625l)) == .640625, "sg14::closed_unit test failed");
+static_assert(static_cast<float>(closed_unit<std::int16_t>(1)) == 1, "sg14::closed_unit test failed");
+static_assert(static_cast<double>(closed_unit<std::int8_t>(-.5)) == -.5, "sg14::closed_unit test failed");
+static_assert(static_cast<float>(closed_unit<std::int16_t>(-.125f)) == -.125f, "sg14::closed_unit test failed");
+static_assert(static_cast<float>(closed_unit<std::int16_t>(-.640625l)) == -.640625, "sg14::closed_unit test failed");
+static_assert(static_cast<float>(closed_unit<std::int16_t>(-1)) == -1, "sg14::closed_unit test failed");
+
 // open_unit
 static_assert(static_cast<double>(open_unit<std::uint8_t>(.5)) == .5, "sg14::closed_unit test failed");
 static_assert(static_cast<float>(open_unit<std::uint16_t>(.125f)) == .125f, "sg14::closed_unit test failed");
 static_assert(static_cast<float>(open_unit<std::uint16_t>(.640625l)) == .640625, "sg14::closed_unit test failed");
 static_assert(static_cast<float>(open_unit<std::uint16_t>(1)) == 0, "sg14::closed_unit test failed");	// dropped bit
+
+static_assert(static_cast<double>(open_unit<std::int8_t>(.5)) == .5, "sg14::open_unit test failed");
+static_assert(static_cast<float>(open_unit<std::int16_t>(.125f)) == .125f, "sg14::open_unit test failed");
+static_assert(static_cast<float>(open_unit<std::int16_t>(.640625l)) == .640625, "sg14::open_unit test failed");
+static_assert(static_cast<float>(open_unit<std::int16_t>(1)) != 1, "sg14::open_unit test failed");	// dropped bit
+static_assert(static_cast<double>(open_unit<std::int8_t>(-.5)) == -.5, "sg14::open_unit test failed");
+static_assert(static_cast<float>(open_unit<std::int16_t>(-.125f)) == -.125f, "sg14::open_unit test failed");
+static_assert(static_cast<float>(open_unit<std::int16_t>(-.640625l)) == -.640625, "sg14::open_unit test failed");
+static_assert(static_cast<float>(open_unit<std::int16_t>(-1)) == -1, "sg14::open_unit test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // boolean

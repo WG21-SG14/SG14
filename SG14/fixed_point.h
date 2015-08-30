@@ -674,18 +674,17 @@ namespace sg14
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point
 
-	// fixed-point type capable of storing values in the range [0, 1);
-	// a bit more precise than closed_unit
+	// produces a left-closed and right-open unit intervel type, capable of storing
+	// signed values in the range [-1, 1) and
+	// unsigned values in the range [0, 1)
 	template <typename REPR_TYPE>
-	using open_unit = fixed_point<REPR_TYPE, -_impl::num_bits<REPR_TYPE>()>;
+	using open_unit = make_fixed_from_repr<REPR_TYPE, 0>;
 
-	// fixed-point type capable of storing values in the range [0, 1];
-	// actually storing values in the range [0, 2);
-	// a bit less precise than closed_unit
+	// produces a closed unit intervel type, capable of storing
+	// signed values in the range [-1, 1] and
+	// unsigned values in the range [0, 1]
 	template <typename REPR_TYPE>
-	using closed_unit = fixed_point<
-		typename std::enable_if<_impl::is_unsigned<REPR_TYPE>::value, REPR_TYPE>::type,
-		1 - _impl::num_bits<REPR_TYPE>()>;
+	using closed_unit = make_fixed_from_repr<REPR_TYPE, 1>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_promotion_t / promote
