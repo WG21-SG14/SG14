@@ -905,7 +905,6 @@ namespace sg14
 	constexpr safe_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
 	{
 		using output_type = safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
-		//return output_type(addend1);
 		return _impl::add<output_type, FIXED_POINT>(addend1, addend_tail ...);
 	}
 
