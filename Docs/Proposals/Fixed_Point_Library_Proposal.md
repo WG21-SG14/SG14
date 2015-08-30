@@ -506,7 +506,7 @@ rounding and error cases can be found in N3352 [\[4\]](http://www.open-std.org/j
 
 ## VI. References
 
-1. N1169, Extensions to support embedded processors, [http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf]
-2. C++ bounded::integer library, [http://doublewise.net/c++/bounded/]
-3. fp, C++14 Fixed Point Library, [https://github.com/mizvekov/fp]
-4. N3352, C++ Binary Fixed-Point Arithmetic, [http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html]
+1. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
+2. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
+3. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
+4. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
