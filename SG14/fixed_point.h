@@ -871,12 +871,12 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_add_result_t / safe_add
+	// sg14::shift_add_result_t / shift_add
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT, unsigned N = 2>
-	using safe_add_result_t = make_fixed_from_repr<
+	using shift_add_result_t = make_fixed_from_repr<
 		typename FIXED_POINT::repr_type,
 		fixed_point<
 			typename FIXED_POINT::repr_type,
@@ -887,61 +887,61 @@ namespace sg14
 		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD>
 		constexpr RESULT_TYPE add(HEAD const & addend_head)
 		{
-			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched safe_add parameters");
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched shift_add parameters");
 			return static_cast<RESULT_TYPE>(addend_head);
 		}
 
 		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD, typename ... TAIL>
 		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
 		{
-			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched safe_add parameters");
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched shift_add parameters");
 			return add<RESULT_TYPE, FIXED_POINT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
 		}
 	}
 
 	template <typename FIXED_POINT, typename ... TAIL>
-	safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>
-	constexpr safe_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
+	shift_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>
+	constexpr shift_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
 	{
-		using output_type = safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
+		using output_type = shift_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
 		return _impl::add<output_type, FIXED_POINT>(addend1, addend_tail ...);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_subtract_result_t / safe_subtract
+	// sg14::shift_subtract_result_t / shift_subtract
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an subtraction between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using safe_subtract_result_t = make_fixed_from_repr<
+	using shift_subtract_result_t = make_fixed_from_repr<
 		_impl::get_int_t<true, _impl::max(sizeof(typename LHS::repr_type), sizeof(typename RHS::repr_type))>,
 		_impl::max(LHS::integer_digits, RHS::integer_digits) + 1>;
 
 	template <typename LHS, typename RHS>
-	safe_subtract_result_t<LHS, RHS>
-	constexpr safe_subtract(LHS const & minuend, RHS const & subtrahend)
+	shift_subtract_result_t<LHS, RHS>
+	constexpr shift_subtract(LHS const & minuend, RHS const & subtrahend)
 	{
-		using output_type = safe_subtract_result_t<LHS, RHS>;
+		using output_type = shift_subtract_result_t<LHS, RHS>;
 		return static_cast<output_type>(minuend) - static_cast<output_type>(subtrahend);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_multiply_result_t / safe_multiply
+	// sg14::shift_multiply_result_t / shift_multiply
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using safe_multiply_result_t = make_fixed_from_repr<
+	using shift_multiply_result_t = make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
 		LHS::integer_digits + RHS::integer_digits>;
 
-	// as safe_multiply_result_t but converts parameter, factor,
+	// as shift_multiply_result_t but converts parameter, factor,
 	// ready for safe binary multiply
 	template <typename LHS, typename RHS>
-	safe_multiply_result_t<LHS, RHS>
-	constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept
+	shift_multiply_result_t<LHS, RHS>
+	constexpr shift_multiply(const LHS & factor1, const RHS & factor2) noexcept
 	{
-		using output_type = safe_multiply_result_t<LHS, RHS>;
+		using output_type = shift_multiply_result_t<LHS, RHS>;
 		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
 		using next_repr_type = _impl::next_size_t<common_repr_type>;
 		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
@@ -949,46 +949,46 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_square_result_t / safe_square
+	// sg14::shift_square_result_t / shift_square
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	// whose sign bit is set to the same value
 	template <typename FIXED_POINT>
-	using safe_square_result_t = make_fixed_from_repr<
+	using shift_square_result_t = make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		FIXED_POINT::integer_digits * 2>;
 
-	// as safe_square_result_t but converts parameter, factor,
+	// as shift_square_result_t but converts parameter, factor,
 	// ready for safe binary multiply-by-self
 	template <typename FIXED_POINT>
-	safe_square_result_t<FIXED_POINT>
-	constexpr safe_square(const FIXED_POINT & root) noexcept
+	shift_square_result_t<FIXED_POINT>
+	constexpr shift_square(const FIXED_POINT & root) noexcept
 	{
-		using output_type = safe_square_result_t<FIXED_POINT>;
+		using output_type = shift_square_result_t<FIXED_POINT>;
 		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
 		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
 		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::safe_sqrt_result_t / safe_sqrt
+	// sg14::shift_sqrt_result_t / shift_sqrt
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// the positive result of a square root operation on an object of type,
 	// fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT>
-	using safe_sqrt_result_t = make_fixed_from_repr<
+	using shift_sqrt_result_t = make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		(FIXED_POINT::integer_digits + 1) / 2>;
 
-	// as safe_sqrt_result_t but converts parameter, factor,
+	// as shift_sqrt_result_t but converts parameter, factor,
 	// ready for safe sqrt operation
 	template <typename FIXED_POINT>
-	safe_sqrt_result_t<FIXED_POINT>
-	constexpr safe_sqrt(const FIXED_POINT & square) noexcept
+	shift_sqrt_result_t<FIXED_POINT>
+	constexpr shift_sqrt(const FIXED_POINT & square) noexcept
 	{
-		using output_type = safe_sqrt_result_t<FIXED_POINT>;
+		using output_type = shift_sqrt_result_t<FIXED_POINT>;
 		return output_type(sqrt(square));
 	}
 

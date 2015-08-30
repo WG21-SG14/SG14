@@ -23,9 +23,9 @@ namespace sg14_test
 	{
 		template <typename FP>
 		constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
-		-> decltype(safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z))))
+		-> decltype(shift_sqrt(shift_add(shift_square(x), shift_square(y), shift_square(z))))
 		{
-			return safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z)));
+			return shift_sqrt(shift_add(shift_square(x), shift_square(y), shift_square(z)));
 		}
 	}
 
@@ -102,8 +102,8 @@ namespace sg14_test
 
 		// Arithmetic Operators
 
-		auto arithmetic_op = make_fixed<4, 3>(15) * make_fixed<4, 3>(15);
-		static_assert(is_same<decltype(arithmetic_op), make_fixed<4, 3>>::value, "Incorrect information in proposal section, Arithmetic Operators");
+		auto arithmetic_op = fixed_point<uint8_t, -4>(15) * fixed_point<uint8_t, -4>(15);
+		static_assert(is_same<decltype(arithmetic_op), fixed_point<uint8_t, -4>>::value, "Incorrect information in proposal section, Arithmetic Operators");
 		ASSERT_EQUAL(static_cast<int>(arithmetic_op), 1);
 
 		// Type Promotion and Demotion Functions
@@ -112,12 +112,12 @@ namespace sg14_test
 		ASSERT_EQUAL(static_cast<float>(type_promotion), 15.5);
 
 		// Named Arithmetic Functions
-		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));
+		auto sq = shift_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));
 		ASSERT_EQUAL(static_cast<double>(sq), 254);
 
 		// Overflow and Underflow
-		auto underflow = safe_square(fixed_point<uint8_t, 0>(15));
-		static_assert(is_same<decltype(underflow), fixed_point<uint8_t, 8>>::value, "unexpected type returned by safe_square");
+		auto underflow = shift_square(fixed_point<uint8_t, 0>(15));
+		static_assert(is_same<decltype(underflow), fixed_point<uint8_t, 8>>::value, "unexpected type returned by shift_square");
 		ASSERT_TRUE(! underflow);
 
 		// Examples
@@ -447,75 +447,75 @@ static_assert(!(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.6)), "sg14::
 static_assert(fixed_point<uint8_t, -1>(.5) == fixed_point<uint8_t, 0>(0), "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_multiply_result_t
+// sg14::shift_multiply_result_t
 
-static_assert(safe_multiply_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::safe_multiply_result_t test failed");
-static_assert(safe_multiply_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::safe_multiply_result_t test failed");
-static_assert(safe_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::safe_multiply_result_t test failed");
-
-////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_multiply
-
-static_assert(static_cast<int>(safe_multiply(fixed7_8_t(127), fixed7_8_t(127))) == 16129, "sg14::safe_multiply test failed");
-static_assert(static_cast<int>(safe_multiply(ufixed4_4_t(15.9375), ufixed4_4_t(15.9375))) == 254, "sg14::safe_multiply test failed");
-static_assert(static_cast<float>(safe_multiply(ufixed4_4_t(0.0625), ufixed4_4_t(0.0625))) == 0, "sg14::safe_multiply test failed");
-static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(1), ufixed8_0_t(1))) == 0, "sg14::safe_multiply test failed");
-static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(174), ufixed8_0_t(25))) == 4096, "sg14::safe_multiply test failed");
-static_assert(static_cast<int>(safe_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::safe_multiply test failed");
-static_assert(static_cast<double>(safe_multiply(fixed4_3_t(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::safe_multiply test failed");
+static_assert(shift_multiply_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::shift_multiply_result_t test failed");
+static_assert(shift_multiply_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::shift_multiply_result_t test failed");
+static_assert(shift_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::shift_multiply_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_add_result_t
+// sg14::shift_multiply
 
-static_assert(safe_add_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 5, "sg14::safe_add_result_t test failed");
-static_assert(safe_add_result_t<fixed_point<std::int32_t, -25>, 4>::integer_digits == 8, "sg14::safe_add_result_t test failed");
-
-////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_add
-
-static_assert(static_cast<int>(safe_add(fixed_point<std::uint8_t, -1>(127), fixed_point<std::uint8_t, -1>(127))) == 254, "sg14::safe_add test failed");
-static_assert(static_cast<float>(safe_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5))) == 43.25, "sg14::safe_add test failed");
-
-////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_subtract_result_t
-
-static_assert(std::is_same<safe_subtract_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::int8_t, -2>>::value, "sg14::safe_subtract_result_t test failed");
-static_assert(std::is_same<safe_subtract_result_t<fixed_point<std::int8_t, -3>, fixed_point<std::uint16_t, -8>>, fixed_point<std::int16_t, -6>>::value, "sg14::safe_subtract_result_t test failed");
+static_assert(static_cast<int>(shift_multiply(fixed7_8_t(127), fixed7_8_t(127))) == 16129, "sg14::shift_multiply test failed");
+static_assert(static_cast<int>(shift_multiply(ufixed4_4_t(15.9375), ufixed4_4_t(15.9375))) == 254, "sg14::shift_multiply test failed");
+static_assert(static_cast<float>(shift_multiply(ufixed4_4_t(0.0625), ufixed4_4_t(0.0625))) == 0, "sg14::shift_multiply test failed");
+static_assert(static_cast<float>(shift_multiply(ufixed8_0_t(1), ufixed8_0_t(1))) == 0, "sg14::shift_multiply test failed");
+static_assert(static_cast<float>(shift_multiply(ufixed8_0_t(174), ufixed8_0_t(25))) == 4096, "sg14::shift_multiply test failed");
+static_assert(static_cast<int>(shift_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::shift_multiply test failed");
+static_assert(static_cast<double>(shift_multiply(fixed4_3_t(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::shift_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_subtract
+// sg14::shift_add_result_t
 
-static_assert(static_cast<int>(safe_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(127))) == 0, "sg14::safe_subtract test failed");
-static_assert(static_cast<float>(safe_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(0))) == 126, "sg14::safe_subtract test failed");
-static_assert(static_cast<float>(safe_subtract(fixed_point<std::uint8_t, -1>(0), fixed_point<std::uint8_t, -1>(127.5))) == -126, "sg14::safe_subtract test failed");
-static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(127))) == 0, "sg14::safe_subtract test failed");
-static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(-128))) == 254, "sg14::safe_subtract test failed");
-static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(-128))) == 0, "sg14::safe_subtract test failed");
-static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(127))) == -254, "sg14::safe_subtract test failed");
+static_assert(shift_add_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 5, "sg14::shift_add_result_t test failed");
+static_assert(shift_add_result_t<fixed_point<std::int32_t, -25>, 4>::integer_digits == 8, "sg14::shift_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_square_result_t
+// sg14::shift_add
 
-static_assert(std::is_same<safe_square_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, 0>>::value, "sg14::safe_square_result_t test failed");
-static_assert(std::is_same<safe_square_result_t<fixed_point<std::int32_t, -25>>, fixed_point<std::uint32_t, -20>>::value, "sg14::safe_square_result_t test failed");
-
-////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_square
-
-static_assert(static_cast<int>(safe_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::safe_square test failed");
-static_assert(static_cast<float>(safe_square(ufixed4_4_t(15.5))) == 240, "sg14::safe_square test failed");
+static_assert(static_cast<int>(shift_add(fixed_point<std::uint8_t, -1>(127), fixed_point<std::uint8_t, -1>(127))) == 254, "sg14::shift_add test failed");
+static_assert(static_cast<float>(shift_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5))) == 43.25, "sg14::shift_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_sqrt_result_t
+// sg14::shift_subtract_result_t
 
-static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, -6>>::value, "sg14::safe_sqrt_result_t test failed");
-static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::int32_t, -16>>, fixed_point<std::uint32_t, -24>>::value, "sg14::safe_sqrt_result_t test failed");
+static_assert(std::is_same<shift_subtract_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::int8_t, -2>>::value, "sg14::shift_subtract_result_t test failed");
+static_assert(std::is_same<shift_subtract_result_t<fixed_point<std::int8_t, -3>, fixed_point<std::uint16_t, -8>>, fixed_point<std::int16_t, -6>>::value, "sg14::shift_subtract_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::safe_sqrt
+// sg14::shift_subtract
 
-static_assert(static_cast<int>(safe_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::safe_sqrt test failed");
-static_assert(static_cast<float>(safe_sqrt(ufixed8_0_t(240))) == 15, "sg14::safe_sqrt test failed");
+static_assert(static_cast<int>(shift_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(127))) == 0, "sg14::shift_subtract test failed");
+static_assert(static_cast<float>(shift_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(0))) == 126, "sg14::shift_subtract test failed");
+static_assert(static_cast<float>(shift_subtract(fixed_point<std::uint8_t, -1>(0), fixed_point<std::uint8_t, -1>(127.5))) == -126, "sg14::shift_subtract test failed");
+static_assert(static_cast<float>(shift_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(127))) == 0, "sg14::shift_subtract test failed");
+static_assert(static_cast<float>(shift_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(-128))) == 254, "sg14::shift_subtract test failed");
+static_assert(static_cast<float>(shift_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(-128))) == 0, "sg14::shift_subtract test failed");
+static_assert(static_cast<float>(shift_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(127))) == -254, "sg14::shift_subtract test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::shift_square_result_t
+
+static_assert(std::is_same<shift_square_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, 0>>::value, "sg14::shift_square_result_t test failed");
+static_assert(std::is_same<shift_square_result_t<fixed_point<std::int32_t, -25>>, fixed_point<std::uint32_t, -20>>::value, "sg14::shift_square_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::shift_square
+
+static_assert(static_cast<int>(shift_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::shift_square test failed");
+static_assert(static_cast<float>(shift_square(ufixed4_4_t(15.5))) == 240, "sg14::shift_square test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::shift_sqrt_result_t
+
+static_assert(std::is_same<shift_sqrt_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, -6>>::value, "sg14::shift_sqrt_result_t test failed");
+static_assert(std::is_same<shift_sqrt_result_t<fixed_point<std::int32_t, -16>>, fixed_point<std::uint32_t, -24>>::value, "sg14::shift_sqrt_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::shift_sqrt
+
+static_assert(static_cast<int>(shift_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::shift_sqrt test failed");
+static_assert(static_cast<float>(shift_sqrt(ufixed8_0_t(240))) == 15, "sg14::shift_sqrt test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
