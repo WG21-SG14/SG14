@@ -96,9 +96,10 @@ namespace sg14_test
 		static_assert(is_same<decltype(conversion_lhs), decltype(conversion_rhs)>::value, "Incorrect information in proposal section, Conversion");
 		ASSERT_EQUAL(conversion_lhs, conversion_rhs);
 
-		// Names Constructors
+		// Named Constructors
 
 		static_assert(is_same<make_fixed<8, 11, true>, fixed_point<int32_t, -23>>::value, "Incorrect information in proposal section, Named Constructors");
+		static_assert(is_same<make_fixed_from_repr<uint16_t, 4>, fixed_point<uint16_t, -12>>::value, "Incorrect information in proposal section, Named Constructors");
 
 		// Arithmetic Operators
 
@@ -115,6 +116,13 @@ namespace sg14_test
 		auto sq = shift_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));
 		ASSERT_EQUAL(static_cast<double>(sq), 254);
 
+		auto most_negative = fixed_point<int8_t, 0>(-128);
+		ASSERT_EQUAL(static_cast<int>(most_negative), -128);
+		ASSERT_EQUAL(static_cast<int>(shift_square(promote(most_negative))), 16384);
+		auto square = shift_square(most_negative);
+		static_assert(is_same<decltype(square), fixed_point<uint8_t, 6>>::value, "wrong type mentioned in proposal");
+		ASSERT_EQUAL(static_cast<int>(square), 0);
+
 		// Overflow and Underflow
 		auto underflow = shift_square(fixed_point<uint8_t, 0>(15));
 		static_assert(is_same<decltype(underflow), fixed_point<uint8_t, 8>>::value, "unexpected type returned by shift_square");
@@ -125,6 +133,9 @@ namespace sg14_test
 			fixed_point<uint16_t, -12>(1),
 			fixed_point<uint16_t, -12>(4),
 			fixed_point<uint16_t, -12>(9))) == 9.890625, "unexpected result from magnitude");
+
+		static fixed_point<> zero;
+		ASSERT_EQUAL(zero, fixed_point<>(0));
 	}
 }
 
@@ -463,6 +474,8 @@ static_assert(static_cast<float>(shift_multiply(ufixed8_0_t(1), ufixed8_0_t(1)))
 static_assert(static_cast<float>(shift_multiply(ufixed8_0_t(174), ufixed8_0_t(25))) == 4096, "sg14::shift_multiply test failed");
 static_assert(static_cast<int>(shift_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::shift_multiply test failed");
 static_assert(static_cast<double>(shift_multiply(fixed4_3_t(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::shift_multiply test failed");
+static_assert(static_cast<int>(shift_multiply(fixed4_3_t(-16), fixed4_3_t(-15.875))) == 254, "sg14::shift_multiply test failed");
+static_assert(static_cast<int>(shift_multiply(fixed4_3_t(-16), fixed4_3_t(-16))) == -256, "sg14::shift_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::shift_add_result_t
