@@ -1,11 +1,34 @@
 #include "fixed_point.h"
 
 #include <cassert>
+#include <iostream>
 
 using namespace sg14;
 
+#define ASSERT_EQUAL(A, B) \
+	if ((A) != (B)) { \
+		cout << "Failed: \"" << #A " == " #B << "\", i.e. " << (A) << " != " << (B) << endl; \
+		assert(false); \
+	}
+
+#define ASSERT_TRUE(A) \
+	if (!(A)) { \
+		cout << "Failed: (" << #A << ") where (" #A "==" << (A) << ')' << endl; \
+		assert(false); \
+	}
+
 namespace sg14_test
 {
+	namespace
+	{
+		template <typename FP>
+		constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
+		-> decltype(safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z))))
+		{
+			return safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z)));
+		}
+	}
+
 	void fixed_point_test()
 	{
 		using namespace std;
@@ -16,19 +39,39 @@ namespace sg14_test
 		// from fixed_point
 		auto rhs = fixed_point<>(123.456);
 		auto lhs = rhs;
-		assert(lhs == fixed_point<>(123.456));
+		ASSERT_EQUAL(lhs, fixed_point<>(123.456));
 
 		// from floating-point type
 		lhs = 234.567;
-		assert(static_cast<double>(lhs) == 234.56698608398438);
+		ASSERT_EQUAL(static_cast<double>(lhs), 234.56698608398438);
 
 		// from integer
 		lhs = 543;
-		assert(static_cast<int>(lhs) == 543);
+		ASSERT_EQUAL(static_cast<int>(lhs), 543);
 
 		// from alternative specialization
 		lhs = fixed_point<uint8_t>(87.65);
-		assert(static_cast<fixed_point<uint8_t>>(lhs) == fixed_point<uint8_t>(87.65));
+		ASSERT_EQUAL(static_cast<fixed_point<uint8_t>>(lhs), fixed_point<uint8_t>(87.65));
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sin
+
+		ASSERT_EQUAL(static_cast<float>(sin(fixed_point<std::uint8_t, -6>(0))), 0);
+		ASSERT_EQUAL(static_cast<float>(sin(fixed_point<std::int16_t, -13>(3.1415926))), 0);
+		ASSERT_EQUAL(static_cast<double>(sin(fixed_point<std::uint16_t, -14>(3.1415926 / 2))), 1);
+		ASSERT_EQUAL(static_cast<float>(sin(fixed_point<std::int32_t, -24>(3.1415926 * 7. / 2.))), -1);
+		ASSERT_EQUAL(static_cast<float>(sin(fixed_point<std::int32_t, -28>(3.1415926 / 4))), .707106769f);
+		ASSERT_EQUAL(static_cast<double>(sin(fixed_point<std::int16_t, -10>(-3.1415926 / 3))), -.865234375);
+
+		////////////////////////////////////////////////////////////////////////////////
+		// cos
+
+		ASSERT_EQUAL(static_cast<float>(cos(fixed_point<std::uint8_t, -6>(0))), 1);
+		ASSERT_EQUAL(static_cast<float>(cos(fixed_point<std::int16_t, -13>(3.1415926))), -1);
+		ASSERT_EQUAL(static_cast<double>(cos(fixed_point<std::uint16_t, -14>(3.1415926 / 2))), 0);
+		ASSERT_EQUAL(static_cast<float>(cos(fixed_point<std::int32_t, -20>(3.1415926 * 7. / 2.))), 0);
+		ASSERT_EQUAL(static_cast<float>(cos(fixed_point<std::int32_t, -28>(3.1415926 / 4))), .707106829f);
+		ASSERT_EQUAL(static_cast<double>(cos(fixed_point<std::int16_t, -10>(-3.1415926 / 3))), .5);
 
 		////////////////////////////////////////////////////////////////////////////////
 		// Tests of Examples in Proposal 
@@ -51,7 +94,7 @@ namespace sg14_test
 		auto conversion_lhs = fixed_point<uint8_t, -4>(.006);
 		auto conversion_rhs = fixed_point<uint8_t, -4>(0);
 		static_assert(is_same<decltype(conversion_lhs), decltype(conversion_rhs)>::value, "Incorrect information in proposal section, Conversion");
-		assert(conversion_lhs == conversion_rhs);
+		ASSERT_EQUAL(conversion_lhs, conversion_rhs);
 
 		// Names Constructors
 
@@ -61,18 +104,51 @@ namespace sg14_test
 
 		auto arithmetic_op = make_fixed<4, 3>(15) * make_fixed<4, 3>(15);
 		static_assert(is_same<decltype(arithmetic_op), make_fixed<4, 3>>::value, "Incorrect information in proposal section, Arithmetic Operators");
-		assert(static_cast<int>(arithmetic_op) == 1);
+		ASSERT_EQUAL(static_cast<int>(arithmetic_op), 1);
 
 		// Type Promotion and Demotion Functions
 		auto type_promotion = promote(fixed_point<int8_t, -2>(15.5));
 		static_assert(is_same<decltype(type_promotion), fixed_point<int16_t, -4>>::value, "Incorrect information in proposal section, Type Promotion and Demotion Functions");
-		assert(static_cast<float>(type_promotion) == 15.5);
+		ASSERT_EQUAL(static_cast<float>(type_promotion), 15.5);
 
 		// Named Arithmetic Functions
-		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));  // TODO: safe_square
-		assert(static_cast<double>(sq) == 254);
+		auto sq = safe_multiply(fixed_point<uint8_t, -4>(15.9375), fixed_point<uint8_t, -4>(15.9375));
+		ASSERT_EQUAL(static_cast<double>(sq), 254);
+
+		// Overflow and Underflow
+		auto underflow = safe_square(fixed_point<uint8_t, 0>(15));
+		static_assert(is_same<decltype(underflow), fixed_point<uint8_t, 8>>::value, "unexpected type returned by safe_square");
+		ASSERT_TRUE(! underflow);
+
+		// Examples
+		static_assert(static_cast<double>(magnitude(
+			fixed_point<uint16_t, -12>(1),
+			fixed_point<uint16_t, -12>(4),
+			fixed_point<uint16_t, -12>(9))) == 9.890625, "unexpected result from magnitude");
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// language assumptions
+
+// default rounding style is truncation
+static_assert(static_cast<int>(3.9) == 3, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(3.0) == 3, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(2.9) == 2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(2.0) == 2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(1.9) == 1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(1.0) == 1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(0.9) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(0.0) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-0.0) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-0.9) == 0, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-1.0) == -1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-1.9) == -1, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-2.0) == -2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-2.9) == -2, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-3.0) == -3, "incorrect assumption about default rounding");
+static_assert(static_cast<int>(-3.9) == -3, "incorrect assumption about default rounding");
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -269,6 +345,13 @@ static_assert(static_cast<float>(open_unit<std::uint16_t>(.640625l)) == .640625,
 static_assert(static_cast<float>(open_unit<std::uint16_t>(1)) == 0, "sg14::closed_unit test failed");	// dropped bit
 
 ////////////////////////////////////////////////////////////////////////////////
+// boolean
+
+static_assert(fixed_point<>(-1), "sg14::fixed_point test failed");
+static_assert(fixed_point<>(1024), "sg14::fixed_point test failed");
+static_assert(! fixed_point<>(0), "sg14::fixed_point test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // arithmetic
 
 // addition
@@ -298,14 +381,14 @@ static_assert(static_cast<int>((fixed_point<std::uint64_t, -8>(65535) / fixed_po
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_promotion_t
 
-static_assert(std::is_same<fixed_point_promotion_t<std::int8_t, -4>, fixed_point<std::int16_t, -8>>::value, "sg14::fixed_point_promotion_t test failed");
-static_assert(std::is_same<fixed_point_promotion_t<std::uint32_t, 44>, fixed_point<std::uint64_t, 88>>::value, "sg14::fixed_point_promotion_t test failed");
+static_assert(std::is_same<fixed_point_promotion_t<fixed_point<std::int8_t, -4>>, fixed_point<std::int16_t, -8>>::value, "sg14::fixed_point_promotion_t test failed");
+static_assert(std::is_same<fixed_point_promotion_t<fixed_point<std::uint32_t, 44>>, fixed_point<std::uint64_t, 88>>::value, "sg14::fixed_point_promotion_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::fixed_point_demotion_t
 
-static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<std::int16_t, -9>>::value, "sg14::fixed_point_demotion_t test failed");
-static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<std::uint64_t, 88>>::value, "sg14::fixed_point_demotion_t test failed");
+static_assert(std::is_same<fixed_point<std::int8_t, -4>, fixed_point_demotion_t<fixed_point<std::int16_t, -9>>>::value, "sg14::fixed_point_demotion_t test failed");
+static_assert(std::is_same<fixed_point<std::uint32_t, 44>, fixed_point_demotion_t<fixed_point<std::uint64_t, 88>>>::value, "sg14::fixed_point_demotion_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::make_fixed_from_repr
@@ -346,11 +429,11 @@ static_assert(!(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.6)), "sg14::
 static_assert(fixed_point<uint8_t, -1>(.5) == fixed_point<uint8_t, 0>(0), "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::fixed_point_mul_result_t
+// sg14::safe_multiply_result_t
 
-static_assert(fixed_point_mul_result_t<std::uint8_t, -4>::integer_digits == 8, "sg14::fixed_point_mul_result_t test failed");
-static_assert(fixed_point_mul_result_t<std::int32_t, -25>::integer_digits == 12, "sg14::fixed_point_mul_result_t test failed");
-static_assert(fixed_point_mul_result_t<std::uint8_t, 0>::integer_digits == 16, "sg14::fixed_point_mul_result_t test failed");
+static_assert(safe_multiply_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::safe_multiply_result_t test failed");
+static_assert(safe_multiply_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::safe_multiply_result_t test failed");
+static_assert(safe_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::safe_multiply_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_multiply
@@ -360,18 +443,44 @@ static_assert(static_cast<int>(safe_multiply(ufixed4_4_t(15.9375), ufixed4_4_t(1
 static_assert(static_cast<float>(safe_multiply(ufixed4_4_t(0.0625), ufixed4_4_t(0.0625))) == 0, "sg14::safe_multiply test failed");
 static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(1), ufixed8_0_t(1))) == 0, "sg14::safe_multiply test failed");
 static_assert(static_cast<float>(safe_multiply(ufixed8_0_t(174), ufixed8_0_t(25))) == 4096, "sg14::safe_multiply test failed");
+static_assert(static_cast<int>(safe_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::safe_multiply test failed");
+static_assert(static_cast<double>(safe_multiply(fixed4_3_t(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::safe_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::fixed_point_add_result_t
+// sg14::safe_add_result_t
 
-static_assert(fixed_point_add_result_t<std::uint8_t, -4>::integer_digits == 5, "sg14::fixed_point_add_result_t test failed");
-static_assert(fixed_point_add_result_t<std::int32_t, -25, 4>::integer_digits == 8, "sg14::fixed_point_add_result_t test failed");
+static_assert(safe_add_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 5, "sg14::safe_add_result_t test failed");
+static_assert(safe_add_result_t<fixed_point<std::int32_t, -25>, 4>::integer_digits == 8, "sg14::safe_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_add
 
 static_assert(static_cast<int>(safe_add(fixed_point<std::uint8_t, -1>(127), fixed_point<std::uint8_t, -1>(127))) == 254, "sg14::safe_add test failed");
 static_assert(static_cast<float>(safe_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5))) == 43.25, "sg14::safe_add test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_square_result_t
+
+static_assert(std::is_same<safe_square_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, 0>>::value, "sg14::safe_square_result_t test failed");
+static_assert(std::is_same<safe_square_result_t<fixed_point<std::int32_t, -25>>, fixed_point<std::uint32_t, -20>>::value, "sg14::safe_square_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_square
+
+static_assert(static_cast<int>(safe_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::safe_add test failed");
+static_assert(static_cast<float>(safe_square(ufixed4_4_t(15.5))) == 240, "sg14::safe_add test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_sqrt_result_t
+
+static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, -6>>::value, "sg14::safe_sqrt_result_t test failed");
+static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::int32_t, -16>>, fixed_point<std::uint32_t, -24>>::value, "sg14::safe_sqrt_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_sqrt
+
+static_assert(static_cast<int>(safe_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::safe_add test failed");
+static_assert(static_cast<float>(safe_sqrt(ufixed8_0_t(240))) == 15, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs

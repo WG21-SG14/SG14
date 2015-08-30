@@ -53,12 +53,28 @@ namespace sg14
 #endif
 
 		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::get_float_t
+
+		template <int NUM_BYTES>
+		struct get_float;
+
+		template <int NUM_BYTES>
+		using get_float_t = typename get_float<NUM_BYTES>::type;
+
+		// specializations
+		template <> struct get_float<1> { using type = float; };
+		template <> struct get_float<2> { using type = float; };
+		template <> struct get_float<4> { using type = float; };
+		template <> struct get_float<8> { using type = double; };
+		template <> struct get_float<16> { using type = long double; };
+
+		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::is_integral
 
 		template <typename T>
 		struct is_integral;
 
-		// possible exception to std::is_integral as fixed_point<bool, X> seems pointless
+		// exception to std::is_integral as fixed_point::operator bool is a special case
 		template <>
 		struct is_integral<bool> : std::false_type { };
 
@@ -135,104 +151,131 @@ namespace sg14
 		// 1) shifting by a negative amount causes undefined behavior
 		// 2) converting between integer types of different sizes can lose significant bits during shift right
 
-		// EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && is_unsigned<INPUT>
+		// EXPONENT == 0
 		template <
 			int EXPONENT,
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_unsigned<INPUT>::value,
-				int>::type dummy = 0>
-			constexpr OUTPUT shift_left(INPUT i) noexcept
-		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-
-			return static_cast<OUTPUT>(i) << EXPONENT;
-		}
-
-		// EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && is_signed<INPUT>
-		template <
-			int EXPONENT,
-			typename OUTPUT,
-			typename INPUT,
-			typename std::enable_if<
-				EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_signed<INPUT>::value,
+				(EXPONENT == 0),
 				int>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
 
-			using signed_type = typename _impl::make_signed<OUTPUT>::type;
-
-			return (i >= 0)
-				? static_cast<OUTPUT>(i) << EXPONENT
-				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
+			// cast only
+			return static_cast<OUTPUT>(i);
 		}
 
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && sizeof(OUTPUT) <= sizeof(INPUT), int>::type dummy = 0>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				EXPONENT == 0,
+				int>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
 			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
 			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-			return static_cast<OUTPUT>(i >> EXPONENT);
+
+			// cast only
+			return static_cast<OUTPUT>(i);
 		}
 
-		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_unsigned<INPUT>
+		// sizeof(INPUT) > sizeof(OUTPUT)
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				!(EXPONENT <= 0) && sizeof(OUTPUT) <= sizeof(INPUT) && _impl::is_unsigned<INPUT>::value,
+				int>::type dummy = 0>
+			constexpr OUTPUT shift_left(INPUT i) noexcept
+		{
+			return shift_left<0, OUTPUT, INPUT>(i) << EXPONENT;
+		}
+
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				!(EXPONENT <= 0) && sizeof(OUTPUT) <= sizeof(INPUT),
+				int>::type dummy = 0>
+		constexpr OUTPUT shift_right(INPUT i) noexcept
+		{
+			return shift_right<0, OUTPUT, INPUT>(i >> EXPONENT);
+		}
+
+		// sizeof(INPUT) <= sizeof(OUTPUT)
 		template <
 			int EXPONENT, 
 			typename OUTPUT, 
 			typename INPUT, 
 			typename std::enable_if<
-				EXPONENT >= 0 && ! (sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_unsigned<INPUT>::value,
+				!(EXPONENT <= 0) && !(sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_unsigned<INPUT>::value,
 				char>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-
-			return static_cast<OUTPUT>(i) << EXPONENT;
+			return shift_left<0, OUTPUT, INPUT>(i) << EXPONENT;
 		}
 
-		// EXPONENT >= 0 && sizeof(OUTPUT) > sizeof(INPUT) && is_signed<INPUT>
 		template <
 			int EXPONENT,
 			typename OUTPUT,
 			typename INPUT,
 			typename std::enable_if<
-			EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)) && _impl::is_signed<INPUT>::value,
-			char>::type dummy = 0>
-			constexpr OUTPUT shift_left(INPUT i) noexcept
-		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-
-			using signed_type = typename _impl::make_signed<OUTPUT>::type;
-
-			return (i >= 0)
-				? static_cast<OUTPUT>(i) << EXPONENT
-				: static_cast<OUTPUT>(-(static_cast<signed_type>(-i) << EXPONENT));
-		}
-
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT >= 0 && !(sizeof(OUTPUT) <= sizeof(INPUT)), char>::type dummy = 0>
+				!(EXPONENT <= 0) && !(sizeof(OUTPUT) <= sizeof(INPUT)),
+				char>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
-			static_assert(_impl::is_integral<INPUT>::value, "INPUT must be integral type");
-			static_assert(_impl::is_integral<OUTPUT>::value, "OUTPUT must be integral type");
-			return static_cast<OUTPUT>(i) >> EXPONENT;
+			return shift_right<0, OUTPUT, INPUT>(i) >> EXPONENT;
 		}
 
-		// pass bit-shifts with negative EXPONENTS to their complimentary positive-EXPONENT equivalents
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<(EXPONENT < 0), int>::type dummy = 0>
+		// is_signed<INPUT>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				!(EXPONENT <= 0) && _impl::is_signed<INPUT>::value,
+				int>::type dummy = 0>
 		constexpr OUTPUT shift_left(INPUT i) noexcept
 		{
+			using unsigned_input = typename _impl::make_unsigned<INPUT>::type;
+			using signed_output = typename _impl::make_signed<OUTPUT>::type;
+
+			return (i >= 0)
+				? shift_left<EXPONENT, signed_output, unsigned_input>(i)
+				: -shift_left<EXPONENT, signed_output, unsigned_input>(-i);
+		}
+
+		// EXPONENT < 0
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				(EXPONENT < 0),
+				int>::type dummy = 0>
+		constexpr OUTPUT shift_left(INPUT i) noexcept
+		{
+			// negate EXPONENT and flip from left to right
 			return shift_right<-EXPONENT, OUTPUT, INPUT>(i);
 		}
 
-		template <int EXPONENT, typename OUTPUT, typename INPUT, typename std::enable_if<EXPONENT < 0, int>::type dummy = 0>
+		template <
+			int EXPONENT,
+			typename OUTPUT,
+			typename INPUT,
+			typename std::enable_if<
+				EXPONENT < 0,
+				int>::type dummy = 0>
 		constexpr OUTPUT shift_right(INPUT i) noexcept
 		{
+			// negate EXPONENT and flip from right to left
 			return shift_left<-EXPONENT, OUTPUT, INPUT>(i);
 		}
 
@@ -278,6 +321,16 @@ namespace sg14
 		{
 			return (a < b) ? b : a;
 		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		// sg14::_impl::common_repr_type
+
+		// given two integral types, produces a common type with enough capacity to
+		// store values of either EXCEPT when one is signed and both are same size
+		template <typename REPR_TYPE_1, typename REPR_TYPE_2>
+		using common_repr_type = typename _impl::get_int<
+			_impl::is_signed<REPR_TYPE_1>::value | _impl::is_signed<REPR_TYPE_2>::value,
+			_impl::max(sizeof(REPR_TYPE_1), sizeof(REPR_TYPE_2))>::type;
 
 		////////////////////////////////////////////////////////////////////////////////
 		// sg14::_impl::capacity
@@ -431,6 +484,12 @@ namespace sg14
 		explicit constexpr operator S() const noexcept
 		{
 			return repr_to_floating_point<S>(_repr);
+		}
+
+		// returns non-zeroness represented as boolean
+		explicit constexpr operator bool() const noexcept
+		{
+			return _repr != 0;
 		}
 
 		// returns internal representation of value
@@ -607,9 +666,7 @@ namespace sg14
 	// given two fixed-point types, produces the type that is best suited to both of them
 	template <typename LHS_FP, typename RHS_FP>
 	using make_fixed_from_pair = make_fixed_from_repr<
-		typename _impl::get_int<
-		_impl::is_signed<typename LHS_FP::repr_type>::value | _impl::is_signed<typename RHS_FP::repr_type>::value,
-		_impl::max(sizeof(typename LHS_FP::repr_type), sizeof(typename RHS_FP::repr_type))>::type,
+		_impl::common_repr_type<typename LHS_FP::repr_type, typename RHS_FP::repr_type>,
 		_impl::max(
 			LHS_FP::integer_digits,
 			RHS_FP::integer_digits)>;
@@ -636,15 +693,17 @@ namespace sg14
 	// given template parameters of a fixed_point specialization, 
 	// yields alternative specialization with twice the fractional bits
 	// and twice the integral/sign bits
-	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_promotion_t = fixed_point<_impl::next_size_t<REPR_TYPE>, EXPONENT * 2>;
+	template <typename FIXED_POINT>
+	using fixed_point_promotion_t = fixed_point<
+		_impl::next_size_t<typename FIXED_POINT::repr_type>,
+		FIXED_POINT::exponent * 2>;
 
 	// as fixed_point_promotion_t but promotes parameter, from
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_promotion_t<REPR_TYPE, EXPONENT>
-	constexpr promote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	template <typename FIXED_POINT>
+	fixed_point_promotion_t<FIXED_POINT>
+	constexpr promote(const FIXED_POINT & from) noexcept
 	{
-		return fixed_point_promotion_t<REPR_TYPE, EXPONENT>(from);
+		return fixed_point_promotion_t<FIXED_POINT>(from);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -653,15 +712,17 @@ namespace sg14
 	// given template parameters of a fixed_point specialization, 
 	// yields alternative specialization with half the fractional bits
 	// and half the integral/sign bits (assuming EXPONENT is even)
-	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_demotion_t = fixed_point<_impl::previous_size_t<REPR_TYPE>, EXPONENT / 2>;
+	template <typename FIXED_POINT>
+	using fixed_point_demotion_t = fixed_point<
+		_impl::previous_size_t<typename FIXED_POINT::repr_type>,
+		FIXED_POINT::exponent / 2>;
 
 	// as fixed_point_demotion_t but demotes parameter, from
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_demotion_t<REPR_TYPE, EXPONENT>
-	constexpr demote(fixed_point<REPR_TYPE, EXPONENT> const & from) noexcept
+	template <typename FIXED_POINT>
+	fixed_point_demotion_t<FIXED_POINT>
+	constexpr demote(const FIXED_POINT & from) noexcept
 	{
-		return from;
+		return fixed_point_demotion_t<FIXED_POINT>(from);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -669,107 +730,58 @@ namespace sg14
 	//
 	// compare two objects of different fixed_point specializations
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator ==(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator ==(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) == static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator !=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator !=(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) != static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator <(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator <(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) < static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator >(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator >(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) > static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator >=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator >=(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) >= static_cast<fixed_point>(rhs);
 	}
 
-	template <typename LHS_FP, typename RHS_FP>
-	constexpr bool operator <=(LHS_FP const & lhs, RHS_FP const & rhs) noexcept
+	template <typename LHS_REPR_TYPE, int LHS_EXPONENT, typename RHS_REPR_TYPE, int RHS_EXPONENT>
+	constexpr bool operator <=(
+		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
+		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<LHS_FP, RHS_FP>;
+		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) <= static_cast<fixed_point>(rhs);
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_mul_result_t / safe_multiply
-	//
-	// TODO: accept factors of heterogeneous specialization, e.g.:
-	//       fixed_point<char, -4> * fixed_point<short, -10> = fixed_point<short, -7>
-
-	// yields specialization of fixed_point with integral bits necessary to store 
-	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename REPR_TYPE, int EXPONENT>
-	using fixed_point_mul_result_t = make_fixed_from_repr<
-		REPR_TYPE,
-		fixed_point<REPR_TYPE, EXPONENT>::integer_digits * 2>;
-
-	// as fixed_point_mul_result_t but converts parameter, factor,
-	// ready for safe binary multiply
-	template <typename REPR_TYPE, int EXPONENT>
-	fixed_point_mul_result_t<REPR_TYPE, EXPONENT>
-	constexpr safe_multiply(
-		fixed_point<REPR_TYPE, EXPONENT> const & factor1, 
-		fixed_point<REPR_TYPE, EXPONENT> const & factor2) noexcept
-	{
-		using output_type = fixed_point_mul_result_t<REPR_TYPE, EXPONENT>;
-		using next_type = _impl::next_size_t<REPR_TYPE>;
-		return output_type(_impl::shift_left<EXPONENT * 2, next_type>(next_type(factor1.data()) * factor2.data()));
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	// sg14::fixed_point_add_result_t / safe_add
-
-	// yields specialization of fixed_point with integral bits necessary to store 
-	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
-	template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-	using fixed_point_add_result_t = make_fixed_from_repr<
-		REPR_TYPE,
-		fixed_point<REPR_TYPE, EXPONENT>::integer_digits + _impl::capacity<N - 1>::value>;
-
-	namespace _impl
-	{
-		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD>
-		constexpr RESULT_TYPE add(HEAD const & addend_head)
-		{
-			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
-			return static_cast<RESULT_TYPE>(addend_head);
-		}
-
-		template <typename RESULT_TYPE, typename REPR_TYPE, int EXPONENT, typename HEAD, typename ... TAIL>
-		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
-		{
-			static_assert(std::is_same<fixed_point<REPR_TYPE, EXPONENT>, HEAD>::value, "mismatched safe_add parameters");
-			return add<RESULT_TYPE, REPR_TYPE, EXPONENT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
-		}
-	}
-
-	template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-	fixed_point_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-	constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
-	{
-		using output_type = fixed_point_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>;
-		return _impl::add<output_type, REPR_TYPE, EXPONENT>(addend1, addend_tail ...);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -808,7 +820,8 @@ namespace sg14
 	// sg14::abs
 
 	template <typename REPR_TYPE, int EXPONENT, typename std::enable_if<_impl::is_signed<REPR_TYPE>::value, int>::type dummy = 0>
-	constexpr fixed_point<REPR_TYPE, EXPONENT> abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+	abs(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return (x.data() >= 0) ? x : - x;
 	}
@@ -819,10 +832,148 @@ namespace sg14
 	// https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
 	// slow when calculated at run-time?
 	template <typename REPR_TYPE, int EXPONENT>
-	constexpr fixed_point<REPR_TYPE, EXPONENT> sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+	sqrt(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
 	{
 		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
 			static_cast<REPR_TYPE>(_impl::sqrt_solve1(promote(x).data())));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::trig
+	//
+	// Placeholder implementations fall back on <cmath> functions which is slow
+	// due to conversion to and from floating-point types; also inconvenient as
+	// many <cmath> functions are not constexpr.
+
+	namespace _impl
+	{
+		template <typename REPR_TYPE, int EXPONENT, _impl::get_float_t<sizeof(REPR_TYPE)>(*F)(_impl::get_float_t<sizeof(REPR_TYPE)>)>
+		constexpr fixed_point<REPR_TYPE, EXPONENT>
+			crib(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+		{
+			using floating_point = _impl::get_float_t<sizeof(REPR_TYPE)>;
+			return static_cast<fixed_point<REPR_TYPE, EXPONENT>>(F(static_cast<floating_point>(x)));
+		}
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+		sin(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	{
+		return _impl::crib<REPR_TYPE, EXPONENT, std::sin>(x);
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT>
+		cos(fixed_point<REPR_TYPE, EXPONENT> const & x) noexcept
+	{
+		return _impl::crib<REPR_TYPE, EXPONENT, std::cos>(x);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_add_result_t / safe_add
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename FIXED_POINT, unsigned N = 2>
+	using safe_add_result_t = make_fixed_from_repr<
+		typename FIXED_POINT::repr_type,
+		fixed_point<
+			typename FIXED_POINT::repr_type,
+			FIXED_POINT::exponent>::integer_digits + _impl::capacity<N - 1>::value>;
+
+	namespace _impl
+	{
+		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD>
+		constexpr RESULT_TYPE add(HEAD const & addend_head)
+		{
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched safe_add parameters");
+			return static_cast<RESULT_TYPE>(addend_head);
+		}
+
+		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD, typename ... TAIL>
+		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
+		{
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched safe_add parameters");
+			return add<RESULT_TYPE, FIXED_POINT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
+		}
+	}
+
+	template <typename FIXED_POINT, typename ... TAIL>
+	safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>
+	constexpr safe_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
+	{
+		using output_type = safe_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
+		//return output_type(addend1);
+		return _impl::add<output_type, FIXED_POINT>(addend1, addend_tail ...);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_multiply_result_t / safe_multiply
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename LHS, typename RHS = LHS>
+	using safe_multiply_result_t = make_fixed_from_repr<
+		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
+		LHS::integer_digits + RHS::integer_digits>;
+
+	// as safe_multiply_result_t but converts parameter, factor,
+	// ready for safe binary multiply
+	template <typename LHS, typename RHS>
+	safe_multiply_result_t<LHS, RHS>
+	constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept
+	{
+		using output_type = safe_multiply_result_t<LHS, RHS>;
+		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
+		using next_repr_type = _impl::next_size_t<common_repr_type>;
+		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		return output_type(static_cast<next_type>(factor1) * static_cast<next_type>(factor2));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_square_result_t / safe_square
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	// whose sign bit is set to the same value
+	template <typename FIXED_POINT>
+	using safe_square_result_t = make_fixed_from_repr<
+		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
+		FIXED_POINT::integer_digits * 2>;
+
+	// as safe_square_result_t but converts parameter, factor,
+	// ready for safe binary multiply-by-self
+	template <typename FIXED_POINT>
+	safe_square_result_t<FIXED_POINT>
+	constexpr safe_square(const FIXED_POINT & root) noexcept
+	{
+		using output_type = safe_square_result_t<FIXED_POINT>;
+		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
+		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_sqrt_result_t / safe_sqrt
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// the positive result of a square root operation on an object of type,
+	// fixed_point<REPR_TYPE, EXPONENT>
+	template <typename FIXED_POINT>
+	using safe_sqrt_result_t = make_fixed_from_repr<
+		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
+		(FIXED_POINT::integer_digits + 1) / 2>;
+
+	// as safe_sqrt_result_t but converts parameter, factor,
+	// ready for safe sqrt operation
+	template <typename FIXED_POINT>
+	safe_sqrt_result_t<FIXED_POINT>
+	constexpr safe_sqrt(const FIXED_POINT & square) noexcept
+	{
+		using output_type = safe_sqrt_result_t<FIXED_POINT>;
+		return output_type(sqrt(square));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////

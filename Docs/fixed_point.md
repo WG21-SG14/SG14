@@ -12,7 +12,7 @@ It is developed as part of [SG14](https://groups.google.com/a/isocpp.org/forum/#
 
 ### 1.2. Resources
 
-SG14 has  an [unofficial](https://groups.google.com/forum/#!forum/unofficial-real-time-cxx) and an [official](https://groups.google.com/a/isocpp.org/forum/#!forum/sg14) discussion group which contains [a thread](https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1w5eiJsyT2Q) circulating the original fixed_point idea. A formal [proposal](Fixed_Point_Library_Proposal.md) is also in the works.
+SG14 has  an [unofficial](https://groups.google.com/forum/#!forum/unofficial-real-time-cxx) and an [official](https://groups.google.com/a/isocpp.org/forum/#!forum/sg14) discussion group which contains [a thread](https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1w5eiJsyT2Q) circulating the original fixed_point idea. A formal [proposal](Proposals/Fixed_Point_Library_Proposal.md) is also in the works.
 
 There is an [SG14 source code repository](https://github.com/WG21-SG14/SG14) including a header file, [fixed_point.h](https://github.com/WG21-SG14/SG14/blob/master/SG14/fixed_point.h), in which a proof of concept, `sg14::fixed_point`, is actively developed. Accompanying tests can be found in [fixed_point_test.cpp](https://github.com/WG21-SG14/SG14/blob/master/SG14_test/fixed_point_test.cpp).
 

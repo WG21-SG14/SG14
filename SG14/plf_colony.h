@@ -163,7 +163,7 @@ private:
 	
 
 public:
-	class iterator : public std::iterator<std::bidirectional_iterator_tag, element_type, std::ptrdiff_t, element_type *, element_type &>
+	class iterator : public std::iterator<std::random_access_iterator_tag, element_type, std::ptrdiff_t, element_type *, element_type &>
 	{
 	private:
 		group_pointer_type		group_pointer;
