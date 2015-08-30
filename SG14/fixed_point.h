@@ -425,7 +425,7 @@ namespace sg14
 		}
 	public:
 		// default c'tor
-		constexpr fixed_point() noexcept {}
+		fixed_point() noexcept {}
 
 		// c'tor taking an integer type
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
