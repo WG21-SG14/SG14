@@ -419,13 +419,13 @@ namespace sg14
 
 	private:
 		// constructor taking representation explicitly using operator++(int)-style trick
-		explicit constexpr fixed_point(repr_type repr, int) noexcept
+		constexpr fixed_point(repr_type repr, int) noexcept
 			: _repr(repr)
 		{
 		}
 	public:
 		// default c'tor
-		explicit constexpr fixed_point() noexcept {}
+		constexpr fixed_point() noexcept {}
 
 		// c'tor taking an integer type
 		template <typename S, typename std::enable_if<_impl::is_integral<S>::value, int>::type dummy = 0>
