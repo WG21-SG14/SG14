@@ -1,46 +1,54 @@
 **Document number**: (draft)  
-**Date**: 2015-08-12  
+**Date**: 2015-08-29  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [john@mcfarlane.name](mailto:john@mcfarlane.name)
 
 # Fixed-Point Real Numbers
 
-## I. Motivation
+## I. Introduction
 
-Floating-point types are highly versatile in their ability to
-represent real numbers across a very wide range of values. However,
-the cost of this versatility is a loss of precision and a variation
-in accuracy across linear ranges of values. In particular, absolute
-ranges of value with linear distribution - such as temporal and
-spatial coordinates and unit intervals - gain very little from being
-represented with a floating point.
+This proposal introduces a system for performing binary fixed-point
+arithmetic using built-in integral types.
 
-Conversely, integer types are ideal at representing values across a
-linear range and are far more simple to deal with. However, they lack
-an exponent and their radix point if fixed at zero. This means their
-range is predetermined and they do not express fractional digits.
+## II. Motivation
 
-Fixed-point arithmetic is the middle-ground between integer and
-floating-point arithmetic. The exponent of a fixed-point type is
-determined at compile time.
+Floating-point types are an exceedingly versatile and widely supported
+method of expressing real numbers on modern architectures. However,
+there are certain situations where fixed-point arithmetic is
+preferable.
 
-The fixed_point library is intended to make fixed-point arithmetic as
-easy and effective as possible. It is intended to be used in
-situations where integer types and bit manipulation operations would
-normally be used.
+Some system lack native floating-point registers and must emulate them
+with integer arithmetic. Many others are capable of performing some or
+all operations more efficiently using integer arithmetic. Certain
+applications can suffer from the variability in precision which comes
+from a dynamic radix point [\[1\]](http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php).
+In situations where a variable exponent is not desired, it takes
+valuable space away from the mantissa and reduces precision.
 
-## II. Impact On the Standard
+Built-in integer types provide the basis for an efficient
+representation of binary fixed-point real numbers. However, *** there's something not very great about having to deal with all the shit related to this***.
+A set of tools for defining and manipulating fixed-point types is
+proposed. These tools are designed for those who traditionally take on the burden of using integer types to represent fixed-point
+and are aimed at performance and low-level shit.
+
+## III. Impact On the Standard
 
 This proposal is a pure library extension. It does not require
 changes to any standard classes, functions or headers.
 
-## III. Design Decisions
+## IV. Design Decisions
 
-The class is designed to function as closely as possible to built-in
-integral type with the major exception of disallowing implicit
-conversion. Additionally, a number of accompanying definitions are
-intended to address some of the specific difficulties of working with
-fixed-point values.
+The design is driven by the following aims in roughly descending
+order:
+
+1. to automate the task of using integer types to perform low-level
+   binary fixed-point arithmetic;
+2. to facilitate a style of code that is intuitive to anyone who is
+   comfortable with integer and floating-point arithmetic;
+3. to avoid type promotion, implicit conversion or other behavior that
+   might lead to surprising results and
+4. to preserve significant digits at the expense of insignificant
+   digits, i.e. to prefer underflow to overflow.
 
 ### Class Template
 
@@ -48,19 +56,26 @@ Fixed-point numbers are specializations of `template <typename
 REPR_TYPE, int EXPONENT> class fixed_point` where:
 
 * `REPR_TYPE` implies the underlying type used to store the value. A
-  type which satisfies `is_integral` is an appropriate choice. The
-  size of the resulting type will be `sizeof(REPR_TYPE)` and it will
-  be signed iff `is_signed<REPR_TYPE>::value`. The default is `int`.
+  type which satisfies `is_integral` is an ideal choice. The size of
+  the resulting type will be `sizeof(REPR_TYPE)` and it will be signed
+  iff `is_signed<REPR_TYPE>::value` is true.
 
-* `EXPONENT` is the equivalent of a floating-point exponent and
-  shifts the stored value by the requisite number of bits necessary
-  to produce the desired range. The default value depends on
-  `REPR_TYPE` and is whatever value divides capacity equally between
-  bits used to store fractional digits and bits used to store integer
-  digits and sign.
+  The default is `int`.
 
-Some example specializations include an unsigned 16-bit type with 8
-integer digits and 8 fractional digits:
+* `EXPONENT` is the equivalent of the exponent field in a
+  floating-point type and shifts the stored value by the requisite
+  number of bits necessary to produce the desired range.
+
+  The default value is dependent on `REPR_TYPE` and ensures that half
+  of the bits of the type are allocated to fractional digits. The
+  other half go to integer digits and the signe bit.
+
+Some example specializations include the default -- typically a 32-bit
+object with a sign bit, 15 integer digits and 16 fractional digits:
+
+    fixed_point<>
+
+an unsigned 16-bit type with 8 integer digits and 8 fractional digits:
 
     fixed_point<uint16_t>
 
@@ -68,53 +83,47 @@ a signed 32-bit type which can represent half values:
 
     fixed_point<int32_t, -1>
 
-an unsigned 8-bit type with 8 fractional digits that can be used to
-store values in the range, [0, 1):
+and an unsigned 8-bit type with 8 fractional digits that can be used
+to store values in the range, [0, 1):
 
     fixed_point<uint8_t, -8>
 
-and a signed value - typically in 32 bits - with half the bits
-dedicated to fractional digits:
-
-    fixed_point<>
-
 ### Conversion
 
-Fixed-point numbers can be converted explicitly to and from built-in
-arithmetic types. While effort is made to ensure that large enough
-types are used to perform the calculations without losing significant
-digits, no effort is made to avoid rounding errors.
+Fixed-point numbers can be explicitly converted to and from built-in
+arithmetic types.
 
+While effort is made to ensure that significant digits are not lost
+during conversion, no effort is made to avoid rounding errors.
 Whatever would happen when converting to and from an integer type
-largely goes for `fixed_point` objects also. For example:
+largely applies to `fixed_point` objects also. For example:
 
     fixed_point<uint8_t, -4>(.006) == fixed_point<uint8_t, -4>(0)
 
-...equates to `true` and is considered an acceptable rounding error.
-
-The priority here is preserving the highest-value digits of a value
-and avoiding any run-time performance penalties involved with
-non-trivial rounding strategies.
+...equates to `true` and is considered a tolerable rounding error.
 
 ### Named Constructors
 
-Fixed-point numbers are traditionally notated in a variety of ways.
-The `EXPONENT` template parameter is a versatile way of expressing
-the full range of values a type may contain - including very large
+The `EXPONENT` template parameter is a versatile way to express the
+full range of values a type might contain - including very large
 positive and negative values. However, it is not necessarily the most
-intuitive choice for many common use cases.
+intuitive choice for a typical user.
 
-A number of named constructors in the spirit of existing `make_X`
-functions are defined to make specialization of `fixed_point<>`
-more convenient.
+There are a number of conventions by which fixed-point number types
+are traditionally expressed. And because the template parameters of
+`fixed_point` do not necessarily fit with these conventions, a number
+of named constructors are defined in the spirit of existing `make_X`
+functions to make specialization of `fixed_point<>` more convenient.
+
+#### `make_fixed`
 
 To create a specialization with *I* integer digits, *F* fractional
-digits and signed digit iff S, there is:
+digits and signed digit *S*, there is:
 
-    make_fixed<I, F, S>
+    template <unsigned I, unsigned F, bool S = true> make_fixed
 
 This alias automatically determines what underlying type is needed to
-accommodate the desired amount of precisions so for example,
+accommodate the desired amount of precisions. For example,
 
     make_fixed<8, 11, true>
 
@@ -123,16 +132,25 @@ and at least 11 fractional digits. As there is no standard 20-bit
 integer type, a `REPR_TYPE` of `int32_t` is used and an additional 12
 bits are devoted to fractional digits: `fixed_point<int32_t, -23>`.
 
-While the number of fractional digits is often the attribute of most
-attention when discussing a fixed-point type, it is really the number
-of integer digits that are - literally - most significant. In cases
-where the underlying type and the number of integer digits are known,
-one can use:
+#### `make_fixed_from_repr`
 
-    make_fixed_from_repr<REPR_TYPE, I>
+When discussing a fixed-point type, the number of fractional digits
+often hogs the limelight. It is really the number of integer digits
+that are - literally - most significant. In cases where the underlying
+type and the number of integer digits are known, one can use
 
-And when the greater of two fixed-point types is required, such as
-when comparing heterogeneous values or taking their maximum, use:
+    template <typename REPR_TYPE, int I> make_fixed_from_repr
+
+to instantiate a type. For example:
+
+    make_fixed_from_repr<uint16_t, 4>
+
+is an alias for a 16-bit unsigned type, capable of storing value, 15.
+
+#### `make_fixed_from_pair`
+
+When the greater of two fixed-point types is required, such as when
+comparing heterogeneous values or taking their maximum, use:
 
     make_fixed_from_pair<FIXED_POINT_1, FIXED_POINT_2>
 
@@ -140,43 +158,43 @@ when comparing heterogeneous values or taking their maximum, use:
 
 Any operators that might be applied to integer types can also be
 applied to `fixed_point` specializations. Input parameters and return
-value are all of the same type. (The possible exceptions to this are
-the right hand parameter of bit shift operators.)
+value are all of the same type. (A possible exception to this is the
+right hand parameter of bit shift operators.)
 
-Because of this decision, arithmetic operators carry a risk of
-overflowing. For instance,
+Because of this choice, arithmetic operators carry a risk of overflow.
+For instance,
 
-    make_fixed<4, 3>(15) * make_fixed<4, 3>(15)
+    fixed_point<uint8_t, -4>(15) * fixed_point<uint8_t, -4>(15)
 
-returns `make_fixed<4, 3>(1)` because the input type does not have
+returns `fixed_point<uint8_t, -4>(1)` as the input type does not have
 the capacity to represent the value, 225.
 
-This presents a design choice between three alternative strategies:
+This represents the first of three alternative approaches to dealing
+with overflow:
 
 1. ignore the problem and leave it to the user to avoid overflow;
 2. promote the result to a larger type to ensure sufficient capacity
-   exists to store all integer and fractional digits and
-3. adjust the exponent upward to ensure that the top limit of the
-   type is sufficient to preserve the most significant digits at the
-   expense of the less significant digits.
+   or
+3. adjust the exponent of the result upward to ensure that the top
+   limit of the type is sufficient to preserve the most significant
+   digits at the expense of the less significant digits.
 
 For arithmetic operators, choice 1) is preferred because it most
-closely follows the behavior of integer types. Thus it should hide
-the fewest surprises from the most users. It does not produce a
-result of a larger type or different `EXPONENT` value. This makes it
-far easier to manage in code where functions are written to expect
-specific types.
+closely follows the behavior of integer types. Thus it should cause
+the least surprise to the fewest users. This makes it far easier to
+reason about in code where functions are written with a particular
+type in mind.
 
-Choices 2) and 3) are still of great value. However, they represent
-different trade-offs and neither one is the best fit in all
-situations. For this reason, they are available via named functions.
+Choices 2) and 3) are more robust to overflow events. However, they
+represent different trade-offs and neither one is the best fit in all
+situations. For these reasons, they are offered via named functions.
 
-### Type Promotion and Demotion Functions
+### Type Promotion
 
-Borrowing a term from the language feature which avoids integer
-overflow prior to certain operations, the `promote` function template
-takes a `fixed_point<>` value and returns the same value represented
-by a larger `fixed_point<>` specialization.
+Function template, `promote`, borrows a term from the language feature
+which avoids integer overflow prior to certain operations. It takes a
+`fixed_point<>` object and returns the same value represented by a
+larger `fixed_point<>` specialization.
 
 For example,
 
@@ -186,47 +204,52 @@ is equivalent to
 
     fixed_point<int16_t, -4>(15.5)
 
-while `demotion` reverses the process, returning a value of a smaller
-type. The functions double and half, respectively, the number of
-integer and fractional digits available in the value.
-
-The way `promotion` is used similar to the way high and low digits
-are preserved for precision-critical calculations by first converting
-values from `float` to `double`. To perform the calculations
-themselves, regular arithmetic operators are then used.
+Complimentary function template, `demote`, inverts the process,
+returning a value of a smaller type.
 
 ### Named Arithmetic Functions
 
-The following named functions can be used as alternatives to
+The following named function templates can be used as alternatives to
 arithmetic operators in situations where the aim is to avoid overflow
 without falling back on higher-capacity types.
 
-    safe_multiply(FIXED_POINT_1, FIXED_POINT_2)
-    safe_add(FIXED_POINT_1, FIXED_POINT_2)
-    safe_square(FIXED_POINT_1)
-    safe_sqrt(FIXED_POINT_1)
+    shift_multiply(FIXED_POINT_1, FIXED_POINT_2)
+    shift_add(FIXED_POINT_1, FIXED_POINT_2)
+    shift_subtract(FIXED_POINT_1, FIXED_POINT_2)
+    shift_square(FIXED_POINT_1)
+    shift_sqrt(FIXED_POINT_1)
 
-These functions return specializations which are guaranteed to
-accommodate the result of the operations. However, the capacity of
-the return type is not increased so precision may be lost. For
-example:
+These templates return results whose types have adjusted `EXPONENT`
+values which prevent overflow in the vast majority of cases. The
+`shift_` function templates have two drawbacks:
 
-    safe_square(fixed_point<uint8_t, -4>(15.9375))
+Firstly, because the capacity of the return type is not increased,
+precision may be lost. For example:
+
+    shift_square(fixed_point<uint8_t, -4>(15.9375))
 
 returns `fixed_point<uint8_t, 0>(254)`. This result is far closer to
-the correct value than the result returned by `operator *` - hence
-the 'safe_' prefix.
+the correct value than the result returned by `operator *`.
+
+Secondly, there are rare cases where overflow can still occur due to
+the nature of twos-compliment binary arithmetic and the *most negative
+number*. For instance, the value of
+
+    shift_square(fixed_point<int8_t, 0>(-128))
+
+is zero because 16384 cannot be represented in a
+`fixed_point<uint8_t, 6>` type.
 
 ### Overflow and Underflow
 
-The major disadvantage of `safe_` functions preserving the more
-significant digits of their input values is that less significant
-digits are sacrificed. In the extreme case of underflow, all the bits
-are lost and the value becomes zero.
+The major disadvantage of the way in which `shift_` functions protect
+the more significant digits is that the less insignificant digits are
+dropped. In the extreme case of underflow, all the bits are lost and
+the value becomes zero.
 
 For example,
 
-    safe_square(fixed_pointuint8_t, 0>(15))
+    shift_square(fixed_point<uint8_t, 0>(15))
 
 causes the object to be flushed to zero.
 
@@ -235,10 +258,8 @@ effects, such as when a flushed value is subsequently used as a
 divisor.
 
 There is a strong desire to catch situations where a `fixed_point`
-value transitions to a flushed state to causes any bits to overflow.
-However, it is unacceptable that this should necessarily require a
-run-time check. Additionally it is not net established by which
-method an error should be flagged.
+value transitions to a flushed state. However, it is unacceptable that
+this should necessarily require a run-time check.
 
 For this reason, it is left to the user to avoid flush events and for
 such events to result in undefined behavior. This is not an ideal
@@ -247,7 +268,7 @@ involving the option of run-time checks has enough freedom to
 implement a satisfactory solution.
 
 See the 'Future Issues' section below for discussion on possible
-future strategies for catching overflow and underflow events.
+strategies for catching overflow and underflow events.
 
 ### Example
 
@@ -255,9 +276,9 @@ The following example calculates the magnitude of a 3-dimensional vector.
 
     template <typename FP>
     constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
-    -> decltype(safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z))))
+    -> decltype(shift_sqrt(shift_add(shift_square(x), shift_square(y), shift_square(z))))
     {
-        return safe_sqrt(safe_add(safe_square(x), safe_square(y), safe_square(z)));
+        return shift_sqrt(shift_add(shift_square(x), shift_square(y), shift_square(z)));
     }
 
 Calling the above function as follows
@@ -269,7 +290,7 @@ Calling the above function as follows
 
 returns the value, 9.890625.
 
-## IV. Technical Specification
+## V. Technical Specification
 
 ### Header
 
@@ -316,34 +337,34 @@ All proposed additions to the library are contained in header,
         constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
 
       template <typename LHS, typename RHS = LHS>
-        using safe_multiply_result_t;
+        using shift_multiply_result_t;
       template <typename LHS, typename RHS>
-        safe_multiply_result_t<LHS, RHS>
-          constexpr safe_multiply(const LHS & factor1, const RHS & factor2) noexcept;
+        shift_multiply_result_t<LHS, RHS>
+          constexpr shift_multiply(const LHS & factor1, const RHS & factor2) noexcept;
 
       template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-        using safe_add_result_t;
+        using shift_add_result_t;
       template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-        safe_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr safe_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+        shift_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+          constexpr shift_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 
       template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-        using safe_subtract_result_t;
+        using shift_subtract_result_t;
       template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-        safe_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr safe_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+        shift_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+          constexpr shift_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 
       template <typename FIXED_POINT>
-        using safe_square_result_t;
+        using shift_square_result_t;
       template <typename FIXED_POINT>
-        safe_square_result_t<FIXED_POINT>
-          constexpr safe_square(const FIXED_POINT & root) noexcept;
+        shift_square_result_t<FIXED_POINT>
+          constexpr shift_square(const FIXED_POINT & root) noexcept;
 
       template <typename FIXED_POINT>
-        using safe_sqrt_result_t;
+        using shift_sqrt_result_t;
       template <typename FIXED_POINT>
-        safe_sqrt_result_t<FIXED_POINT>
-          constexpr safe_sqrt(const FIXED_POINT & root) noexcept;
+        shift_sqrt_result_t<FIXED_POINT>
+          constexpr shift_sqrt(const FIXED_POINT & root) noexcept;
     }
 
 #### Class template `fixed_point<>`
@@ -398,7 +419,7 @@ All proposed additions to the library are contained in header,
     // ...
   };
 
-## V. Future Issues
+## VI. Future Issues
 
 ### Alternative Specializations
 
@@ -408,17 +429,16 @@ appropriate choice, the option to take it is reserved.
 
 For example, it is conceivable that explicit template specializations
 could be defined which exploit the language-level extensions to the C
-type system outlined in proposal N1169 [\[1\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf).
+type system outlined in proposal N1169 [\[2\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf).
 It defines built-in fixed-point types which might improve performance
 on target systems with suitably-equipped processors.
 
-If reasonably possible, the design of the `fixed_point` template
-should leave open the option to exploit such system-specific
-features.
+If practical, the design of the `fixed_point` template should leave
+open the option to exploit such system-specific features.
 
-Alternatively, it may be wiser to say that a user may explicitly
-specify a type other than one which satisfies `is_integral` in order
-to invoke a custom specialization, e.g.:
+Alternatively, it may be clearer to stipulate that a user may
+explicitly specify a type other than one which satisfies `is_integral`
+in order to invoke an explicit `fixed_point` specialization, e.g.:
 
     fixed_point<signed short _Fract>
 
@@ -427,7 +447,7 @@ to invoke a custom specialization, e.g.:
 Currently, is is not possible to use a binary operator with
 non-matching input types. This leaves open the future possibility of
 allowing such input patterns and returning the result in a type which
-usually encompasses both input types.
+tries to encompasses both input types.
 
 However, it is not always possible to produce a type which covers the
 capabilities of two other types without increasing the size of the
@@ -437,17 +457,15 @@ concise type which can represent the values of both `int8_t` and
 return a value based on `int16_t` and lose the least significant bit
 of precision from the `uint16_t` input.
 
-This dilemma is one reason to defer a decision.
-
 ### Library Support
 
-Because it aims to provide an alternative to existing arithmetic types
-which are supported by the standard library, it is conceivable that a
-future proposal might specialize existing class templates and overload
-existing functions.
+Because the aim is to provide an alternative to existing arithmetic
+types which are supported by the standard library, it is conceivable
+that a future proposal might specialize existing class templates and
+overload existing functions.
 
 Possible candidates for overloading include the functions defined in
-<cmath> and a templated specialization of `numeric_limits`. A type
+<cmath> and a templated specialization of `numeric_limits`. A new type
 trait, `is_fixed_point`, would also be useful.
 
 While `fixed_point` is intended to provide drop-in replacements to
@@ -457,56 +475,56 @@ functions from <cmath> will be considerably less concise, efficient
 and versatile if they obey rules surrounding error cases. In
 particular, the guarantee of setting `errno` in the case of an error
 prevents a function from being defined as pure. This highlights a
-wider debate surrounding the adoption of functional techniques and
+wider issue surrounding the adoption of the functional approach and
 compile-time computation that is beyond the scope of this document.
 
 ### Bounded Integers
 
-The bounded::integer library [\[2\]](http://doublewise.net/c++/bounded/)
+The bounded::integer library [\[3\]](http://doublewise.net/c++/bounded/)
 exemplifies the benefits of keeping track of ranges of values in
 arithmetic types at compile time.
 
-To a limited extent the `safe_` functions defined here also keep track
-of - and modify - the limits of values. However, a combination of
-techniques is capable of producing superior results.
+To a limited extent, the `shift_` functions defined here also keep
+track of - and modify - the limits of values. However, a combination
+of techniques is capable of producing superior results.
 
 For instance, consider the following expression:
 
-    make_fixed<2, 6, false> three(3);
-    auto n = safe_multiply((safe_multiply(three, three), safe_multiply(three, three));
+    fixed_point<uint8_t, -6> three(3);
+    auto n = shift_square(shift_square(three));
 
 The type of `n` is `fixed_point<uint8_t, 0>` but its value does not
 exceed 81. Hence, an unused integer bit has been allocated. It may be
 possible to track more accurate limits in the same manner as the
 bounded::integer library in order to improve the precision of types
-returned by `safe_` functions. For this reason, details surrounding
+returned by `shift_` functions. For this reason, details surrounding
 these return types are omitted from this proposal.
 
 (Note: bounded::integer is already supported by fixed-point library,
-fp [\[3\]](https://github.com/mizvekov/fp).)
+fp [\[4\]](https://github.com/mizvekov/fp).)
 
 ### Alternative Policies
 
-The behavior of the types specialized from `fixed_point<>` represents
+The behavior of the types specialized from `fixed_point<>` represent
 one sub-set of all potentially desirable behaviors. Alternative
 characteristics include:
 
-* different rounding strategies - other than truncation
-* overflow and underflow checks - possibly throwing exceptions
-* operator return type - adopting `safe_` function behavior or even
-  promotion
-* default-initialize to zero - not done by default
+* different rounding strategies - other than truncation;
+* overflow and underflow checks - possibly throwing exceptions;
+* operator return type - adopting `shift_` or `promote` behavior and
+* default-initialize to zero - not done by default.
 
 One way to extend `fixed_point` to cover these alternatives would be
 to add a third template parameter containing bit flags. The default
 set of values would reflect `fixed_point` as it stands currently.
 
 An example of a fixed-point proposal which takes a similar approach to
-rounding and error cases can be found in N3352 [\[4\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html).
+rounding and error cases can be found in N3352 [\[5\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html).
 
-## VI. References
+## VII. References
 
-1. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
-2. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
-3. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
-4. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
+1. Why Integer Coordinates?, http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php
+2. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
+3. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
+4. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
+5. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
