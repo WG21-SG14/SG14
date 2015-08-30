@@ -467,8 +467,8 @@ static_assert(std::is_same<safe_square_result_t<fixed_point<std::int32_t, -25>>,
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_square
 
-static_assert(static_cast<int>(safe_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::safe_add test failed");
-static_assert(static_cast<float>(safe_square(ufixed4_4_t(15.5))) == 240, "sg14::safe_add test failed");
+static_assert(static_cast<int>(safe_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::safe_square test failed");
+static_assert(static_cast<float>(safe_square(ufixed4_4_t(15.5))) == 240, "sg14::safe_square test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_sqrt_result_t
@@ -479,8 +479,8 @@ static_assert(std::is_same<safe_sqrt_result_t<fixed_point<std::int32_t, -16>>, f
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_sqrt
 
-static_assert(static_cast<int>(safe_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::safe_add test failed");
-static_assert(static_cast<float>(safe_sqrt(ufixed8_0_t(240))) == 15, "sg14::safe_add test failed");
+static_assert(static_cast<int>(safe_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::safe_sqrt test failed");
+static_assert(static_cast<float>(safe_sqrt(ufixed8_0_t(240))) == 15, "sg14::safe_sqrt test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
