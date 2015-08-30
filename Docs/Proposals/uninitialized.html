@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Extending memory management tools</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=windows-1252">
 </HEAD>
-<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>15-8-2015
+<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>30-8-2015
 <BR>Document number: unassigned</FONT>
 
 <H1>Extending memory management tools</H1>
@@ -10,19 +10,21 @@
 
 <H2>I. Motivation</H2>
 
-<p>When implementing containers it is often necessary to manage memory directly. This paper seeks to fill gaps in the standard library's memory management utilities.</p>
+<p>When implementing containers that do not rely on allocators it is often necessary to manage memory directly. This paper seeks to fill gaps in the standard library's memory management utilities.</p>
 <p>Algorithmic changes proposed in the "range" proposals should be mirrored if both are accepted.</p>
 
-<H2>III. Summary</H2>
+<H2>II. Summary</H2>
 
 <p>
-The function template destroy calls the destructor for specified elements.<br>
-The function template uninitialized_move performs move construction of elements over a range of memory, similar to uninitialized_copy.<br>
-The function template uninitialized_value_construct performs value-construction of objects over a range of memory.<br>
-The function template uninitialized_default_construct performs default-construction of objects over a range of memory.<br><br>
-
-It is notable that <code>destroy</code> first appeared in SGI's Standard Template Library.
+The function template <code>destroy</code> calls the destructor for specified elements.<br>
+The function template <code>uninitialized_move</code> performs move construction of elements over a range of memory, similar to <code>uninitialized_copy</code>.<br>
+The function template <code>uninitialized_value_construct</code> performs value-construction of objects over a range of memory.<br>
+The function template <code>uninitialized_default_construct</code> performs default-construction of objects over a range of memory.<br><br>
 </p>
+<H2>III. Notes </H2>
+<p><code>destroy</code> first appeared in SGI's Standard Template Library. It is not known by the author why this algorithm was not inherited into the C++ Standard Library in its initial stages.</p>
+<p>
+The names <code>uninitialized_value_construct</code> and <code>uninitialized_default_construct</code> explicitly reflect their effects but do not clearly match terminology in other standard library functions. Proposal N3939 has chosen the _noinit suffix to denote value vs. default construction. If LWG prefers this direction then the algorithms could be renamed to <code>uninitialized_construct</code> and <code>uninitialized_construct_noinit</code>.</p>
 
 <H2>IV. Proposed Text</H2>
 
