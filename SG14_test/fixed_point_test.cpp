@@ -459,6 +459,23 @@ static_assert(static_cast<int>(safe_add(fixed_point<std::uint8_t, -1>(127), fixe
 static_assert(static_cast<float>(safe_add(ufixed4_4_t(15.5), ufixed4_4_t(14.25), ufixed4_4_t(13.5))) == 43.25, "sg14::safe_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_subtract_result_t
+
+static_assert(std::is_same<safe_subtract_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::int8_t, -2>>::value, "sg14::safe_subtract_result_t test failed");
+static_assert(std::is_same<safe_subtract_result_t<fixed_point<std::int8_t, -3>, fixed_point<std::uint16_t, -8>>, fixed_point<std::int16_t, -6>>::value, "sg14::safe_subtract_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::safe_subtract
+
+static_assert(static_cast<int>(safe_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(127))) == 0, "sg14::safe_subtract test failed");
+static_assert(static_cast<float>(safe_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(0))) == 126, "sg14::safe_subtract test failed");
+static_assert(static_cast<float>(safe_subtract(fixed_point<std::uint8_t, -1>(0), fixed_point<std::uint8_t, -1>(127.5))) == -126, "sg14::safe_subtract test failed");
+static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(127))) == 0, "sg14::safe_subtract test failed");
+static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(-128))) == 254, "sg14::safe_subtract test failed");
+static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(-128))) == 0, "sg14::safe_subtract test failed");
+static_assert(static_cast<float>(safe_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(127))) == -254, "sg14::safe_subtract test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::safe_square_result_t
 
 static_assert(std::is_same<safe_square_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, 0>>::value, "sg14::safe_square_result_t test failed");

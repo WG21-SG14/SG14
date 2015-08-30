@@ -909,6 +909,24 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::safe_subtract_result_t / safe_subtract
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of an subtraction between N values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename LHS, typename RHS = LHS>
+	using safe_subtract_result_t = make_fixed_from_repr<
+		_impl::get_int_t<true, _impl::max(sizeof(typename LHS::repr_type), sizeof(typename RHS::repr_type))>,
+		_impl::max(LHS::integer_digits, RHS::integer_digits) + 1>;
+
+	template <typename LHS, typename RHS>
+	safe_subtract_result_t<LHS, RHS>
+	constexpr safe_subtract(LHS const & minuend, RHS const & subtrahend)
+	{
+		using output_type = safe_subtract_result_t<LHS, RHS>;
+		return static_cast<output_type>(minuend) - static_cast<output_type>(subtrahend);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::safe_multiply_result_t / safe_multiply
 
 	// yields specialization of fixed_point with integral bits necessary to store
