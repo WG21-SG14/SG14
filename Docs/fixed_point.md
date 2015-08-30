@@ -115,7 +115,7 @@ auto b = promote(a);  // type of b is ufixed16_16_t
 ```
 This is akin to casting from `float` to `double`. One can perform precision-critical calculations using the promoted type. Finally, the `demote` function template can be used to convert a value back to the original type.
 
-#### 2.2.3 'Safe' Conversion
+#### 2.2.3 'Shift' Conversion
 
 Usually, it isn't worth the extra complication and performance loss associated with converting to a larger type. In the floating-point case, this is handled automatically by the type's variable exponent. Not so for `fixed_point` types!
 
@@ -123,18 +123,19 @@ Consider this operation:
 ```
 cout << ufixed4_4_t(10) * ufixed4_4_t(2);  // output: 4
 ```
-Because `ufixed4_4_t` cannot store value 20, there is an overflow. The solution is to use `safe_multiply`:
+Because `ufixed4_4_t` cannot store value 20, there is an overflow. The solution is to use `shift_multiply`:
 ```
-cout << safe_multiply(ufixed4_4_t(10), ufixed4_4_t(2));  // output: 20
+cout << shift_multiply(ufixed4_4_t(10), ufixed4_4_t(2));  // output: 20
 ```
 This function, and its partners:
 
-* `safe_add`
-* `safe_subtract`
-* `safe_square`
-* `safe_sqrt`
+* `shift_add`
+* `shift_subtract`
+* `shift_multiply`
+* `shift_square`
+* `shift_sqrt`
 
-ensure that the result is returned in a type of the same size which is suitable for holding the result. In the above case, `safe_multiply` returns a `ufixed8_0_t`.
+ensure that the result is returned in a type of the same size which is suitable for holding the result in the vast majority of cases. In the above case, `shift_multiply` returns a `ufixed8_0_t`.
 
 With liberal use of type deduction, much work can be performed this way without the worry of losing significant digits:
 ```
@@ -143,7 +144,7 @@ auto constexpr dot_product(
 	fixed_point<REPR_TYPE, EXPONENT> x1, fixed_point<REPR_TYPE, EXPONENT> y1,
 	fixed_point<REPR_TYPE, EXPONENT> x2, fixed_point<REPR_TYPE, EXPONENT> y2)
 {
-	return safe_add(safe_multiply(x1, x2), safe_multiply(y1, y2));
+	return shift_add(shift_multiply(x1, x2), shift_multiply(y1, y2));
 }
 
 cout << dot_product(ufixed4_4_t(10), ufixed4_4_t(0), ufixed4_4_t(5), ufixed4_4_t(5));  // output: 50
@@ -161,7 +162,7 @@ Some rough notes on where to go next with the design of the API:
 
 ### 3.1 To Discuss
 
-* better name for `safe_` functions
+* better name for `shift_` functions
 * 'number of integer digits' might make a better 2nd parameter to `fixed_point<>`.
 * should the first template parameter default to int?
 * fixed_point::data is named after the std::vector member function but is this the best choice here?
@@ -174,8 +175,7 @@ Some rough notes on where to go next with the design of the API:
   * binary: `%`, `<<`, `>>`, `<<=`, `>>=`, `&`, `|`, `^`, `&&`, `||`
   * pre and post: `++`, `--`
 * many more overloads of cmath functions
-* heterogenous safe_add, safe_multiply etc.
-* safe_divide? inverse_t?
+* shift_divide? inverse_t?
 * standard traits and `std::numeric_limits`
 * either remove `open_unit` and `closed_unit` or replace with `open_interval` and `closed_interval`
 * consider removing `lerp` as it can probably be done as well using arithmetic operations
