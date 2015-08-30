@@ -249,22 +249,6 @@ implement a satisfactory solution.
 See the 'Future Issues' section below for discussion on possible
 future strategies for catching overflow and underflow events.
 
-### Alternative Specializations
-
-The `REPR_TYPE` template parameter is not necessarily the type of the
-member variable used to store the value. If there is a more
-appropriate choice, the option to take it is reserved.
-
-For example, it is conceivable that explicit template specializations
-could be defined which exploit the language-level extensions to the C
-type system outlined in proposal N1169[1](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf).
-It defines built-in fixed-point types which might improve performance
-on target systems with suitably-equipped processors.
-
-If reasonably possible, the design of the `fixed_point` template
-should leave open the option to exploit such system-specific
-features.
-
 ### Example
 
 The following example calculates the magnitude of a 3-dimensional vector.
@@ -416,17 +400,25 @@ All proposed additions to the library are contained in header,
 
 ## V. Future Issues
 
-### Explicit Specializations
+### Alternative Specializations
 
-As suggested above, the `fixed_point` class template might be
-explicitly specialized to take advantage of language extensions and
-non-standard built-in types. However, it is not clear that this is a
-wise decision. In particular, it leaves the return type of such
-functions as `fixed_point<>::data()` unclear.
+The `REPR_TYPE` template parameter is not necessarily the type of the
+member variable used to store the value. If there is a more
+appropriate choice, the option to take it is reserved.
 
-It may be wiser to say that a user may explicitly specify a type other
-than one which satisfies `is_integral` in order to invoke a custom
-specialization, e.g.:
+For example, it is conceivable that explicit template specializations
+could be defined which exploit the language-level extensions to the C
+type system outlined in proposal N1169 [\[1\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf).
+It defines built-in fixed-point types which might improve performance
+on target systems with suitably-equipped processors.
+
+If reasonably possible, the design of the `fixed_point` template
+should leave open the option to exploit such system-specific
+features.
+
+Alternatively, it may be wiser to say that a user may explicitly
+specify a type other than one which satisfies `is_integral` in order
+to invoke a custom specialization, e.g.:
 
     fixed_point<signed short _Fract>
 
@@ -470,7 +462,7 @@ compile-time computation that is beyond the scope of this document.
 
 ### Bounded Integers
 
-The bounded::integer library[2](http://doublewise.net/c++/bounded/)
+The bounded::integer library [\[2\]](http://doublewise.net/c++/bounded/)
 exemplifies the benefits of keeping track of ranges of values in
 arithmetic types at compile time.
 
@@ -491,7 +483,7 @@ returned by `safe_` functions. For this reason, details surrounding
 these return types are omitted from this proposal.
 
 (Note: bounded::integer is already supported by fixed-point library,
-fp[3](https://github.com/mizvekov/fp).)
+fp [\[3\]](https://github.com/mizvekov/fp).)
 
 ### Alternative Policies
 
@@ -510,9 +502,7 @@ to add a third template parameter containing bit flags. The default
 set of values would reflect `fixed_point` as it stands currently.
 
 An example of a fixed-point proposal which takes a similar approach to
-rounding and error cases can be found in N3352[4]
-
- similar apprach is taken by
+rounding and error cases can be found in N3352 [\[4\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html).
 
 ## VI. References
 
