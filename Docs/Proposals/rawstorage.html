@@ -2,8 +2,8 @@
 <HTML><HEAD><TITLE>Extending raw_storage_iterator</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=windows-1252">
 </HEAD>
-<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>15 August 2015
-<BR>No doc number</FONT>
+<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>15-8-2015
+<BR>Document number: unassigned</FONT>
 
 <H1>Extending raw_storage_iterator</H1>
 
@@ -12,12 +12,7 @@
 
 <p>Management of uninitialized memory is an important topic for those implementing containers, allocators, and similar library facilities. This paper seeks to modernize raw storage iterator, bringing important missing features to this utility class.</p>
 
-<H2>II. Impact On the Standard</H2>
-
-<p>This proposal extends features for raw_storage_iterator. It does not depend on any other proposals.</p>
-
-
-<H2>III. Summary</H2>
+<H2>II. Summary</H2>
 
 <H3>Move construction</H3>
 <p>raw_storage_iterator lacks support for move construction of elements. Currently users will be faced with the surprising behavior of copy construction in all circumstances.
@@ -30,10 +25,9 @@
 <p>The primary use of raw_storage_iterator is to serve as a helper for constructing objects in place. Despite this, it does not support placement new syntax. Support for placement new into a raw storage iterator makes this iterator useful in new contexts like the uninitialized_* algorithms.</p>
 
 
-<H2>IV. Proposed Text</H2>
+<H2>III. Proposed Text</H2>
 
 <p>Make the following changes in [storage.iterator]: <br>
-Add to namespace std:
 
 <blockquote><pre><code>
   template&lt;class T&gt;
@@ -61,13 +55,12 @@ Add to namespace std:
 <blockquote><tt><pre>
   raw_storage_iterator& operator=(T&& element);
 </pre></tt></blockquote>
-<p><b>9</b> raw_storage_iterator& operator=(T&& element);
-<br>
+
 <b>Effects:</b> Move-constructs a value from element at the location to which the iterator points.<br>
 <b>Returns:</b> A reference to the iterator. 
 </p>
 
-<p>Amend <b>4</b> as follows:</p>
+<p>Amend operator=(const T& element) as follows:</p>
 <p>Effects: <u>Copy-c</u>onstructs a value from element ... </p>
 
 </BODY></HTML>
