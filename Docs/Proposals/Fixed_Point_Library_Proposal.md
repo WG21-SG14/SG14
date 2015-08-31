@@ -18,7 +18,7 @@ there are certain situations where fixed-point arithmetic is
 preferable.
 
 Some system lack native floating-point registers and must emulate them
-with integer arithmetic. Many others are capable of performing some or
+in software. Many others are capable of performing some or
 all operations more efficiently using integer arithmetic. Certain
 applications can suffer from the variability in precision which comes
 from a dynamic radix point [\[1\]](http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php).
@@ -26,10 +26,14 @@ In situations where a variable exponent is not desired, it takes
 valuable space away from the mantissa and reduces precision.
 
 Built-in integer types provide the basis for an efficient
-representation of binary fixed-point real numbers. However, *** there's something not very great about having to deal with all the shit related to this***.
+representation of binary fixed-point real numbers. However, laborious,
+error-prone steps are required to normalize the results of certain
+operations and to convert to and from fixed-point types.
+
 A set of tools for defining and manipulating fixed-point types is
-proposed. These tools are designed for those who traditionally take on the burden of using integer types to represent fixed-point
-and are aimed at performance and low-level shit.
+proposed. These tools are designed to make work easier for those who
+traditionally use integers to perform low-level, high-performance
+fixed-point computation.
 
 ## III. Impact On the Standard
 
