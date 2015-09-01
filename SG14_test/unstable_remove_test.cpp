@@ -7,11 +7,10 @@
 #include "algorithm_ext.h"
 #include <cassert>
 #include <memory>
-#include <chrono>
 
 struct foo
 {
-	std::array<int,16> info;
+	std::array<int,15> info;
 	static foo make()
 	{
 		foo result;
@@ -24,12 +23,10 @@ struct foo
 void sg14_test::unstable_remove_test()
 {
 #if 0
-	size_t test_runs = 200;
-
 	auto makelist = []
 	{
 		std::vector<foo> list;
-		std::generate_n(std::back_inserter(list), 30000, foo::make);
+		std::generate_n(std::back_inserter(list), 3000000, foo::make);
 		return list;
 	};
 
@@ -50,45 +47,19 @@ void sg14_test::unstable_remove_test()
 	auto time = [&](auto&& f)
 	{
 		auto list = makelist();
-		auto t0 = std::chrono::high_resolution_clock::now();
+		auto t0 = clock();
 		f(list);
-		auto t1 = std::chrono::high_resolution_clock::now();
-		return (t1 - t0).count();
+		auto t1 = clock();
+		return t1 - t0;
 	};
 
-	auto median = [](std::vector<unsigned long>& v)
-	{
-		auto b = v.begin();
-		auto e = v.end();
-		return *(b + ((e - b) / 2));
-	};
+	auto partition = time(partitionfn);
+	auto unstable_remove_if = time(unstablefn);
+	auto remove_if = time(removefn);
 
-	std::vector<unsigned long> partition; 
-	std::vector<unsigned long> unstable_remove_if;
-	std::vector<unsigned long> remove_if;
-
-	partition.reserve(test_runs);
-	unstable_remove_if.reserve(test_runs);
-	remove_if.reserve(test_runs);
-
-	for (int i = 0; i < test_runs; ++i)
-	{
-		remove_if.push_back(time(removefn));
-		unstable_remove_if.push_back(time(unstablefn));
-		partition.push_back(time(partitionfn));
-	}
-	std::sort(partition.begin(), partition.end());
-	std::sort(unstable_remove_if.begin(), unstable_remove_if.end());
-	std::sort(remove_if.begin(), remove_if.end());
-
-	auto partition_med = median(partition);
-	auto unstable_med = median(unstable_remove_if);
-	auto remove_med = median(remove_if);
-
-
-	std::cout << "partition: " << partition_med << "\n";
-	std::cout << "unstable: " << unstable_med << "\n";
-	std::cout << "remove_if: " << remove_med << "\n";
+	std::cout << "partition: " << partition << "\n";
+	std::cout << "unstable: " << unstable_remove_if << "\n";
+	std::cout << "remove_if: " << remove_if << "\n";
 	std::cin.get();
 #endif
 }
