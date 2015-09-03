@@ -638,6 +638,20 @@ namespace sg14
 	};
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::is_fixed_point
+
+	template <typename T>
+	struct is_fixed_point;
+
+	template <typename T>
+	struct is_fixed_point
+		: public std::integral_constant<bool, false> {};
+
+	template <typename REPR_TYPE, int EXPONENT>
+	struct is_fixed_point <fixed_point<REPR_TYPE, EXPONENT>>
+		: public std::integral_constant<bool, true> {};
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::make_fixed
 
 	// given the desired number of integer and fractional digits,
@@ -651,40 +665,35 @@ namespace sg14
 		(signed)(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::make_fixed_from_repr
+	// sg14::make_ufixed
 
-	// yields a float_point with EXPONENT calculated such that 
-	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
-	template <typename REPR_TYPE, int INTEGER_BITS>
-	using make_fixed_from_repr = fixed_point<
-		REPR_TYPE,
-		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+	// unsigned short-hanrd for make_fixed
+	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS>
+	using make_ufixed = make_fixed<INTEGER_DIGITS, FRACTIONAL_DIGITS, false>;
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::_impl::make_fixed_from_pair
+	// sg14::_impl::make_fixed_from_repr
+
+	namespace _impl
+	{
+		// yields a float_point with EXPONENT calculated such that
+		// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
+		template <typename REPR_TYPE, int INTEGER_BITS>
+		using make_fixed_from_repr = fixed_point<
+			REPR_TYPE,
+			INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::common_type
 
 	// given two fixed-point types, produces the type that is best suited to both of them
 	template <typename LHS_FP, typename RHS_FP>
-	using make_fixed_from_pair = make_fixed_from_repr<
+	using common_type = _impl::make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS_FP::repr_type, typename RHS_FP::repr_type>,
 		_impl::max(
 			LHS_FP::integer_digits,
 			RHS_FP::integer_digits)>;
-
-	////////////////////////////////////////////////////////////////////////////////
-	// sg14::open_unit and sg14::closed_unit partial specializations of fixed_point
-
-	// produces a left-closed and right-open unit intervel type, capable of storing
-	// signed values in the range [-1, 1) and
-	// unsigned values in the range [0, 1)
-	template <typename REPR_TYPE>
-	using open_unit = make_fixed_from_repr<REPR_TYPE, 0>;
-
-	// produces a closed unit intervel type, capable of storing
-	// signed values in the range [-1, 1] and
-	// unsigned values in the range [0, 1]
-	template <typename REPR_TYPE>
-	using closed_unit = make_fixed_from_repr<REPR_TYPE, 1>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point_promotion_t / promote
@@ -734,7 +743,7 @@ namespace sg14
 		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
 		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
+		using fixed_point = common_type<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) == static_cast<fixed_point>(rhs);
 	}
 
@@ -743,7 +752,7 @@ namespace sg14
 		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
 		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
+		using fixed_point = common_type<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) != static_cast<fixed_point>(rhs);
 	}
 
@@ -752,7 +761,7 @@ namespace sg14
 		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
 		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
+		using fixed_point = common_type<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) < static_cast<fixed_point>(rhs);
 	}
 
@@ -761,7 +770,7 @@ namespace sg14
 		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
 		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
+		using fixed_point = common_type<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) > static_cast<fixed_point>(rhs);
 	}
 
@@ -770,7 +779,7 @@ namespace sg14
 		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
 		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
+		using fixed_point = common_type<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) >= static_cast<fixed_point>(rhs);
 	}
 
@@ -779,40 +788,8 @@ namespace sg14
 		fixed_point<LHS_REPR_TYPE, LHS_EXPONENT> const & lhs,
 		fixed_point<RHS_REPR_TYPE, RHS_EXPONENT> const & rhs) noexcept
 	{
-		using fixed_point = make_fixed_from_pair<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
+		using fixed_point = common_type<fixed_point<LHS_REPR_TYPE, LHS_EXPONENT>, fixed_point<RHS_REPR_TYPE, RHS_EXPONENT>>;
 		return static_cast<fixed_point>(lhs) <= static_cast<fixed_point>(rhs);
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	// sg14::lerp
-
-	// linear interpolation between two fixed_point values
-	// given floating-point `t` for which result is `from` when t==0 and `to` when t==1
-	template <typename REPR_TYPE, int EXPONENT, typename S>
-	constexpr fixed_point<REPR_TYPE, EXPONENT> lerp(
-		fixed_point<REPR_TYPE, EXPONENT> from,
-		fixed_point<REPR_TYPE, EXPONENT> to,
-		S t)
-	{
-		using closed_unit = closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type>;
-		return lerp<REPR_TYPE, EXPONENT>(from, to, closed_unit(t));
-	}
-
-	template <typename REPR_TYPE, int EXPONENT>
-	constexpr fixed_point<REPR_TYPE, EXPONENT> lerp(
-		fixed_point<REPR_TYPE, EXPONENT> from,
-		fixed_point<REPR_TYPE, EXPONENT> to,
-		closed_unit<typename _impl::make_unsigned<REPR_TYPE>::type> t)
-	{
-		using fixed_point = fixed_point<REPR_TYPE, EXPONENT>;
-		using repr_type = typename fixed_point::repr_type;
-		using next_repr_type = typename _impl::next_size_t<repr_type>;
-		using closed_unit = closed_unit<typename  _impl::make_unsigned<REPR_TYPE>::type>;
-
-		return fixed_point::from_data(
-			_impl::shift_left<closed_unit::exponent, repr_type>(
-				(static_cast<next_repr_type>(from.data()) * (closed_unit(1).data() - t.data())) +
-				(static_cast<next_repr_type>(to.data()) * t.data())));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -876,7 +853,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT, unsigned N = 2>
-	using shift_add_result_t = make_fixed_from_repr<
+	using shift_add_result_t = _impl::make_fixed_from_repr<
 		typename FIXED_POINT::repr_type,
 		fixed_point<
 			typename FIXED_POINT::repr_type,
@@ -913,7 +890,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an subtraction between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using shift_subtract_result_t = make_fixed_from_repr<
+	using shift_subtract_result_t = _impl::make_fixed_from_repr<
 		_impl::get_int_t<true, _impl::max(sizeof(typename LHS::repr_type), sizeof(typename RHS::repr_type))>,
 		_impl::max(LHS::integer_digits, RHS::integer_digits) + 1>;
 
@@ -931,7 +908,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using shift_multiply_result_t = make_fixed_from_repr<
+	using shift_multiply_result_t = _impl::make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
 		LHS::integer_digits + RHS::integer_digits>;
 
@@ -944,7 +921,7 @@ namespace sg14
 		using output_type = shift_multiply_result_t<LHS, RHS>;
 		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
 		using next_repr_type = _impl::next_size_t<common_repr_type>;
-		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		using next_type = _impl::make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
 		return output_type(static_cast<next_type>(factor1) * static_cast<next_type>(factor2));
 	}
 
@@ -955,7 +932,7 @@ namespace sg14
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	// whose sign bit is set to the same value
 	template <typename FIXED_POINT>
-	using shift_square_result_t = make_fixed_from_repr<
+	using shift_square_result_t = _impl::make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		FIXED_POINT::integer_digits * 2>;
 
@@ -967,7 +944,7 @@ namespace sg14
 	{
 		using output_type = shift_square_result_t<FIXED_POINT>;
 		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
-		using next_type = make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
+		using next_type = _impl::make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
 		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
 	}
 
@@ -978,7 +955,7 @@ namespace sg14
 	// the positive result of a square root operation on an object of type,
 	// fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT>
-	using shift_sqrt_result_t = make_fixed_from_repr<
+	using shift_sqrt_result_t = _impl::make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		(FIXED_POINT::integer_digits + 1) / 2>;
 
@@ -1009,66 +986,6 @@ namespace sg14
 		fp = ld;
 		return in;
 	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	// fixed_point specializations
-
-	using fixed0_7_t = fixed_point<std::int8_t, -7>;
-	using fixed1_6_t = fixed_point<std::int8_t, -6>;
-	using fixed3_4_t = fixed_point<std::int8_t, -4>;
-	using fixed4_3_t = fixed_point<std::int8_t, -3>;
-	using fixed7_0_t = fixed_point<std::int8_t, 0>;
-
-	using ufixed0_8_t = fixed_point<std::uint8_t, -8>;
-	using ufixed1_7_t = fixed_point<std::uint8_t, -7>;
-	using ufixed4_4_t = fixed_point<std::uint8_t, -4>;
-	using ufixed8_0_t = fixed_point<std::uint8_t, 0>;
-
-	using fixed0_15_t = fixed_point<std::int16_t, -15>;
-	using fixed1_14_t = fixed_point<std::int16_t, -14>;
-	using fixed7_8_t = fixed_point<std::int16_t, -8>;
-	using fixed8_7_t = fixed_point<std::int16_t, -7>;
-	using fixed15_0_t = fixed_point<std::int16_t, 0>;
-
-	using ufixed0_16_t = fixed_point<std::uint16_t, -16>;
-	using ufixed1_15_t = fixed_point<std::uint16_t, -15>;
-	using ufixed8_8_t = fixed_point<std::uint16_t, -8>;
-	using ufixed16_0_t = fixed_point<std::uint16_t, 0>;
-
-	using fixed0_31_t = fixed_point<std::int32_t, -31>;
-	using fixed1_30_t = fixed_point<std::int32_t, -30>;
-	using fixed15_16_t = fixed_point<std::int32_t, -16>;
-	using fixed16_15_t = fixed_point<std::int32_t, -15>;
-	using fixed31_0_t = fixed_point<std::int32_t, 0>;
-
-	using ufixed0_32_t = fixed_point<std::uint32_t, -32>;
-	using ufixed1_31_t = fixed_point<std::uint32_t, -31>;
-	using ufixed16_16_t = fixed_point<std::uint32_t, -16>;
-	using ufixed32_0_t = fixed_point<std::uint32_t, 0>;
-
-	using fixed0_63_t = fixed_point<std::int64_t, -63>;
-	using fixed1_62_t = fixed_point<std::int64_t, -62>;
-	using fixed31_32_t = fixed_point<std::int64_t, -32>;
-	using fixed32_31_t = fixed_point<std::int64_t, -31>;
-	using fixed63_0_t = fixed_point<std::int64_t, 0>;
-
-	using ufixed0_64_t = fixed_point<std::uint64_t, -64>;
-	using ufixed1_63_t = fixed_point<std::uint64_t, -63>;
-	using ufixed32_32_t = fixed_point<std::uint64_t, -32>;
-	using ufixed64_0_t = fixed_point<std::uint64_t, 0>;
-
-#if defined(_SG14_FIXED_POINT_128)
-	using fixed0_127_t = fixed_point<__int128, -127>;
-	using fixed1_126_t = fixed_point<__int128, -126>;
-	using fixed63_64_t = fixed_point<__int128, -64>;
-	using fixed64_63_t = fixed_point<__int128, -63>;
-	using fixed127_0_t = fixed_point<__int128, 0>;
-
-	using ufixed0_128_t = fixed_point<unsigned __int128, -128>;
-	using ufixed1_127_t = fixed_point<unsigned __int128, -127>;
-	using ufixed64_64_t = fixed_point<unsigned __int128, -64>;
-	using ufixed128_0_t = fixed_point<unsigned __int128, 0>;
-#endif
 }
 
 #endif	// defined(_SG14_FIXED_POINT)
