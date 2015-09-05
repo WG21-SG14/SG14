@@ -1,7 +1,7 @@
 **Document number**: (draft)  
 **Date**: 2015-08-29  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
-**Reply-to**: John McFarlane, [john@mcfarlane.name](mailto:john@mcfarlane.name)
+**Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
 
 # Fixed-Point Real Numbers
 
