@@ -848,12 +848,12 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::shift_add_result_t / shift_add
+	// sg14::trunc_add_result_t / trunc_add
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT, unsigned N = 2>
-	using shift_add_result_t = _impl::make_fixed_from_repr<
+	using trunc_add_result_t = _impl::make_fixed_from_repr<
 		typename FIXED_POINT::repr_type,
 		fixed_point<
 			typename FIXED_POINT::repr_type,
@@ -864,61 +864,61 @@ namespace sg14
 		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD>
 		constexpr RESULT_TYPE add(HEAD const & addend_head)
 		{
-			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched shift_add parameters");
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched trunc_add parameters");
 			return static_cast<RESULT_TYPE>(addend_head);
 		}
 
 		template <typename RESULT_TYPE, typename FIXED_POINT, typename HEAD, typename ... TAIL>
 		constexpr RESULT_TYPE add(HEAD const & addend_head, TAIL const & ... addend_tail)
 		{
-			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched shift_add parameters");
+			static_assert(std::is_same<FIXED_POINT, HEAD>::value, "mismatched trunc_add parameters");
 			return add<RESULT_TYPE, FIXED_POINT, TAIL ...>(addend_tail ...) + static_cast<RESULT_TYPE>(addend_head);
 		}
 	}
 
 	template <typename FIXED_POINT, typename ... TAIL>
-	shift_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>
-	constexpr shift_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
+	trunc_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>
+	constexpr trunc_add(FIXED_POINT const & addend1, TAIL const & ... addend_tail)
 	{
-		using output_type = shift_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
+		using output_type = trunc_add_result_t<FIXED_POINT, sizeof...(TAIL) + 1>;
 		return _impl::add<output_type, FIXED_POINT>(addend1, addend_tail ...);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::shift_subtract_result_t / shift_subtract
+	// sg14::trunc_subtract_result_t / trunc_subtract
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an subtraction between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using shift_subtract_result_t = _impl::make_fixed_from_repr<
+	using trunc_subtract_result_t = _impl::make_fixed_from_repr<
 		_impl::get_int_t<true, _impl::max(sizeof(typename LHS::repr_type), sizeof(typename RHS::repr_type))>,
 		_impl::max(LHS::integer_digits, RHS::integer_digits) + 1>;
 
 	template <typename LHS, typename RHS>
-	shift_subtract_result_t<LHS, RHS>
-	constexpr shift_subtract(LHS const & minuend, RHS const & subtrahend)
+	trunc_subtract_result_t<LHS, RHS>
+	constexpr trunc_subtract(LHS const & minuend, RHS const & subtrahend)
 	{
-		using output_type = shift_subtract_result_t<LHS, RHS>;
+		using output_type = trunc_subtract_result_t<LHS, RHS>;
 		return static_cast<output_type>(minuend) - static_cast<output_type>(subtrahend);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::shift_multiply_result_t / shift_multiply
+	// sg14::trunc_multiply_result_t / trunc_multiply
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using shift_multiply_result_t = _impl::make_fixed_from_repr<
+	using trunc_multiply_result_t = _impl::make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
 		LHS::integer_digits + RHS::integer_digits>;
 
-	// as shift_multiply_result_t but converts parameter, factor,
+	// as trunc_multiply_result_t but converts parameter, factor,
 	// ready for safe binary multiply
 	template <typename LHS, typename RHS>
-	shift_multiply_result_t<LHS, RHS>
-	constexpr shift_multiply(const LHS & factor1, const RHS & factor2) noexcept
+	trunc_multiply_result_t<LHS, RHS>
+	constexpr trunc_multiply(const LHS & factor1, const RHS & factor2) noexcept
 	{
-		using output_type = shift_multiply_result_t<LHS, RHS>;
+		using output_type = trunc_multiply_result_t<LHS, RHS>;
 		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
 		using next_repr_type = _impl::next_size_t<common_repr_type>;
 		using next_type = _impl::make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
@@ -926,46 +926,46 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::shift_square_result_t / shift_square
+	// sg14::trunc_square_result_t / trunc_square
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	// whose sign bit is set to the same value
 	template <typename FIXED_POINT>
-	using shift_square_result_t = _impl::make_fixed_from_repr<
+	using trunc_square_result_t = _impl::make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		FIXED_POINT::integer_digits * 2>;
 
-	// as shift_square_result_t but converts parameter, factor,
+	// as trunc_square_result_t but converts parameter, factor,
 	// ready for safe binary multiply-by-self
 	template <typename FIXED_POINT>
-	shift_square_result_t<FIXED_POINT>
-	constexpr shift_square(const FIXED_POINT & root) noexcept
+	trunc_square_result_t<FIXED_POINT>
+	constexpr trunc_square(const FIXED_POINT & root) noexcept
 	{
-		using output_type = shift_square_result_t<FIXED_POINT>;
+		using output_type = trunc_square_result_t<FIXED_POINT>;
 		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
 		using next_type = _impl::make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
 		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::shift_sqrt_result_t / shift_sqrt
+	// sg14::trunc_sqrt_result_t / trunc_sqrt
 
 	// yields specialization of fixed_point with integral bits necessary to store
 	// the positive result of a square root operation on an object of type,
 	// fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT>
-	using shift_sqrt_result_t = _impl::make_fixed_from_repr<
+	using trunc_sqrt_result_t = _impl::make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		(FIXED_POINT::integer_digits + 1) / 2>;
 
-	// as shift_sqrt_result_t but converts parameter, factor,
+	// as trunc_sqrt_result_t but converts parameter, factor,
 	// ready for safe sqrt operation
 	template <typename FIXED_POINT>
-	shift_sqrt_result_t<FIXED_POINT>
-	constexpr shift_sqrt(const FIXED_POINT & square) noexcept
+	trunc_sqrt_result_t<FIXED_POINT>
+	constexpr trunc_sqrt(const FIXED_POINT & square) noexcept
 	{
-		using output_type = shift_sqrt_result_t<FIXED_POINT>;
+		using output_type = trunc_sqrt_result_t<FIXED_POINT>;
 		return output_type(sqrt(square));
 	}
 

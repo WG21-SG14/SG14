@@ -206,20 +206,20 @@ The following named function templates can be used as alternatives to
 arithmetic operators in situations where the aim is to avoid overflow
 without falling back on higher-capacity types.
 
-    shift_multiply(FIXED_POINT_1, FIXED_POINT_2)
-    shift_add(FIXED_POINT_1, FIXED_POINT_2)
-    shift_subtract(FIXED_POINT_1, FIXED_POINT_2)
-    shift_square(FIXED_POINT_1)
-    shift_sqrt(FIXED_POINT_1)
+    trunc_multiply(FIXED_POINT_1, FIXED_POINT_2)
+    trunc_add(FIXED_POINT_1, FIXED_POINT_2)
+    trunc_subtract(FIXED_POINT_1, FIXED_POINT_2)
+    trunc_square(FIXED_POINT_1)
+    trunc_sqrt(FIXED_POINT_1)
 
 These templates return results whose types have adjusted `EXPONENT`
 values which prevent overflow in the vast majority of cases. The
-`shift_` function templates have two drawbacks:
+`trunc_` function templates have two drawbacks:
 
 Firstly, because the capacity of the return type is not increased,
 precision may be lost. For example:
 
-    shift_square(make_ufixed<4, 4>(15.9375))
+    trunc_square(make_ufixed<4, 4>(15.9375))
 
 returns `make_ufixed<8, 0>(254)`. This result is far closer to
 the correct value than the result returned by `operator *`.
@@ -228,21 +228,21 @@ Secondly, there are rare cases where overflow can still occur due to
 the nature of twos-compliment binary arithmetic and the *most negative
 number*. For instance, the value of
 
-    shift_square(make_fixed<7, 0>(-128))
+    trunc_square(make_fixed<7, 0>(-128))
 
 is zero because 16384 cannot be represented in a
 `fixed_point<uint8_t, 6>` type.
 
 ### Underflow
 
-The major disadvantage of the way in which `shift_` functions protect
+The major disadvantage of the way in which `trunc_` functions protect
 the more significant digits is that the less insignificant digits are
 dropped. In the extreme case of underflow, all the bits are lost and
 the value becomes zero.
 
 For example,
 
-    shift_square(make_ufixed<8, 0>(15))
+    trunc_square(make_ufixed<8, 0>(15))
 
 causes the object to be flushed to zero.
 
@@ -269,9 +269,9 @@ The following example calculates the magnitude of a 3-dimensional vector.
 
     template <typename FP>
     constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
-    -> decltype(shift_sqrt(shift_add(shift_square(x), shift_square(y), shift_square(z))))
+    -> decltype(trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z))))
     {
-        return shift_sqrt(shift_add(shift_square(x), shift_square(y), shift_square(z)));
+        return trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z)));
     }
 
 Calling the above function as follows
@@ -321,34 +321,34 @@ returns the value, 9.890625.
         constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
 
       template <typename LHS, typename RHS = LHS>
-        using shift_multiply_result_t;
+        using trunc_multiply_result_t;
       template <typename LHS, typename RHS>
-        shift_multiply_result_t<LHS, RHS>
-          constexpr shift_multiply(const LHS & factor1, const RHS & factor2) noexcept;
+        trunc_multiply_result_t<LHS, RHS>
+          constexpr trunc_multiply(const LHS & factor1, const RHS & factor2) noexcept;
 
       template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-        using shift_add_result_t;
+        using trunc_add_result_t;
       template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-        shift_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr shift_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+        trunc_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+          constexpr trunc_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 
       template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
-        using shift_subtract_result_t;
+        using trunc_subtract_result_t;
       template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-        shift_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr shift_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+        trunc_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
+          constexpr trunc_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 
       template <typename FIXED_POINT>
-        using shift_square_result_t;
+        using trunc_square_result_t;
       template <typename FIXED_POINT>
-        shift_square_result_t<FIXED_POINT>
-          constexpr shift_square(const FIXED_POINT & root) noexcept;
+        trunc_square_result_t<FIXED_POINT>
+          constexpr trunc_square(const FIXED_POINT & root) noexcept;
 
       template <typename FIXED_POINT>
-        using shift_sqrt_result_t;
+        using trunc_sqrt_result_t;
       template <typename FIXED_POINT>
-        shift_sqrt_result_t<FIXED_POINT>
-          constexpr shift_sqrt(const FIXED_POINT & root) noexcept;
+        trunc_sqrt_result_t<FIXED_POINT>
+          constexpr trunc_sqrt(const FIXED_POINT & root) noexcept;
     }
 
 #### `fixed_point<>` Class Template
@@ -468,20 +468,20 @@ The bounded::integer library [\[3\]](http://doublewise.net/c++/bounded/)
 exemplifies the benefits of keeping track of ranges of values in
 arithmetic types at compile time.
 
-To a limited extent, the `shift_` functions defined here also keep
+To a limited extent, the `trunc_` functions defined here also keep
 track of - and modify - the limits of values. However, a combination
 of techniques is capable of producing superior results.
 
 For instance, consider the following expression:
 
     make_ufixed<2, 6> three(3);
-    auto n = shift_square(shift_square(three));
+    auto n = trunc_square(trunc_square(three));
 
 The type of `n` is `make_ufixed<8, 0>` but its value does not
 exceed 81. Hence, an unused integer bit has been allocated. It may be
 possible to track more accurate limits in the same manner as the
 bounded::integer library in order to improve the precision of types
-returned by `shift_` functions. For this reason, details surrounding
+returned by `trunc_` functions. For this reason, details surrounding
 these return types are omitted from this proposal.
 
 Notes:
@@ -498,7 +498,7 @@ characteristics include:
 
 * different rounding strategies - other than truncation;
 * overflow and underflow checks - possibly throwing exceptions;
-* operator return type - adopting `shift_` or `promote` behavior and
+* operator return type - adopting `trunc_` or `promote` behavior and
 * default-initialize to zero - not done by default.
 
 One way to extend `fixed_point` to cover these alternatives would be
