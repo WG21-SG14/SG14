@@ -425,26 +425,6 @@ static_assert(!(fixed_point<uint8_t>(4.5) >= fixed_point<int16_t>(4.6)), "sg14::
 static_assert(fixed_point<uint8_t, -1>(.5) == fixed_point<uint8_t, 0>(0), "sg14::fixed_point test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
-// sg14::trunc_multiply_result_t
-
-static_assert(trunc_multiply_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::trunc_multiply_result_t test failed");
-static_assert(trunc_multiply_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::trunc_multiply_result_t test failed");
-static_assert(trunc_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::trunc_multiply_result_t test failed");
-
-////////////////////////////////////////////////////////////////////////////////
-// sg14::trunc_multiply
-
-static_assert(static_cast<int>(trunc_multiply(make_fixed<7, 8>(127), make_fixed<7, 8>(127))) == 16129, "sg14::trunc_multiply test failed");
-static_assert(static_cast<int>(trunc_multiply(make_ufixed<4, 4>(15.9375), make_ufixed<4, 4>(15.9375))) == 254, "sg14::trunc_multiply test failed");
-static_assert(static_cast<float>(trunc_multiply(make_ufixed<4, 4>(0.0625), make_ufixed<4, 4>(0.0625))) == 0, "sg14::trunc_multiply test failed");
-static_assert(static_cast<float>(trunc_multiply(make_ufixed<8, 0>(1), make_ufixed<8, 0>(1))) == 0, "sg14::trunc_multiply test failed");
-static_assert(static_cast<float>(trunc_multiply(make_ufixed<8, 0>(174), make_ufixed<8, 0>(25))) == 4096, "sg14::trunc_multiply test failed");
-static_assert(static_cast<int>(trunc_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::trunc_multiply test failed");
-static_assert(static_cast<double>(trunc_multiply(make_fixed<4, 3>(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::trunc_multiply test failed");
-static_assert(static_cast<int>(trunc_multiply(make_fixed<4, 3>(-16), make_fixed<4, 3>(-15.875))) == 254, "sg14::trunc_multiply test failed");
-static_assert(static_cast<int>(trunc_multiply(make_fixed<4, 3>(-16), make_fixed<4, 3>(-16))) == -256, "sg14::trunc_multiply test failed");
-
-////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_add_result_t
 
 static_assert(trunc_add_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 5, "sg14::trunc_add_result_t test failed");
@@ -474,6 +454,26 @@ static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(127), make_fixe
 static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(127), make_fixed<7, 0>(-128))) == 254, "sg14::trunc_subtract test failed");
 static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(-128), make_fixed<7, 0>(-128))) == 0, "sg14::trunc_subtract test failed");
 static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(-128), make_fixed<7, 0>(127))) == -254, "sg14::trunc_subtract test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::trunc_multiply_result_t
+
+static_assert(trunc_multiply_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 8, "sg14::trunc_multiply_result_t test failed");
+static_assert(trunc_multiply_result_t<fixed_point<std::int32_t, -25>>::integer_digits == 12, "sg14::trunc_multiply_result_t test failed");
+static_assert(trunc_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::trunc_multiply_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::trunc_multiply
+
+static_assert(static_cast<int>(trunc_multiply(make_fixed<7, 8>(127), make_fixed<7, 8>(127))) == 16129, "sg14::trunc_multiply test failed");
+static_assert(static_cast<int>(trunc_multiply(make_ufixed<4, 4>(15.9375), make_ufixed<4, 4>(15.9375))) == 254, "sg14::trunc_multiply test failed");
+static_assert(static_cast<float>(trunc_multiply(make_ufixed<4, 4>(0.0625), make_ufixed<4, 4>(0.0625))) == 0, "sg14::trunc_multiply test failed");
+static_assert(static_cast<float>(trunc_multiply(make_ufixed<8, 0>(1), make_ufixed<8, 0>(1))) == 0, "sg14::trunc_multiply test failed");
+static_assert(static_cast<float>(trunc_multiply(make_ufixed<8, 0>(174), make_ufixed<8, 0>(25))) == 4096, "sg14::trunc_multiply test failed");
+static_assert(static_cast<int>(trunc_multiply(make_fixed<8, 0, false>(174), make_fixed<6, 2, false>(25))) == 4288, "sg14::trunc_multiply test failed");
+static_assert(static_cast<double>(trunc_multiply(make_fixed<4, 3>(15.875), make_fixed<16, 0, false>(65535))) == 1040352, "sg14::trunc_multiply test failed");
+static_assert(static_cast<int>(trunc_multiply(make_fixed<4, 3>(-16), make_fixed<4, 3>(-15.875))) == 254, "sg14::trunc_multiply test failed");
+static_assert(static_cast<int>(trunc_multiply(make_fixed<4, 3>(-16), make_fixed<4, 3>(-16))) == -256, "sg14::trunc_multiply test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_square_result_t
