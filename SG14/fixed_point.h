@@ -659,7 +659,7 @@ namespace sg14
 	//   fixed_point<>::integer_digits == INTEGER_DIGITS,
 	// and
 	//   fixed_point<>::fractional_digits >= FRACTIONAL_DIGITS,
-	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
+	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
 	using make_fixed = fixed_point<
 		typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>,
 		(signed)(INTEGER_DIGITS + IS_SIGNED) - _impl::num_bits<typename _impl::necessary_repr_t<INTEGER_DIGITS + FRACTIONAL_DIGITS + IS_SIGNED, IS_SIGNED>>()>;
@@ -668,7 +668,7 @@ namespace sg14
 	// sg14::make_ufixed
 
 	// unsigned short-hanrd for make_fixed
-	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS>
+	template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
 	using make_ufixed = make_fixed<INTEGER_DIGITS, FRACTIONAL_DIGITS, false>;
 
 	////////////////////////////////////////////////////////////////////////////////

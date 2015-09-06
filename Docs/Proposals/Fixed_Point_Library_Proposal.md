@@ -119,12 +119,12 @@ form of helper types in the style of `make_signed`.
 
 These aliases are declared as:
 
-    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
+    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
   	using make_fixed;
 
 and
 
-    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS>
+    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
     using make_ufixed;
 
 They resolve to a `fixed_point` specialization with the given
@@ -290,9 +290,9 @@ returns the value, 9.890625.
     namespace std {
       template <typename REPR_TYPE, int EXPONENT> class fixed_point;
 
-      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS, bool IS_SIGNED = true>
+      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
         using make_fixed;
-      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS>
+      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
         using make_ufixed;
 
       template <typename FIXED_POINT>
