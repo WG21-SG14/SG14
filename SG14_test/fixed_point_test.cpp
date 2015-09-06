@@ -357,13 +357,13 @@ static_assert(static_cast<float>((make_fixed<15, 16>(123.125) + make_fixed<15, 1
 // subtraction
 static_assert(static_cast<int>((make_fixed<31, 0>(999) - make_fixed<31, 0>(369))) == 630, "sg14::fixed_point test failed");
 static_assert(static_cast<float>((make_fixed<15, 16>(246.875) - make_fixed<15, 16>(123.75))) == 123.125, "sg14::fixed_point test failed");
-static_assert(static_cast<float>((fixed_point<std::int16_t, -4>(123.125) - fixed_point<std::int16_t, -4>(246.875))) == -123.75, "sg14::fixed_point test failed");
+static_assert(static_cast<float>((make_fixed<11, 4>(123.125) - make_fixed<11, 4>(246.875))) == -123.75, "sg14::fixed_point test failed");
 
 // multiplication
 static_assert(static_cast<int>((make_ufixed<8, 0>(0x55) * make_ufixed<8, 0>(2))) == 0xaa, "sg14::fixed_point test failed");
 static_assert(static_cast<float>((make_fixed<15, 16>(123.75) * make_fixed<15, 16>(44.5))) == 5506.875, "sg14::fixed_point test failed");
 #if defined(_SG14_FIXED_POINT_128)
-static_assert(static_cast<int>((fixed_point<std::uint64_t, -8>(1003006) * fixed_point<std::uint64_t, -8>(7))) == 7021042, "sg14::fixed_point test failed");
+static_assert(static_cast<int>((make_ufixed<56, 8>(1003006) * make_ufixed<56, 8>(7))) == 7021042, "sg14::fixed_point test failed");
 #endif
 
 // division
@@ -453,48 +453,48 @@ static_assert(trunc_add_result_t<fixed_point<std::int32_t, -25>, 4>::integer_dig
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_add
 
-static_assert(static_cast<int>(trunc_add(fixed_point<std::uint8_t, -1>(127), fixed_point<std::uint8_t, -1>(127))) == 254, "sg14::trunc_add test failed");
+static_assert(static_cast<int>(trunc_add(make_ufixed<7, 1>(127), make_ufixed<7, 1>(127))) == 254, "sg14::trunc_add test failed");
 static_assert(static_cast<float>(trunc_add(make_ufixed<4, 4>(15.5), make_ufixed<4, 4>(14.25), make_ufixed<4, 4>(13.5))) == 43.25, "sg14::trunc_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_subtract_result_t
 
-static_assert(std::is_same<trunc_subtract_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::int8_t, -2>>::value, "sg14::trunc_subtract_result_t test failed");
-static_assert(std::is_same<trunc_subtract_result_t<fixed_point<std::int8_t, -3>, fixed_point<std::uint16_t, -8>>, fixed_point<std::int16_t, -6>>::value, "sg14::trunc_subtract_result_t test failed");
+static_assert(std::is_same<trunc_subtract_result_t<make_ufixed<4, 4>>, make_fixed<5, 2>>::value, "sg14::trunc_subtract_result_t test failed");
+static_assert(std::is_same<trunc_subtract_result_t<make_fixed<4, 3>, make_ufixed<8, 8>>, make_fixed<9, 6>>::value, "sg14::trunc_subtract_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_subtract
 
-static_assert(static_cast<int>(trunc_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(127))) == 0, "sg14::trunc_subtract test failed");
-static_assert(static_cast<float>(trunc_subtract(fixed_point<std::uint8_t, -1>(127.5), fixed_point<std::uint8_t, -1>(0))) == 126, "sg14::trunc_subtract test failed");
-static_assert(static_cast<float>(trunc_subtract(fixed_point<std::uint8_t, -1>(0), fixed_point<std::uint8_t, -1>(127.5))) == -126, "sg14::trunc_subtract test failed");
-static_assert(static_cast<float>(trunc_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(127))) == 0, "sg14::trunc_subtract test failed");
-static_assert(static_cast<float>(trunc_subtract(fixed_point<std::int8_t, 0>(127), fixed_point<std::int8_t, 0>(-128))) == 254, "sg14::trunc_subtract test failed");
-static_assert(static_cast<float>(trunc_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(-128))) == 0, "sg14::trunc_subtract test failed");
-static_assert(static_cast<float>(trunc_subtract(fixed_point<std::int8_t, 0>(-128), fixed_point<std::int8_t, 0>(127))) == -254, "sg14::trunc_subtract test failed");
+static_assert(static_cast<int>(trunc_subtract(make_ufixed<7, 1>(127.5), make_ufixed<7, 1>(127))) == 0, "sg14::trunc_subtract test failed");
+static_assert(static_cast<float>(trunc_subtract(make_ufixed<7, 1>(127.5), make_ufixed<7, 1>(0))) == 126, "sg14::trunc_subtract test failed");
+static_assert(static_cast<float>(trunc_subtract(make_ufixed<7, 1>(0), make_ufixed<7, 1>(127.5))) == -126, "sg14::trunc_subtract test failed");
+static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(127), make_fixed<7, 0>(127))) == 0, "sg14::trunc_subtract test failed");
+static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(127), make_fixed<7, 0>(-128))) == 254, "sg14::trunc_subtract test failed");
+static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(-128), make_fixed<7, 0>(-128))) == 0, "sg14::trunc_subtract test failed");
+static_assert(static_cast<float>(trunc_subtract(make_fixed<7, 0>(-128), make_fixed<7, 0>(127))) == -254, "sg14::trunc_subtract test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_square_result_t
 
-static_assert(std::is_same<trunc_square_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, 0>>::value, "sg14::trunc_square_result_t test failed");
-static_assert(std::is_same<trunc_square_result_t<fixed_point<std::int32_t, -25>>, fixed_point<std::uint32_t, -20>>::value, "sg14::trunc_square_result_t test failed");
+static_assert(std::is_same<trunc_square_result_t<make_ufixed<4, 4>>, make_ufixed<8, 0>>::value, "sg14::trunc_square_result_t test failed");
+static_assert(std::is_same<trunc_square_result_t<make_fixed<6, 25>>, make_ufixed<12, 20>>::value, "sg14::trunc_square_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_square
 
-static_assert(static_cast<int>(trunc_square(fixed_point<std::uint8_t, -1>(127))) == 16128, "sg14::trunc_square test failed");
+static_assert(static_cast<int>(trunc_square(make_ufixed<7, 1>(127))) == 16128, "sg14::trunc_square test failed");
 static_assert(static_cast<float>(trunc_square(make_ufixed<4, 4>(15.5))) == 240, "sg14::trunc_square test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_sqrt_result_t
 
-static_assert(std::is_same<trunc_sqrt_result_t<fixed_point<std::uint8_t, -4>>, fixed_point<std::uint8_t, -6>>::value, "sg14::trunc_sqrt_result_t test failed");
-static_assert(std::is_same<trunc_sqrt_result_t<fixed_point<std::int32_t, -16>>, fixed_point<std::uint32_t, -24>>::value, "sg14::trunc_sqrt_result_t test failed");
+static_assert(std::is_same<trunc_sqrt_result_t<make_ufixed<4, 4>>, make_ufixed<2, 6>>::value, "sg14::trunc_sqrt_result_t test failed");
+static_assert(std::is_same<trunc_sqrt_result_t<make_ufixed<15, 16>>, make_ufixed<8, 24>>::value, "sg14::trunc_sqrt_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_sqrt
 
-static_assert(static_cast<int>(trunc_sqrt(fixed_point<std::int16_t, -1>(16128))) == 126, "sg14::trunc_sqrt test failed");
+static_assert(static_cast<int>(trunc_sqrt(make_fixed<14, 1>(16128))) == 126, "sg14::trunc_sqrt test failed");
 static_assert(static_cast<float>(trunc_sqrt(make_ufixed<8, 0>(240))) == 15, "sg14::trunc_sqrt test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -512,12 +512,12 @@ static_assert(static_cast<int>(abs(make_fixed<7, 8>(-5))) == 5, "sg14::abs test 
 static_assert(static_cast<int>(sqrt(make_ufixed<8, 0>(225))) == 15, "sg14::sqrt test failed");
 static_assert(static_cast<int>(sqrt(make_fixed<7, 0>(81))) == 9, "sg14::sqrt test failed");
 
-static_assert(static_cast<int>(sqrt(fixed_point<std::uint8_t, -1>(4))) == 2, "sg14::sqrt test failed");
-static_assert(static_cast<int>(sqrt(fixed_point<std::int8_t, -2>(9))) == 3, "sg14::sqrt test failed");
+static_assert(static_cast<int>(sqrt(make_ufixed<7, 1>(4))) == 2, "sg14::sqrt test failed");
+static_assert(static_cast<int>(sqrt(make_fixed<5, 2>(9))) == 3, "sg14::sqrt test failed");
 
 static_assert(static_cast<int>(sqrt(make_ufixed<4, 4>(4))) == 2, "sg14::sqrt test failed");
-static_assert(static_cast<float>(sqrt(fixed_point<std::int32_t, -24>(3.141592654))) > 1.7724537849426, "sg14::sqrt test failed");
-static_assert(static_cast<float>(sqrt(fixed_point<std::int32_t, -24>(3.141592654))) < 1.7724537849427, "sg14::sqrt test failed");
+static_assert(static_cast<float>(sqrt(make_fixed<7, 24>(3.141592654))) > 1.7724537849426, "sg14::sqrt test failed");
+static_assert(static_cast<float>(sqrt(make_fixed<7, 24>(3.141592654))) < 1.7724537849427, "sg14::sqrt test failed");
 #if defined(_SG14_FIXED_POINT_128)
 static_assert(static_cast<std::int64_t>(sqrt(make_fixed<63, 0>(9223372036854775807))) == 3037000499, "sg14::sqrt test failed");
 #endif
