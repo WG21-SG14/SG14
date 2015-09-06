@@ -449,12 +449,14 @@ static_assert(static_cast<int>(trunc_multiply(make_fixed<4, 3>(-16), make_fixed<
 
 static_assert(trunc_add_result_t<fixed_point<std::uint8_t, -4>>::integer_digits == 5, "sg14::trunc_add_result_t test failed");
 static_assert(trunc_add_result_t<fixed_point<std::int32_t, -25>, 4>::integer_digits == 8, "sg14::trunc_add_result_t test failed");
+static_assert(std::is_same<trunc_add_result_t<fixed_point<std::int8_t, 0>, 2>, fixed_point<int8_t, 1>>::value, "sg14::trunc_add_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_add
 
 static_assert(static_cast<int>(trunc_add(make_ufixed<7, 1>(127), make_ufixed<7, 1>(127))) == 254, "sg14::trunc_add test failed");
 static_assert(static_cast<float>(trunc_add(make_ufixed<4, 4>(15.5), make_ufixed<4, 4>(14.25), make_ufixed<4, 4>(13.5))) == 43.25, "sg14::trunc_add test failed");
+static_assert(static_cast<int>(trunc_add(make_fixed<7, 0>(-128), make_fixed<7, 0>(-128))) == -256, "sg14::trunc_add test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_subtract_result_t
