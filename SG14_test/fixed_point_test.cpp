@@ -101,7 +101,7 @@ namespace sg14_test
 		// Arithmetic Operators
 		static_assert(static_cast<int>(make_fixed<4, 3>(15) + make_fixed<4, 3>(1)) != 16, "Incorrect information in proposal section, Arithmetic Operators");
 
-		// Type Promotion and Demotion Functions
+		// Type Promotion
 		auto type_promotion = promote(make_fixed<5, 2>(15.5));
 		static_assert(is_same<decltype(type_promotion), make_fixed<11, 4>>::value, "Incorrect information in proposal section, Type Promotion and Demotion Functions");
 		ASSERT_EQUAL(static_cast<float>(type_promotion), 15.5);
