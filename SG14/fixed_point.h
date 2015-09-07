@@ -533,48 +533,6 @@ namespace sg14
 			return lhs._repr <= rhs._repr;
 		}
 
-		// arithmetic
-		friend constexpr fixed_point operator-(fixed_point const & rhs) noexcept
-		{
-			static_assert(_impl::is_signed<repr_type>::value, "unary negation of unsigned value");
-
-			return fixed_point(- rhs._repr, 0);
-		}
-
-		friend constexpr fixed_point operator+(fixed_point const & lhs, fixed_point const & rhs) noexcept
-		{
-			return fixed_point(lhs._repr + rhs._repr, 0);
-		}
-		friend constexpr fixed_point operator-(fixed_point const & lhs, fixed_point const & rhs) noexcept
-		{
-			return fixed_point(lhs._repr - rhs._repr, 0);
-		}
-		friend constexpr fixed_point operator*(fixed_point const & lhs, fixed_point const & rhs) noexcept
-		{
-			return fixed_point(_impl::shift_left<exponent, repr_type>(_impl::next_size_t<repr_type>(lhs._repr) * rhs._repr), 0);
-		}
-		friend constexpr fixed_point operator/(fixed_point const & lhs, fixed_point const & rhs) noexcept
-		{
-			return fixed_point(repr_type(_impl::shift_right<exponent, _impl::next_size_t<repr_type>>(lhs._repr) / rhs._repr), 0);
-		}
-
-		friend fixed_point & operator+=(fixed_point & lhs, fixed_point const & rhs) noexcept
-		{
-			return lhs = lhs + rhs;
-		}
-		friend fixed_point & operator-=(fixed_point & lhs, fixed_point const & rhs) noexcept
-		{
-			return lhs = lhs - rhs;
-		}
-		friend fixed_point & operator*=(fixed_point & lhs, fixed_point const & rhs) noexcept
-		{
-			return lhs = lhs * rhs;
-		}
-		friend fixed_point & operator/=(fixed_point & lhs, fixed_point const & rhs) noexcept
-		{
-			return lhs = lhs / rhs;
-		}
-
 	private:
 		template <typename S, typename std::enable_if<std::is_floating_point<S>::value, int>::type dummy = 0>
 		static constexpr S one() noexcept
@@ -996,6 +954,83 @@ namespace sg14
 		in >> ld;
 		fp = ld;
 		return in;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// fixed_point arithmetic operator overloads
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT> operator-(
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		static_assert(_impl::is_signed<REPR_TYPE>::value, "unary negation of unsigned value");
+
+		return fixed_point<REPR_TYPE, EXPONENT>::from_data(-rhs.data());
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT> operator+(
+		fixed_point<REPR_TYPE, EXPONENT> const & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return fixed_point<REPR_TYPE, EXPONENT>::from_data(lhs.data() + rhs.data());
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT> operator-(
+		fixed_point<REPR_TYPE, EXPONENT> const & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return fixed_point<REPR_TYPE, EXPONENT>::from_data(lhs.data() - rhs.data());
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT> operator*(
+		fixed_point<REPR_TYPE, EXPONENT> const & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return _impl::multiply<fixed_point<REPR_TYPE, EXPONENT>>(lhs, rhs);
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	constexpr fixed_point<REPR_TYPE, EXPONENT> operator/(
+		fixed_point<REPR_TYPE, EXPONENT> const & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return fixed_point<REPR_TYPE, EXPONENT>::from_data(
+			REPR_TYPE(_impl::shift_right<EXPONENT, _impl::next_size_t<REPR_TYPE>>(lhs.data()) / rhs.data()));
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point<REPR_TYPE, EXPONENT> & operator+=(
+		fixed_point<REPR_TYPE, EXPONENT> & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return lhs = lhs + rhs;
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point<REPR_TYPE, EXPONENT> & operator-=(
+		fixed_point<REPR_TYPE, EXPONENT> & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return lhs = lhs - rhs;
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point<REPR_TYPE, EXPONENT> & operator*=(
+		fixed_point<REPR_TYPE, EXPONENT> & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return lhs = lhs * rhs;
+	}
+
+	template <typename REPR_TYPE, int EXPONENT>
+	fixed_point<REPR_TYPE, EXPONENT> & operator/=(
+		fixed_point<REPR_TYPE, EXPONENT> & lhs,
+		fixed_point<REPR_TYPE, EXPONENT> const & rhs) noexcept
+	{
+		return lhs = lhs / rhs;
 	}
 }
 
