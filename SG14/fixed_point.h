@@ -932,13 +932,10 @@ namespace sg14
 	// ready for safe binary multiply
 	template <typename LHS, typename RHS>
 	trunc_multiply_result_t<LHS, RHS>
-	constexpr trunc_multiply(const LHS & factor1, const RHS & factor2) noexcept
+	constexpr trunc_multiply(LHS const & lhs, RHS const & rhs) noexcept
 	{
-		using output_type = trunc_multiply_result_t<LHS, RHS>;
-		using common_repr_type = _impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>;
-		using next_repr_type = _impl::next_size_t<common_repr_type>;
-		using next_type = _impl::make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
-		return output_type(static_cast<next_type>(factor1) * static_cast<next_type>(factor2));
+		using result_type = trunc_multiply_result_t<LHS, RHS>;
+		return _impl::multiply<result_type>(lhs, rhs);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -958,10 +955,8 @@ namespace sg14
 	trunc_square_result_t<FIXED_POINT>
 	constexpr trunc_square(const FIXED_POINT & root) noexcept
 	{
-		using output_type = trunc_square_result_t<FIXED_POINT>;
-		using next_repr_type = _impl::next_size_t<typename FIXED_POINT::repr_type>;
-		using next_type = _impl::make_fixed_from_repr<next_repr_type, output_type::integer_digits>;
-		return output_type(static_cast<next_type>(root) * static_cast<next_type>(root));
+		using result_type = trunc_square_result_t<FIXED_POINT>;
+		return _impl::multiply<result_type>(root, root);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
