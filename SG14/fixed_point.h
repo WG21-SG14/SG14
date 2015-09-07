@@ -848,6 +848,22 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::_impl::multiply
+
+	namespace _impl
+	{
+		template <typename RESULT, typename LHS, typename RHS>
+		constexpr RESULT multiply(LHS const & lhs, RHS const & rhs) noexcept
+		{
+			using result_repr_type = RESULT::repr_type;
+			using intermediate_repr_type = _impl::next_size_t<common_type<LHS, RHS>::repr_type>;
+			return RESULT::from_data(
+				_impl::shift_left<(LHS::exponent + RHS::exponent - RESULT::exponent), result_repr_type>(
+					static_cast<intermediate_repr_type>(lhs.data()) * static_cast<intermediate_repr_type>(rhs.data())));
+		}
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::trunc_add_result_t / trunc_add
 
 	// yields specialization of fixed_point with integral bits necessary to store
