@@ -939,6 +939,48 @@ namespace sg14
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
+	// sg14::promote_multiply_result_t / promote_multiply
+
+	// yields specialization of fixed_point with capacity necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	template <typename LHS, typename RHS = LHS>
+	using promote_multiply_result_t = fixed_point_promotion_t<common_type<LHS, RHS>>;
+
+	// as promote_multiply_result_t but converts parameter, factor,
+	// ready for safe binary multiply
+	template <typename LHS, typename RHS>
+	promote_multiply_result_t<LHS, RHS>
+		constexpr promote_multiply(const LHS & lhs, const RHS & rhs) noexcept
+	{
+		using result_type = promote_multiply_result_t<LHS, RHS>;
+		return _impl::multiply<result_type>(lhs, rhs);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// sg14::promote_square_result_t / promote_square
+
+	// yields specialization of fixed_point with integral bits necessary to store
+	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
+	// whose sign bit is set to the same value
+	template <typename FIXED_POINT>
+	using promote_square_result_t = make_ufixed<
+		FIXED_POINT::integer_digits * 2,
+		FIXED_POINT::fractional_digits * 2>;
+
+	// as promote_square_result_t but converts parameter, factor,
+	// ready for safe binary multiply-by-self
+	template <typename FIXED_POINT>
+	promote_square_result_t<FIXED_POINT>
+		constexpr promote_square(const FIXED_POINT & root) noexcept
+	{
+		using output_type = promote_square_result_t<FIXED_POINT>;
+		using output_repr_type = output_type::repr_type;
+		return output_type::from_data(
+			_impl::shift_left<(FIXED_POINT::exponent * 2 - output_type::exponent), output_repr_type>(
+				static_cast<output_repr_type>(root.data()) * static_cast<output_repr_type>(root.data())));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
 	// sg14::fixed_point streaming - (placeholder implementation)
 
 	template <typename REPR_TYPE, int EXPONENT>

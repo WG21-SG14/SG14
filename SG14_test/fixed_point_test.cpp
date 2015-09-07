@@ -503,6 +503,39 @@ static_assert(static_cast<int>(trunc_sqrt(make_fixed<14, 1>(16128))) == 126, "sg
 static_assert(static_cast<float>(trunc_sqrt(make_ufixed<8, 0>(240))) == 15, "sg14::trunc_sqrt test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
+// sg14::promote_multiply_result_t
+
+static_assert(std::is_same<promote_multiply_result_t<make_ufixed<4, 4>>, make_ufixed<8, 8>>::value, "sg14::promote_multiply_result_t test failed");
+static_assert(std::is_same<promote_multiply_result_t<make_fixed<6, 25>>, make_fixed<13, 50>>::value, "sg14::promote_multiply_result_t test failed");
+static_assert(promote_multiply_result_t<fixed_point<std::uint8_t, 0>>::integer_digits == 16, "sg14::promote_multiply_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::promote_multiply
+
+static_assert(static_cast<int>(promote_multiply(make_fixed<7, 8>(127), make_fixed<7, 8>(127))) == 16129, "sg14::promote_multiply test failed");
+static_assert(static_cast<int>(promote_multiply(make_ufixed<4, 4>(15.9375), make_ufixed<4, 4>(15.9375))) == 254, "sg14::promote_multiply test failed");
+static_assert(static_cast<float>(promote_multiply(make_ufixed<4, 4>(0.0625), make_ufixed<4, 4>(0.0625))) == 0.00390625, "sg14::promote_multiply test failed");
+static_assert(static_cast<float>(promote_multiply(make_ufixed<8, 0>(1), make_ufixed<8, 0>(1))) == 1, "sg14::promote_multiply test failed");
+static_assert(static_cast<float>(promote_multiply(make_ufixed<8, 0>(174), make_ufixed<8, 0>(25))) == 4350, "sg14::promote_multiply test failed");
+static_assert(static_cast<int>(promote_multiply(make_ufixed<8, 0>(174), make_ufixed<6, 2>(25))) == 4350, "sg14::promote_multiply test failed");
+static_assert(static_cast<double>(promote_multiply(make_fixed<4, 3>(15.875), make_ufixed<16, 0>(65535))) == 1040368, "sg14::promote_multiply test failed");
+static_assert(static_cast<int>(promote_multiply(make_fixed<4, 3>(-16), make_fixed<4, 3>(-15.875))) == 254, "sg14::promote_multiply test failed");
+static_assert(static_cast<int>(promote_multiply(make_fixed<4, 3>(-16), make_fixed<4, 3>(-16))) == 256, "sg14::promote_multiply test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::promote_square_result_t
+
+static_assert(std::is_same<promote_square_result_t<make_ufixed<4, 4>>, make_ufixed<8, 8>>::value, "sg14::promote_square_result_t test failed");
+static_assert(std::is_same<promote_square_result_t<make_fixed<6, 25>>, make_ufixed<12, 51>>::value, "sg14::promote_square_result_t test failed");
+
+////////////////////////////////////////////////////////////////////////////////
+// sg14::promote_square
+
+static_assert(static_cast<float>(promote_square(make_ufixed<7, 1>(127.5))) == 16256.25, "sg14::promote_square test failed");
+static_assert(static_cast<float>(promote_square(make_ufixed<4, 4>(15.5))) == 240.25, "sg14::promote_square test failed");
+static_assert(static_cast<std::uint64_t>(promote_square(make_fixed<31>(2000000000))) == 4000000000000000000, "sg14::promote_square test failed");
+
+////////////////////////////////////////////////////////////////////////////////
 // sg14::abs
 
 static_assert(static_cast<int>(abs(make_fixed<7, 0>(66))) == 66, "sg14::abs test failed");
