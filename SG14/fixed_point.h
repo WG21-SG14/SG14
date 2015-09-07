@@ -813,8 +813,8 @@ namespace sg14
 		template <typename RESULT, typename LHS, typename RHS>
 		constexpr RESULT multiply(LHS const & lhs, RHS const & rhs) noexcept
 		{
-			using result_repr_type = RESULT::repr_type;
-			using intermediate_repr_type = _impl::next_size_t<common_type<LHS, RHS>::repr_type>;
+			using result_repr_type = typename RESULT::repr_type;
+			using intermediate_repr_type = _impl::next_size_t<typename common_type<LHS, RHS>::repr_type>;
 			return RESULT::from_data(
 				_impl::shift_left<(LHS::exponent + RHS::exponent - RESULT::exponent), result_repr_type>(
 					static_cast<intermediate_repr_type>(lhs.data()) * static_cast<intermediate_repr_type>(rhs.data())));
@@ -974,7 +974,7 @@ namespace sg14
 		constexpr promote_square(const FIXED_POINT & root) noexcept
 	{
 		using output_type = promote_square_result_t<FIXED_POINT>;
-		using output_repr_type = output_type::repr_type;
+		using output_repr_type = typename output_type::repr_type;
 		return output_type::from_data(
 			_impl::shift_left<(FIXED_POINT::exponent * 2 - output_type::exponent), output_repr_type>(
 				static_cast<output_repr_type>(root.data()) * static_cast<output_repr_type>(root.data())));
