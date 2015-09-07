@@ -152,42 +152,67 @@ applied to `fixed_point` specializations. Input parameters and return
 value are all of the same type. (A possible exception to this is the
 right hand parameter of bit shift operators.)
 
-Because of this choice, arithmetic operators carry a risk of overflow.
-For instance,
+#### Overflow
+
+Because arithmetic operators return a result of equal capacity to
+their inputs, they carry a risk of overflow. For instance,
 
     make_fixed<4, 3>(15) + make_fixed<4, 3>(1)
 
-produces undefined behavior because a type with 4 integer bits cannot
-store value 16. (Note that unsigned types also overflow - unlike their
-unsigned integer equivalents.)
+causes overflow because because a type with 4 integer bits cannot
+store a value of 16.
 
-This represents the first of three alternative approaches to dealing
-with overflow:
+Overflow of any bits in a signed or unsigned fixed-point type is
+classed as undefined behavior. This is a minor deviation from
+built-in integer arithmetic where only signed overflow results in
+undefined behavior.
 
-1. ignore the problem and leave it to the user to avoid overflow;
+#### Underflow
+
+The other typical cause of lost bits is underflow where, for example,
+
+    make_fixed<7, 0>(15) / make_fixed<7, 0>(2)
+
+results in a value of 7. This results in loss of precision but is
+generally considered acceptable.
+
+However, when all bits are lost due to underflow, the value is said
+to be flushed and this is classed as undefined behavior.
+
+### Dealing With Overflow and Flushes
+
+Errors resulting from overflow and flushes are two of the biggest
+headaches related to fixed-point arithmetic. Integers suffer the same
+kinds of errors but are somewhat easier to reason about as they lack
+fractional digits. Floating-point numbers are largely shielded from
+these errors by their variable exponent and implicit bit.
+
+Three strategies for avoiding overflow in fixed-point types are
+presented:
+
+1. simply leave it to the user to avoid overflow;
 2. promote the result to a larger type to ensure sufficient capacity
    or
 3. adjust the exponent of the result upward to ensure that the top
    limit of the type is sufficient to preserve the most significant
    digits at the expense of the less significant digits.
 
-For arithmetic operators, choice 1) is preferred because it most
-closely follows the behavior of integer types. Thus it should cause
-the least surprise to the fewest users. This makes it far easier to
-reason about in code where functions are written with a particular
-type in mind. It also requires the least computation.
+For arithmetic operators, choice 1) is taken because it most closely
+follows the behavior of integer types. Thus it should cause the least
+surprise to the fewest users. This makes it far easier to reason
+about in code where functions are written with a particular type in
+mind. It also requires the least computation in most cases.
 
 Choices 2) and 3) are more robust to overflow events. However, they
 represent different trade-offs and neither one is the best fit in all
-situations. For these reasons, they are offered via named functions
-instead.
+situations. For these reasons, they are presented as named functions.
 
-### Type Promotion
+#### Type Promotion
 
-Function template, `promote`, borrows a term from the language feature
-which avoids integer overflow prior to certain operations. It takes a
-`fixed_point` object and returns the same value represented by a
-larger `fixed_point` specialization.
+Function template, `promote`, borrows a term from the language
+feature which avoids integer overflow prior to certain operations. It
+takes a `fixed_point` object and returns the same value represented
+by a larger `fixed_point` specialization.
 
 For example,
 
@@ -197,71 +222,37 @@ is equivalent to
 
     make_fixed<11, 4>(15.5)
 
-Complimentary function template, `demote`, inverts the process,
+Complimentary function template, `demote`, reverses the process,
 returning a value of a smaller type.
 
-### Named Arithmetic Functions
+#### Named Arithmetic Functions
 
-The following named function templates can be used as alternatives to
-arithmetic operators in situations where the aim is to avoid overflow
-without falling back on higher-capacity types.
+The following named function templates can be used as a hassle-free
+alternative to arithmetic operators in situations where the aim is
+to avoid overflow:
 
-    trunc_multiply(FIXED_POINT_1, FIXED_POINT_2)
     trunc_add(FIXED_POINT_1, FIXED_POINT_2)
     trunc_subtract(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_square(FIXED_POINT_1)
-    trunc_sqrt(FIXED_POINT_1)
+    trunc_multiply(FIXED_POINT_1, FIXED_POINT_2)
+    trunc_square(FIXED_POINT)
+    trunc_sqrt(FIXED_POINT)
+    promote_multiply(FIXED_POINT_1, FIXED_POINT_2)
+    promote_square(FIXED_POINT)
 
-These templates return results whose types have adjusted `EXPONENT`
-values which prevent overflow in the vast majority of cases. The
-`trunc_` function templates have two drawbacks:
+Some notes:
 
-Firstly, because the capacity of the return type is not increased,
-precision may be lost. For example:
-
-    trunc_square(make_ufixed<4, 4>(15.9375))
-
-returns `make_ufixed<8, 0>(254)`. This result is far closer to
-the correct value than the result returned by `operator *`.
-
-Secondly, there are rare cases where overflow can still occur due to
-the nature of twos-compliment binary arithmetic and the *most negative
-number*. For instance, the value of
-
-    trunc_square(make_fixed<7, 0>(-128))
-
-is zero because 16384 cannot be represented in a
-`fixed_point<uint8_t, 6>` type.
-
-### Underflow
-
-The major disadvantage of the way in which `trunc_` functions protect
-the more significant digits is that the less insignificant digits are
-dropped. In the extreme case of underflow, all the bits are lost and
-the value becomes zero.
-
-For example,
-
-    trunc_square(make_ufixed<8, 0>(15))
-
-causes the object to be flushed to zero.
-
-While often not as serious as overflow, underflow can cause knock-on
-effects, such as when a flushed value is subsequently used as a
-divisor.
-
-Although there is a strong desire to catch situations where a
-`fixed_point` value transitions to a flushed state, it is unacceptable
-that this should necessarily require a run-time check.
-
-For this reason, it is left to the user to avoid flush events and for
-such events to result in undefined behavior. This is not an ideal
-solution but is necessary to ensure that future extension to the API
-involving the option of run-time checks has enough freedom to
-implement a satisfactory solution.
-
-See the 'Future Issues' section below for discussion on possible
-strategies for catching overflow and underflow events.
+1. The `trunc_` functions return the result as a type no larger than
+   the inputs and with an exponent increased in order to avoid
+   overflow;
+2. the `promote_` functions return the result as a type large enough
+   to avoid overflow and underflow;
+3. the `_multiply` and `_square` functions are not guaranteed to be
+   available for 64-bit types;
+4. the `_multiply` and `_square` functions produce undefined behavior
+   when all input parameters are the *most negative number*;
+5. the `_square` functions return an unsigned type;
+6. the `_add`, `_subtract` and `_multiply` functions take
+   heterogeneous `fixed_point` specializations.
 
 ### Example
 
@@ -405,28 +396,19 @@ returns the value, 9.890625.
 
 ## VI. Future Issues
 
-### Alternative Specializations
+### Explicit Template Specialization
 
-The `REPR_TYPE` template parameter is not necessarily the type of the
-member variable used to store the value. If there is a more
+Possible reasons to write an explicit template specialization include
+to exploit language-level fixed-point features such as those proposed
+in N1169 [\[2\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf)
+and to exploit machine instructions which might otherwise be
+difficult to invoke.
+
+These options are left open by carefully avoiding describing
+`REPR_TYPE` as the actual storage type. If there is a more
 appropriate choice, the option to take it is reserved.
 
-For example, it is conceivable that explicit template specializations
-could be defined which exploit the language-level extensions to the C
-type system outlined in proposal N1169 [\[2\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf).
-It defines built-in fixed-point types which might improve performance
-on target systems with suitably-equipped processors.
-
-If practical, the design of the `fixed_point` template should leave
-open the option to exploit such system-specific features.
-
-Alternatively, it may be clearer to stipulate that a user may
-explicitly specify a type other than one which satisfies `is_integral`
-in order to invoke an explicit `fixed_point` specialization, e.g.:
-
-    fixed_point<signed short _Fract>
-
-### Relaxed Rules Surrounding Return Types of Arithmetic Operations
+### Relaxed Rules Surrounding Arithmetic Operatior Types
 
 Currently, is is not possible to use a binary operator with
 non-matching input types. This leaves open the future possibility of
@@ -440,6 +422,23 @@ concise type which can represent the values of both `int8_t` and
 `uint16_t` is `int32_t`. In such a case, it may be preferable to
 return a value based on `int16_t` and lose the least significant bit
 of precision from the `uint16_t` input.
+
+One situation where heterogeneous input types is desired is when
+introducing a literal to an expression, for example:
+
+    auto x = a * t + b * (1.0 - t)
+
+Currently, this requires cumbersome casting to convert the literal to
+a suitable fixed-point type.
+
+One possible solution is to introduce a user-defined literal which
+produces a fixed_point object with a suitable exponent. However,
+choosing a specialization that is appropriate in all situations may
+be unrealistic.
+
+Another possibility is to overload arithmetic operators for all types
+which satisfy `is_arithmetic`. This would require many function
+template definitions.
 
 ### Library Support
 
@@ -461,6 +460,19 @@ particular, the guarantee of setting `errno` in the case of an error
 prevents a function from being defined as pure. This highlights a
 wider issue surrounding the adoption of the functional approach and
 compile-time computation that is beyond the scope of this document.
+
+### Alternatives to Built-in Integer Types
+
+The reason that `REPR_TYPE` is restricted to built-in integer types
+is that a number of features require the use of a higher - or
+lower-capacity type. Supporting alias templates are defined to
+provide `fixed_point` with the means to invoke integer types of
+specific capacity and signedness at compile time.
+
+There is no general purpose way of deducing a higher or
+lower-capacity type given a source type in the same manner as
+`make_signed` and `make_unsigned`. If there were, this might be
+adequate to allow alternative choices for `REPR_TYPE`.
 
 ### Bounded Integers
 
@@ -508,7 +520,14 @@ set of values would reflect `fixed_point` as it stands currently.
 An example of a fixed-point proposal which takes a similar approach to
 rounding and error cases can be found in N3352 [\[6\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html).
 
-## VII. References
+## VII. Acknowledgements
+
+Subgroup members: Guy Davidson, Michael Wong
+Feedback provided by: Marco Foco, Joël Lamotte, Ryhor Spivak
+SG14 forum contributors: Clément Grégoire, Sean Middleditch, Ed Ainsley,
+Billy Baker
+
+## VIII. References
 
 1. Why Integer Coordinates?, http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php
 2. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
