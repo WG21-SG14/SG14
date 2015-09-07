@@ -89,8 +89,6 @@ namespace sg14_test
 		
 		static_assert(fixed_point<>::fractional_digits == _impl::num_bits<int>() / 2, "Incorrect information in proposal section, Class Template");
 
-		// Named Constructors
-
 		// Conversion
 
 		auto conversion_lhs = make_ufixed<4, 4>(.006);
@@ -98,8 +96,11 @@ namespace sg14_test
 		static_assert(is_same<decltype(conversion_lhs), decltype(conversion_rhs)>::value, "Incorrect information in proposal section, Conversion");
 		ASSERT_EQUAL(conversion_lhs, conversion_rhs);
 
-		// Arithmetic Operators
-		static_assert(static_cast<int>(make_fixed<4, 3>(15) + make_fixed<4, 3>(1)) != 16, "Incorrect information in proposal section, Arithmetic Operators");
+		// Arithmetic Operators (Overflow)
+		static_assert(static_cast<int>(make_fixed<4, 3>(15) + make_fixed<4, 3>(1)) != 16, "Incorrect information in proposal section, Overflow");
+
+		// Arithmetic Operators (Underflow)
+		static_assert(static_cast<float>(make_fixed<7, 0>(15) / make_fixed<7, 0>(2)) == 7, "Incorrect information in proposal section, Underflow");
 
 		// Type Promotion
 		auto type_promotion = promote(make_fixed<5, 2>(15.5));
