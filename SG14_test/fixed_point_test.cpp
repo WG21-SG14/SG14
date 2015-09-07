@@ -491,7 +491,10 @@ static_assert(static_cast<float>(trunc_square(make_ufixed<4, 4>(15.5))) == 240, 
 // sg14::trunc_sqrt_result_t
 
 static_assert(std::is_same<trunc_sqrt_result_t<make_ufixed<4, 4>>, make_ufixed<2, 6>>::value, "sg14::trunc_sqrt_result_t test failed");
+static_assert(sizeof(trunc_sqrt_result_t<make_ufixed<4, 4>>) == sizeof(make_ufixed<2, 6>), "sg14::trunc_sqrt_result_t test failed");
+
 static_assert(std::is_same<trunc_sqrt_result_t<make_ufixed<15, 16>>, make_ufixed<8, 24>>::value, "sg14::trunc_sqrt_result_t test failed");
+static_assert(sizeof(trunc_sqrt_result_t<make_ufixed<15, 16>>) == sizeof(make_ufixed<8, 24>), "sg14::trunc_sqrt_result_t test failed");
 
 ////////////////////////////////////////////////////////////////////////////////
 // sg14::trunc_sqrt
