@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // clock()
 #include "plf_colony.h"
@@ -33,7 +32,6 @@ namespace sg14_test
 
 	void plf_test_suite()
 	{
-		freopen("error.log", "w", stderr);
 		srand(clock()); // Note: using random numbers to avoid CPU predictive
 
 		using namespace std;

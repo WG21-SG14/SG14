@@ -331,7 +331,16 @@ private:
 	#define PLF_STACK_PUSH_MACRO(ASSIGNMENT_OBJECT) \
 		if(current_element != end_element) \
 		{ \
-			allocator.construct(++current_element, ASSIGNMENT_OBJECT); \
+			try \
+			{ \
+				allocator.construct(++current_element, ASSIGNMENT_OBJECT); \
+			} \
+			catch (...) \
+			{ \
+				--current_element; \
+				throw; \
+			} \
+			\
 			++total_size; \
 		} \
 		else \
@@ -339,13 +348,35 @@ private:
 			if (current_group->next_group == NULL) \
 			{ \
 				current_group->next_group = group_allocator.allocate(1, current_group); \
-				group_allocator.construct(current_group->next_group, PLF_STACK_PUSH_MACRO_GROUP_ADD); \
+				\
+				try \
+				{ \
+					group_allocator.construct(current_group->next_group, PLF_STACK_PUSH_MACRO_GROUP_ADD); \
+				} \
+				catch (...) \
+				{ \
+					group_allocator.deallocate(current_group->next_group, 1); \
+					current_group->next_group = NULL; \
+				} \
+				\
 			} \
 			\
 			++total_size; \
 			current_group = current_group->next_group; \
 			start_element = current_element = current_group->elements; \
-			allocator.construct(current_element, ASSIGNMENT_OBJECT); \
+			\
+			try \
+			{ \
+				allocator.construct(current_element, ASSIGNMENT_OBJECT); \
+			} \
+			catch (...) \
+			{ \
+				--total_size; \
+				current_group = current_group->previous_group; \
+				start_element = current_element = current_group->elements; \
+				throw; \
+			} \
+			\
 			end_element = current_group->end; \
 		} \
 		\

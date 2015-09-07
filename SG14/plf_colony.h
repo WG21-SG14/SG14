@@ -48,9 +48,9 @@ private:
 		element_pointer_type		last_endpoint; // the address that is one past the highest cell number that's been used so far in this group - does not change with erase command
 		group_pointer_type			next_group;
 		const element_pointer_type	elements;
-		const bool_pointer_type		erased;
+		bool_pointer_type		erased;
 		const element_pointer_type	end; // the address that is one past the end of the elements array - used in - iterator operators
-		const bool_pointer_type		end_erased; // the address that is one past the end of the erased array - used in - iterator operators
+		bool_pointer_type		end_erased; // the address that is one past the end of the erased array - used in - iterator operators
 		group_pointer_type			previous_group;
 		unsigned int				total_number_of_elements; // indicates total number of used cells - changes with erase command
 		const unsigned int			group_number; // Used for comparison (> < >= <=) iterator operators and (in debug mode) checking order in multi-erase and multi-add commands
@@ -61,17 +61,25 @@ private:
 		#ifdef PLF_VARIADICS_SUPPORT 
 			group(const unsigned int elements_per_group): 
 				last_endpoint(allocator.allocate(elements_per_group, 0)), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is simply initialised to element's base value initially */
-				next_group(NULL), 
+				next_group(NULL),
 				elements(last_endpoint),
-				erased(bool_allocator.allocate(elements_per_group, 0)),
 				end(elements + elements_per_group),
-				end_erased(erased + elements_per_group),
 				previous_group(NULL), 
 				total_number_of_elements(0), 
 				group_number(0), 
 				size(elements_per_group), 
 				number_of_erased_elements(0)
 			{
+				try
+				{
+					end_erased = (erased = bool_allocator.allocate(elements_per_group, 0)) + elements_per_group;
+				}
+				catch (...)
+				{
+					allocator.deallocate(elements, size);
+					throw;
+				}
+
 				std::memset(erased, false, sizeof(bool) * size);
 			}
 
@@ -80,15 +88,23 @@ private:
 				last_endpoint(allocator.allocate(elements_per_group, previous->elements)), 
 				next_group(NULL), 
 				elements(last_endpoint),
-				erased(bool_allocator.allocate(elements_per_group, previous->erased)),
 				end(elements + elements_per_group),
-				end_erased(erased + elements_per_group),
 				previous_group(previous), 
 				total_number_of_elements(0), 
 				group_number(previous->group_number + 1), 
 				size(elements_per_group), 
 				number_of_erased_elements(0)
 			{
+				try
+				{
+					end_erased = (erased = bool_allocator.allocate(elements_per_group, previous->erased)) + elements_per_group;
+				}
+				catch (...)
+				{
+					allocator.deallocate(elements, size);
+					throw;
+				}
+
 				std::memset(erased, false, sizeof(bool) * size);
 			}
 
@@ -136,15 +152,23 @@ private:
 				last_endpoint(allocator.allocate(source.size, (source.previous_group == NULL) ? 0 : source.previous_group->elements)),
 				next_group(NULL), 
 				elements(last_endpoint),
-				erased(bool_allocator.allocate(source.size, (source.previous_group == NULL) ? 0 : source.previous_group->erased)),
 				end(elements + source.size),
-				end_erased(erased + source.size),
 				previous_group(source.previous_group), 
 				total_number_of_elements(0), 
 				group_number(source.group_number), 
 				size(source.size), 
 				number_of_erased_elements(0)
 			{
+				try
+				{
+					end_erased = (erased = bool_allocator.allocate(size, (previous_group == NULL) ? 0 : previous_group->erased)) + size;
+				}
+				catch (...)
+				{
+					allocator.deallocate(elements, size);
+					throw;
+				}
+				
 				std::memset(erased, false, sizeof(bool) * size);
 			}
 
@@ -1128,14 +1152,14 @@ public:
 	
 
 
-	inline const reverse_iterator rbegin() const
+	inline reverse_iterator rbegin() const
 	{
 		return reverse_iterator(end_iterator - 1);
 	}
 
 
 
-	inline const reverse_iterator rend() const
+	inline reverse_iterator rend() const
 	{
 		reverse_iterator beforebegin(begin_iterator);
 		--(beforebegin.the_iterator.element_pointer); // ie. point to memory space before first element
@@ -1227,21 +1251,67 @@ private:
 			++(end_iterator.group_pointer->last_endpoint); \
 			++(end_iterator.group_pointer->total_number_of_elements); \
 			const iterator return_iterator = end_iterator; /* Make copy for return before adjusting components */\
-			allocator.construct(end_iterator.element_pointer++, ASSIGNMENT_OBJECT); \
+			\
+			try \
+			{ \
+				allocator.construct(end_iterator.element_pointer++, ASSIGNMENT_OBJECT); \
+			} \
+			catch (...) \
+			{ \
+				--total_size; \
+				--(end_iterator.group_pointer->last_endpoint); \
+				--(end_iterator.group_pointer->total_number_of_elements); \
+				return return_iterator; /* returns value before incrementation */\
+			} \
+			\
 			++end_iterator.erasure_field; \
 			\
 			return return_iterator; /* returns value before incrementation */\
 		} \
 		else \
 		{ \
-			const group_reference_type next_group = *(end_iterator.group_pointer->next_group = group_allocator.allocate(1, end_iterator.group_pointer)); \
-			group_allocator.construct(&next_group, PLF_COLONY_ADD_MACRO_GROUP_ADD); \
+			try \
+			{ \
+				end_iterator.group_pointer->next_group = group_allocator.allocate(1, end_iterator.group_pointer); \
+			} \
+			catch (...) \
+			{ \
+				end_iterator.group_pointer->next_group = NULL; \
+				throw; \
+			} \
+			\
+			const group_reference_type next_group = *(end_iterator.group_pointer->next_group); \
+			 \
+			try \
+			{ \
+				group_allocator.construct(&next_group, PLF_COLONY_ADD_MACRO_GROUP_ADD); \
+			} \
+			catch (...) \
+			{ \
+				group_allocator.deallocate(end_iterator.group_pointer->next_group, 1); \
+				end_iterator.group_pointer->next_group = NULL; \
+				throw; \
+			} \
+			\
 			++total_size; \
 			end_iterator.group_pointer = &next_group; \
 			end_iterator.element_pointer = next_group.elements; \
 			end_iterator.erasure_field = next_group.erased; \
 			const iterator return_iterator = end_iterator; /* Make copy for return before adjusting components */ \
-			allocator.construct(end_iterator.element_pointer++, ASSIGNMENT_OBJECT); \
+			\
+			try \
+			{ \
+				allocator.construct(end_iterator.element_pointer++, ASSIGNMENT_OBJECT); \
+			} \
+			catch (...) \
+			{ \
+				--total_size; \
+				end_iterator.group_pointer = end_iterator.group_pointer->previous_group; \
+				end_iterator.element_pointer = end_iterator.group_pointer->elements; \
+				end_iterator.erasure_field = end_iterator.group_pointer->erased; \
+				throw; \
+			} \
+			\
 			++end_iterator.erasure_field; \
 			++(next_group.last_endpoint); \
 			current_end = next_group.end; \
@@ -1255,7 +1325,16 @@ private:
 		 \
 		const iterator &new_index = empty_indexes.back(); \
 		 \
-		allocator.construct(new_index.element_pointer, ASSIGNMENT_OBJECT); \
+		try \
+		{ \
+			allocator.construct(new_index.element_pointer, ASSIGNMENT_OBJECT); \
+		} \
+		catch (...) \
+		{ \
+			--total_size; \
+			throw; \
+		} \
+		\
 		*new_index.erasure_field = false; \
 		++(new_index.group_pointer->total_number_of_elements); \
 		--(new_index.group_pointer->number_of_erased_elements); \
@@ -1504,12 +1583,19 @@ private:
 		
 		stack_group_pointer current_old_group = empty_indexes.first_group, new_group = stack_group_allocator.allocate(1, empty_indexes.current_group), first_new_chain = NULL, current_new_chain = NULL;
 
+		try
+		{
 		#ifdef PLF_VARIADICS_SUPPORT
 			stack_group_allocator.construct(new_group, new_group_size, empty_indexes.current_group);
 		#else
-			typedef typename iterator_stack_type::group stack_group_type;
-			stack_group_allocator.construct(new_group, stack_group_type(new_group_size, empty_indexes.current_group));
+			stack_group_allocator.construct(new_group, typename iterator_stack_type::group(new_group_size, empty_indexes.current_group));
 		#endif
+		}
+		catch (...)
+		{
+			stack_group_allocator.deallocate(new_group, 1);
+			throw;
+		}
 		
 
 		stack_element_pointer iterator_pointer, source_end, destination_begin = new_group->elements, the_end = NULL;
