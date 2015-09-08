@@ -630,24 +630,21 @@ namespace sg14
 	using make_ufixed = make_fixed<INTEGER_DIGITS, FRACTIONAL_DIGITS, false>;
 
 	////////////////////////////////////////////////////////////////////////////////
-	// sg14::_impl::make_fixed_from_repr
+	// sg14::make_fixed_from_repr
 
-	namespace _impl
-	{
-		// yields a float_point with EXPONENT calculated such that
-		// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
-		template <typename REPR_TYPE, int INTEGER_BITS>
-		using make_fixed_from_repr = fixed_point<
-			REPR_TYPE,
-			INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
-	}
+	// yields a float_point with EXPONENT calculated such that
+	// fixed_point<REPR_TYPE, EXPONENT>::integer_bits == INTEGER_BITS
+	template <typename REPR_TYPE, int INTEGER_BITS>
+	using make_fixed_from_repr = fixed_point<
+		REPR_TYPE,
+		INTEGER_BITS + _impl::is_signed<REPR_TYPE>::value - (signed)sizeof(REPR_TYPE) * CHAR_BIT>;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// sg14::common_type
 
 	// given two fixed-point types, produces the type that is best suited to both of them
 	template <typename LHS_FP, typename RHS_FP>
-	using common_type = _impl::make_fixed_from_repr<
+	using common_type = make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS_FP::repr_type, typename RHS_FP::repr_type>,
 		_impl::max(
 			LHS_FP::integer_digits,
@@ -827,7 +824,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an addition between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT, unsigned N = 2>
-	using trunc_add_result_t = _impl::make_fixed_from_repr<
+	using trunc_add_result_t = make_fixed_from_repr<
 		typename FIXED_POINT::repr_type,
 		fixed_point<
 			typename FIXED_POINT::repr_type,
@@ -864,7 +861,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of an subtraction between N values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using trunc_subtract_result_t = _impl::make_fixed_from_repr<
+	using trunc_subtract_result_t = make_fixed_from_repr<
 		_impl::get_int_t<true, _impl::max(sizeof(typename LHS::repr_type), sizeof(typename RHS::repr_type))>,
 		_impl::max(LHS::integer_digits, RHS::integer_digits) + 1>;
 
@@ -882,7 +879,7 @@ namespace sg14
 	// yields specialization of fixed_point with integral bits necessary to store
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	template <typename LHS, typename RHS = LHS>
-	using trunc_multiply_result_t = _impl::make_fixed_from_repr<
+	using trunc_multiply_result_t = make_fixed_from_repr<
 		_impl::common_repr_type<typename LHS::repr_type, typename RHS::repr_type>,
 		LHS::integer_digits + RHS::integer_digits>;
 
@@ -903,7 +900,7 @@ namespace sg14
 	// result of a multiply between values of fixed_point<REPR_TYPE, EXPONENT>
 	// whose sign bit is set to the same value
 	template <typename FIXED_POINT>
-	using trunc_square_result_t = _impl::make_fixed_from_repr<
+	using trunc_square_result_t = make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		FIXED_POINT::integer_digits * 2>;
 
@@ -924,7 +921,7 @@ namespace sg14
 	// the positive result of a square root operation on an object of type,
 	// fixed_point<REPR_TYPE, EXPONENT>
 	template <typename FIXED_POINT>
-	using trunc_sqrt_result_t = _impl::make_fixed_from_repr<
+	using trunc_sqrt_result_t = make_fixed_from_repr<
 		typename _impl::make_unsigned<typename FIXED_POINT::repr_type>::type,
 		(FIXED_POINT::integer_digits + 1) / 2>;
 
