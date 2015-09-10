@@ -3,7 +3,8 @@
 
 namespace sg14_test
 {
-	void fixed_ring_queue_test();
+	void static_ring_test();
+	void dynamic_ring_test();
 	void unstable_remove_test();
 }
 

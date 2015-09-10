@@ -8,7 +8,8 @@
 
 int main(int, char *[])
 {
-	sg14_test::fixed_ring_queue_test();
+	sg14_test::static_ring_test();
+	sg14_test::dynamic_ring_test();
 	sg14_test::unstable_remove_test();
 	return 0;
 }

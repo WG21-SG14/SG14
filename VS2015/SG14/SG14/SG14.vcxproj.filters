@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
-    <ClInclude Include="..\..\..\SG14\ring_queue.h" />
+    <ClInclude Include="..\..\..\SG14\ring.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\Docs\fixed_point.md" />
