@@ -1,0 +1,64 @@
+Document number: unassigned<br>
+2015-8-29<br>
+Brent Friedman<br>
+fourthgeek@gmail.com
+<h1>Unstable remove algorithms</h1>
+<h2>I. Summary</h2>
+<p>This proposal covers new algorithms for removing elements from a range without the stability guarantees of existing algorithms.</p>
+
+
+<h2>II. Motivation</h2>
+<p>The stability requirements of existing remove algorithms impose overhead on users, especially for types which are expensive to move. For cases where element order is insignificant, an unstable algorithm can prove beneficial for efficiency.</p>
+
+
+<p>The following URL demonstrates generated assembly for implementations of similar algorithms:<br>
+https://goo.gl/xfCxzL</p>
+
+<p>It is observed that unstable_remove generates less code than remove_if and partition. In particular we may note that swapping two elements, as with partition, can be much more expensive than move-assignment.</p>
+
+<p>The following link demonstrates performance tests for these same implementations:<br>
+https://github.com/WG21-SG14/SG14</p>
+
+<p>It is observed that unstable_remove_if can significantly outperform both remove_if and partition.</p>
+
+<p>These examples suggest that unstable_remove algorithms can be both smaller and faster than existing solutions.</p>
+
+<h2>III. Additional work</h2>
+<p>The same logic can be applied to uniform container erasure proposals, implying unstable_erase* algorithms. Additionally, this functionality could be extended to vector::erase, implying vector::unstable_erase* methods.</p>
+<p>Algorithmic changes proposed in the "range" proposals should be applied to these algorithms if both are accepted.</p>
+
+<h2>IV. Proposed Wording</h2>
+<p>In [alg.remove]<br>
+
+First section:<br>
+<code>
+template&lt;class ForwardIterator, class T&gt;
+ForwardIterator unstable_remove(ForwardIterator first, ForwardIterator last,
+const T& value); <br>
+template&lt;class ForwardIterator, class Predicate&gt;
+ForwardIterator unstable_remove_if(ForwardIterator first, ForwardIterator last,Predicate pred); 
+
+</code>
+<br><br>
+Remarks (remove, remove_if): Stable <br>
+</p>
+
+<p>
+
+Second section:<br>
+<code>
+template&lt;class InputIterator, class OutputIterator, class T&gt;
+OutputIterator
+unstable_remove_copy(InputIterator first, InputIterator last,
+OutputIterator result, const T& value);<br>
+
+template&lt;class InputIterator, class OutputIterator, class Predicate&gt;
+OutputIterator
+unstable_remove_copy_if(InputIterator first, InputIterator last,
+OutputIterator result, Predicate pred);
+</code>
+
+<br><br>
+Remarks (remove_copy, remove_copy_if): Stable<br>
+
+</p>

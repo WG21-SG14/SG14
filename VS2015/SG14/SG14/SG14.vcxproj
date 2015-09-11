@@ -16,7 +16,6 @@
     <ClInclude Include="..\..\..\SG14\ring.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\Docs\Fixed_Point_Library_Proposal.md" />
     <None Include="..\..\..\Docs\fixed_point.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -7,6 +7,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\Docs\fixed_point.md" />
-    <None Include="..\..\..\Docs\Fixed_Point_Library_Proposal.md" />
   </ItemGroup>
 </Project>

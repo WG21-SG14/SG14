@@ -6,6 +6,9 @@ namespace sg14_test
 	void static_ring_test();
 	void dynamic_ring_test();
 	void unstable_remove_test();
+	void uninitialized();
+	void fixed_point_test();
+	void plf_test_suite();
 }
 
 #endif
