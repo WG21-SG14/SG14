@@ -15,20 +15,22 @@
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
     <ClInclude Include="..\..\..\SG14\plf_colony.h" />
     <ClInclude Include="..\..\..\SG14\plf_stack.h" />
-    <ClInclude Include="..\..\..\SG14\rolling_queue.h" />
+    <ClInclude Include="..\..\..\SG14\ring.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Docs\fixed_point.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{71063685-C50D-4C69-AE56-7184DE4FECCB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>SG14</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
