@@ -4,6 +4,8 @@
     <ClInclude Include="..\..\..\SG14\algorithm_ext.h" />
     <ClInclude Include="..\..\..\SG14\fixed_point.h" />
     <ClInclude Include="..\..\..\SG14\ring.h" />
+    <ClInclude Include="..\..\..\SG14\plf_colony.h" />
+    <ClInclude Include="..\..\..\SG14\plf_stack.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\Docs\fixed_point.md" />
