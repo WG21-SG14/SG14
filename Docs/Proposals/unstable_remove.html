@@ -1,5 +1,5 @@
-Document number: unassigned<br>
-2015-8-29<br>
+LEWG, SG14: D0041R0<br>
+11-9-2015<br>
 Brent Friedman<br>
 fourthgeek@gmail.com
 <h1>Unstable remove algorithms</h1>
@@ -8,26 +8,49 @@ fourthgeek@gmail.com
 
 
 <h2>II. Motivation</h2>
-<p>The stability requirements of existing remove algorithms impose overhead on users, especially for types which are expensive to move. For cases where element order is insignificant, an unstable algorithm can prove beneficial for efficiency.</p>
+<p>The stability requirements of existing remove algorithms impose overhead on users, especially for types which are expensive to move. For cases where element order need not be preserved, an unstable algorithm can prove beneficial for efficiency. unstable_remove has complexity proportional to the number of elements to be removed, whereas stable removal has complexity proportional to the number of elements that need to be moved into the "holes".</p>
 
 
 <p>The following URL demonstrates generated assembly for implementations of similar algorithms:<br>
-https://goo.gl/xfCxzL</p>
+<A href="https://goo.gl/xfCxzL">https://goo.gl/xfCxzL</A></p>
 
 <p>It is observed that unstable_remove generates less code than remove_if and partition. In particular we may note that swapping two elements, as with partition, can be much more expensive than move-assignment.</p>
 
-<p>The following link demonstrates performance tests for these same implementations:<br>
-https://github.com/WG21-SG14/SG14</p>
+<p>The following URL demonstrates performance tests for these same implementations:<br>
+<a href="https://github.com/WG21-SG14/SG14">https://github.com/WG21-SG14/SG14</a></p>
 
-<p>It is observed that unstable_remove_if can significantly outperform both remove_if and partition.</p>
+<p>It is observed that unstable_remove_if can outperform both remove_if and partition by a measurable degree.</p>
 
 <p>These examples suggest that unstable_remove algorithms can be both smaller and faster than existing solutions.</p>
 
 <h2>III. Additional work</h2>
-<p>The same logic can be applied to uniform container erasure proposals, implying unstable_erase* algorithms. Additionally, this functionality could be extended to vector::erase, implying vector::unstable_erase* methods.</p>
 <p>Algorithmic changes proposed in the "range" proposals should be applied to these algorithms if both are accepted.</p>
+<p>The value of unstable_remove can be applied to containers directly, implying unstable_erase* algorithms or member functions. The following pseudocode signatures are informally provided here for reference and discussion but are not proposed in this paper.</p>
+<p><pre><code>
+//1.
+It unstable_erase(Cont& C, It at);
+//2.
+It unstable_erase(Cont& C, It begin, It end);
+//3.
+It unstable_erase_if(Cont& C, Pred p); //unstable_remove_if + erase
+//4.
+It unstable_erase(Cont& C, const T& value); //unstable_remove + erase
 
-<h2>IV. Proposed Wording</h2>
+</code></pre></p>
+
+<h2>IV. Discussion</h2>
+<p>Some skepticism is levied against the utility of creating unstable variants for all erase and remove features. The cost and value of each variant may be difficult to evaluate individually, which is why this proposal covers only the most fundamental functionality of unstable_remove and unstable_remove_if. This author does believe that all removal and erasure features with stability guarantees should have variants without those stability guarantees.</p>
+<p>Some see unstable container erasure as even more important than unstable_remove. It is in the author's opinion that unstable_remove algorithms remain independently useful in many contexts (such as fixed sized containers) and constitute more fundamental functionality than erasure.</p>
+<p>For linked lists, the best efficiency guarantees for unstable_erase are provided by forwarding to existing, stable erase functions. It is believed that no additional wording for this case would be necessary, but some clarification may be desirable.</p>
+<p>It is noted that for <code>vector&lt;int&gt; x</code>, and the following code samples,<br>
+<pre><code>
+x.unstable_erase( unstable_remove( x.begin(), x.end(), 0), x.end()); //A.
+x.erase( unstable_remove(x.begin(), x.end(), 0), x.end()); //B.
+</code></pre><br>A provides no efficiency benefits over B. unstable_erase provides benefits only when the range to be removed occurs within the middle of the container. This may lead to some confusion among users, though A and B would provide the same results.</p>
+
+<p></p>
+<p>
+<h2>V. Proposed Wording</h2>
 <p>In [alg.remove]<br>
 
 First section:<br>
