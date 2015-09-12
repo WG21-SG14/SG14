@@ -90,15 +90,15 @@ half go to integer digits and (if `ReprType` is signed) the sign bit.
 
 The resolution of a specialization of `fixed_point` is
 
-    2 ^ Exponent
+    2 ** Exponent
 
 and the minimum and maximum values are
 
-    std::numeric_limits<ReprType>::min() * 2 ^ Exponent
+    std::numeric_limits<ReprType>::min() * (2 ** Exponent)
 
 and
 
-    std::numeric_limits<ReprType>::max() * 2 ^ Exponent
+    std::numeric_limits<ReprType>::max() * (2 ** Exponent)
 
 respectively.
 
