@@ -289,7 +289,7 @@ Some notes:
 The following example calculates the magnitude of a 3-dimensional vector.
 
     template <class Fp>
-    constexpr auto magnitude(Fp const & x, Fp const & y, Fp const & z)
+    constexpr auto magnitude(const Fp & x, const Fp & y, const Fp & z)
     -> decltype(trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z))))
     {
         return trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z)));
@@ -329,17 +329,17 @@ returns the value, 9.890625.
           constexpr demote(const FixedPoint & from) noexcept
 
       template <class Lhs, class Rhs>
-        constexpr bool operator ==(Lhs const & lhs, Rhs const & rhs) noexcept;
+        constexpr bool operator ==(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator !=(Lhs const & lhs, Rhs const & rhs) noexcept;
+        constexpr bool operator !=(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator <(Lhs const & lhs, Rhs const & rhs) noexcept;
+        constexpr bool operator <(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator >(Lhs const & lhs, Rhs const & rhs) noexcept;
+        constexpr bool operator >(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator >=(Lhs const & lhs, Rhs const & rhs) noexcept;
+        constexpr bool operator >=(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator <=(Lhs const & lhs, Rhs const & rhs) noexcept;
+        constexpr bool operator <=(const Lhs & lhs, const Rhs & rhs) noexcept;
 
       // arithmetic operators
       ...
@@ -354,13 +354,13 @@ returns the value, 9.890625.
         using trunc_add_result_t;
       template <class ReprType, int Exponent, class ... Tail>
         trunc_add_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
-          constexpr trunc_add(fixed_point<ReprType, Exponent> const & addend1, Tail const & ... addend_tail)
+          constexpr trunc_add(const fixed_point<ReprType, Exponent> & addend1, const Tail & ... addend_tail)
 
       template <class ReprType, int Exponent, unsigned N = 2>
         using trunc_subtract_result_t;
       template <class ReprType, int Exponent, class ... Tail>
         trunc_subtract_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
-          constexpr trunc_subtract(fixed_point<ReprType, Exponent> const & addend1, Tail const & ... addend_tail)
+          constexpr trunc_subtract(const fixed_point<ReprType, Exponent> & addend1, const Tail & ... addend_tail)
 
       template <class FixedPoint>
         using trunc_square_result_t;
@@ -395,12 +395,12 @@ returns the value, 9.890625.
       template <class S>
         explicit constexpr fixed_point(S s) noexcept;
       template <class FromReprType, int FromExponent>
-        explicit constexpr fixed_point(fixed_point<FromReprType, FromExponent> const & rhs) noexcept;
+        explicit constexpr fixed_point(const fixed_point<FromReprType, FromExponent> & rhs) noexcept;
 
       template <class S>
         fixed_point & operator=(S s) noexcept;
       template <class FromReprType, int FromExponent>
-        fixed_point & operator=(fixed_point<FromReprType, FromExponent> const & rhs) noexcept
+        fixed_point & operator=(const fixed_point<FromReprType, FromExponent> & rhs) noexcept
 
       template <class S>
         explicit constexpr operator S() const noexcept;
@@ -409,23 +409,23 @@ returns the value, 9.890625.
       constexpr ReprType data() const noexcept;
       static constexpr fixed_point from_data(ReprType repr) noexcept;
 
-      friend constexpr bool operator==(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator!=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator>(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator<(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator>=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator<=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
+      friend constexpr bool operator==(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator!=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator>(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator<(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator>=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator<=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
 
-      friend constexpr fixed_point operator-(fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator+(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator-(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator*(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator/(fixed_point const & lhs, fixed_point const & rhs) noexcept;
+      friend constexpr fixed_point operator-(const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator+(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator-(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator*(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator/(const fixed_point & lhs, const fixed_point & rhs) noexcept;
 
-      friend fixed_point & operator+=(fixed_point & lhs, fixed_point const & rhs) noexcept;
-      friend fixed_point & operator-=(fixed_point & lhs, fixed_point const & rhs) noexcept;
-      friend fixed_point & operator*=(fixed_point & lhs, fixed_point const & rhs) noexcept;
-      friend fixed_point & operator/=(fixed_point & lhs, fixed_point const & rhs) noexcept;
+      friend fixed_point & operator+=(fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend fixed_point & operator-=(fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend fixed_point & operator*=(fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend fixed_point & operator/=(fixed_point & lhs, const fixed_point & rhs) noexcept;
 
       // ...
     };
