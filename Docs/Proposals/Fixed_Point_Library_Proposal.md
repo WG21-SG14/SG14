@@ -1,5 +1,5 @@
-**Document number**: (draft)  
-**Date**: 2015-08-29  
+**Document number**: LEWG, EWG, SG14, SG6: D0037R0  
+**Date**: 2015-09-12  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
 
