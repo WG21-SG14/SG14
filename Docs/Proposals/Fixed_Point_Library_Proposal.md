@@ -84,9 +84,10 @@ The exponent of a fixed-point type is the equivalent of the exponent
 field in a floating-point type and shifts the stored value by the
 requisite number of bits necessary to produce the desired range.
 
-The default value is dependent on `ReprType` and ensures that half of
-the bits of the type are allocated to fractional digits. The other
-half go to integer digits and (if `ReprType` is signed) the sign bit.
+The default value of `Exponent` is dependent on `ReprType` and ensures
+that half of the bits of the type are allocated to fractional digits.
+The other half go to integer digits and (if `ReprType` is signed) the
+sign bit.
 
 The resolution of a specialization of `fixed_point` is
 
@@ -103,7 +104,7 @@ and
 respectively.
 
 Any usage that results in values of `Exponent` which lie outside the
-range, (INT_MIN / 2, INT_MAX / 2), may result in undefined
+range, (`INT_MIN / 2`, `INT_MAX / 2`), may result in undefined
 behavior and/or overflow or underflow. This range of exponent values
 is far in excess of the largest built-in floting-point type and should
 be adequate for all intents and purposes.
@@ -277,11 +278,11 @@ Some notes:
 4. the `_multiply` and `_square` functions produce undefined behavior
    when all input parameters are the *most negative number*;
 5. the `_square` functions return an unsigned type;
-6. the `_add`, `_subtract` and `_multiply` functions take
+6. the `_add`, `_subtract`, `_multiply` and `_divide` functions take
    heterogeneous `fixed_point` specializations;
 7. the `_divide` and `_invert` functions in no way guard against
    divide-by-zero errors and
-8. The `trunc_shift_` functions return results of the same type as
+8. the `trunc_shift_` functions return results of the same type as
   their first input parameter.
 
 ### Example
@@ -440,13 +441,13 @@ that a future proposal might specialize existing class templates and
 overload existing functions.
 
 Possible candidates for overloading include the functions defined in
-<cmath> and a templated specialization of `numeric_limits`. A new type
+\<cmath\> and a templated specialization of `numeric_limits`. A new type
 trait, `is_fixed_point`, would also be useful.
 
 While `fixed_point` is intended to provide drop-in replacements to
 existing built-ins, it may be preferable to deviate slightly from the
 behavior of certain standard functions. For example, overloads of
-functions from <cmath> will be considerably less concise, efficient
+functions from \<cmath\> will be considerably less concise, efficient
 and versatile if they obey rules surrounding error cases. In
 particular, the guarantee of setting `errno` in the case of an error
 prevents a function from being defined as pure. This highlights a
@@ -482,11 +483,11 @@ For instance, consider the following expression:
     auto n = trunc_square(trunc_square(three));
 
 The type of `n` is `make_ufixed<8, 0>` but its value does not
-exceed 81. Hence, an unused integer bit has been allocated. It may be
-possible to track more accurate limits in the same manner as the
+exceed 81. Hence, an integer bit has been wasted. It may be possible
+to track more accurate limits in the same manner as the
 bounded::integer library in order to improve the precision of types
-returned by `trunc_` functions. For this reason, details surrounding
-these return types are omitted from this proposal.
+returned by `trunc_` functions. For this reason, the exact value of
+the exponents of these return types is not given.
 
 Notes:
 * Bounded::integer is already supported by fixed-point library,
@@ -503,7 +504,7 @@ characteristics include:
 * different rounding strategies - other than truncation;
 * overflow and underflow checks - possibly throwing exceptions;
 * operator return type - adopting `trunc_` or `promote_` behavior;
-* default-initialize to zero - not done by default and
+* default-initialize to zero - currently uninitialized and
 * saturation arithmetic - as opposed to modular arithmetic.
 
 One way to extend `fixed_point` to cover these alternatives would be
@@ -515,12 +516,12 @@ stands currently.
 
 Many examples of fixed-point support in C and C++ exist. While almost
 all of them aim for low run-time cost and expressive alternatives to
-raw integer manipulation, they vary greatly in terms of their
-interface.
+raw integer manipulation, they vary greatly in detail and in terms of
+their interface.
 
 One especially interesting dichotomy is between solutions which offer
 a discrete selection of fixed-point types and libraries which contain
-a continuous range of types through type parameterization.
+a continuous range of exponents through type parameterization.
 
 ### N1169
 
@@ -528,7 +529,7 @@ One example of the former is found in proposal N1169
 [\[5\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf),
 the intent of which is to expose features found in certain embedded
 hardware. It introduces a succinct set of language-level fixed-point
-types with certain constraints on the number of integer or fractional
+types and impose constraints on the number of integer or fractional
 digits each can possess.
 
 As with all examples of discrete-type fixed-point support, the limited
@@ -538,8 +539,8 @@ and expressiveness of the API.
 Nevertheless, it may be possible to harness performance gains provided
 by N1169 fixed-point types through explicit template specialization.
 This is likely to be a valuable proposition to potential users of the
-library who find themselves targeting architectures which already
-benefit from N1169.
+library who find themselves targeting platforms which support
+fixed-point arithmetic at the hardware level.
 
 ### N3352
 
@@ -557,11 +558,11 @@ versus unsigned and fractional versus integer numeric types. It is
 intended to replace built-in types in a wide variety of situations and
 accordingly, is highly compile-time configurable in terms of how
 rounding and overflow are handled. Parameters to these four class
-templates the storage in bits and - for fractional types - the
+templates include the storage in bits and - for fractional types - the
 resolution.
 
-The `fixed_point` class template could probably - with a few caveats
-- be generated using the two fractional types, `nonnegative` and
+The `fixed_point` class template could probably - with a few caveats -
+be generated using the two fractional types, `nonnegative` and
 `negatable`, replacing the `ReprType` parameter with the integer bit
 count of `ReprType`, specifying either `fastest` or `truncated` for
 the rounding mode and specifying `undefined` as the overflow mode.
@@ -583,7 +584,7 @@ conclusion are that:
 * the breaking up of duties amongst four separate class templates
   introduces four new concepts and incurs additional mental load for
   relatively little gain while further detaching the interface from
-  vital machine-level details;
+  vital machine-level details and
 * the absence of the most negative number from signed types reduces
   the capacity of all types by one.
 
@@ -602,11 +603,11 @@ fixed_point design to be similarly extensible in future revisions.
 
 ## VIII. Acknowledgements
 
-Subgroup: Guy Davidson, Michael Wong
-Code: Peter Schregle, Ryhor Spivak
-Design: Marco Foco, Joël Lamotte
+Subgroup: Guy Davidson, Michael Wong  
+Code: Peter Schregle, Ryhor Spivak  
+Design: Marco Foco, Joël Lamotte  
 Discussion: Ed Ainsley, Billy Baker, Clément Grégoire,
-xSean Middleditch
+Sean Middleditch
 
 ## IX. References
 
