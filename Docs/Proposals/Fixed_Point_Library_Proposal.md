@@ -255,16 +255,21 @@ to avoid overflow:
     trunc_add(FIXED_POINT_1, FIXED_POINT_2)
     trunc_subtract(FIXED_POINT_1, FIXED_POINT_2)
     trunc_multiply(FIXED_POINT_1, FIXED_POINT_2)
+    trunc_divide(FIXED_POINT_1, FIXED_POINT_2)
+    trunc_invert(FIXED_POINT)
     trunc_square(FIXED_POINT)
     trunc_sqrt(FIXED_POINT)
+    trunc_shift_left(FIXED_POINT, INTEGER)
+    trunc_shift_right(FIXED_POINT, INTEGER)
     promote_multiply(FIXED_POINT_1, FIXED_POINT_2)
+    promote_divide(FIXED_POINT_1, FIXED_POINT_2)
+    promote_invert(FIXED_POINT)
     promote_square(FIXED_POINT)
 
 Some notes:
 
 1. The `trunc_` functions return the result as a type no larger than
-   the inputs and with an exponent increased in order to avoid
-   overflow;
+   the inputs and with an exponent adjusted to avoid overflow;
 2. the `promote_` functions return the result as a type large enough
    to avoid overflow and underflow;
 3. the `_multiply` and `_square` functions are not guaranteed to be
@@ -273,7 +278,11 @@ Some notes:
    when all input parameters are the *most negative number*;
 5. the `_square` functions return an unsigned type;
 6. the `_add`, `_subtract` and `_multiply` functions take
-   heterogeneous `fixed_point` specializations.
+   heterogeneous `fixed_point` specializations;
+7. the `_divide` and `_invert` functions in no way guard against
+   divide-by-zero errors and
+8. The `trunc_shift_` functions return results of the same type as
+  their first input parameter.
 
 ### Example
 
