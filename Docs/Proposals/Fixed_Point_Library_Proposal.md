@@ -546,8 +546,9 @@ characteristics include:
 
 * different rounding strategies - other than truncation;
 * overflow and underflow checks - possibly throwing exceptions;
-* operator return type - adopting `trunc_` or `promote` behavior and
-* default-initialize to zero - not done by default.
+* operator return type - adopting `trunc_` or `promote_` behavior;
+* default-initialize to zero - not done by default and
+* saturation arithmetic - as opposed to modular arithmetic.
 
 One way to extend `fixed_point` to cover these alternatives would be
 to add a third template parameter containing bit flags. The default
