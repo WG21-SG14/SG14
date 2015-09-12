@@ -57,20 +57,20 @@ order:
 
 Fixed-point numbers are specializations of
 
-    template <class REPR_TYPE, int EXPONENT>
+    template <class ReprType, int Exponent>
     class fixed_point
 
 where the template parameters are described as follows.
 
-#### `REPR_TYPE` Type Template Parameter
+#### `ReprType` Type Template Parameter
 
 This parameter identifies the capacity and signedness of the
 underlying type used to represent the value. In other words, the size
-of the resulting type will be `sizeof(REPR_TYPE)` and it will be
-signed iff `is_signed<REPR_TYPE>::value` is true. The default is
+of the resulting type will be `sizeof(ReprType)` and it will be
+signed iff `is_signed<ReprType>::value` is true. The default is
 `int`.
 
-`REPR_TYPE` must be a fundamental integral type and should not be the
+`ReprType` must be a fundamental integral type and should not be the
 largest size. Suitable types include: `std::int8_t`, `std::uint8_t`,
 `std::int16_t`, `std::uint16_t`, `std::int32_t` and `std::uint32_t`.
 In limited situations, `std::int64_t` and `std::uint64_t` can be used.
@@ -78,31 +78,31 @@ The  reasons for these limitations relate to the difficulty in finding
 a type that is suitable for performing lossless integer
 multiplication.
 
-#### `EXPONENT` Non-Type Template Parameter
+#### `Exponent` Non-Type Template Parameter
 
 The exponent of a fixed-point type is the equivalent of the exponent
 field in a floating-point type and shifts the stored value by the
 requisite number of bits necessary to produce the desired range.
 
-The default value is dependent on `REPR_TYPE` and ensures that half of
+The default value is dependent on `ReprType` and ensures that half of
 the bits of the type are allocated to fractional digits. The other
-half go to integer digits and (if `REPR_TYPE` is signed) the sign bit.
+half go to integer digits and (if `ReprType` is signed) the sign bit.
 
 The resolution of a specialization of `fixed_point` is
 
-    2 ^ EXPONENT
+    2 ^ Exponent
 
 and the minimum and maximum values are
 
-    std::numeric_limits<REPR_TYPE>::min() * 2 ^ EXPONENT
+    std::numeric_limits<ReprType>::min() * 2 ^ Exponent
 
 and
 
-    std::numeric_limits<REPR_TYPE>::max() * 2 ^ EXPONENT
+    std::numeric_limits<ReprType>::max() * 2 ^ Exponent
 
 respectively.
 
-Any usage that results in values of `EXPONENT` which lie outside the
+Any usage that results in values of `Exponent` which lie outside the
 range, (INT_MIN / 2, INT_MAX / 2), may result in undefined
 behavior and/or overflow or underflow. This range of exponent values
 is far in excess of the largest built-in floting-point type and should
@@ -110,7 +110,7 @@ be adequate for all intents and purposes.
 
 ### `make_fixed` and `make_ufixed` Helper Type
 
-The `EXPONENT` template parameter is versatile and concise. It is an
+The `Exponent` template parameter is versatile and concise. It is an
 intuitive scale to use when considering the full range of positive and
 negative exponents a fixed-point type might possess. It also
 corresponds to the exponent field of built-in floating-point types.
@@ -125,12 +125,12 @@ form of helper types in the style of `make_signed`.
 
 These aliases are declared as:
 
-    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
+    template <unsigned IntegerDigits, unsigned FractionalDigits = 0, bool IsSigned = true>
   	using make_fixed;
 
 and
 
-    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
+    template <unsigned IntegerDigits, unsigned FractionalDigits = 0>
     using make_ufixed;
 
 They resolve to a `fixed_point` specialization with the given
@@ -252,19 +252,19 @@ The following named function templates can be used as a hassle-free
 alternative to arithmetic operators in situations where the aim is
 to avoid overflow:
 
-    trunc_add(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_subtract(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_multiply(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_divide(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_invert(FIXED_POINT)
-    trunc_square(FIXED_POINT)
-    trunc_sqrt(FIXED_POINT)
-    trunc_shift_left(FIXED_POINT, INTEGER)
-    trunc_shift_right(FIXED_POINT, INTEGER)
-    promote_multiply(FIXED_POINT_1, FIXED_POINT_2)
-    promote_divide(FIXED_POINT_1, FIXED_POINT_2)
-    promote_invert(FIXED_POINT)
-    promote_square(FIXED_POINT)
+    trunc_add(FixedPoint1, FixedPoint2)
+    trunc_subtract(FixedPoint1, FixedPoint2)
+    trunc_multiply(FixedPoint1, FixedPoint2)
+    trunc_divide(FixedPoint1, FixedPoint2)
+    trunc_invert(FixedPoint)
+    trunc_square(FixedPoint)
+    trunc_sqrt(FixedPoint)
+    trunc_shift_left(FixedPoint, Integer)
+    trunc_shift_right(FixedPoint, Integer)
+    promote_multiply(FixedPoint1, FixedPoint2)
+    promote_divide(FixedPoint1, FixedPoint2)
+    promote_invert(FixedPoint)
+    promote_square(FixedPoint)
 
 Some notes:
 
@@ -288,8 +288,8 @@ Some notes:
 
 The following example calculates the magnitude of a 3-dimensional vector.
 
-    template <class FP>
-    constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
+    template <class Fp>
+    constexpr auto magnitude(Fp const & x, Fp const & y, Fp const & z)
     -> decltype(trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z))))
     {
         return trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z)));
@@ -309,70 +309,70 @@ returns the value, 9.890625.
 ### Header \<fixed_point\> Synopsis
 
     namespace std {
-      template <class REPR_TYPE, int EXPONENT> class fixed_point;
+      template <class ReprType, int Exponent> class fixed_point;
 
-      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
+      template <unsigned FractionalDigits, unsigned FractionalDigits = 0, bool IsSigned = true>
         using make_fixed;
-      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
+      template <unsigned IntegerDigits, unsigned FractionalDigits = 0>
         using make_ufixed;
 
-      template <class FIXED_POINT>
+      template <class FixedPoint>
         using fixed_point_promotion_t;
-      template <class FIXED_POINT>
-        fixed_point_promotion_t<FIXED_POINT>
-          constexpr promote(const FIXED_POINT & from) noexcept
+      template <class FixedPoint>
+        fixed_point_promotion_t<FixedPoint>
+          constexpr promote(const FixedPoint & from) noexcept
 
-      template <class FIXED_POINT>
+      template <class FixedPoint>
         using fixed_point_demotion_t;
-      template <class FIXED_POINT>
-        fixed_point_demotion_t<FIXED_POINT>
-          constexpr demote(const FIXED_POINT & from) noexcept
+      template <class FixedPoint>
+        fixed_point_demotion_t<FixedPoint>
+          constexpr demote(const FixedPoint & from) noexcept
 
-      template <class LHS, class RHS>
-        constexpr bool operator ==(LHS const & lhs, RHS const & rhs) noexcept;
-      template <class LHS, class RHS>
-        constexpr bool operator !=(LHS const & lhs, RHS const & rhs) noexcept;
-      template <class LHS, class RHS>
-        constexpr bool operator <(LHS const & lhs, RHS const & rhs) noexcept;
-      template <class LHS, class RHS>
-        constexpr bool operator >(LHS const & lhs, RHS const & rhs) noexcept;
-      template <class LHS, class RHS>
-        constexpr bool operator >=(LHS const & lhs, RHS const & rhs) noexcept;
-      template <class LHS, class RHS>
-        constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator ==(Lhs const & lhs, Rhs const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator !=(Lhs const & lhs, Rhs const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator <(Lhs const & lhs, Rhs const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator >(Lhs const & lhs, Rhs const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator >=(Lhs const & lhs, Rhs const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator <=(Lhs const & lhs, Rhs const & rhs) noexcept;
 
       // arithmetic operators
       ...
 
-      template <class LHS, class RHS = LHS>
+      template <class Lhs, class Rhs = Lhs>
         using trunc_multiply_result_t;
-      template <class LHS, class RHS>
-        trunc_multiply_result_t<LHS, RHS>
-          constexpr trunc_multiply(const LHS & factor1, const RHS & factor2) noexcept;
+      template <class Lhs, class Rhs>
+        trunc_multiply_result_t<Lhs, Rhs>
+          constexpr trunc_multiply(const Lhs & factor1, const Rhs & factor2) noexcept;
 
-      template <class REPR_TYPE, int EXPONENT, unsigned N = 2>
+      template <class ReprType, int Exponent, unsigned N = 2>
         using trunc_add_result_t;
-      template <class REPR_TYPE, int EXPONENT, class ... TAIL>
-        trunc_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr trunc_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+      template <class ReprType, int Exponent, class ... Tail>
+        trunc_add_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
+          constexpr trunc_add(fixed_point<ReprType, Exponent> const & addend1, Tail const & ... addend_tail)
 
-      template <class REPR_TYPE, int EXPONENT, unsigned N = 2>
+      template <class ReprType, int Exponent, unsigned N = 2>
         using trunc_subtract_result_t;
-      template <class REPR_TYPE, int EXPONENT, class ... TAIL>
-        trunc_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr trunc_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+      template <class ReprType, int Exponent, class ... Tail>
+        trunc_subtract_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
+          constexpr trunc_subtract(fixed_point<ReprType, Exponent> const & addend1, Tail const & ... addend_tail)
 
-      template <class FIXED_POINT>
+      template <class FixedPoint>
         using trunc_square_result_t;
-      template <class FIXED_POINT>
-        trunc_square_result_t<FIXED_POINT>
-          constexpr trunc_square(const FIXED_POINT & root) noexcept;
+      template <class FixedPoint>
+        trunc_square_result_t<FixedPoint>
+          constexpr trunc_square(const FixedPoint & root) noexcept;
 
-      template <class FIXED_POINT>
+      template <class FixedPoint>
         using trunc_sqrt_result_t;
-      template <class FIXED_POINT>
-        trunc_sqrt_result_t<FIXED_POINT>
-          constexpr trunc_sqrt(const FIXED_POINT & root) noexcept;
+      template <class FixedPoint>
+        trunc_sqrt_result_t<FixedPoint>
+          constexpr trunc_sqrt(const FixedPoint & root) noexcept;
 
       // additional named arithmetic functions
       ...
@@ -380,11 +380,11 @@ returns the value, 9.890625.
 
 #### `fixed_point<>` Class Template
 
-    template <class REPR_TYPE, int EXPONENT>
+    template <class ReprType, int Exponent>
     class fixed_point
     {
     public:
-      using repr_type;
+      using ReprType;
 
       constexpr static int exponent;
       constexpr static int digits;
@@ -394,20 +394,20 @@ returns the value, 9.890625.
       constexpr fixed_point() noexcept;
       template <class S>
         explicit constexpr fixed_point(S s) noexcept;
-      template <class FROM_REPR_TYPE, int FROM_EXPONENT>
-        explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept;
+      template <class FromReprType, int FromExponent>
+        explicit constexpr fixed_point(fixed_point<FromReprType, FromExponent> const & rhs) noexcept;
 
       template <class S>
         fixed_point & operator=(S s) noexcept;
-      template <class FROM_REPR_TYPE, int FROM_EXPONENT>
-        fixed_point & operator=(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+      template <class FromReprType, int FromExponent>
+        fixed_point & operator=(fixed_point<FromReprType, FromExponent> const & rhs) noexcept
 
       template <class S>
         explicit constexpr operator S() const noexcept;
       explicit constexpr operator bool() const noexcept;
 
-      constexpr repr_type data() const noexcept;
-      static constexpr fixed_point from_data(repr_type repr) noexcept;
+      constexpr ReprType data() const noexcept;
+      static constexpr fixed_point from_data(ReprType repr) noexcept;
 
       friend constexpr bool operator==(fixed_point const & lhs, fixed_point const & rhs) noexcept;
       friend constexpr bool operator!=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
@@ -455,7 +455,7 @@ compile-time computation that is beyond the scope of this document.
 
 ### Alternatives to Built-in Integer Types
 
-The reason that `REPR_TYPE` is restricted to built-in integer types
+The reason that `ReprType` is restricted to built-in integer types
 is that a number of features require the use of a higher - or
 lower-capacity type. Supporting alias templates are defined to
 provide `fixed_point` with the means to invoke integer types of
@@ -464,7 +464,7 @@ specific capacity and signedness at compile time.
 There is no general purpose way of deducing a higher or
 lower-capacity type given a source type in the same manner as
 `make_signed` and `make_unsigned`. If there were, this might be
-adequate to allow alternative choices for `REPR_TYPE`.
+adequate to allow alternative choices for `ReprType`.
 
 ### Bounded Integers
 
@@ -562,8 +562,8 @@ resolution.
 
 The `fixed_point` class template could probably - with a few caveats
 - be generated using the two fractional types, `nonnegative` and
-`negatable`, replacing the REPR_TYPE parameter with the integer bit
-count of REPR_TYPE, specifying either `fastest` or `truncated` for the
+`negatable`, replacing the ReprType parameter with the integer bit
+count of ReprType, specifying either `fastest` or `truncated` for the
 rounding mode and specifying `undefined` as the overflow mode.
 
 However, fixed_point more closely and concisely caters to the needs of
