@@ -22,7 +22,7 @@ or all operations more efficiently using integer arithmetic. Certain
 applications can suffer from the variability in precision which comes
 from a dynamic radix point [\[1\]](http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php).
 In situations where a variable exponent is not desired, it takes
-valuable space away from the mantissa and reduces precision.
+valuable space away from the significand and reduces precision.
 
 Built-in integer types provide the basis for an efficient
 representation of binary fixed-point real numbers. However, laborious,
