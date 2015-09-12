@@ -16,7 +16,7 @@ Floating-point types are an exceedingly versatile and widely supported
 method of expressing real numbers on modern architectures.
 
 However, there are certain situations where fixed-point arithmetic is
-preferable. Some system lack native floating-point registers and must
+preferable. Some systems lack native floating-point registers and must
 emulate them in software. Many others are capable of performing some
 or all operations more efficiently using integer arithmetic. Certain
 applications can suffer from the variability in precision which comes
