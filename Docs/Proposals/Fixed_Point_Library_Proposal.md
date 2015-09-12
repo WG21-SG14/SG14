@@ -341,6 +341,9 @@ returns the value, 9.890625.
       template <typename LHS, typename RHS>
         constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
 
+      // arithmetic operators
+      ...
+
       template <typename LHS, typename RHS = LHS>
         using trunc_multiply_result_t;
       template <typename LHS, typename RHS>
@@ -370,6 +373,9 @@ returns the value, 9.890625.
       template <typename FIXED_POINT>
         trunc_sqrt_result_t<FIXED_POINT>
           constexpr trunc_sqrt(const FIXED_POINT & root) noexcept;
+
+      // additional named arithmetic functions
+      ...
     }
 
 #### `fixed_point<>` Class Template
