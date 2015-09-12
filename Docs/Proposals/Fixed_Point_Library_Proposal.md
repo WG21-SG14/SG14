@@ -432,38 +432,6 @@ returns the value, 9.890625.
 
 ## VI. Future Issues
 
-### Relaxed Rules Surrounding Arithmetic Operatior Types
-
-Currently, is is not possible to use a binary operator with
-non-matching input types. This leaves open the future possibility of
-allowing such input patterns and returning the result in a type which
-tries to encompasses both input types.
-
-However, it is not always possible to produce a type which covers the
-capabilities of two other types without increasing the size of the
-resultant type beyond that of both inputs. For example the most
-concise type which can represent the values of both `int8_t` and
-`uint16_t` is `int32_t`. In such a case, it may be preferable to
-return a value based on `int16_t` and lose the least significant bit
-of precision from the `uint16_t` input.
-
-One situation where heterogeneous input types is desired is when
-introducing a literal to an expression, for example:
-
-    auto x = a * t + b * (1.0 - t)
-
-Currently, this requires cumbersome casting to convert the literal to
-a suitable fixed-point type.
-
-One possible solution is to introduce a user-defined literal which
-produces a fixed_point object with a suitable exponent. However,
-choosing a specialization that is appropriate in all situations may
-be unrealistic.
-
-Another possibility is to overload arithmetic operators for all types
-which satisfy `is_arithmetic`. This would require many function
-template definitions.
-
 ### Library Support
 
 Because the aim is to provide an alternative to existing arithmetic
