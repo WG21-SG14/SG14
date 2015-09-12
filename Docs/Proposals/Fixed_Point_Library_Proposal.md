@@ -102,6 +102,12 @@ and
 
 respectively.
 
+Any usage that results in values of `EXPONENT` which lie outside the
+range, (INT_MIN / 2, INT_MAX / 2), may result in undefined
+behavior and/or overflow or underflow. This range of exponent values
+is far in excess of the largest built-in floting-point type and should
+be adequate for all intents and purposes.
+
 ### `make_fixed` and `make_ufixed` Helper Type
 
 The `EXPONENT` template parameter is versatile and concise. It is an
