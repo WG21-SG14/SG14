@@ -58,7 +58,7 @@ order:
 Fixed-point numbers are specializations of
 
     template <class ReprType, int Exponent>
-    class fixed_point
+    class fixed_point;
 
 where the template parameters are described as follows.
 
