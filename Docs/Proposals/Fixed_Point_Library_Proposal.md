@@ -57,7 +57,7 @@ order:
 
 Fixed-point numbers are specializations of
 
-    template <typename REPR_TYPE, int EXPONENT>
+    template <class REPR_TYPE, int EXPONENT>
     class fixed_point
 
 where the template parameters are described as follows.
@@ -288,7 +288,7 @@ Some notes:
 
 The following example calculates the magnitude of a 3-dimensional vector.
 
-    template <typename FP>
+    template <class FP>
     constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
     -> decltype(trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z))))
     {
@@ -309,68 +309,68 @@ returns the value, 9.890625.
 ### Header \<fixed_point\> Synopsis
 
     namespace std {
-      template <typename REPR_TYPE, int EXPONENT> class fixed_point;
+      template <class REPR_TYPE, int EXPONENT> class fixed_point;
 
       template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
         using make_fixed;
       template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
         using make_ufixed;
 
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         using fixed_point_promotion_t;
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         fixed_point_promotion_t<FIXED_POINT>
           constexpr promote(const FIXED_POINT & from) noexcept
 
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         using fixed_point_demotion_t;
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         fixed_point_demotion_t<FIXED_POINT>
           constexpr demote(const FIXED_POINT & from) noexcept
 
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         constexpr bool operator ==(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         constexpr bool operator !=(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         constexpr bool operator <(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         constexpr bool operator >(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         constexpr bool operator >=(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
 
       // arithmetic operators
       ...
 
-      template <typename LHS, typename RHS = LHS>
+      template <class LHS, class RHS = LHS>
         using trunc_multiply_result_t;
-      template <typename LHS, typename RHS>
+      template <class LHS, class RHS>
         trunc_multiply_result_t<LHS, RHS>
           constexpr trunc_multiply(const LHS & factor1, const RHS & factor2) noexcept;
 
-      template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+      template <class REPR_TYPE, int EXPONENT, unsigned N = 2>
         using trunc_add_result_t;
-      template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
+      template <class REPR_TYPE, int EXPONENT, class ... TAIL>
         trunc_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
           constexpr trunc_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 
-      template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+      template <class REPR_TYPE, int EXPONENT, unsigned N = 2>
         using trunc_subtract_result_t;
-      template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
+      template <class REPR_TYPE, int EXPONENT, class ... TAIL>
         trunc_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
           constexpr trunc_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
 
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         using trunc_square_result_t;
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         trunc_square_result_t<FIXED_POINT>
           constexpr trunc_square(const FIXED_POINT & root) noexcept;
 
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         using trunc_sqrt_result_t;
-      template <typename FIXED_POINT>
+      template <class FIXED_POINT>
         trunc_sqrt_result_t<FIXED_POINT>
           constexpr trunc_sqrt(const FIXED_POINT & root) noexcept;
 
@@ -380,7 +380,7 @@ returns the value, 9.890625.
 
 #### `fixed_point<>` Class Template
 
-    template <typename REPR_TYPE, int EXPONENT>
+    template <class REPR_TYPE, int EXPONENT>
     class fixed_point
     {
     public:
@@ -392,17 +392,17 @@ returns the value, 9.890625.
       constexpr static int fractional_digits;
 
       constexpr fixed_point() noexcept;
-      template <typename S>
+      template <class S>
         explicit constexpr fixed_point(S s) noexcept;
-      template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+      template <class FROM_REPR_TYPE, int FROM_EXPONENT>
         explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept;
 
-      template <typename S>
+      template <class S>
         fixed_point & operator=(S s) noexcept;
-      template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
+      template <class FROM_REPR_TYPE, int FROM_EXPONENT>
         fixed_point & operator=(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
 
-      template <typename S>
+      template <class S>
         explicit constexpr operator S() const noexcept;
       explicit constexpr operator bool() const noexcept;
 
