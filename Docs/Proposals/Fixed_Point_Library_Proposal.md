@@ -432,18 +432,6 @@ returns the value, 9.890625.
 
 ## VI. Future Issues
 
-### Explicit Template Specialization
-
-Possible reasons to write an explicit template specialization include
-to exploit language-level fixed-point features such as those proposed
-in N1169 [\[2\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf)
-and to exploit machine instructions which might otherwise be
-difficult to invoke.
-
-These options are left open by carefully avoiding describing
-`REPR_TYPE` as the actual storage type. If there is a more
-appropriate choice, the option to take it is reserved.
-
 ### Relaxed Rules Surrounding Arithmetic Operatior Types
 
 Currently, is is not possible to use a binary operator with
@@ -512,7 +500,7 @@ adequate to allow alternative choices for `REPR_TYPE`.
 
 ### Bounded Integers
 
-The bounded::integer library [\[3\]](http://doublewise.net/c++/bounded/)
+The bounded::integer library [\[2\]](http://doublewise.net/c++/bounded/)
 exemplifies the benefits of keeping track of ranges of values in
 arithmetic types at compile time.
 
@@ -534,9 +522,9 @@ these return types are omitted from this proposal.
 
 Notes:
 * Bounded::integer is already supported by fixed-point library,
-fp [\[4\]](https://github.com/mizvekov/fp).
+fp [\[3\]](https://github.com/mizvekov/fp).
 * A similar library is the boost constrained_value library
-[\[5\]](http://rk.hekko.pl/constrained_value/).
+[\[4\]](http://rk.hekko.pl/constrained_value/).
 
 ### Alternative Policies
 
@@ -551,24 +539,114 @@ characteristics include:
 * saturation arithmetic - as opposed to modular arithmetic.
 
 One way to extend `fixed_point` to cover these alternatives would be
-to add a third template parameter containing bit flags. The default
-set of values would reflect `fixed_point` as it stands currently.
+to add non-type template parameters containing bit flags or enumerated
+types. The default set of values would reflect `fixed_point` as it
+stands currently.
 
-An example of a fixed-point proposal which takes a similar approach to
-rounding and error cases can be found in N3352 [\[6\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html).
+## VII. Prior Art
 
-## VII. Acknowledgements
+Many examples of fixed-point support in C and C++ exist. While almost
+all of them aim for low run-time cost and expressive alternatives to
+raw integer manipulation, they vary greatly in terms of their
+interface.
 
-Subgroup members: Guy Davidson, Michael Wong
-Feedback provided by: Marco Foco, Joël Lamotte, Ryhor Spivak
-SG14 forum contributors: Clément Grégoire, Sean Middleditch, Ed Ainsley,
-Billy Baker
+One especially interesting dichotomy is between solutions which offer
+a discrete selection of fixed-point types and libraries which contain
+a continuous range of types through type parameterization.
 
-## VIII. References
+### N1169
 
-1. Why Integer Coordinates?, http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php
-2. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
-3. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
-4. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
-5. Boost Constrained Value Libarary, <http://rk.hekko.pl/constrained_value/>
-6. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
+One example of the former is found in proposal N1169
+[\[5\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf),
+the intent of which is to expose features found in certain embedded
+hardware. It introduces a succinct set of language-level fixed-point
+types with certain constraints on the number of integer or fractional
+digits each can possess.
+
+As with all examples of discrete-type fixed-point support, the limited
+choice of exponents is a considerable restriction on the versatility
+and expressiveness of the API.
+
+Nevertheless, it may be possible to harness performance gains provided
+by N1169 fixed-point types through explicit template specialization.
+This is likely to be a valuable proposition to potential users of the
+library who find themselves targeting architectures which already
+benefit from N1169.
+
+### N3352
+
+There are many other C++ libraries available which fall into the
+latter category of continuous-range fixed-point arithmetic
+[\[3\]](https://github.com/mizvekov/fp)
+[\[6\]](http://www.codeproject.com/Articles/37636/Fixed-Point-Class)
+[\[7\]](https://github.com/viboes/fixed_point). In particular, an
+existing library proposal, N3352 [\[8\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html),
+aims to achieve very similar goals through similar means and warrants
+closer comparison than N1169.
+
+N3352 introduces four class templates covering the quadrant of signed
+versus unsigned and fractional versus integer numeric types. It is
+intended to replace built-in types in a wide variety of situations and
+accordingly, is highly compile-time configurable in terms of how
+rounding and overflow are handled. Parameters to these four class
+templates the storage in bits and - for fractional types - the
+resolution.
+
+The `fixed_point` class template could probably - with a few caveats
+- be generated using the two fractional types, `nonnegative` and
+`negatable`, replacing the REPR_TYPE parameter with the integer bit
+count of REPR_TYPE, specifying either `fastest` or `truncated` for the
+rounding mode and specifying `undefined` as the overflow mode.
+
+However, fixed_point more closely and concisely caters to the needs of
+users who already use integer types and simply desire a more concise,
+less error-prone form. It more closely follows the four design aims of
+the library and - it can be argued - more closely follows the spirit
+of the standard in its pursuit of zero-cost abstraction.
+
+Some aspects of the design of the N3352 API which back up these
+conclusion are that:
+
+* the result of arithmetic operations closely resemble the `trunc_`
+  function templates and are potentially more costly at run-time;
+* the nature of the range-specifying template parameters - through
+  careful framing in mathematical terms - abstracts away valuable
+  information regarding machine-critical type size information;
+* the breaking up of duties amongst four separate class templates
+  introduces four new concepts and incurs additional mental load for
+  relatively little gain while further detaching the interface from
+  vital machine-level details;
+* the absence of the most negative number from signed types reduces
+  the capacity of all types by one.
+
+The added versatility that the N3352 API provides regarding rounding
+and overflow handling are of relatively low priority to users who
+already bear the scars of battles with raw integer types.
+Nevertheless, providing them as options to be turned on or off at
+compile time is an ideal way to leave the choice in the hands of the
+user.
+
+Many high-performance applications - in which fixed-point is of
+potential value - favor run-time checks during development which are
+subsequently deactivated in production builds. The N3352 interface is
+highly conducive to this style of development. It is an aim of the
+fixed_point design to be similarly extensible in future revisions.
+
+## VIII. Acknowledgements
+
+Subgroup: Guy Davidson, Michael Wong
+Code: Peter Schregle, Ryhor Spivak
+Design: Marco Foco, Joël Lamotte
+Discussion: Ed Ainsley, Billy Baker, Clément Grégoire,
+xSean Middleditch
+
+## IX. References
+
+1. Why Integer Coordinates?, <http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php>
+2. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
+3. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
+4. Boost Constrained Value Libarary, <http://rk.hekko.pl/constrained_value/>
+5. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
+6. fpmath, Fixed Point Math Library, <http://www.codeproject.com/Articles/37636/Fixed-Point-Class>
+7. Boost fixed_point (proposed), Fixed point integral and fractional types, <https://github.com/viboes/fixed_point>
+8. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
