@@ -154,9 +154,24 @@ largely applies to `fixed_point` objects also. For example:
 ### Arithmetic Operators
 
 Any operators that might be applied to integer types can also be
-applied to `fixed_point` specializations. Input parameters and return
-value are all of the same type. (A possible exception to this is the
-right hand parameter of bit shift operators.)
+applied to `fixed_point` specializations. A guiding principle of
+operator overloads is that they perform as little run-time computation
+as is practically possible.
+
+With the exception of shift operators, binary operators can take any
+combination of:
+
+* one or two arguments of a single specialization of `fixed_point` and
+* zero or one arguments of any arithmetic type.
+
+The return value is the same `fixed_point` type as the input(s) in all
+cases. The reason that heterogeneous specializations are not accepted
+is that the type of the result would be problematic to determine and
+possibly require shift operations to produce.
+
+Shift operator overloads require an integer type as the right-hand
+parameter and return a type which is adjusted to accommodate the new
+value without risk of overflow or underflow.
 
 #### Overflow
 
