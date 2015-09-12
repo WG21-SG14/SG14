@@ -562,9 +562,9 @@ resolution.
 
 The `fixed_point` class template could probably - with a few caveats
 - be generated using the two fractional types, `nonnegative` and
-`negatable`, replacing the ReprType parameter with the integer bit
-count of ReprType, specifying either `fastest` or `truncated` for the
-rounding mode and specifying `undefined` as the overflow mode.
+`negatable`, replacing the `ReprType` parameter with the integer bit
+count of `ReprType`, specifying either `fastest` or `truncated` for
+the rounding mode and specifying `undefined` as the overflow mode.
 
 However, fixed_point more closely and concisely caters to the needs of
 users who already use integer types and simply desire a more concise,
