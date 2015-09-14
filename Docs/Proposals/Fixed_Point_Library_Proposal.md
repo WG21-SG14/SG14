@@ -1,5 +1,5 @@
-**Document number**: (draft)  
-**Date**: 2015-08-29  
+**Document number**: LEWG, EWG, SG14, SG6: D0037R0  
+**Date**: 2015-09-12  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
 
@@ -16,13 +16,13 @@ Floating-point types are an exceedingly versatile and widely supported
 method of expressing real numbers on modern architectures.
 
 However, there are certain situations where fixed-point arithmetic is
-preferable. Some system lack native floating-point registers and must
+preferable. Some systems lack native floating-point registers and must
 emulate them in software. Many others are capable of performing some
 or all operations more efficiently using integer arithmetic. Certain
 applications can suffer from the variability in precision which comes
 from a dynamic radix point [\[1\]](http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php).
 In situations where a variable exponent is not desired, it takes
-valuable space away from the mantissa and reduces precision.
+valuable space away from the significand and reduces precision.
 
 Built-in integer types provide the basis for an efficient
 representation of binary fixed-point real numbers. However, laborious,
@@ -57,20 +57,20 @@ order:
 
 Fixed-point numbers are specializations of
 
-    template <typename REPR_TYPE, int EXPONENT>
-    class fixed_point
+    template <class ReprType, int Exponent>
+    class fixed_point;
 
 where the template parameters are described as follows.
 
-#### `REPR_TYPE` Type Template Parameter
+#### `ReprType` Type Template Parameter
 
 This parameter identifies the capacity and signedness of the
 underlying type used to represent the value. In other words, the size
-of the resulting type will be `sizeof(REPR_TYPE)` and it will be
-signed iff `is_signed<REPR_TYPE>::value` is true. The default is
+of the resulting type will be `sizeof(ReprType)` and it will be
+signed iff `is_signed<ReprType>::value` is true. The default is
 `int`.
 
-`REPR_TYPE` must be a fundamental integral type and should not be the
+`ReprType` must be a fundamental integral type and should not be the
 largest size. Suitable types include: `std::int8_t`, `std::uint8_t`,
 `std::int16_t`, `std::uint16_t`, `std::int32_t` and `std::uint32_t`.
 In limited situations, `std::int64_t` and `std::uint64_t` can be used.
@@ -78,33 +78,40 @@ The  reasons for these limitations relate to the difficulty in finding
 a type that is suitable for performing lossless integer
 multiplication.
 
-#### `EXPONENT` Non-Type Template Parameter
+#### `Exponent` Non-Type Template Parameter
 
 The exponent of a fixed-point type is the equivalent of the exponent
 field in a floating-point type and shifts the stored value by the
 requisite number of bits necessary to produce the desired range.
 
-The default value is dependent on `REPR_TYPE` and ensures that half of
-the bits of the type are allocated to fractional digits. The other
-half go to integer digits and (if `REPR_TYPE` is signed) the sign bit.
+The default value of `Exponent` is dependent on `ReprType` and ensures
+that half of the bits of the type are allocated to fractional digits.
+The other half go to integer digits and (if `ReprType` is signed) the
+sign bit.
 
 The resolution of a specialization of `fixed_point` is
 
-    2 ^ EXPONENT
+    2 ** Exponent
 
 and the minimum and maximum values are
 
-    std::numeric_limits<REPR_TYPE>::min() * 2 ^ EXPONENT
+    std::numeric_limits<ReprType>::min() * (2 ** Exponent)
 
 and
 
-    std::numeric_limits<REPR_TYPE>::max() * 2 ^ EXPONENT
+    std::numeric_limits<ReprType>::max() * (2 ** Exponent)
 
 respectively.
 
+Any usage that results in values of `Exponent` which lie outside the
+range, (`INT_MIN / 2`, `INT_MAX / 2`), may result in undefined
+behavior and/or overflow or underflow. This range of exponent values
+is far in excess of the largest built-in floting-point type and should
+be adequate for all intents and purposes.
+
 ### `make_fixed` and `make_ufixed` Helper Type
 
-The `EXPONENT` template parameter is versatile and concise. It is an
+The `Exponent` template parameter is versatile and concise. It is an
 intuitive scale to use when considering the full range of positive and
 negative exponents a fixed-point type might possess. It also
 corresponds to the exponent field of built-in floating-point types.
@@ -119,12 +126,12 @@ form of helper types in the style of `make_signed`.
 
 These aliases are declared as:
 
-    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
+    template <unsigned IntegerDigits, unsigned FractionalDigits = 0, bool IsSigned = true>
   	using make_fixed;
 
 and
 
-    template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
+    template <unsigned IntegerDigits, unsigned FractionalDigits = 0>
     using make_ufixed;
 
 They resolve to a `fixed_point` specialization with the given
@@ -148,9 +155,24 @@ largely applies to `fixed_point` objects also. For example:
 ### Arithmetic Operators
 
 Any operators that might be applied to integer types can also be
-applied to `fixed_point` specializations. Input parameters and return
-value are all of the same type. (A possible exception to this is the
-right hand parameter of bit shift operators.)
+applied to `fixed_point` specializations. A guiding principle of
+operator overloads is that they perform as little run-time computation
+as is practically possible.
+
+With the exception of shift operators, binary operators can take any
+combination of:
+
+* one or two arguments of a single specialization of `fixed_point` and
+* zero or one arguments of any arithmetic type.
+
+The return value is the same `fixed_point` type as the input(s) in all
+cases. The reason that heterogeneous specializations are not accepted
+is that the type of the result would be problematic to determine and
+possibly require shift operations to produce.
+
+Shift operator overloads require an integer type as the right-hand
+parameter and return a type which is adjusted to accommodate the new
+value without risk of overflow or underflow.
 
 #### Overflow
 
@@ -231,19 +253,24 @@ The following named function templates can be used as a hassle-free
 alternative to arithmetic operators in situations where the aim is
 to avoid overflow:
 
-    trunc_add(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_subtract(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_multiply(FIXED_POINT_1, FIXED_POINT_2)
-    trunc_square(FIXED_POINT)
-    trunc_sqrt(FIXED_POINT)
-    promote_multiply(FIXED_POINT_1, FIXED_POINT_2)
-    promote_square(FIXED_POINT)
+    trunc_add(FixedPoint1, FixedPoint2)
+    trunc_subtract(FixedPoint1, FixedPoint2)
+    trunc_multiply(FixedPoint1, FixedPoint2)
+    trunc_divide(FixedPoint1, FixedPoint2)
+    trunc_invert(FixedPoint)
+    trunc_square(FixedPoint)
+    trunc_sqrt(FixedPoint)
+    trunc_shift_left(FixedPoint, Integer)
+    trunc_shift_right(FixedPoint, Integer)
+    promote_multiply(FixedPoint1, FixedPoint2)
+    promote_divide(FixedPoint1, FixedPoint2)
+    promote_invert(FixedPoint)
+    promote_square(FixedPoint)
 
 Some notes:
 
 1. The `trunc_` functions return the result as a type no larger than
-   the inputs and with an exponent increased in order to avoid
-   overflow;
+   the inputs and with an exponent adjusted to avoid overflow;
 2. the `promote_` functions return the result as a type large enough
    to avoid overflow and underflow;
 3. the `_multiply` and `_square` functions are not guaranteed to be
@@ -251,15 +278,19 @@ Some notes:
 4. the `_multiply` and `_square` functions produce undefined behavior
    when all input parameters are the *most negative number*;
 5. the `_square` functions return an unsigned type;
-6. the `_add`, `_subtract` and `_multiply` functions take
-   heterogeneous `fixed_point` specializations.
+6. the `_add`, `_subtract`, `_multiply` and `_divide` functions take
+   heterogeneous `fixed_point` specializations;
+7. the `_divide` and `_invert` functions in no way guard against
+   divide-by-zero errors and
+8. the `trunc_shift_` functions return results of the same type as
+  their first input parameter.
 
 ### Example
 
 The following example calculates the magnitude of a 3-dimensional vector.
 
-    template <typename FP>
-    constexpr auto magnitude(FP const & x, FP const & y, FP const & z)
+    template <class Fp>
+    constexpr auto magnitude(const Fp & x, const Fp & y, const Fp & z)
     -> decltype(trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z))))
     {
         return trunc_sqrt(trunc_add(trunc_square(x), trunc_square(y), trunc_square(z)));
@@ -279,76 +310,82 @@ returns the value, 9.890625.
 ### Header \<fixed_point\> Synopsis
 
     namespace std {
-      template <typename REPR_TYPE, int EXPONENT> class fixed_point;
+      template <class ReprType, int Exponent> class fixed_point;
 
-      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0, bool IS_SIGNED = true>
+      template <unsigned FractionalDigits, unsigned FractionalDigits = 0, bool IsSigned = true>
         using make_fixed;
-      template <unsigned INTEGER_DIGITS, unsigned FRACTIONAL_DIGITS = 0>
+      template <unsigned IntegerDigits, unsigned FractionalDigits = 0>
         using make_ufixed;
 
-      template <typename FIXED_POINT>
+      template <class FixedPoint>
         using fixed_point_promotion_t;
-      template <typename FIXED_POINT>
-        fixed_point_promotion_t<FIXED_POINT>
-          constexpr promote(const FIXED_POINT & from) noexcept
+      template <class FixedPoint>
+        fixed_point_promotion_t<FixedPoint>
+          constexpr promote(const FixedPoint & from) noexcept
 
-      template <typename FIXED_POINT>
+      template <class FixedPoint>
         using fixed_point_demotion_t;
-      template <typename FIXED_POINT>
-        fixed_point_demotion_t<FIXED_POINT>
-          constexpr demote(const FIXED_POINT & from) noexcept
+      template <class FixedPoint>
+        fixed_point_demotion_t<FixedPoint>
+          constexpr demote(const FixedPoint & from) noexcept
 
-      template <typename LHS, typename RHS>
-        constexpr bool operator ==(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
-        constexpr bool operator !=(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
-        constexpr bool operator <(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
-        constexpr bool operator >(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
-        constexpr bool operator >=(LHS const & lhs, RHS const & rhs) noexcept;
-      template <typename LHS, typename RHS>
-        constexpr bool operator <=(LHS const & lhs, RHS const & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator ==(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator !=(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator <(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator >(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator >=(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs>
+        constexpr bool operator <=(const Lhs & lhs, const Rhs & rhs) noexcept;
 
-      template <typename LHS, typename RHS = LHS>
+      // arithmetic operators
+      ...
+
+      template <class Lhs, class Rhs = Lhs>
         using trunc_multiply_result_t;
-      template <typename LHS, typename RHS>
-        trunc_multiply_result_t<LHS, RHS>
-          constexpr trunc_multiply(const LHS & factor1, const RHS & factor2) noexcept;
+      template <class Lhs, class Rhs>
+        trunc_multiply_result_t<Lhs, Rhs>
+          constexpr trunc_multiply(const Lhs & factor1, const Rhs & factor2) noexcept;
 
-      template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+      template <class ReprType, int Exponent, unsigned N = 2>
         using trunc_add_result_t;
-      template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-        trunc_add_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr trunc_add(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+      template <class ReprType, int Exponent, class ... Tail>
+        trunc_add_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
+          constexpr trunc_add(const fixed_point<ReprType, Exponent> & addend1, const Tail & ... addend_tail)
 
-      template <typename REPR_TYPE, int EXPONENT, unsigned N = 2>
+      template <class ReprType, int Exponent, unsigned N = 2>
         using trunc_subtract_result_t;
-      template <typename REPR_TYPE, int EXPONENT, typename ... TAIL>
-        trunc_subtract_result_t<REPR_TYPE, EXPONENT, sizeof...(TAIL) + 1>
-          constexpr trunc_subtract(fixed_point<REPR_TYPE, EXPONENT> const & addend1, TAIL const & ... addend_tail)
+      template <class ReprType, int Exponent, class ... Tail>
+        trunc_subtract_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
+          constexpr trunc_subtract(const fixed_point<ReprType, Exponent> & addend1, const Tail & ... addend_tail)
 
-      template <typename FIXED_POINT>
+      template <class FixedPoint>
         using trunc_square_result_t;
-      template <typename FIXED_POINT>
-        trunc_square_result_t<FIXED_POINT>
-          constexpr trunc_square(const FIXED_POINT & root) noexcept;
+      template <class FixedPoint>
+        trunc_square_result_t<FixedPoint>
+          constexpr trunc_square(const FixedPoint & root) noexcept;
 
-      template <typename FIXED_POINT>
+      template <class FixedPoint>
         using trunc_sqrt_result_t;
-      template <typename FIXED_POINT>
-        trunc_sqrt_result_t<FIXED_POINT>
-          constexpr trunc_sqrt(const FIXED_POINT & root) noexcept;
+      template <class FixedPoint>
+        trunc_sqrt_result_t<FixedPoint>
+          constexpr trunc_sqrt(const FixedPoint & root) noexcept;
+
+      // additional named arithmetic functions
+      ...
     }
 
 #### `fixed_point<>` Class Template
 
-    template <typename REPR_TYPE, int EXPONENT>
+    template <class ReprType, int Exponent>
     class fixed_point
     {
     public:
-      using repr_type;
+      using ReprType;
 
       constexpr static int exponent;
       constexpr static int digits;
@@ -356,89 +393,45 @@ returns the value, 9.890625.
       constexpr static int fractional_digits;
 
       constexpr fixed_point() noexcept;
-      template <typename S>
+      template <class S>
         explicit constexpr fixed_point(S s) noexcept;
-      template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
-        explicit constexpr fixed_point(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept;
+      template <class FromReprType, int FromExponent>
+        explicit constexpr fixed_point(const fixed_point<FromReprType, FromExponent> & rhs) noexcept;
 
-      template <typename S>
+      template <class S>
         fixed_point & operator=(S s) noexcept;
-      template <typename FROM_REPR_TYPE, int FROM_EXPONENT>
-        fixed_point & operator=(fixed_point<FROM_REPR_TYPE, FROM_EXPONENT> const & rhs) noexcept
+      template <class FromReprType, int FromExponent>
+        fixed_point & operator=(const fixed_point<FromReprType, FromExponent> & rhs) noexcept
 
-      template <typename S>
+      template <class S>
         explicit constexpr operator S() const noexcept;
       explicit constexpr operator bool() const noexcept;
 
-      constexpr repr_type data() const noexcept;
-      static constexpr fixed_point from_data(repr_type repr) noexcept;
+      constexpr ReprType data() const noexcept;
+      static constexpr fixed_point from_data(ReprType repr) noexcept;
 
-      friend constexpr bool operator==(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator!=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator>(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator<(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator>=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr bool operator<=(fixed_point const & lhs, fixed_point const & rhs) noexcept;
+      friend constexpr bool operator==(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator!=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator>(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator<(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator>=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr bool operator<=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
 
-      friend constexpr fixed_point operator-(fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator+(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator-(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator*(fixed_point const & lhs, fixed_point const & rhs) noexcept;
-      friend constexpr fixed_point operator/(fixed_point const & lhs, fixed_point const & rhs) noexcept;
+      friend constexpr fixed_point operator-(const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator+(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator-(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator*(const fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend constexpr fixed_point operator/(const fixed_point & lhs, const fixed_point & rhs) noexcept;
 
-      friend fixed_point & operator+=(fixed_point & lhs, fixed_point const & rhs) noexcept;
-      friend fixed_point & operator-=(fixed_point & lhs, fixed_point const & rhs) noexcept;
-      friend fixed_point & operator*=(fixed_point & lhs, fixed_point const & rhs) noexcept;
-      friend fixed_point & operator/=(fixed_point & lhs, fixed_point const & rhs) noexcept;
+      friend fixed_point & operator+=(fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend fixed_point & operator-=(fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend fixed_point & operator*=(fixed_point & lhs, const fixed_point & rhs) noexcept;
+      friend fixed_point & operator/=(fixed_point & lhs, const fixed_point & rhs) noexcept;
 
       // ...
     };
 
 ## VI. Future Issues
-
-### Explicit Template Specialization
-
-Possible reasons to write an explicit template specialization include
-to exploit language-level fixed-point features such as those proposed
-in N1169 [\[2\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf)
-and to exploit machine instructions which might otherwise be
-difficult to invoke.
-
-These options are left open by carefully avoiding describing
-`REPR_TYPE` as the actual storage type. If there is a more
-appropriate choice, the option to take it is reserved.
-
-### Relaxed Rules Surrounding Arithmetic Operatior Types
-
-Currently, is is not possible to use a binary operator with
-non-matching input types. This leaves open the future possibility of
-allowing such input patterns and returning the result in a type which
-tries to encompasses both input types.
-
-However, it is not always possible to produce a type which covers the
-capabilities of two other types without increasing the size of the
-resultant type beyond that of both inputs. For example the most
-concise type which can represent the values of both `int8_t` and
-`uint16_t` is `int32_t`. In such a case, it may be preferable to
-return a value based on `int16_t` and lose the least significant bit
-of precision from the `uint16_t` input.
-
-One situation where heterogeneous input types is desired is when
-introducing a literal to an expression, for example:
-
-    auto x = a * t + b * (1.0 - t)
-
-Currently, this requires cumbersome casting to convert the literal to
-a suitable fixed-point type.
-
-One possible solution is to introduce a user-defined literal which
-produces a fixed_point object with a suitable exponent. However,
-choosing a specialization that is appropriate in all situations may
-be unrealistic.
-
-Another possibility is to overload arithmetic operators for all types
-which satisfy `is_arithmetic`. This would require many function
-template definitions.
 
 ### Library Support
 
@@ -448,13 +441,13 @@ that a future proposal might specialize existing class templates and
 overload existing functions.
 
 Possible candidates for overloading include the functions defined in
-<cmath> and a templated specialization of `numeric_limits`. A new type
+\<cmath\> and a templated specialization of `numeric_limits`. A new type
 trait, `is_fixed_point`, would also be useful.
 
 While `fixed_point` is intended to provide drop-in replacements to
 existing built-ins, it may be preferable to deviate slightly from the
 behavior of certain standard functions. For example, overloads of
-functions from <cmath> will be considerably less concise, efficient
+functions from \<cmath\> will be considerably less concise, efficient
 and versatile if they obey rules surrounding error cases. In
 particular, the guarantee of setting `errno` in the case of an error
 prevents a function from being defined as pure. This highlights a
@@ -463,7 +456,7 @@ compile-time computation that is beyond the scope of this document.
 
 ### Alternatives to Built-in Integer Types
 
-The reason that `REPR_TYPE` is restricted to built-in integer types
+The reason that `ReprType` is restricted to built-in integer types
 is that a number of features require the use of a higher - or
 lower-capacity type. Supporting alias templates are defined to
 provide `fixed_point` with the means to invoke integer types of
@@ -472,11 +465,11 @@ specific capacity and signedness at compile time.
 There is no general purpose way of deducing a higher or
 lower-capacity type given a source type in the same manner as
 `make_signed` and `make_unsigned`. If there were, this might be
-adequate to allow alternative choices for `REPR_TYPE`.
+adequate to allow alternative choices for `ReprType`.
 
 ### Bounded Integers
 
-The bounded::integer library [\[3\]](http://doublewise.net/c++/bounded/)
+The bounded::integer library [\[2\]](http://doublewise.net/c++/bounded/)
 exemplifies the benefits of keeping track of ranges of values in
 arithmetic types at compile time.
 
@@ -490,17 +483,17 @@ For instance, consider the following expression:
     auto n = trunc_square(trunc_square(three));
 
 The type of `n` is `make_ufixed<8, 0>` but its value does not
-exceed 81. Hence, an unused integer bit has been allocated. It may be
-possible to track more accurate limits in the same manner as the
+exceed 81. Hence, an integer bit has been wasted. It may be possible
+to track more accurate limits in the same manner as the
 bounded::integer library in order to improve the precision of types
-returned by `trunc_` functions. For this reason, details surrounding
-these return types are omitted from this proposal.
+returned by `trunc_` functions. For this reason, the exact value of
+the exponents of these return types is not given.
 
 Notes:
 * Bounded::integer is already supported by fixed-point library,
-fp [\[4\]](https://github.com/mizvekov/fp).
+fp [\[3\]](https://github.com/mizvekov/fp).
 * A similar library is the boost constrained_value library
-[\[5\]](http://rk.hekko.pl/constrained_value/).
+[\[4\]](http://rk.hekko.pl/constrained_value/).
 
 ### Alternative Policies
 
@@ -510,28 +503,119 @@ characteristics include:
 
 * different rounding strategies - other than truncation;
 * overflow and underflow checks - possibly throwing exceptions;
-* operator return type - adopting `trunc_` or `promote` behavior and
-* default-initialize to zero - not done by default.
+* operator return type - adopting `trunc_` or `promote_` behavior;
+* default-initialize to zero - currently uninitialized and
+* saturation arithmetic - as opposed to modular arithmetic.
 
 One way to extend `fixed_point` to cover these alternatives would be
-to add a third template parameter containing bit flags. The default
-set of values would reflect `fixed_point` as it stands currently.
+to add non-type template parameters containing bit flags or enumerated
+types. The default set of values would reflect `fixed_point` as it
+stands currently.
 
-An example of a fixed-point proposal which takes a similar approach to
-rounding and error cases can be found in N3352 [\[6\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html).
+## VII. Prior Art
 
-## VII. Acknowledgements
+Many examples of fixed-point support in C and C++ exist. While almost
+all of them aim for low run-time cost and expressive alternatives to
+raw integer manipulation, they vary greatly in detail and in terms of
+their interface.
 
-Subgroup members: Guy Davidson, Michael Wong
-Feedback provided by: Marco Foco, Joël Lamotte, Ryhor Spivak
-SG14 forum contributors: Clément Grégoire, Sean Middleditch, Ed Ainsley,
-Billy Baker
+One especially interesting dichotomy is between solutions which offer
+a discrete selection of fixed-point types and libraries which contain
+a continuous range of exponents through type parameterization.
 
-## VIII. References
+### N1169
 
-1. Why Integer Coordinates?, http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php
-2. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
-3. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
-4. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
-5. Boost Constrained Value Libarary, <http://rk.hekko.pl/constrained_value/>
-6. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
+One example of the former is found in proposal N1169
+[\[5\]](http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf),
+the intent of which is to expose features found in certain embedded
+hardware. It introduces a succinct set of language-level fixed-point
+types and impose constraints on the number of integer or fractional
+digits each can possess.
+
+As with all examples of discrete-type fixed-point support, the limited
+choice of exponents is a considerable restriction on the versatility
+and expressiveness of the API.
+
+Nevertheless, it may be possible to harness performance gains provided
+by N1169 fixed-point types through explicit template specialization.
+This is likely to be a valuable proposition to potential users of the
+library who find themselves targeting platforms which support
+fixed-point arithmetic at the hardware level.
+
+### N3352
+
+There are many other C++ libraries available which fall into the
+latter category of continuous-range fixed-point arithmetic
+[\[3\]](https://github.com/mizvekov/fp)
+[\[6\]](http://www.codeproject.com/Articles/37636/Fixed-Point-Class)
+[\[7\]](https://github.com/viboes/fixed_point). In particular, an
+existing library proposal, N3352 [\[8\]](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html),
+aims to achieve very similar goals through similar means and warrants
+closer comparison than N1169.
+
+N3352 introduces four class templates covering the quadrant of signed
+versus unsigned and fractional versus integer numeric types. It is
+intended to replace built-in types in a wide variety of situations and
+accordingly, is highly compile-time configurable in terms of how
+rounding and overflow are handled. Parameters to these four class
+templates include the storage in bits and - for fractional types - the
+resolution.
+
+The `fixed_point` class template could probably - with a few caveats -
+be generated using the two fractional types, `nonnegative` and
+`negatable`, replacing the `ReprType` parameter with the integer bit
+count of `ReprType`, specifying either `fastest` or `truncated` for
+the rounding mode and specifying `undefined` as the overflow mode.
+
+However, fixed_point more closely and concisely caters to the needs of
+users who already use integer types and simply desire a more concise,
+less error-prone form. It more closely follows the four design aims of
+the library and - it can be argued - more closely follows the spirit
+of the standard in its pursuit of zero-cost abstraction.
+
+Some aspects of the design of the N3352 API which back up these
+conclusion are that:
+
+* the result of arithmetic operations closely resemble the `trunc_`
+  function templates and are potentially more costly at run-time;
+* the nature of the range-specifying template parameters - through
+  careful framing in mathematical terms - abstracts away valuable
+  information regarding machine-critical type size information;
+* the breaking up of duties amongst four separate class templates
+  introduces four new concepts and incurs additional mental load for
+  relatively little gain while further detaching the interface from
+  vital machine-level details and
+* the absence of the most negative number from signed types reduces
+  the capacity of all types by one.
+
+The added versatility that the N3352 API provides regarding rounding
+and overflow handling are of relatively low priority to users who
+already bear the scars of battles with raw integer types.
+Nevertheless, providing them as options to be turned on or off at
+compile time is an ideal way to leave the choice in the hands of the
+user.
+
+Many high-performance applications - in which fixed-point is of
+potential value - favor run-time checks during development which are
+subsequently deactivated in production builds. The N3352 interface is
+highly conducive to this style of development. It is an aim of the
+fixed_point design to be similarly extensible in future revisions.
+
+## VIII. Acknowledgements
+
+Subgroup: Guy Davidson, Michael Wong  
+Code: Peter Schregle, Ryhor Spivak  
+Design: Marco Foco, Joël Lamotte  
+Discussion: Ed Ainsley, Billy Baker, Clément Grégoire,
+Sean Middleditch
+
+## IX. References
+
+1. Why Integer Coordinates?, <http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php>
+2. C++ bounded::integer library, <http://doublewise.net/c++/bounded/>
+3. fp, C++14 Fixed Point Library, <https://github.com/mizvekov/fp>
+4. Boost Constrained Value Libarary, <http://rk.hekko.pl/constrained_value/>
+5. N1169, Extensions to support embedded processors, <http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf>
+6. fpmath, Fixed Point Math Library, <http://www.codeproject.com/Articles/37636/Fixed-Point-Class>
+7. Boost fixed_point (proposed), Fixed point integral and fractional types, <https://github.com/viboes/fixed_point>
+8. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
