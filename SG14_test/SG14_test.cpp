@@ -57,17 +57,17 @@ void sg14_test::static_ring_test()
 
 void sg14_test::dynamic_ring_test()
 {
-	sg14::dynamic_ring<int> Q;
+	sg14::dynamic_ring<int> Q(8);
 
-	Q.push(7);
-	Q.push(3);
+	assert(Q.push(7));
+	assert(Q.push(3));
 	assert(Q.size() == 2);
 	assert(Q.front() == 7);
 
 	Q.pop();
 	assert(Q.size() == 1);
 
-	Q.push(18);
+	assert(Q.push(18));
 	auto Q2 = Q;
 	assert(Q2.front() == 3);
 	assert(Q2.back() == 18);
@@ -89,11 +89,11 @@ void sg14_test::dynamic_ring_test()
 	Q5.pop();
 	assert(Q5.empty());
 
-	sg14::dynamic_ring<int> Q6;
-	Q6.push(6);
-	Q6.push(7);
-	Q6.push(8);
-	Q6.push(9);
+	sg14::dynamic_ring<int> Q6(8);
+	assert(Q6.push(6));
+	assert(Q6.push(7));
+	assert(Q6.push(8));
+	assert(Q6.push(9));
 	Q6.emplace(10);
 	Q6.swap(Q5);
 	assert(Q6.empty());
