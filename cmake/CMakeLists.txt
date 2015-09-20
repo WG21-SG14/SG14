@@ -14,7 +14,6 @@ set(SG14_TEST_SOURCE_DIRECTORY "../SG14_test")
 set(SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/main.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/SG14_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/fixed_point_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/plf_test_suite.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized.cpp)

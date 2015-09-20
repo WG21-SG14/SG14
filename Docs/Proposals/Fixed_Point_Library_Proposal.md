@@ -1,5 +1,5 @@
-**Document number**: LEWG, EWG, SG14, SG6: D0037R0  
-**Date**: 2015-09-12  
+**Document number**: LEWG, EWG, SG14, SG6: D0037R1  
+**Date**: 2015-09-19  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
 
@@ -82,12 +82,9 @@ multiplication.
 
 The exponent of a fixed-point type is the equivalent of the exponent
 field in a floating-point type and shifts the stored value by the
-requisite number of bits necessary to produce the desired range.
-
-The default value of `Exponent` is dependent on `ReprType` and ensures
-that half of the bits of the type are allocated to fractional digits.
-The other half go to integer digits and (if `ReprType` is signed) the
-sign bit.
+requisite number of bits necessary to produce the desired range. The
+default value of `Exponent` is zero, giving `fixed_point<T>` the same
+range as `T`.
 
 The resolution of a specialization of `fixed_point` is
 
@@ -152,27 +149,52 @@ largely applies to `fixed_point` objects also. For example:
 
 ...equates to `true` and is considered a acceptable rounding error.
 
-### Arithmetic Operators
+### Operator Overloads
 
 Any operators that might be applied to integer types can also be
-applied to `fixed_point` specializations. A guiding principle of
-operator overloads is that they perform as little run-time computation
-as is practically possible.
+applied to fixed-point types. A guiding principle of operator
+overloads is that they perform as little run-time computation as is
+practically possible.
 
-With the exception of shift operators, binary operators can take any
-combination of:
+With the exception of shift and comparison operators, binary operators
+can take any combination of:
 
-* one or two arguments of a single specialization of `fixed_point` and
-* zero or one arguments of any arithmetic type.
+* one or two fixed-point arguments and
+* zero or one arguments of any arithmetic type, i.e. a type for which
+  is_arithmetic is true.
 
-The return value is the same `fixed_point` type as the input(s) in all
-cases. The reason that heterogeneous specializations are not accepted
-is that the type of the result would be problematic to determine and
-possibly require shift operations to produce.
+Where the inputs are not identical fixed-point types, a simple set of
+promotion-like rules are applied to determine the return type:
+
+1. If both arguments are fixed-point, a type is chosen which is the
+   size of the larger type, is signed if either input is signed and
+   has the maximum integer bits of the two inputs, i.e. cannot loose
+   high-significance bits through conversion alone.
+2. If one of the arguments is a floating-point type, then the type of
+   the result is the smallest floating-point type of equal or greater
+   size than the inputs otherwise;
+3. If one of the arguments is an integral type, the type of the result
+   is the input fixed-point.
+
+The reasoning behind this choice is a combination of predictability
+and performance. It is expained for each rule as follows:
+
+1. ensures that the least computation is performed where fixed-point
+   types are used exclusively. Aside from multiplication and division
+   requiring shift operations, should require similar computational
+   costs to equivalent integer operations;
+2. loosely follows the promotion rules for mixed-mode arithmetic,
+   ensures values with exponents far beyond the range of the
+   fixed-point type are catered for and avoids costly conversion from
+   floating-point to integer.
 
 Shift operator overloads require an integer type as the right-hand
 parameter and return a type which is adjusted to accommodate the new
 value without risk of overflow or underflow.
+
+Comparison operators convert the inputs to a common result type
+following the rules above before performing a comparison and returning
+`true` or `false`.
 
 #### Overflow
 
@@ -257,14 +279,14 @@ to avoid overflow:
     trunc_subtract(FixedPoint1, FixedPoint2)
     trunc_multiply(FixedPoint1, FixedPoint2)
     trunc_divide(FixedPoint1, FixedPoint2)
-    trunc_invert(FixedPoint)
+    trunc_reciprocal(FixedPoint)
     trunc_square(FixedPoint)
     trunc_sqrt(FixedPoint)
     trunc_shift_left(FixedPoint, Integer)
     trunc_shift_right(FixedPoint, Integer)
     promote_multiply(FixedPoint1, FixedPoint2)
     promote_divide(FixedPoint1, FixedPoint2)
-    promote_invert(FixedPoint)
+    promote_reciprocal(FixedPoint)
     promote_square(FixedPoint)
 
 Some notes:
@@ -280,7 +302,7 @@ Some notes:
 5. the `_square` functions return an unsigned type;
 6. the `_add`, `_subtract`, `_multiply` and `_divide` functions take
    heterogeneous `fixed_point` specializations;
-7. the `_divide` and `_invert` functions in no way guard against
+7. the `_divide` and `_reciprocal` functions in no way guard against
    divide-by-zero errors and
 8. the `trunc_shift_` functions return results of the same type as
   their first input parameter.
@@ -564,8 +586,8 @@ resolution.
 The `fixed_point` class template could probably - with a few caveats -
 be generated using the two fractional types, `nonnegative` and
 `negatable`, replacing the `ReprType` parameter with the integer bit
-count of `ReprType`, specifying either `fastest` or `truncated` for
-the rounding mode and specifying `undefined` as the overflow mode.
+count of `ReprType`, specifying `fastest` for the rounding mode and
+specifying `undefined` as the overflow mode.
 
 However, fixed_point more closely and concisely caters to the needs of
 users who already use integer types and simply desire a more concise,
