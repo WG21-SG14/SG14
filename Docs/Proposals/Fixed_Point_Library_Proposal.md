@@ -1,4 +1,4 @@
-**Document number**: LEWG, EWG, SG14, SG6: D0037R1  
+**Document number**: LEWG, EWG, SG14, SG6: D0037R2  
 **Date**: 2015-09-19  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
@@ -118,8 +118,8 @@ the cardinal number of integer and/or fractional digits they contain.
 Most users will prefer to distinguish fixed-point types using these
 parameters.
 
-For this reason, two 'named constructors' are defined. They take the
-form of helper types in the style of `make_signed`.
+For this reason, two aliases are defined in the style of
+`make_signed`.
 
 These aliases are declared as:
 
@@ -134,6 +134,17 @@ and
 They resolve to a `fixed_point` specialization with the given
 signedness and number of integer and fractional digits. They may
 contain additional integer and fractional digits.
+
+For example, one could define and initialize an 8-bit, unsigned,
+fixed-point variable with four integer digits and four fractional
+digits:
+
+    make_ufixed<4, 4> value { 15.9375 };
+
+or a 32-bit, signed, fixed-point number with two integer digits and 29
+fractional digits:
+
+    make_fixed<2, 29> value { 3.141592653 };
 
 ### Conversion
 
@@ -161,23 +172,29 @@ can take any combination of:
 
 * one or two fixed-point arguments and
 * zero or one arguments of any arithmetic type, i.e. a type for which
-  is_arithmetic is true.
+  `is_arithmetic` is true.
 
 Where the inputs are not identical fixed-point types, a simple set of
 promotion-like rules are applied to determine the return type:
 
 1. If both arguments are fixed-point, a type is chosen which is the
    size of the larger type, is signed if either input is signed and
-   has the maximum integer bits of the two inputs, i.e. cannot loose
+   has the maximum integer bits of the two inputs, i.e. cannot lose
    high-significance bits through conversion alone.
 2. If one of the arguments is a floating-point type, then the type of
    the result is the smallest floating-point type of equal or greater
-   size than the inputs otherwise;
-3. If one of the arguments is an integral type, the type of the result
-   is the input fixed-point.
+   size than the inputs.
+3. If one of the arguments is an integral type, then the result is the
+   other, fixed-point type.
+
+Some examples:
+
+   make_ufixed<5, 3>{8} + make_ufixed<4, 4>{3} == make_ufixed<5, 3>{11};
+   make_ufixed<5, 3>{8} + 3 == make_ufixed<5, 3>{11};
+   make_ufixed<5, 3>{8} + float{3} == float{11};
 
 The reasoning behind this choice is a combination of predictability
-and performance. It is expained for each rule as follows:
+and performance. It is explained for each rule as follows:
 
 1. ensures that the least computation is performed where fixed-point
    types are used exclusively. Aside from multiplication and division
@@ -186,7 +203,9 @@ and performance. It is expained for each rule as follows:
 2. loosely follows the promotion rules for mixed-mode arithmetic,
    ensures values with exponents far beyond the range of the
    fixed-point type are catered for and avoids costly conversion from
-   floating-point to integer.
+   floating-point to integer and
+3. preserves the input fixed-point type whose range is far more likely
+   to be of deliberate importance to the operation.
 
 Shift operator overloads require an integer type as the right-hand
 parameter and return a type which is adjusted to accommodate the new
@@ -628,8 +647,8 @@ fixed_point design to be similarly extensible in future revisions.
 Subgroup: Guy Davidson, Michael Wong  
 Code: Peter Schregle, Ryhor Spivak  
 Design: Marco Foco, Joël Lamotte  
-Discussion: Ed Ainsley, Billy Baker, Clément Grégoire,
-Sean Middleditch
+Discussion: Ed Ainsley, Billy Baker, Clément Grégoire, Nicolas
+Guillemot, Sean Middleditch, Patrice Roy
 
 ## IX. References
 
