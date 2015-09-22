@@ -17,7 +17,7 @@ namespace sg14
 		typedef typename container_type::reverse_iterator reverse_iterator;
 		typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-		static_ring() noexcept(std::is_nothrow_default_constructible<T>::value)
+		constexpr static_ring() noexcept(std::is_nothrow_default_constructible<T>::value)
 			: c()
 			, count(0)
 			, next_element(std::begin(c))
@@ -38,6 +38,22 @@ namespace sg14
 			, count(std::move(rhs.count))
 			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
 			, last_element(std::begin(c) + (rhs.last_element - std::begin(rhs.c)))
+		{
+		}
+
+		static_ring(const container_type& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
+			: c(rhs)
+			, count(0)
+			, next_element(std::begin(c))
+			, last_element(next_element)
+		{
+		}
+	
+		static_ring(container_type&&) noexcept(std::is_nothrow_move_constructible<T>::value)
+			: c(std::move(rhs))
+			, count(0)
+			, next_element(std::begin(c))
+			, last_element(next_element)
 		{
 		}
 
@@ -188,22 +204,13 @@ namespace sg14
 		typedef typename container_type::reverse_iterator reverse_iterator;
 		typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-		explicit dynamic_ring(size_type initial_capacity = 8)
-			: c(initial_capacity)
+		explicit dynamic_ring(size_type initial_capacity/*, typename Container::allocator_type& = */)	// Hmmm, what WOULD be the default value?
+			: c(initial_capacity)																		// It would need to be passed through here
 			, count(0)
 			, next_element(std::begin(c))
 			, last_element(next_element)
 		{
 		}
-
-/*		dynamic_ring()
-			: dynamic_ring(Allocator())
-		{
-		}
-
-		explicit dynamic_ring(const Allocator& alloc);
-		explicit dynamic_ring(size_type count);
-		explicit dynamic_ring(size_type count, const Allocator& alloc = Allocator());*/
 
 		dynamic_ring(const dynamic_ring& rhs)
 			: c(rhs.c)
@@ -213,14 +220,13 @@ namespace sg14
 		{
 		}
 
-/*		dynamic_ring(dynamic_ring&& rhs)
-			: c(std::swap(rhs.c, c))
-			, count(std::swap(rhs.count, count))
-			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
-			, last_element(std::begin(c) + (rhs.last_element - std::begin(rhs.c)))
-		{
-		}*/
-
+//		dynamic_ring(dynamic_ring&& rhs);
+//		template<typename Alloc> explicit dynamic_ring(const Alloc&);
+//		template<typename Alloc> dynamic_ring(const dynamic_ring&, const Alloc&);
+//		template<typename Alloc> dynamic_ring(dynamic_ring&&, const Alloc&);
+//		template<typename Alloc> dynamic_ring(const container_type&, const Alloc&);
+//		template<typename Alloc> dynamic_ring(container_type&&, const Alloc&);
+		
 		dynamic_ring& operator=(const dynamic_ring& rhs)
 		{
 			c = rhs.c;
@@ -233,40 +239,42 @@ namespace sg14
 			return (*this);
 		}
 
-		void push(const value_type& from_value)
+		bool push(const value_type& from_value)
 		{
 			if (count == c.capacity())
 			{
-				resize();
+				return false;
 			}
 			*next_element = from_value;
 			increase_back();
+			return true;
 		}
 
-		void push(value_type&& from_value)
+		bool push(value_type&& from_value)
 		{
 			if (count == c.capacity())
 			{
-				resize();
+				return false;
 			}
 			*next_element = std::move(from_value);
 			increase_back();
+			return true;
 		}
 
 		template<class... FromType>
-		void emplace(FromType&&... from_value)
+		bool emplace(FromType&&... from_value)
 		{
 			if (count == c.capacity())
 			{
-				resize();
+				return false;
 			}
 			*next_element = T(std::forward<FromType>(from_value)...);
 			increase_back();
+			return true;
 		}
 
-		void pop()
+		void pop() noexcept
 		{
-			*last_element = T();
 			increase_front();
 		}
 
@@ -347,26 +355,6 @@ namespace sg14
 				last_element = c.begin();
 			}
 			--count;
-		}
-
-		void resize()
-		{
-			// Save the index of next_element
-			// Double the size of the vector
-			// Move everything, from next_element to back, to the end of the vector
-			// Update last_element and next_element
-			auto next_index = std::distance(c.begin(), next_element);
-			auto tail_length = std::distance(c.end(), next_element);
-			c.resize(count * 2);
-			last_element = c.begin();
-			std::advance(last_element, next_index - 1);
-			next_element = c.begin();
-			std::advance(next_element, next_index + count);
-			auto begin_tail = last_element;
-			++begin_tail;
-			auto end_tail = begin_tail;
-			std::advance(end_tail, tail_length);
-			std::copy(begin_tail, end_tail, next_element);
 		}
 	}; 
 }
