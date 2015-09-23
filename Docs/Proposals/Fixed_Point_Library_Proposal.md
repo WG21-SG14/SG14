@@ -1,4 +1,4 @@
-**Document number**: LEWG, EWG, SG14, SG6: D0037R2  
+**Document number**: LEWG, EWG, SG14, SG6: D0037R3  
 **Date**: 2015-09-19  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
