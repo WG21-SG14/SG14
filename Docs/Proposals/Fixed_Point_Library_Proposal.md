@@ -189,9 +189,9 @@ promotion-like rules are applied to determine the return type:
 
 Some examples:
 
-   make_ufixed<5, 3>{8} + make_ufixed<4, 4>{3} == make_ufixed<5, 3>{11};
-   make_ufixed<5, 3>{8} + 3 == make_ufixed<5, 3>{11};
-   make_ufixed<5, 3>{8} + float{3} == float{11};
+    make_ufixed<5, 3>{8} + make_ufixed<4, 4>{3} == make_ufixed<5, 3>{11};  
+    make_ufixed<5, 3>{8} + 3 == make_ufixed<5, 3>{11};  
+    make_ufixed<5, 3>{8} + float{3} == float{11};  
 
 The reasoning behind this choice is a combination of predictability
 and performance. It is explained for each rule as follows:
