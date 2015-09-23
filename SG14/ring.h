@@ -49,7 +49,7 @@ namespace sg14
 		{
 		}
 	
-		static_ring(container_type&&) noexcept(std::is_nothrow_move_constructible<T>::value)
+		static_ring(container_type&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
 			: c(std::move(rhs))
 			, count(0)
 			, next_element(std::begin(c))
