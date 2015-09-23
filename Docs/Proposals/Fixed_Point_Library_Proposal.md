@@ -1,4 +1,4 @@
-**Document number**: LEWG, EWG, SG14, SG6: D0037R2  
+**Document number**: LEWG, EWG, SG14, SG6: D0037R3  
 **Date**: 2015-09-19  
 **Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
@@ -88,15 +88,15 @@ range as `T`.
 
 The resolution of a specialization of `fixed_point` is
 
-    2 ** Exponent
+    pow(2, Exponent)
 
 and the minimum and maximum values are
 
-    std::numeric_limits<ReprType>::min() * (2 ** Exponent)
+    std::numeric_limits<ReprType>::min() * pow(2, Exponent)
 
 and
 
-    std::numeric_limits<ReprType>::max() * (2 ** Exponent)
+    std::numeric_limits<ReprType>::max() * pow(2, Exponent)
 
 respectively.
 
@@ -189,9 +189,9 @@ promotion-like rules are applied to determine the return type:
 
 Some examples:
 
-   make_ufixed<5, 3>{8} + make_ufixed<4, 4>{3} == make_ufixed<5, 3>{11};
-   make_ufixed<5, 3>{8} + 3 == make_ufixed<5, 3>{11};
-   make_ufixed<5, 3>{8} + float{3} == float{11};
+    make_ufixed<5, 3>{8} + make_ufixed<4, 4>{3} == make_ufixed<5, 3>{11};  
+    make_ufixed<5, 3>{8} + 3 == make_ufixed<5, 3>{11};  
+    make_ufixed<5, 3>{8} + float{3} == float{11};  
 
 The reasoning behind this choice is a combination of predictability
 and performance. It is explained for each rule as follows:
@@ -645,10 +645,9 @@ fixed_point design to be similarly extensible in future revisions.
 ## VIII. Acknowledgements
 
 Subgroup: Guy Davidson, Michael Wong  
-Code: Peter Schregle, Ryhor Spivak  
-Design: Marco Foco, Joël Lamotte  
-Discussion: Ed Ainsley, Billy Baker, Clément Grégoire, Nicolas
-Guillemot, Sean Middleditch, Patrice Roy
+Contributors: Ed Ainsley, Billy Baker, Lance Dyson, Marco Foco,
+Clément Grégoire, Nicolas Guillemot, Matt Kinzelman, Joël Lamotte,
+Sean Middleditch, Patrice Roy, Peter Schregle, Ryhor Spivak
 
 ## IX. References
 
