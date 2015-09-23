@@ -645,10 +645,9 @@ fixed_point design to be similarly extensible in future revisions.
 ## VIII. Acknowledgements
 
 Subgroup: Guy Davidson, Michael Wong  
-Code: Peter Schregle, Ryhor Spivak  
-Design: Marco Foco, Joël Lamotte  
-Discussion: Ed Ainsley, Billy Baker, Clément Grégoire, Nicolas
-Guillemot, Sean Middleditch, Patrice Roy
+Contributors: Ed Ainsley, Billy Baker, Lance Dyson, Marco Foco,
+Clément Grégoire, Nicolas Guillemot, Matt Kinzelman, Joël Lamotte,
+Sean Middleditch, Patrice Roy, Peter Schregle, Ryhor Spivak
 
 ## IX. References
 
