@@ -34,12 +34,21 @@ namespace
 			move = 0;
 		}
 
-		static void test(uint64_t inconstruct, uint64_t indestruct, uint64_t inmove)
-		{
-			assert(construct == inconstruct);
-			assert(destruct == indestruct);
-			assert(move == inmove);
-		}
+		// To avoid "unused argument" error/warning. 
+		#ifdef NDEBUG
+			static void test(uint64_t, uint64_t, uint64_t)
+			{
+				
+			}
+		#else
+			static void test(uint64_t inconstruct, uint64_t indestruct, uint64_t inmove)
+			{
+				assert(construct == inconstruct);
+				assert(destruct == indestruct);
+				assert(move == inmove);
+			}
+		#endif
+		
 	};
 	uint64_t lifetest::construct;
 	uint64_t lifetest::destruct;

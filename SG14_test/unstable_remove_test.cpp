@@ -4,7 +4,7 @@
 #include <ctime>
 #include <iostream>
 #include <algorithm>
-#include "algorithm_ext.h"
+#include "../SG14/algorithm_ext.h"
 #include <cassert>
 #include <memory>
 #include <chrono>
@@ -23,7 +23,6 @@ struct foo
 
 void sg14_test::unstable_remove_test()
 {
-#if 0
 	size_t test_runs = 200;
 
 	auto makelist = []
@@ -71,7 +70,7 @@ void sg14_test::unstable_remove_test()
 	unstable_remove_if.reserve(test_runs);
 	remove_if.reserve(test_runs);
 
-	for (int i = 0; i < test_runs; ++i)
+	for (decltype(test_runs) i = 0; i < test_runs; ++i)
 	{
 		remove_if.push_back(time(removefn));
 		unstable_remove_if.push_back(time(unstablefn));
@@ -90,5 +89,4 @@ void sg14_test::unstable_remove_test()
 	std::cout << "unstable: " << unstable_med << "\n";
 	std::cout << "remove_if: " << remove_med << "\n";
 	std::cin.get();
-#endif
 }

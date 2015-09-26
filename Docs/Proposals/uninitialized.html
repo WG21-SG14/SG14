@@ -2,30 +2,43 @@
 <HTML><HEAD><TITLE>Extending memory management tools</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=windows-1252">
 </HEAD>
-<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>30-8-2015
-<BR>Document number: unassigned</FONT>
-
+<BODY>
+LEWG, SG14: D0040R0
+<BR>11-9-2015
+<BR>Brent Friedman <br>fourthgeek@gmail.com
 <H1>Extending memory management tools</H1>
 
 
 <H2>I. Motivation</H2>
 
-<p>When implementing containers that do not rely on allocators it is often necessary to manage memory directly. This paper seeks to fill gaps in the standard library's memory management utilities.</p>
-<p>Algorithmic changes proposed in the "range" proposals should be mirrored if both are accepted.</p>
+<p>When implementing containers that do not rely on standard allocators it is often necessary to manage memory directly. This paper seeks to fill gaps in the standard library's memory management utilities.</p>
 
 <H2>II. Summary</H2>
 
 <p>
 The function template <code>destroy</code> calls the destructor for specified elements.<br>
-The function template <code>uninitialized_move</code> performs move construction of elements over a range of memory, similar to <code>uninitialized_copy</code>.<br>
+The function template <code>uninitialized_move</code> performs move construction of elements over a range of memory, similar to <code>uninitialized_copy</code>. <code>uninitialized_move_n</code> is also provided.<br>
 The function template <code>uninitialized_value_construct</code> performs value-construction of objects over a range of memory.<br>
 The function template <code>uninitialized_default_construct</code> performs default-construction of objects over a range of memory.<br><br>
 </p>
-<H2>III. Notes </H2>
-<p><code>destroy</code> first appeared in SGI's Standard Template Library. It is not known by the author why this algorithm was not inherited into the C++ Standard Library in its initial stages.</p>
-<p>
-The names <code>uninitialized_value_construct</code> and <code>uninitialized_default_construct</code> explicitly reflect their effects but do not clearly match terminology in other standard library functions. Proposal N3939 has chosen the _noinit suffix to denote value vs. default construction. If LWG prefers this direction then the algorithms could be renamed to <code>uninitialized_construct</code> and <code>uninitialized_construct_noinit</code>.</p>
+<H2>III. Discussion </H2>
+<p>Interface changes proposed in the "range" proposals should be mirrored if both are accepted.</p>
 
+<p><code>destroy</code> first appeared in SGI's Standard Template Library. It is not known by the author why this algorithm was not inherited into the C++ Standard Library in its initial stages. Several responses have preferred that the algorithm be called <code>destruct</code>, however, <code>destroy</code> maintains convention with SGI and appears to be considered more appropriate use of English.</p>
+<p>
+It is not possible to implement the "no effects" policy for <code>destroy</code> so it is specifically excluded from that rule.
+</p>
+<p>
+The names <code>uninitialized_value_construct</code> and <code>uninitialized_default_construct</code> explicitly reflect their effects but do not clearly match terminology in other standard library functions. Proposal N3939 has chosen the _noinit suffix to denote value vs. default construction. If LEWG prefers this direction then the algorithms could be renamed to <code>uninitialized_construct</code> and <code>uninitialized_construct_noinit</code>.</p>
+
+<p>
+Some concern is raised about exception handling with respect to <code>uninitialized_move</code>. If a move-constructor throws, moved-from objects may be left in a poorly defined state. Given that algorithm <code>move</code> has no special support for this case, it is believed that throwing constructors for this algorithm can be treated similarly. It is believed that the "no effects" wording of this section is sufficient as is.<br>
+An additional algorithm, <code>uninitialized_move_if_noexcept</code>, could be considered as a resolution to this concern. Given that there is currently no range-based <code>move_if_noexcept</code> algorithm, such a solution is not considered here. It is however trivial to implement such an algorithm -- simply forwarding to copy or move as appropriate. The same would hold true for uninitialized algorithms.
+</p>
+
+<p>
+
+</p>
 <H2>IV. Proposed Text</H2>
 
 <p>Make the following changes in [specialized.algorithm]: <br>
@@ -47,9 +60,18 @@ Add:
 		
 	template &lt;class InputIterator, class ForwardIterator&gt;
 	ForwardIterator uninitialized_move(InputIterator first, InputIterator last, ForwardIterator result);
-	
+
 	<i>Effects:</i>
 		for (; first != last; ++result, ++first)
+			::new (static_cast&lt;void*&gt;(addressof(*result)))
+				typename iterator_traits&lt;ForwardIterator&gt;::value_type(std::move(*first));
+		return result;
+		
+	template &lt;class InputIterator, class ForwardIterator&gt;
+	ForwardIterator uninitialized_move_n(InputIterator first, size_t count, ForwardIterator result);	
+	
+	<i>Effects:</i>
+		for ( ; count&gt;0; ++result, ++first, --count)
 			::new (static_cast&lt;void*&gt;(addressof(*result)))
 				typename iterator_traits&lt;ForwardIterator&gt;::value_type(std::move(*first));
 		return result;
