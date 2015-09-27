@@ -79,18 +79,14 @@ void SlowUpdateExample()
 	}
 
 	{
-		mytimer a;
-		for (float t = 0.0f; t < 1.0; t += 0.05f)
-		{
-			for (auto &a : entity_vec)
-			{
+		// change styles for document 
+		mytimer timer;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+			for (auto &a : entity_vec) {
 				a->Update(t);
-#ifdef PRINT
-				cout << endl;
-#endif
 			}
 		}
-		gSlowSimpleUpdateExampleTimers.emplace_back(a.stop());
+		gSlowSimpleUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
 
@@ -133,22 +129,17 @@ void SlowComplicatedUpdateExample()
 
 
 	{
-		mytimer a;
-		for (float t = 0.0f; t < 1.0; t += 0.05f)
-		{
-			for (auto &a : entity_vec)
-			{
-				if (a->GetType() != entity_lerp_fast::type)
-				{
+		// change styles for document 
+		mytimer timer;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+			for (auto &a : entity_vec) {
+				if (a->GetType() != entity_lerp_fast::type)	{
 					a->Update(t);
-#ifdef PRINT
-					cout << endl;
-#endif
 				}
 			}
 			entity_lerp_fast::UpdateAll(t);
 		}
-		gSlowComplicatedUpdateExampleTimers.emplace_back(a.stop());
+		gSlowComplicatedUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
 
@@ -191,22 +182,17 @@ void FastUpdateExampleTimers()
 
 
 	{
-		mytimer a;
-		for (float t = 0.0f; t < 1.0; t += 0.05f)
-		{
-			for (auto &a : entity_vec)
-			{
-				if (*a->m_typedata != entity_lerp_fast::type)
-				{
+		// change styles for document 
+		mytimer timer;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+			for (auto &a : entity_vec) {
+				if (*a->m_typedata != entity_lerp_fast::type) {
 					a->Update(t);
-#ifdef PRINT
-					cout << endl;
-#endif
 				}
 			}
 			entity_lerp_fast::UpdateAll(t);
 		}
-		gFastUpdateExampleTimers.emplace_back(a.stop());
+		gFastUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
 
