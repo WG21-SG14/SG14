@@ -1,6 +1,6 @@
-**Document number**: LEWG, EWG, SG14, SG6: D0037R3  
-**Date**: 2015-09-19  
-**Project**: Programming Language C++, Library Evolution WG, Evolution WG, SG14  
+**Document number**: LEWG, EWG, SG14, SG6: P0037R0  
+**Date**: 2015-09-28  
+**Project**: Programming Language C++, Library Evolution WG, SG14  
 **Reply-to**: John McFarlane, [fixed-point@john.mcfarlane.name](mailto:fixed-point@john.mcfarlane.name)
 
 # Fixed-Point Real Numbers
@@ -292,21 +292,18 @@ returning a value of a smaller type.
 
 The following named function templates can be used as a hassle-free
 alternative to arithmetic operators in situations where the aim is
-to avoid overflow:
+to avoid overflow.
 
-    trunc_add(FixedPoint1, FixedPoint2)
-    trunc_subtract(FixedPoint1, FixedPoint2)
-    trunc_multiply(FixedPoint1, FixedPoint2)
-    trunc_divide(FixedPoint1, FixedPoint2)
-    trunc_reciprocal(FixedPoint)
-    trunc_square(FixedPoint)
-    trunc_sqrt(FixedPoint)
-    trunc_shift_left(FixedPoint, Integer)
-    trunc_shift_right(FixedPoint, Integer)
-    promote_multiply(FixedPoint1, FixedPoint2)
-    promote_divide(FixedPoint1, FixedPoint2)
-    promote_reciprocal(FixedPoint)
-    promote_square(FixedPoint)
+Unary functions:
+
+    trunc_reciprocal, trunc_square, trunc_sqrt,
+    promote_reciprocal, promote_square
+
+Binary functions:
+
+    trunc_add, trunc_subtract, trunc_multiply, trunc_divide
+    trunc_shift_left, trunc_shift_right,
+    promote_add, promote_sub, promote_multiply, promote_divide
 
 Some notes:
 
@@ -322,9 +319,10 @@ Some notes:
 6. the `_add`, `_subtract`, `_multiply` and `_divide` functions take
    heterogeneous `fixed_point` specializations;
 7. the `_divide` and `_reciprocal` functions in no way guard against
-   divide-by-zero errors and
+   divide-by-zero errors;
 8. the `trunc_shift_` functions return results of the same type as
-  their first input parameter.
+   their first input parameter and
+9. the list is by no means complete.
 
 ### Example
 
@@ -353,123 +351,266 @@ returns the value, 9.890625.
     namespace std {
       template <class ReprType, int Exponent> class fixed_point;
 
-      template <unsigned FractionalDigits, unsigned FractionalDigits = 0, bool IsSigned = true>
+      template <unsigned IntegerDigits, unsigned FractionalDigits = 0, bool IsSigned = true>
         using make_fixed;
       template <unsigned IntegerDigits, unsigned FractionalDigits = 0>
         using make_ufixed;
+      template <class ReprType, int IntegerDigits>
+        using make_fixed_from_repr;
 
       template <class FixedPoint>
-        using fixed_point_promotion_t;
+        using promote_result;
       template <class FixedPoint>
-        fixed_point_promotion_t<FixedPoint>
-          constexpr promote(const FixedPoint & from) noexcept
+        promote_result<FixedPoint>
+          constexpr promote(const FixedPoint & from) noexcept;
 
       template <class FixedPoint>
-        using fixed_point_demotion_t;
+        using demote_result;
       template <class FixedPoint>
-        fixed_point_demotion_t<FixedPoint>
-          constexpr demote(const FixedPoint & from) noexcept
+        demote_result<FixedPoint>
+          constexpr demote(const FixedPoint & from) noexcept;
+
+      template <class ReprType, int Exponent>
+      	constexpr bool operator==(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+        constexpr bool operator!=(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+          const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr bool operator<(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr bool operator>(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr bool operator>=(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr bool operator<=(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+
+      template <class ReprType, int Exponent>
+      	constexpr fixed_point<ReprType, Exponent> operator-(
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr fixed_point<ReprType, Exponent> operator+(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr fixed_point<ReprType, Exponent> operator-(
+      	  const fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	fixed_point<ReprType, Exponent> & operator+=(
+      	  fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	fixed_point<ReprType, Exponent> & operator-=(
+      	  fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	fixed_point<ReprType, Exponent> & operator*=(
+      	  fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	fixed_point<ReprType, Exponent> & operator/=(
+      	  fixed_point<ReprType, Exponent> & lhs,
+      	  const fixed_point<ReprType, Exponent> & rhs) noexcept;
 
       template <class Lhs, class Rhs>
-        constexpr bool operator ==(const Lhs & lhs, const Rhs & rhs) noexcept;
+      	constexpr auto operator==(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator !=(const Lhs & lhs, const Rhs & rhs) noexcept;
+      	constexpr auto operator!=(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator <(const Lhs & lhs, const Rhs & rhs) noexcept;
+      	constexpr auto operator<(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator >(const Lhs & lhs, const Rhs & rhs) noexcept;
+      	constexpr auto operator>(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator >=(const Lhs & lhs, const Rhs & rhs) noexcept;
+      	constexpr auto operator>=(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class Lhs, class Rhs>
-        constexpr bool operator <=(const Lhs & lhs, const Rhs & rhs) noexcept;
+      	constexpr auto operator<=(const Lhs & lhs, const Rhs & rhs) noexcept;
 
-      // arithmetic operators
-      ...
+      template <class Lhs, class Rhs>
+      	constexpr auto operator+(
+      	  const Lhs & lhs,
+      	  const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs>
+      	constexpr auto operator-(
+      	  const Lhs & lhs,
+      	  const Rhs & rhs) noexcept;
+      template <class LhsReprType, int LhsExponent, class RhsReprType, int RhsExponent>
+      	constexpr auto operator*(
+      	  const fixed_point<LhsReprType, LhsExponent> & lhs,
+      	  const fixed_point<RhsReprType, RhsExponent> & rhs) noexcept;
+      template <class LhsReprType, int LhsExponent, class RhsReprType, int RhsExponent>
+      	constexpr auto operator/(
+      	  const fixed_point<LhsReprType, LhsExponent> & lhs,
+      	  const fixed_point<RhsReprType, RhsExponent> & rhs) noexcept;
+      template <class LhsReprType, int LhsExponent, class Integer>
+      	constexpr auto operator*(
+      	  const fixed_point<LhsReprType, LhsExponent> & lhs,
+      	  const Integer & rhs) noexcept;
+      template <class LhsReprType, int LhsExponent, class Integer>
+      	constexpr auto operator/(
+      	  const fixed_point<LhsReprType, LhsExponent> & lhs,
+      	  const Integer & rhs) noexcept;
+      template <class Integer, class RhsReprType, int RhsExponent>
+      	constexpr auto operator*(
+      	  const Integer & lhs,
+      	  const fixed_point<RhsReprType, RhsExponent> & rhs) noexcept;
+      template <class Integer, class RhsReprType, int RhsExponent>
+      	constexpr auto operator/(
+      	  const Integer & lhs,
+      	  const fixed_point<RhsReprType, RhsExponent> & rhs) noexcept;
+      template <class LhsReprType, int LhsExponent, class Float>
+      	constexpr auto operator*(
+      	  const fixed_point<LhsReprType, LhsExponent> & lhs,
+      	  const Float & rhs) noexcept;
+      template <class LhsReprType, int LhsExponent, class Float>
+      	constexpr auto operator/(
+      	  const fixed_point<LhsReprType, LhsExponent> & lhs,
+      	  const Float & rhs) noexcept;
+      template <class Float, class RhsReprType, int RhsExponent>
+      	constexpr auto operator*(
+      	  const Float & lhs,
+      	  const fixed_point<RhsReprType, RhsExponent> & rhs) noexcept;
+      template <class Float, class RhsReprType, int RhsExponent>
+      	constexpr auto operator/(
+      	  const Float & lhs,
+      	  const fixed_point<RhsReprType, RhsExponent> & rhs) noexcept;
+      template <class LhsReprType, int Exponent, class Rhs>
+      	fixed_point<LhsReprType, Exponent> & operator+=(fixed_point<LhsReprType, Exponent> & lhs, const Rhs & rhs) noexcept;
+      template <class LhsReprType, int Exponent, class Rhs>
+      	fixed_point<LhsReprType, Exponent> & operator-=(fixed_point<LhsReprType, Exponent> & lhs, const Rhs & rhs) noexcept;
+      template <class LhsReprType, int Exponent>
+      template <class Rhs, typename std::enable_if<std::is_arithmetic<Rhs>::value, int>::type Dummy>
+      	fixed_point<LhsReprType, Exponent> &
+      	fixed_point<LhsReprType, Exponent>::operator*=(const Rhs & rhs) noexcept;
+      template <class LhsReprType, int Exponent>
+      template <class Rhs, typename std::enable_if<std::is_arithmetic<Rhs>::value, int>::type Dummy>
+      	fixed_point<LhsReprType, Exponent> &
+      	fixed_point<LhsReprType, Exponent>::operator/=(const Rhs & rhs) noexcept;
+      template <class ReprType, int Exponent>
+      	constexpr fixed_point<ReprType, Exponent>
+      	  sqrt(const fixed_point<ReprType, Exponent> & x) noexcept;
+      template <class FixedPoint, unsigned N = 2>
+      	using trunc_add_result;
 
+      template <class FixedPoint, class ... Tail>
+      	trunc_add_result<FixedPoint, sizeof...(Tail) + 1>
+          constexpr trunc_add(const FixedPoint & addend1, const Tail & ... addend_tail);
       template <class Lhs, class Rhs = Lhs>
-        using trunc_multiply_result_t;
+      	using trunc_subtract_result;
       template <class Lhs, class Rhs>
-        trunc_multiply_result_t<Lhs, Rhs>
-          constexpr trunc_multiply(const Lhs & factor1, const Rhs & factor2) noexcept;
+      	trunc_subtract_result<Lhs, Rhs>
+      	  constexpr trunc_subtract(const Lhs & minuend, const Rhs & subtrahend);
+      template <class Lhs, class Rhs = Lhs>
+      	using trunc_multiply_result;
 
-      template <class ReprType, int Exponent, unsigned N = 2>
-        using trunc_add_result_t;
-      template <class ReprType, int Exponent, class ... Tail>
-        trunc_add_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
-          constexpr trunc_add(const fixed_point<ReprType, Exponent> & addend1, const Tail & ... addend_tail)
-
-      template <class ReprType, int Exponent, unsigned N = 2>
-        using trunc_subtract_result_t;
-      template <class ReprType, int Exponent, class ... Tail>
-        trunc_subtract_result_t<ReprType, Exponent, sizeof...(Tail) + 1>
-          constexpr trunc_subtract(const fixed_point<ReprType, Exponent> & addend1, const Tail & ... addend_tail)
+      template <class Lhs, class Rhs>
+      	trunc_multiply_result<Lhs, Rhs>
+      	  constexpr trunc_multiply(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class FixedPointDividend, class FixedPointDivisor = FixedPointDividend>
+      	using trunc_divide_result;
+      template <class FixedPointDividend, class FixedPointDivisor>
+      	trunc_divide_result<FixedPointDividend, FixedPointDivisor>
+      	  constexpr trunc_divide(const FixedPointDividend & lhs, const FixedPointDivisor & rhs) noexcept;
+      template <class FixedPoint>
+      	using trunc_reciprocal_result;
+      template <class FixedPoint>
+      	trunc_reciprocal_result<FixedPoint>
+      	  constexpr trunc_reciprocal(const FixedPoint & fixed_point) noexcept;
+      template <class FixedPoint>
+      	using trunc_square_result;
 
       template <class FixedPoint>
-        using trunc_square_result_t;
+      	trunc_square_result<FixedPoint>
+      	  constexpr trunc_square(const FixedPoint & root) noexcept;
       template <class FixedPoint>
-        trunc_square_result_t<FixedPoint>
-          constexpr trunc_square(const FixedPoint & root) noexcept;
+      	using trunc_sqrt_result;
+      template <class FixedPoint>
+      	trunc_sqrt_result<FixedPoint>
+      	  constexpr trunc_sqrt(const FixedPoint & square) noexcept;
+      template <int Integer, class ReprType, int Exponent>
+      	constexpr fixed_point<ReprType, Exponent + Integer>
+      	  trunc_shift_left(const fixed_point<ReprType, Exponent> & fp) noexcept;
+      template <int Integer, class ReprType, int Exponent>
+      	constexpr fixed_point<ReprType, Exponent - Integer>
+      	  trunc_shift_right(const fixed_point<ReprType, Exponent> & fp) noexcept;
+      template <class FixedPoint, unsigned N = 2>
+      	using promote_add_result;
 
+      template <class FixedPoint, class ... Tail>
+      	promote_add_result<FixedPoint, sizeof...(Tail) + 1>
+      	  constexpr promote_add(const FixedPoint & addend1, const Tail & ... addend_tail);
+      template <class Lhs, class Rhs = Lhs>
+      	using promote_subtract_result
+      template <class Lhs, class Rhs>
+      	promote_subtract_result<Lhs, Rhs>
+      	  constexpr promote_subtract(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs = Lhs>
+      	using promote_multiply_result;
+      template <class Lhs, class Rhs>
+      	promote_multiply_result<Lhs, Rhs>
+      	  constexpr promote_multiply(const Lhs & lhs, const Rhs & rhs) noexcept;
+      template <class Lhs, class Rhs = Lhs>
+      	using promote_divide_result;
+      template <class Lhs, class Rhs>
+      	promote_divide_result<Lhs, Rhs>
+      	  constexpr promote_divide(const Lhs & lhs, const Rhs & rhs) noexcept;
       template <class FixedPoint>
-        using trunc_sqrt_result_t;
+      	using promote_square_result;
       template <class FixedPoint>
-        trunc_sqrt_result_t<FixedPoint>
-          constexpr trunc_sqrt(const FixedPoint & root) noexcept;
-
-      // additional named arithmetic functions
-      ...
+      	promote_square_result<FixedPoint>
+      	  constexpr promote_square(const FixedPoint & root) noexcept;
     }
 
 #### `fixed_point<>` Class Template
 
-    template <class ReprType, int Exponent>
+    template <class ReprType = int, int Exponent = 0>
     class fixed_point
     {
     public:
-      using ReprType;
+      using repr_type = ReprType;
 
       constexpr static int exponent;
       constexpr static int digits;
       constexpr static int integer_digits;
       constexpr static int fractional_digits;
 
-      constexpr fixed_point() noexcept;
-      template <class S>
+      fixed_point() noexcept;
+      template <class S, typename std::enable_if<_impl::is_integral<S>::value, int>::type Dummy = 0>
+        explicit constexpr fixed_point(S s) noexcept;
+      template <class S, typename std::enable_if<std::is_floating_point<S>::value, int>::type Dummy = 0>
         explicit constexpr fixed_point(S s) noexcept;
       template <class FromReprType, int FromExponent>
         explicit constexpr fixed_point(const fixed_point<FromReprType, FromExponent> & rhs) noexcept;
-
-      template <class S>
+      template <class S, typename std::enable_if<_impl::is_integral<S>::value, int>::type Dummy = 0>
+        fixed_point & operator=(S s) noexcept;
+      template <class S, typename std::enable_if<std::is_floating_point<S>::value, int>::type Dummy = 0>
         fixed_point & operator=(S s) noexcept;
       template <class FromReprType, int FromExponent>
-        fixed_point & operator=(const fixed_point<FromReprType, FromExponent> & rhs) noexcept
+        fixed_point & operator=(const fixed_point<FromReprType, FromExponent> & rhs) noexcept;
 
-      template <class S>
+      template <class S, typename std::enable_if<_impl::is_integral<S>::value, int>::type Dummy = 0>
+        explicit constexpr operator S() const noexcept;
+      template <class S, typename std::enable_if<std::is_floating_point<S>::value, int>::type Dummy = 0>
         explicit constexpr operator S() const noexcept;
       explicit constexpr operator bool() const noexcept;
 
-      constexpr ReprType data() const noexcept;
-      static constexpr fixed_point from_data(ReprType repr) noexcept;
+      template <class Rhs, typename std::enable_if<std::is_arithmetic<Rhs>::value, int>::type Dummy = 0>
+        fixed_point &operator*=(const Rhs & rhs) noexcept;
+      template <class Rhs, typename std::enable_if<std::is_arithmetic<Rhs>::value, int>::type Dummy = 0>
+        fixed_point & operator/=(const Rhs & rhs) noexcept;
 
-      friend constexpr bool operator==(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr bool operator!=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr bool operator>(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr bool operator<(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr bool operator>=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr bool operator<=(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-
-      friend constexpr fixed_point operator-(const fixed_point & rhs) noexcept;
-      friend constexpr fixed_point operator+(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr fixed_point operator-(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr fixed_point operator*(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend constexpr fixed_point operator/(const fixed_point & lhs, const fixed_point & rhs) noexcept;
-
-      friend fixed_point & operator+=(fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend fixed_point & operator-=(fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend fixed_point & operator*=(fixed_point & lhs, const fixed_point & rhs) noexcept;
-      friend fixed_point & operator/=(fixed_point & lhs, const fixed_point & rhs) noexcept;
-
-      // ...
+      constexpr repr_type data() const noexcept;
+      static constexpr fixed_point from_data(repr_type repr) noexcept;
     };
 
 ## VI. Future Issues
@@ -659,3 +800,218 @@ Sean Middleditch, Patrice Roy, Peter Schregle, Ryhor Spivak
 6. fpmath, Fixed Point Math Library, <http://www.codeproject.com/Articles/37636/Fixed-Point-Class>
 7. Boost fixed_point (proposed), Fixed point integral and fractional types, <https://github.com/viboes/fixed_point>
 8. N3352, C++ Binary Fixed-Point Arithmetic, <http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html>
+9. fixed_point, Reference Implementation of P0037, <https://github.com/johnmcfarlane/fixed_point>
+
+## X. Appendix 1: Reference Implementation
+
+An in-development implementation of the fixed_point class template and
+its essential supporting functions and types is available
+[\[9\]](https://github.com/johnmcfarlane/fixed_point). It includes a
+utility header containing such things as math and trigonometric
+functions and a partial `numeric_limits` specialization. Compile-time
+and run-time tests are included as well as benchmarking support. It is
+the source of examples and measurements cited here.
+
+## XI. Appendix 2: Performance
+
+Despite a focus on usable interface and direct translation from
+integer-based fixed-point operations, there is an overwhelming
+expectation that the source code result in minimal instructions and
+clock cycles. A few preliminary numbers are presented to give a very
+early idea of how the API might perform.
+
+Some notes:
+
+* A few test functions were run, ranging from single arithmetic
+  operations to basic geometric functions, performed against integer,
+  floating-point and fixed-point types for comparison.
+* Figures were taken from a single CPU, OS and compiler, namely:
+
+      Debian clang version 3.5.0-10 (tags/RELEASE_350/final) (based on LLVM 3.5.0)
+      Target: x86_64-pc-linux-gnu
+      Thread model: posix
+
+* Fixed inputs were provided to each function, meaning that branch
+  prediction rarely fails. Results may also not represent the full
+  range of inputs.
+* Details of the test harness used can be found in the source
+  project mentioned in Appendix 1;
+* Times are in nanoseconds;
+* Code has not yet been optimized for performance.
+
+### Types
+
+Where applicable various combinations of integer, floating-point and
+fixed-point types were tested with the following identifiers:
+
+* `uint8_t`, `int8_t`, `uint16_t`, `int16_t`, `uint32_t`, `int32_t`,
+  `uint64_t` and `int64_t` built-in integer types;
+* `float`, `double` and `long double` built-in floating-point types;
+* s3:4, u4:4, s7:8, u8:8, s15:16, u16:16, s31:32 and u32:32 format
+  fixed-point types.
+
+### Basic Arithmetic
+
+Plus, minus, multiplication and division were tested in isolation
+using a number of different numeric types with the following results:
+
+name	cpu_time  
+add(float)	1.78011  
+add(double)	1.73966  
+add(long double)	3.46011  
+add(u4_4)	1.87726  
+add(s3_4)	1.85051  
+add(u8_8)	1.85417  
+add(s7_8)	1.82057  
+add(u16_16)	1.94194  
+add(s15_16)	1.93463  
+add(u32_32)	1.94674  
+add(s31_32)	1.94446  
+add(int8_t)	2.14857  
+add(uint8_t)	2.12571  
+add(int16_t)	1.9936  
+add(uint16_t)	1.88229  
+add(int32_t)	1.82126  
+add(uint32_t)	1.76  
+add(int64_t)	1.76  
+add(uint64_t)	1.83223  
+sub(float)	1.96617  
+sub(double)	1.98491  
+sub(long double)	3.55474  
+sub(u4_4)	1.77006  
+sub(s3_4)	1.72983  
+sub(u8_8)	1.72983  
+sub(s7_8)	1.72983  
+sub(u16_16)	1.73966  
+sub(s15_16)	1.85051  
+sub(u32_32)	1.88229  
+sub(s31_32)	1.87063  
+sub(int8_t)	1.76  
+sub(uint8_t)	1.74994  
+sub(int16_t)	1.82126  
+sub(uint16_t)	1.83794  
+sub(int32_t)	1.89074  
+sub(uint32_t)	1.85417  
+sub(int64_t)	1.83703  
+sub(uint64_t)	2.04914  
+mul(float)	1.9376  
+mul(double)	1.93097  
+mul(long double)	102.446  
+mul(u4_4)	2.46583  
+mul(s3_4)	2.09189  
+mul(u8_8)	2.08  
+mul(s7_8)	2.18697  
+mul(u16_16)	2.12571  
+mul(s15_16)	2.10789  
+mul(u32_32)	2.10789  
+mul(s31_32)	2.10789  
+mul(int8_t)	1.76  
+mul(uint8_t)	1.78011  
+mul(int16_t)	1.8432  
+mul(uint16_t)	1.76914  
+mul(int32_t)	1.78011  
+mul(uint32_t)	2.19086  
+mul(int64_t)	1.7696  
+mul(uint64_t)	1.79017  
+div(float)	5.12  
+div(double)	7.64343  
+div(long double)	8.304  
+div(u4_4)	3.82171  
+div(s3_4)	3.82171  
+div(u8_8)	3.84  
+div(s7_8)	3.8  
+div(u16_16)	9.152  
+div(s15_16)	11.232  
+div(u32_32)	30.8434  
+div(s31_32)	34  
+div(int8_t)	3.82171  
+div(uint8_t)	3.82171  
+div(int16_t)	3.8  
+div(uint16_t)	3.82171  
+div(int32_t)	3.82171  
+div(uint32_t)	3.81806  
+div(int64_t)	10.2286  
+div(uint64_t)	8.304  
+
+Among the slowest types are `long double`. It is likely that they are
+emulated in software. The next slowest operations are fixed-point
+multiply and divide operations - especially with 64-bit types. This is
+because values need to be promoted temporarily to double-width types.
+This is a known fixed-point technique which inevitably experiences
+slowdown where a 128-bit type is required on a 64-bit system.
+
+Here is a section of the disassembly of the s15:16 multiply call:
+
+    30:   mov    %r14,%rax  
+          mov    %r15,%rax  
+          movslq -0x28(%rbp),%rax  
+          movslq -0x30(%rbp),%rcx  
+          imul   %rax,%rcx  
+          shr    $0x10,%rcx  
+          mov    %ecx,-0x38(%rbp)  
+          mov    %r12,%rax  
+    4c:   movzbl (%rbx),%eax  
+          cmp    $0x1,%eax  
+        ↓ jne    68  
+    54:   mov    0x8(%rbx),%rax  
+          lea    0x1(%rax),%rcx  
+          mov    %rcx,0x8(%rbx)  
+          cmp    0x38(%rbx),%rax  
+        ↑ jb     30
+
+The two 32-bit numbers are multiplied together and the result shifted
+down - much as it would if raw `int` values were used. The efficiency
+of this operation varies with the exponent. An exponent of zero should
+mean no shift at all.
+
+### 3-Dimensional Magnitude Squared
+
+A fast `sqrt` implementation has not yet been tested with
+`fixed_point`. (The naive implementation takes over 300ns.) For this
+reason, a magnitude-squared function is measured, combining multiply
+and add operations:
+
+    template <typename FP>
+    constexpr FP magnitude_squared(const FP & x, const FP & y, const FP & z)
+    {
+        return x * x + y * y + z * z;
+    }
+
+Only real number formats are tested:
+
+float  2.42606  
+double  2.08  
+long double  4.5056  
+s3_4  2.768  
+s7_8  2.77577  
+s15_16  2.752  
+s31_32  4.10331  
+
+Again, the size of the type seems to have the largest impact.
+
+### Circle Intersection
+
+A similar operation includes a comparison and branch:
+
+    template <typename Real>
+    bool circle_intersect_generic(Real x1, Real y1, Real r1, Real x2, Real y2, Real r2)
+    {
+	    auto x_diff = x2 - x1;
+    	auto y_diff = y2 - y1;
+	    auto distance_squared = x_diff * x_diff + y_diff * y_diff;
+
+	    auto touch_distance = r1 + r2;
+    	auto touch_distance_squared = touch_distance * touch_distance;
+
+	    return distance_squared <= touch_distance_squared;
+    }
+
+float	3.46011  
+double	3.48  
+long double	6.4  
+s3_4	3.88  
+s7_8	4.5312  
+s15_16	3.82171  
+s31_32	5.92  
+
+Again, fixed-point and native performance are comparable.
