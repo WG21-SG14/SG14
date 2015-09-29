@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <meta charset="utf-8" />
+      <title>Fixed_Point_Library_Proposal</title>
+      <style>.markdown-preview, .markdown-preview[data-use-github-style] { font-family: 'Helvetica Neue', Helvetica, 'Segoe UI', Arial, freesans, sans-serif; font-size: 16px; line-height: 1.6; word-wrap: break-word; overflow: scroll; box-sizing: border-box; padding: 20px; background-color: rgb(255, 255, 255); }
+.markdown-preview > :first-child, .markdown-preview[data-use-github-style] > :first-child { margin-top: 0px !important; }
+.markdown-preview > :last-child, .markdown-preview[data-use-github-style] > :last-child { margin-bottom: 0px !important; }
+.markdown-preview a:not([href]), .markdown-preview[data-use-github-style] a:not([href]) { color: inherit; text-decoration: none; }
+.markdown-preview .absent, .markdown-preview[data-use-github-style] .absent { color: rgb(204, 0, 0); }
+.markdown-preview .anchor, .markdown-preview[data-use-github-style] .anchor { position: absolute; top: 0px; left: 0px; display: block; padding-right: 6px; padding-left: 30px; margin-left: -30px; }
+.markdown-preview .anchor:focus, .markdown-preview[data-use-github-style] .anchor:focus { outline: none; }
+.markdown-preview h1, .markdown-preview[data-use-github-style] h1, .markdown-preview h2, .markdown-preview[data-use-github-style] h2, .markdown-preview h3, .markdown-preview[data-use-github-style] h3, .markdown-preview h4, .markdown-preview[data-use-github-style] h4, .markdown-preview h5, .markdown-preview[data-use-github-style] h5, .markdown-preview h6, .markdown-preview[data-use-github-style] h6 { position: relative; margin-top: 1em; margin-bottom: 16px; font-weight: bold; line-height: 1.4; }
+.markdown-preview h1 .octicon-link, .markdown-preview[data-use-github-style] h1 .octicon-link, .markdown-preview h2 .octicon-link, .markdown-preview[data-use-github-style] h2 .octicon-link, .markdown-preview h3 .octicon-link, .markdown-preview[data-use-github-style] h3 .octicon-link, .markdown-preview h4 .octicon-link, .markdown-preview[data-use-github-style] h4 .octicon-link, .markdown-preview h5 .octicon-link, .markdown-preview[data-use-github-style] h5 .octicon-link, .markdown-preview h6 .octicon-link, .markdown-preview[data-use-github-style] h6 .octicon-link { display: none; color: rgb(0, 0, 0); vertical-align: middle; }
+.markdown-preview h1:hover .anchor, .markdown-preview[data-use-github-style] h1:hover .anchor, .markdown-preview h2:hover .anchor, .markdown-preview[data-use-github-style] h2:hover .anchor, .markdown-preview h3:hover .anchor, .markdown-preview[data-use-github-style] h3:hover .anchor, .markdown-preview h4:hover .anchor, .markdown-preview[data-use-github-style] h4:hover .anchor, .markdown-preview h5:hover .anchor, .markdown-preview[data-use-github-style] h5:hover .anchor, .markdown-preview h6:hover .anchor, .markdown-preview[data-use-github-style] h6:hover .anchor { padding-left: 8px; margin-left: -30px; text-decoration: none; }
+.markdown-preview h1:hover .anchor .octicon-link, .markdown-preview[data-use-github-style] h1:hover .anchor .octicon-link, .markdown-preview h2:hover .anchor .octicon-link, .markdown-preview[data-use-github-style] h2:hover .anchor .octicon-link, .markdown-preview h3:hover .anchor .octicon-link, .markdown-preview[data-use-github-style] h3:hover .anchor .octicon-link, .markdown-preview h4:hover .anchor .octicon-link, .markdown-preview[data-use-github-style] h4:hover .anchor .octicon-link, .markdown-preview h5:hover .anchor .octicon-link, .markdown-preview[data-use-github-style] h5:hover .anchor .octicon-link, .markdown-preview h6:hover .anchor .octicon-link, .markdown-preview[data-use-github-style] h6:hover .anchor .octicon-link { display: inline-block; }
+.markdown-preview h1 tt, .markdown-preview[data-use-github-style] h1 tt, .markdown-preview h2 tt, .markdown-preview[data-use-github-style] h2 tt, .markdown-preview h3 tt, .markdown-preview[data-use-github-style] h3 tt, .markdown-preview h4 tt, .markdown-preview[data-use-github-style] h4 tt, .markdown-preview h5 tt, .markdown-preview[data-use-github-style] h5 tt, .markdown-preview h6 tt, .markdown-preview[data-use-github-style] h6 tt, .markdown-preview h1 code, .markdown-preview[data-use-github-style] h1 code, .markdown-preview h2 code, .markdown-preview[data-use-github-style] h2 code, .markdown-preview h3 code, .markdown-preview[data-use-github-style] h3 code, .markdown-preview h4 code, .markdown-preview[data-use-github-style] h4 code, .markdown-preview h5 code, .markdown-preview[data-use-github-style] h5 code, .markdown-preview h6 code, .markdown-preview[data-use-github-style] h6 code { font-size: inherit; }
+.markdown-preview h1, .markdown-preview[data-use-github-style] h1 { padding-bottom: 0.3em; font-size: 2.25em; line-height: 1.2; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: rgb(238, 238, 238); }
+.markdown-preview h1 .anchor, .markdown-preview[data-use-github-style] h1 .anchor { line-height: 1; }
+.markdown-preview h2, .markdown-preview[data-use-github-style] h2 { padding-bottom: 0.3em; font-size: 1.75em; line-height: 1.225; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: rgb(238, 238, 238); }
+.markdown-preview h2 .anchor, .markdown-preview[data-use-github-style] h2 .anchor { line-height: 1; }
+.markdown-preview h3, .markdown-preview[data-use-github-style] h3 { font-size: 1.5em; line-height: 1.43; }
+.markdown-preview h3 .anchor, .markdown-preview[data-use-github-style] h3 .anchor { line-height: 1.2; }
+.markdown-preview h4, .markdown-preview[data-use-github-style] h4 { font-size: 1.25em; }
+.markdown-preview h4 .anchor, .markdown-preview[data-use-github-style] h4 .anchor { line-height: 1.2; }
+.markdown-preview h5, .markdown-preview[data-use-github-style] h5 { font-size: 1em; }
+.markdown-preview h5 .anchor, .markdown-preview[data-use-github-style] h5 .anchor { line-height: 1.1; }
+.markdown-preview h6, .markdown-preview[data-use-github-style] h6 { font-size: 1em; color: rgb(119, 119, 119); }
+.markdown-preview h6 .anchor, .markdown-preview[data-use-github-style] h6 .anchor { line-height: 1.1; }
+.markdown-preview p, .markdown-preview[data-use-github-style] p, .markdown-preview blockquote, .markdown-preview[data-use-github-style] blockquote, .markdown-preview ul, .markdown-preview[data-use-github-style] ul, .markdown-preview ol, .markdown-preview[data-use-github-style] ol, .markdown-preview dl, .markdown-preview[data-use-github-style] dl, .markdown-preview table, .markdown-preview[data-use-github-style] table, .markdown-preview pre, .markdown-preview[data-use-github-style] pre { margin-top: 0px; margin-bottom: 16px; }
+.markdown-preview hr, .markdown-preview[data-use-github-style] hr { height: 4px; padding: 0px; margin: 16px 0px; border: 0px none; background-color: rgb(231, 231, 231); }
+.markdown-preview ul, .markdown-preview[data-use-github-style] ul, .markdown-preview ol, .markdown-preview[data-use-github-style] ol { padding-left: 2em; }
+.markdown-preview ul.no-list, .markdown-preview[data-use-github-style] ul.no-list, .markdown-preview ol.no-list, .markdown-preview[data-use-github-style] ol.no-list { padding: 0px; list-style-type: none; }
+.markdown-preview ul ul, .markdown-preview[data-use-github-style] ul ul, .markdown-preview ul ol, .markdown-preview[data-use-github-style] ul ol, .markdown-preview ol ol, .markdown-preview[data-use-github-style] ol ol, .markdown-preview ol ul, .markdown-preview[data-use-github-style] ol ul { margin-top: 0px; margin-bottom: 0px; }
+.markdown-preview li > p, .markdown-preview[data-use-github-style] li > p { margin-top: 16px; }
+.markdown-preview dl, .markdown-preview[data-use-github-style] dl { padding: 0px; }
+.markdown-preview dl dt, .markdown-preview[data-use-github-style] dl dt { padding: 0px; margin-top: 16px; font-size: 1em; font-style: italic; font-weight: bold; }
+.markdown-preview dl dd, .markdown-preview[data-use-github-style] dl dd { padding: 0px 16px; margin-bottom: 16px; }
+.markdown-preview blockquote, .markdown-preview[data-use-github-style] blockquote { padding: 0px 15px; color: rgb(119, 119, 119); border-left-width: 4px; border-left-style: solid; border-left-color: rgb(221, 221, 221); }
+.markdown-preview blockquote > :first-child, .markdown-preview[data-use-github-style] blockquote > :first-child { margin-top: 0px; }
+.markdown-preview blockquote > :last-child, .markdown-preview[data-use-github-style] blockquote > :last-child { margin-bottom: 0px; }
+.markdown-preview table, .markdown-preview[data-use-github-style] table { display: block; width: 100%; overflow: auto; word-break: normal; }
+.markdown-preview table th, .markdown-preview[data-use-github-style] table th { font-weight: bold; }
+.markdown-preview table th, .markdown-preview[data-use-github-style] table th, .markdown-preview table td, .markdown-preview[data-use-github-style] table td { padding: 6px 13px; border: 1px solid rgb(221, 221, 221); }
+.markdown-preview table tr, .markdown-preview[data-use-github-style] table tr { border-top-width: 1px; border-top-style: solid; border-top-color: rgb(204, 204, 204); background-color: rgb(255, 255, 255); }
+.markdown-preview table tr:nth-child(2n), .markdown-preview[data-use-github-style] table tr:nth-child(2n) { background-color: rgb(248, 248, 248); }
+.markdown-preview img, .markdown-preview[data-use-github-style] img { max-width: 100%; box-sizing: border-box; }
+.markdown-preview .emoji, .markdown-preview[data-use-github-style] .emoji { max-width: none; }
+.markdown-preview span.frame, .markdown-preview[data-use-github-style] span.frame { display: block; overflow: hidden; }
+.markdown-preview span.frame > span, .markdown-preview[data-use-github-style] span.frame > span { display: block; float: left; width: auto; padding: 7px; margin: 13px 0px 0px; overflow: hidden; border: 1px solid rgb(221, 221, 221); }
+.markdown-preview span.frame span img, .markdown-preview[data-use-github-style] span.frame span img { display: block; float: left; }
+.markdown-preview span.frame span span, .markdown-preview[data-use-github-style] span.frame span span { display: block; padding: 5px 0px 0px; clear: both; color: rgb(51, 51, 51); }
+.markdown-preview span.align-center, .markdown-preview[data-use-github-style] span.align-center { display: block; overflow: hidden; clear: both; }
+.markdown-preview span.align-center > span, .markdown-preview[data-use-github-style] span.align-center > span { display: block; margin: 13px auto 0px; overflow: hidden; text-align: center; }
+.markdown-preview span.align-center span img, .markdown-preview[data-use-github-style] span.align-center span img { margin: 0px auto; text-align: center; }
+.markdown-preview span.align-right, .markdown-preview[data-use-github-style] span.align-right { display: block; overflow: hidden; clear: both; }
+.markdown-preview span.align-right > span, .markdown-preview[data-use-github-style] span.align-right > span { display: block; margin: 13px 0px 0px; overflow: hidden; text-align: right; }
+.markdown-preview span.align-right span img, .markdown-preview[data-use-github-style] span.align-right span img { margin: 0px; text-align: right; }
+.markdown-preview span.float-left, .markdown-preview[data-use-github-style] span.float-left { display: block; float: left; margin-right: 13px; overflow: hidden; }
+.markdown-preview span.float-left span, .markdown-preview[data-use-github-style] span.float-left span { margin: 13px 0px 0px; }
+.markdown-preview span.float-right, .markdown-preview[data-use-github-style] span.float-right { display: block; float: right; margin-left: 13px; overflow: hidden; }
+.markdown-preview span.float-right > span, .markdown-preview[data-use-github-style] span.float-right > span { display: block; margin: 13px auto 0px; overflow: hidden; text-align: right; }
+.markdown-preview code, .markdown-preview[data-use-github-style] code, .markdown-preview tt, .markdown-preview[data-use-github-style] tt { padding: 0.2em 0px; margin: 0px; font-size: 85%; border-radius: 3px; background-color: rgba(0, 0, 0, 0.0392157); }
+.markdown-preview code::before, .markdown-preview[data-use-github-style] code::before, .markdown-preview tt::before, .markdown-preview[data-use-github-style] tt::before, .markdown-preview code::after, .markdown-preview[data-use-github-style] code::after, .markdown-preview tt::after, .markdown-preview[data-use-github-style] tt::after { letter-spacing: -0.2em; content: ' '; }
+.markdown-preview code br, .markdown-preview[data-use-github-style] code br, .markdown-preview tt br, .markdown-preview[data-use-github-style] tt br { display: none; }
+.markdown-preview del code, .markdown-preview[data-use-github-style] del code { text-decoration: inherit; }
+.markdown-preview pre > code, .markdown-preview[data-use-github-style] pre > code { padding: 0px; margin: 0px; font-size: 100%; word-break: normal; white-space: pre; border: 0px; background: transparent; }
+.markdown-preview .highlight, .markdown-preview[data-use-github-style] .highlight { margin-bottom: 16px; }
+.markdown-preview .highlight pre, .markdown-preview[data-use-github-style] .highlight pre, .markdown-preview pre, .markdown-preview[data-use-github-style] pre { padding: 16px; overflow: auto; font-size: 85%; line-height: 1.45; border-radius: 3px; background-color: rgb(247, 247, 247); }
+.markdown-preview .highlight pre, .markdown-preview[data-use-github-style] .highlight pre { margin-bottom: 0px; word-break: normal; }
+.markdown-preview pre, .markdown-preview[data-use-github-style] pre { word-wrap: normal; }
+.markdown-preview pre code, .markdown-preview[data-use-github-style] pre code, .markdown-preview pre tt, .markdown-preview[data-use-github-style] pre tt { display: inline; max-width: initial; padding: 0px; margin: 0px; overflow: initial; line-height: inherit; word-wrap: normal; border: 0px; background-color: transparent; }
+.markdown-preview pre code::before, .markdown-preview[data-use-github-style] pre code::before, .markdown-preview pre tt::before, .markdown-preview[data-use-github-style] pre tt::before, .markdown-preview pre code::after, .markdown-preview[data-use-github-style] pre code::after, .markdown-preview pre tt::after, .markdown-preview[data-use-github-style] pre tt::after { content: normal; }
+.markdown-preview kbd, .markdown-preview[data-use-github-style] kbd { display: inline-block; padding: 3px 5px; font-size: 11px; line-height: 10px; color: rgb(85, 85, 85); vertical-align: middle; border-style: solid; border-width: 1px; border-color: rgb(204, 204, 204) rgb(204, 204, 204) rgb(187, 187, 187); border-radius: 3px; box-shadow: rgb(187, 187, 187) 0px -1px 0px inset; background-color: rgb(252, 252, 252); }
+.markdown-preview, .markdown-preview[data-use-github-style], .markdown-preview code, .markdown-preview[data-use-github-style] code { color: rgb(51, 51, 51); }
+.markdown-preview h1, .markdown-preview[data-use-github-style] h1, .markdown-preview h2, .markdown-preview[data-use-github-style] h2, .markdown-preview h3, .markdown-preview[data-use-github-style] h3, .markdown-preview h4, .markdown-preview[data-use-github-style] h4, .markdown-preview h5, .markdown-preview[data-use-github-style] h5, .markdown-preview h6, .markdown-preview[data-use-github-style] h6 { -webkit-font-smoothing: antialiased; cursor: text; }
+.markdown-preview > h1:first-child, .markdown-preview[data-use-github-style] > h1:first-child, .markdown-preview > h1:first-child + h2, .markdown-preview[data-use-github-style] > h1:first-child + h2, .markdown-preview > h2:first-child, .markdown-preview[data-use-github-style] > h2:first-child, .markdown-preview > h3:first-child, .markdown-preview[data-use-github-style] > h3:first-child, .markdown-preview > h4:first-child, .markdown-preview[data-use-github-style] > h4:first-child, .markdown-preview > h5:first-child, .markdown-preview[data-use-github-style] > h5:first-child, .markdown-preview > h6:first-child, .markdown-preview[data-use-github-style] > h6:first-child { margin-top: 0px; padding-top: 0px; }
+.markdown-preview a, .markdown-preview[data-use-github-style] a, .markdown-preview a code, .markdown-preview[data-use-github-style] a code { color: rgb(65, 131, 196); }
+.markdown-preview a:first-child h1, .markdown-preview[data-use-github-style] a:first-child h1, .markdown-preview a:first-child h2, .markdown-preview[data-use-github-style] a:first-child h2, .markdown-preview a:first-child h3, .markdown-preview[data-use-github-style] a:first-child h3, .markdown-preview a:first-child h4, .markdown-preview[data-use-github-style] a:first-child h4, .markdown-preview a:first-child h5, .markdown-preview[data-use-github-style] a:first-child h5, .markdown-preview a:first-child h6, .markdown-preview[data-use-github-style] a:first-child h6 { margin-top: 0px; padding-top: 0px; }
+.markdown-preview h1 + p, .markdown-preview[data-use-github-style] h1 + p, .markdown-preview h2 + p, .markdown-preview[data-use-github-style] h2 + p, .markdown-preview h3 + p, .markdown-preview[data-use-github-style] h3 + p, .markdown-preview h4 + p, .markdown-preview[data-use-github-style] h4 + p, .markdown-preview h5 + p, .markdown-preview[data-use-github-style] h5 + p, .markdown-preview h6 + p, .markdown-preview[data-use-github-style] h6 + p { margin-top: 0px; }
+.markdown-preview li p.first, .markdown-preview[data-use-github-style] li p.first { display: inline-block; }
+.markdown-preview ul li > :first-child, .markdown-preview[data-use-github-style] ul li > :first-child, .markdown-preview ol li > :first-child, .markdown-preview[data-use-github-style] ol li > :first-child, .markdown-preview ul li ul:first-of-type, .markdown-preview[data-use-github-style] ul li ul:first-of-type, .markdown-preview ol li ul:first-of-type, .markdown-preview[data-use-github-style] ol li ul:first-of-type { margin-top: 0px; }
+.markdown-preview ol > li, .markdown-preview[data-use-github-style] ol > li { list-style-type: decimal; }
+.markdown-preview ul > li, .markdown-preview[data-use-github-style] ul > li { list-style-type: disc; }
+.markdown-preview dl dt:first-child, .markdown-preview[data-use-github-style] dl dt:first-child { padding: 0px; }
+.markdown-preview dl dt > :first-child, .markdown-preview[data-use-github-style] dl dt > :first-child { margin-top: 0px; }
+.markdown-preview dl dt > :last-child, .markdown-preview[data-use-github-style] dl dt > :last-child { margin-bottom: 0px; }
+.markdown-preview dl dd > :first-child, .markdown-preview[data-use-github-style] dl dd > :first-child { margin-top: 0px; }
+.markdown-preview dl dd > :last-child, .markdown-preview[data-use-github-style] dl dd > :last-child { margin-bottom: 0px; }
+.markdown-preview blockquote p, .markdown-preview[data-use-github-style] blockquote p { font-size: 16px; line-height: 1.5; }
+.markdown-preview pre.editor-colors, .markdown-preview[data-use-github-style] pre.editor-colors { padding: 16px; overflow: auto; font-size: 84%; line-height: 1.45; border-radius: 3px; background-color: rgb(255, 255, 255); }
+.markdown-preview pre.editor-colors, .markdown-preview[data-use-github-style] pre.editor-colors { margin-bottom: 16px; word-break: normal; }
+.markdown-preview code, .markdown-preview[data-use-github-style] code, .markdown-preview tt, .markdown-preview[data-use-github-style] tt, .markdown-preview pre.editor-colors, .markdown-preview[data-use-github-style] pre.editor-colors { font-family: Consolas, 'Liberation Mono', Courier, monospace; }
+.markdown-preview .emoji, .markdown-preview[data-use-github-style] .emoji { height: 20px; width: 20px; }
+.bracket-matcher .region {
+  border-bottom: 1px dotted lime;
+  position: absolute;
+}
+
+.spell-check-misspelling .region {
+  border-bottom: 1px dashed rgba(250, 128, 114, 0.5);
+}
+
+pre.editor-colors,
+.host {
+  background-color: #ffffff;
+  color: #555555;
+}
+pre.editor-colors .invisible-character,
+.host .invisible-character {
+  color: rgba(85, 85, 85, 0.2);
+}
+pre.editor-colors .indent-guide,
+.host .indent-guide {
+  color: rgba(85, 85, 85, 0.2);
+}
+pre.editor-colors .wrap-guide,
+.host .wrap-guide {
+  background-color: rgba(85, 85, 85, 0.2);
+}
+pre.editor-colors .gutter,
+.host .gutter {
+  color: #555555;
+  background: #ffffff;
+}
+pre.editor-colors .gutter .line-number.folded,
+.host .gutter .line-number.folded,
+pre.editor-colors .gutter .line-number:after,
+.host .gutter .line-number:after,
+pre.editor-colors .fold-marker:after,
+.host .fold-marker:after {
+  color: #e87b00;
+}
+pre.editor-colors .invisible,
+.host .invisible {
+  color: #555;
+}
+pre.editor-colors .selection .region,
+.host .selection .region {
+  background-color: #e1e1e1;
+}
+pre.editor-colors.is-focused .cursor,
+.host.is-focused .cursor {
+  border-color: #000000;
+}
+pre.editor-colors.is-focused .selection .region,
+.host.is-focused .selection .region {
+  background-color: #afc4da;
+}
+pre.editor-colors.is-focused .line-number.cursor-line-no-selection,
+.host.is-focused .line-number.cursor-line-no-selection,
+pre.editor-colors.is-focused .line.cursor-line,
+.host.is-focused .line.cursor-line {
+  background-color: rgba(255, 255, 134, 0.34);
+}
+pre.editor-colors .source.gfm,
+.host .source.gfm {
+  color: #444;
+}
+pre.editor-colors .gfm .markup.heading,
+.host .gfm .markup.heading {
+  color: #111;
+}
+pre.editor-colors .gfm .link,
+.host .gfm .link {
+  color: #888;
+}
+pre.editor-colors .gfm .variable.list,
+.host .gfm .variable.list {
+  color: #888;
+}
+pre.editor-colors .markdown .paragraph,
+.host .markdown .paragraph {
+  color: #444;
+}
+pre.editor-colors .markdown .heading,
+.host .markdown .heading {
+  color: #111;
+}
+pre.editor-colors .markdown .link,
+.host .markdown .link {
+  color: #888;
+}
+pre.editor-colors .markdown .link .string,
+.host .markdown .link .string {
+  color: #888;
+}
+.host(.is-focused) .cursor {
+  border-color: #000000;
+}
+.host(.is-focused) .selection .region {
+  background-color: #afc4da;
+}
+.host(.is-focused) .line-number.cursor-line-no-selection,
+.host(.is-focused) .line.cursor-line {
+  background-color: rgba(255, 255, 134, 0.34);
+}
+.comment {
+  color: #999988;
+  font-style: italic;
+}
+.string {
+  color: #D14;
+}
+.string .source,
+.string .meta.embedded.line {
+  color: #5A5A5A;
+}
+.string .punctuation.section.embedded {
+  color: #920B2D;
+}
+.string .punctuation.section.embedded .source {
+  color: #920B2D;
+}
+.constant.numeric {
+  color: #D14;
+}
+.constant.language {
+  color: #606aa1;
+}
+.constant.character,
+.constant.other {
+  color: #606aa1;
+}
+.constant.symbol {
+  color: #990073;
+}
+.constant.numeric.line-number.find-in-files .match {
+  color: rgba(143, 190, 0, 0.63);
+}
+.variable {
+  color: #008080;
+}
+.variable.parameter {
+  color: #606aa1;
+}
+.keyword {
+  color: #222;
+  font-weight: bold;
+}
+.keyword.unit {
+  color: #445588;
+}
+.keyword.special-method {
+  color: #0086B3;
+}
+.storage {
+  color: #222;
+}
+.storage.type {
+  color: #222;
+}
+.entity.name.class {
+  text-decoration: underline;
+  color: #606aa1;
+}
+.entity.other.inherited-class {
+  text-decoration: underline;
+  color: #606aa1;
+}
+.entity.name.function {
+  color: #900;
+}
+.entity.name.tag {
+  color: #008080;
+}
+.entity.other.attribute-name {
+  color: #458;
+  font-weight: bold;
+}
+.entity.name.filename.find-in-files {
+  color: #E6DB74;
+}
+.support.constant,
+.support.function,
+.support.type {
+  color: #458;
+}
+.support.class {
+  color: #008080;
+}
+.invalid {
+  color: #F8F8F0;
+  background-color: #00A8C6;
+}
+.invalid.deprecated {
+  color: #F8F8F0;
+  background-color: #8FBE00;
+}
+.meta.structure.dictionary.json > .string.quoted.double.json,
+.meta.structure.dictionary.json > .string.quoted.double.json .punctuation.string {
+  color: #000080;
+}
+.meta.structure.dictionary.value.json > .string.quoted.double.json {
+  color: #d14;
+}
+.meta.diff,
+.meta.diff.header {
+  color: #75715E;
+}
+.css.support.property-name {
+  font-weight: bold;
+  color: #333;
+}
+.css.constant {
+  color: #099;
+}
+.bracket-matcher .region {
+  background-color: #C9C9C9;
+  opacity: .7;
+  border-bottom: 0 none;
+}
+</style>
+  </head>
+  <body class='markdown-preview'><p><strong>Document number</strong>: LEWG, EWG, SG14, SG6: P0037R0<br><strong>Date</strong>: 2015-09-28<br><strong>Project</strong>: Programming Language C++, Library Evolution WG, SG14<br><strong>Reply-to</strong>: John McFarlane, <a href="mailto:fixed-point@john.mcfarlane.name">fixed-point@john.mcfarlane.name</a></p>
+<h1 id="fixed-point-real-numbers">Fixed-Point Real Numbers</h1>
+<h2 id="i-introduction">I. Introduction</h2>
+<p>This proposal introduces a system for performing binary fixed-point
+arithmetic using built-in integral types.</p>
+<h2 id="ii-motivation">II. Motivation</h2>
+<p>Floating-point types are an exceedingly versatile and widely supported
+method of expressing real numbers on modern architectures.</p>
+<p>However, there are certain situations where fixed-point arithmetic is
+preferable. Some systems lack native floating-point registers and must
+emulate them in software. Many others are capable of performing some
+or all operations more efficiently using integer arithmetic. Certain
+applications can suffer from the variability in precision which comes
+from a dynamic radix point <a href="http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php">[1]</a>.
+In situations where a variable exponent is not desired, it takes
+valuable space away from the significand and reduces precision.</p>
+<p>Built-in integer types provide the basis for an efficient
+representation of binary fixed-point real numbers. However, laborious,
+error-prone steps are required to normalize the results of certain
+operations and to convert to and from fixed-point types.</p>
+<p>A set of tools for defining and manipulating fixed-point types is
+proposed. These tools are designed to make work easier for those who
+traditionally use integers to perform low-level, high-performance
+fixed-point computation.</p>
+<h2 id="iii-impact-on-the-standard">III. Impact On the Standard</h2>
+<p>This proposal is a pure library extension. It does not require
+changes to any standard classes, functions or headers.</p>
+<h2 id="iv-design-decisions">IV. Design Decisions</h2>
+<p>The design is driven by the following aims in roughly descending
+order:</p>
+<ol>
+<li>to automate the task of using integer types to perform low-level
+binary fixed-point arithmetic;</li>
+<li>to facilitate a style of code that is intuitive to anyone who is
+comfortable with integer and floating-point arithmetic;</li>
+<li>to avoid type promotion, implicit conversion or other behavior that
+might lead to surprising results and</li>
+<li>to preserve significant digits at the expense of insignificant
+digits, i.e. to prefer underflow to overflow.</li>
+</ol>
+<h3 id="class-template">Class Template</h3>
+<p>Fixed-point numbers are specializations of</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>class&nbsp;fixed_point;</span></span></span></div></pre><p>where the template parameters are described as follows.</p>
+<h4 id="-reprtype-type-template-parameter"><code>ReprType</code> Type Template Parameter</h4>
+<p>This parameter identifies the capacity and signedness of the
+underlying type used to represent the value. In other words, the size
+of the resulting type will be <code>sizeof(ReprType)</code> and it will be
+signed iff <code>is_signed&lt;ReprType&gt;::value</code> is true. The default is
+<code>int</code>.</p>
+<p><code>ReprType</code> must be a fundamental integral type and should not be the
+largest size. Suitable types include: <code>std::int8_t</code>, <code>std::uint8_t</code>,
+<code>std::int16_t</code>, <code>std::uint16_t</code>, <code>std::int32_t</code> and <code>std::uint32_t</code>.
+In limited situations, <code>std::int64_t</code> and <code>std::uint64_t</code> can be used.
+The  reasons for these limitations relate to the difficulty in finding
+a type that is suitable for performing lossless integer
+multiplication.</p>
+<h4 id="-exponent-non-type-template-parameter"><code>Exponent</code> Non-Type Template Parameter</h4>
+<p>The exponent of a fixed-point type is the equivalent of the exponent
+field in a floating-point type and shifts the stored value by the
+requisite number of bits necessary to produce the desired range. The
+default value of <code>Exponent</code> is zero, giving <code>fixed_point&lt;T&gt;</code> the same
+range as <code>T</code>.</p>
+<p>The resolution of a specialization of <code>fixed_point</code> is</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>pow(2,&nbsp;Exponent)</span></span></span></div></pre><p>and the minimum and maximum values are</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>std::numeric_limits&lt;ReprType&gt;::min()&nbsp;*&nbsp;pow(2,&nbsp;Exponent)</span></span></span></div></pre><p>and</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>std::numeric_limits&lt;ReprType&gt;::max()&nbsp;*&nbsp;pow(2,&nbsp;Exponent)</span></span></span></div></pre><p>respectively.</p>
+<p>Any usage that results in values of <code>Exponent</code> which lie outside the
+range, (<code>INT_MIN / 2</code>, <code>INT_MAX / 2</code>), may result in undefined
+behavior and/or overflow or underflow. This range of exponent values
+is far in excess of the largest built-in floting-point type and should
+be adequate for all intents and purposes.</p>
+<h3 id="-make_fixed-and-make_ufixed-helper-type"><code>make_fixed</code> and <code>make_ufixed</code> Helper Type</h3>
+<p>The <code>Exponent</code> template parameter is versatile and concise. It is an
+intuitive scale to use when considering the full range of positive and
+negative exponents a fixed-point type might possess. It also
+corresponds to the exponent field of built-in floating-point types.</p>
+<p>However, most fixed-point formats can be described more intuitively by
+the cardinal number of integer and/or fractional digits they contain.
+Most users will prefer to distinguish fixed-point types using these
+parameters.</p>
+<p>For this reason, two aliases are defined in the style of
+<code>make_signed</code>.</p>
+<p>These aliases are declared as:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;unsigned&nbsp;IntegerDigits,&nbsp;unsigned&nbsp;FractionalDigits&nbsp;=&nbsp;0,&nbsp;bool&nbsp;IsSigned&nbsp;=&nbsp;true&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;make_fixed;</span></span></span></div></pre><p>and</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;unsigned&nbsp;IntegerDigits,&nbsp;unsigned&nbsp;FractionalDigits&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>using&nbsp;make_ufixed;</span></span></span></div></pre><p>They resolve to a <code>fixed_point</code> specialization with the given
+signedness and number of integer and fractional digits. They may
+contain additional integer and fractional digits.</p>
+<p>For example, one could define and initialize an 8-bit, unsigned,
+fixed-point variable with four integer digits and four fractional
+digits:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_ufixed&lt;4,&nbsp;4&gt;&nbsp;value&nbsp;{&nbsp;15.9375&nbsp;};</span></span></span></div></pre><p>or a 32-bit, signed, fixed-point number with two integer digits and 29
+fractional digits:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_fixed&lt;2,&nbsp;29&gt;&nbsp;value&nbsp;{&nbsp;3.141592653&nbsp;};</span></span></span></div></pre><h3 id="conversion">Conversion</h3>
+<p>Fixed-point numbers can be explicitly converted to and from built-in
+arithmetic types.</p>
+<p>While effort is made to ensure that significant digits are not lost
+during conversion, no effort is made to avoid rounding errors.
+Whatever would happen when converting to and from an integer type
+largely applies to <code>fixed_point</code> objects also. For example:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_ufixed&lt;4,&nbsp;4&gt;(.006)&nbsp;==&nbsp;make_ufixed&lt;4,&nbsp;4&gt;(0)</span></span></span></div></pre><p>...equates to <code>true</code> and is considered a acceptable rounding error.</p>
+<h3 id="operator-overloads">Operator Overloads</h3>
+<p>Any operators that might be applied to integer types can also be
+applied to fixed-point types. A guiding principle of operator
+overloads is that they perform as little run-time computation as is
+practically possible.</p>
+<p>With the exception of shift and comparison operators, binary operators
+can take any combination of:</p>
+<ul>
+<li>one or two fixed-point arguments and</li>
+<li>zero or one arguments of any arithmetic type, i.e. a type for which
+<code>is_arithmetic</code> is true.</li>
+</ul>
+<p>Where the inputs are not identical fixed-point types, a simple set of
+promotion-like rules are applied to determine the return type:</p>
+<ol>
+<li>If both arguments are fixed-point, a type is chosen which is the
+size of the larger type, is signed if either input is signed and
+has the maximum integer bits of the two inputs, i.e. cannot lose
+high-significance bits through conversion alone.</li>
+<li>If one of the arguments is a floating-point type, then the type of
+the result is the smallest floating-point type of equal or greater
+size than the inputs.</li>
+<li>If one of the arguments is an integral type, then the result is the
+other, fixed-point type.</li>
+</ol>
+<p>Some examples:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_ufixed&lt;5,&nbsp;3&gt;{8}&nbsp;+&nbsp;make_ufixed&lt;4,&nbsp;4&gt;{3}&nbsp;==&nbsp;make_ufixed&lt;5,&nbsp;3&gt;{11};&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_ufixed&lt;5,&nbsp;3&gt;{8}&nbsp;+&nbsp;3&nbsp;==&nbsp;make_ufixed&lt;5,&nbsp;3&gt;{11};&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_ufixed&lt;5,&nbsp;3&gt;{8}&nbsp;+&nbsp;float{3}&nbsp;==&nbsp;float{11};&nbsp;&nbsp;</span></span></span></div></pre><p>The reasoning behind this choice is a combination of predictability
+and performance. It is explained for each rule as follows:</p>
+<ol>
+<li>ensures that the least computation is performed where fixed-point
+types are used exclusively. Aside from multiplication and division
+requiring shift operations, should require similar computational
+costs to equivalent integer operations;</li>
+<li>loosely follows the promotion rules for mixed-mode arithmetic,
+ensures values with exponents far beyond the range of the
+fixed-point type are catered for and avoids costly conversion from
+floating-point to integer and</li>
+<li>preserves the input fixed-point type whose range is far more likely
+to be of deliberate importance to the operation.</li>
+</ol>
+<p>Shift operator overloads require an integer type as the right-hand
+parameter and return a type which is adjusted to accommodate the new
+value without risk of overflow or underflow.</p>
+<p>Comparison operators convert the inputs to a common result type
+following the rules above before performing a comparison and returning
+<code>true</code> or <code>false</code>.</p>
+<h4 id="overflow">Overflow</h4>
+<p>Because arithmetic operators return a result of equal capacity to
+their inputs, they carry a risk of overflow. For instance,</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_fixed&lt;4,&nbsp;3&gt;(15)&nbsp;+&nbsp;make_fixed&lt;4,&nbsp;3&gt;(1)</span></span></span></div></pre><p>causes overflow because because a type with 4 integer bits cannot
+store a value of 16.</p>
+<p>Overflow of any bits in a signed or unsigned fixed-point type is
+classed as undefined behavior. This is a minor deviation from
+built-in integer arithmetic where only signed overflow results in
+undefined behavior.</p>
+<h4 id="underflow">Underflow</h4>
+<p>The other typical cause of lost bits is underflow where, for example,</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_fixed&lt;7,&nbsp;0&gt;(15)&nbsp;/&nbsp;make_fixed&lt;7,&nbsp;0&gt;(2)</span></span></span></div></pre><p>results in a value of 7. This results in loss of precision but is
+generally considered acceptable.</p>
+<p>However, when all bits are lost due to underflow, the value is said
+to be flushed and this is classed as undefined behavior.</p>
+<h3 id="dealing-with-overflow-and-flushes">Dealing With Overflow and Flushes</h3>
+<p>Errors resulting from overflow and flushes are two of the biggest
+headaches related to fixed-point arithmetic. Integers suffer the same
+kinds of errors but are somewhat easier to reason about as they lack
+fractional digits. Floating-point numbers are largely shielded from
+these errors by their variable exponent and implicit bit.</p>
+<p>Three strategies for avoiding overflow in fixed-point types are
+presented:</p>
+<ol>
+<li>simply leave it to the user to avoid overflow;</li>
+<li>promote the result to a larger type to ensure sufficient capacity
+or</li>
+<li>adjust the exponent of the result upward to ensure that the top
+limit of the type is sufficient to preserve the most significant
+digits at the expense of the less significant digits.</li>
+</ol>
+<p>For arithmetic operators, choice 1) is taken because it most closely
+follows the behavior of integer types. Thus it should cause the least
+surprise to the fewest users. This makes it far easier to reason
+about in code where functions are written with a particular type in
+mind. It also requires the least computation in most cases.</p>
+<p>Choices 2) and 3) are more robust to overflow events. However, they
+represent different trade-offs and neither one is the best fit in all
+situations. For these reasons, they are presented as named functions.</p>
+<h4 id="type-promotion">Type Promotion</h4>
+<p>Function template, <code>promote</code>, borrows a term from the language
+feature which avoids integer overflow prior to certain operations. It
+takes a <code>fixed_point</code> object and returns the same value represented
+by a larger <code>fixed_point</code> specialization.</p>
+<p>For example,</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>promote(make_fixed&lt;5,&nbsp;2&gt;(15.5))</span></span></span></div></pre><p>is equivalent to</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_fixed&lt;11,&nbsp;4&gt;(15.5)</span></span></span></div></pre><p>Complimentary function template, <code>demote</code>, reverses the process,
+returning a value of a smaller type.</p>
+<h4 id="named-arithmetic-functions">Named Arithmetic Functions</h4>
+<p>The following named function templates can be used as a hassle-free
+alternative to arithmetic operators in situations where the aim is
+to avoid overflow.</p>
+<p>Unary functions:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>trunc_reciprocal,&nbsp;trunc_square,&nbsp;trunc_sqrt,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>promote_reciprocal,&nbsp;promote_square</span></span></span></div></pre><p>Binary functions:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>trunc_add,&nbsp;trunc_subtract,&nbsp;trunc_multiply,&nbsp;trunc_divide</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>trunc_shift_left,&nbsp;trunc_shift_right,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>promote_add,&nbsp;promote_sub,&nbsp;promote_multiply,&nbsp;promote_divide</span></span></span></div></pre><p>Some notes:</p>
+<ol>
+<li>The <code>trunc_</code> functions return the result as a type no larger than
+the inputs and with an exponent adjusted to avoid overflow;</li>
+<li>the <code>promote_</code> functions return the result as a type large enough
+to avoid overflow and underflow;</li>
+<li>the <code>_multiply</code> and <code>_square</code> functions are not guaranteed to be
+available for 64-bit types;</li>
+<li>the <code>_multiply</code> and <code>_square</code> functions produce undefined behavior
+when all input parameters are the <em>most negative number</em>;</li>
+<li>the <code>_square</code> functions return an unsigned type;</li>
+<li>the <code>_add</code>, <code>_subtract</code>, <code>_multiply</code> and <code>_divide</code> functions take
+heterogeneous <code>fixed_point</code> specializations;</li>
+<li>the <code>_divide</code> and <code>_reciprocal</code> functions in no way guard against
+divide-by-zero errors;</li>
+<li>the <code>trunc_shift_</code> functions return results of the same type as
+their first input parameter and</li>
+<li>the list is by no means complete.</li>
+</ol>
+<h3 id="example">Example</h3>
+<p>The following example calculates the magnitude of a 3-dimensional vector.</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Fp&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;magnitude(const&nbsp;Fp&nbsp;&amp;&nbsp;x,&nbsp;const&nbsp;Fp&nbsp;&amp;&nbsp;y,&nbsp;const&nbsp;Fp&nbsp;&amp;&nbsp;z)</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>-&gt;&nbsp;decltype(trunc_sqrt(trunc_add(trunc_square(x),&nbsp;trunc_square(y),&nbsp;trunc_square(z))))</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>{</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>return&nbsp;trunc_sqrt(trunc_add(trunc_square(x),&nbsp;trunc_square(y),&nbsp;trunc_square(z)));</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>}</span></span></span></div></pre><p>Calling the above function as follows</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>static_cast&lt;double&gt;(magnitude(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>make_ufixed&lt;4,&nbsp;12&gt;(1),</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;make_ufixed&lt;4,&nbsp;12&gt;(4),</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;make_ufixed&lt;4,&nbsp;12&gt;(9)));</span></span></span></div></pre><p>returns the value, 9.890625.</p>
+<h2 id="v-technical-specification">V. Technical Specification</h2>
+<h3 id="header-fixed_point-synopsis">Header \<fixed_point\> Synopsis</fixed_point\></h3>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>namespace&nbsp;std&nbsp;{</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;&nbsp;class&nbsp;fixed_point;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;unsigned&nbsp;IntegerDigits,&nbsp;unsigned&nbsp;FractionalDigits&nbsp;=&nbsp;0,&nbsp;bool&nbsp;IsSigned&nbsp;=&nbsp;true&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;make_fixed;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;unsigned&nbsp;IntegerDigits,&nbsp;unsigned&nbsp;FractionalDigits&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;make_ufixed;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;IntegerDigits&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;make_fixed_from_repr;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;promote_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>promote_result&lt;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;promote(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;from)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;demote_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>demote_result&lt;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;demote(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;from)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;bool&nbsp;operator==(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;bool&nbsp;operator!=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;bool&nbsp;operator&lt;(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;bool&nbsp;operator&gt;(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;bool&nbsp;operator&gt;=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;bool&nbsp;operator&lt;=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;operator-(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;operator+(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;operator-(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;operator+=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;operator-=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;operator*=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;operator/=(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator==(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator!=(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator&lt;(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator&gt;(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator&gt;=(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator&lt;=(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator+(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator-(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;LhsExponent,&nbsp;class&nbsp;RhsReprType,&nbsp;int&nbsp;RhsExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator*(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;LhsReprType,&nbsp;LhsExponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;RhsReprType,&nbsp;RhsExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;LhsExponent,&nbsp;class&nbsp;RhsReprType,&nbsp;int&nbsp;RhsExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator/(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;LhsReprType,&nbsp;LhsExponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;RhsReprType,&nbsp;RhsExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;LhsExponent,&nbsp;class&nbsp;Integer&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator*(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;LhsReprType,&nbsp;LhsExponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;Integer&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;LhsExponent,&nbsp;class&nbsp;Integer&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator/(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;LhsReprType,&nbsp;LhsExponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;Integer&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Integer,&nbsp;class&nbsp;RhsReprType,&nbsp;int&nbsp;RhsExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator*(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;Integer&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;RhsReprType,&nbsp;RhsExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Integer,&nbsp;class&nbsp;RhsReprType,&nbsp;int&nbsp;RhsExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator/(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;Integer&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;RhsReprType,&nbsp;RhsExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;LhsExponent,&nbsp;class&nbsp;Float&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator*(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;LhsReprType,&nbsp;LhsExponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;Float&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;LhsExponent,&nbsp;class&nbsp;Float&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator/(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;fixed_point&lt;LhsReprType,&nbsp;LhsExponent&gt;&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;Float&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Float,&nbsp;class&nbsp;RhsReprType,&nbsp;int&nbsp;RhsExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator*(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;Float&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;RhsReprType,&nbsp;RhsExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Float,&nbsp;class&nbsp;RhsReprType,&nbsp;int&nbsp;RhsExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;auto&nbsp;operator/(</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>const&nbsp;Float&nbsp;&amp;&nbsp;lhs,</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;fixed_point&lt;RhsReprType,&nbsp;RhsExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;Exponent,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;operator+=(fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;Exponent,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;operator-=(fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;template&nbsp;&lt;class&nbsp;Rhs,&nbsp;typename&nbsp;std::enable_if&lt;std::is_arithmetic&lt;Rhs&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;&nbsp;&amp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;::operator*=(const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;LhsReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;template&nbsp;&lt;class&nbsp;Rhs,&nbsp;typename&nbsp;std::enable_if&lt;std::is_arithmetic&lt;Rhs&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;&nbsp;&amp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fixed_point&lt;LhsReprType,&nbsp;Exponent&gt;::operator/=(const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>sqrt(const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;x)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint,&nbsp;unsigned&nbsp;N&nbsp;=&nbsp;2&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_add_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint,&nbsp;class&nbsp;...&nbsp;Tail&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_add_result&lt;FixedPoint,&nbsp;sizeof...(Tail)&nbsp;+&nbsp;1&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;constexpr&nbsp;trunc_add(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;addend1,&nbsp;const&nbsp;Tail&nbsp;&amp;&nbsp;...&nbsp;addend_tail);</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&nbsp;=&nbsp;Lhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_subtract_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_subtract_result&lt;Lhs,&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;trunc_subtract(const&nbsp;Lhs&nbsp;&amp;&nbsp;minuend,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;subtrahend);</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&nbsp;=&nbsp;Lhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_multiply_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_multiply_result&lt;Lhs,&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;trunc_multiply(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPointDividend,&nbsp;class&nbsp;FixedPointDivisor&nbsp;=&nbsp;FixedPointDividend&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_divide_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPointDividend,&nbsp;class&nbsp;FixedPointDivisor&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_divide_result&lt;FixedPointDividend,&nbsp;FixedPointDivisor&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;trunc_divide(const&nbsp;FixedPointDividend&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;FixedPointDivisor&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_reciprocal_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_reciprocal_result&lt;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;trunc_reciprocal(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;fixed_point)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_square_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_square_result&lt;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;trunc_square(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;root)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;trunc_sqrt_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_sqrt_result&lt;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;trunc_sqrt(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;square)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;int&nbsp;Integer,&nbsp;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&nbsp;+&nbsp;Integer&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_shift_left(const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;fp)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;int&nbsp;Integer,&nbsp;class&nbsp;ReprType,&nbsp;int&nbsp;Exponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&nbsp;-&nbsp;Integer&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>trunc_shift_right(const&nbsp;fixed_point&lt;ReprType,&nbsp;Exponent&gt;&nbsp;&amp;&nbsp;fp)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint,&nbsp;unsigned&nbsp;N&nbsp;=&nbsp;2&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;promote_add_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint,&nbsp;class&nbsp;...&nbsp;Tail&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>promote_add_result&lt;FixedPoint,&nbsp;sizeof...(Tail)&nbsp;+&nbsp;1&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;promote_add(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;addend1,&nbsp;const&nbsp;Tail&nbsp;&amp;&nbsp;...&nbsp;addend_tail);</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&nbsp;=&nbsp;Lhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;promote_subtract_result</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>promote_subtract_result&lt;Lhs,&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;promote_subtract(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&nbsp;=&nbsp;Lhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;promote_multiply_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>promote_multiply_result&lt;Lhs,&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;promote_multiply(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&nbsp;=&nbsp;Lhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;promote_divide_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Lhs,&nbsp;class&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>promote_divide_result&lt;Lhs,&nbsp;Rhs&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;promote_divide(const&nbsp;Lhs&nbsp;&amp;&nbsp;lhs,&nbsp;const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;promote_square_result;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>promote_square_result&lt;FixedPoint&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;promote_square(const&nbsp;FixedPoint&nbsp;&amp;&nbsp;root)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>}</span></span></span></div></pre><h4 id="-fixed_point-class-template"><code>fixed_point&lt;&gt;</code> Class Template</h4>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;ReprType&nbsp;=&nbsp;int,&nbsp;int&nbsp;Exponent&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>class&nbsp;fixed_point</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>{</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>public:</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>using&nbsp;repr_type&nbsp;=&nbsp;ReprType;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;static&nbsp;int&nbsp;exponent;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;constexpr&nbsp;static&nbsp;int&nbsp;digits;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;constexpr&nbsp;static&nbsp;int&nbsp;integer_digits;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;constexpr&nbsp;static&nbsp;int&nbsp;fractional_digits;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point()&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;template&nbsp;&lt;class&nbsp;S,&nbsp;typename&nbsp;std::enable_if&lt;_impl::is_integral&lt;S&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>explicit&nbsp;constexpr&nbsp;fixed_point(S&nbsp;s)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;S,&nbsp;typename&nbsp;std::enable_if&lt;std::is_floating_point&lt;S&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>explicit&nbsp;constexpr&nbsp;fixed_point(S&nbsp;s)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FromReprType,&nbsp;int&nbsp;FromExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>explicit&nbsp;constexpr&nbsp;fixed_point(const&nbsp;fixed_point&lt;FromReprType,&nbsp;FromExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;S,&nbsp;typename&nbsp;std::enable_if&lt;_impl::is_integral&lt;S&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&nbsp;&amp;&nbsp;operator=(S&nbsp;s)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;S,&nbsp;typename&nbsp;std::enable_if&lt;std::is_floating_point&lt;S&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&nbsp;&amp;&nbsp;operator=(S&nbsp;s)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;FromReprType,&nbsp;int&nbsp;FromExponent&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&nbsp;&amp;&nbsp;operator=(const&nbsp;fixed_point&lt;FromReprType,&nbsp;FromExponent&gt;&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;S,&nbsp;typename&nbsp;std::enable_if&lt;_impl::is_integral&lt;S&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>explicit&nbsp;constexpr&nbsp;operator&nbsp;S()&nbsp;const&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;S,&nbsp;typename&nbsp;std::enable_if&lt;std::is_floating_point&lt;S&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>explicit&nbsp;constexpr&nbsp;operator&nbsp;S()&nbsp;const&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>explicit&nbsp;constexpr&nbsp;operator&nbsp;bool()&nbsp;const&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Rhs,&nbsp;typename&nbsp;std::enable_if&lt;std::is_arithmetic&lt;Rhs&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&nbsp;&amp;operator*=(const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>template&nbsp;&lt;class&nbsp;Rhs,&nbsp;typename&nbsp;std::enable_if&lt;std::is_arithmetic&lt;Rhs&gt;::value,&nbsp;int&gt;::type&nbsp;Dummy&nbsp;=&nbsp;0&gt;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>fixed_point&nbsp;&amp;&nbsp;operator/=(const&nbsp;Rhs&nbsp;&amp;&nbsp;rhs)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;</span><span class="meta paragraph text"><span>constexpr&nbsp;repr_type&nbsp;data()&nbsp;const&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;static&nbsp;constexpr&nbsp;fixed_point&nbsp;from_data(repr_type&nbsp;repr)&nbsp;noexcept;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>};</span></span></span></div></pre><h2 id="vi-future-issues">VI. Future Issues</h2>
+<h3 id="library-support">Library Support</h3>
+<p>Because the aim is to provide an alternative to existing arithmetic
+types which are supported by the standard library, it is conceivable
+that a future proposal might specialize existing class templates and
+overload existing functions.</p>
+<p>Possible candidates for overloading include the functions defined in
+\<cmath\> and a templated specialization of <code>numeric_limits</code>. A new type
+trait, <code>is_fixed_point</code>, would also be useful.</cmath\></p>
+<p>While <code>fixed_point</code> is intended to provide drop-in replacements to
+existing built-ins, it may be preferable to deviate slightly from the
+behavior of certain standard functions. For example, overloads of
+functions from \<cmath\> will be considerably less concise, efficient
+and versatile if they obey rules surrounding error cases. In
+particular, the guarantee of setting <code>errno</code> in the case of an error
+prevents a function from being defined as pure. This highlights a
+wider issue surrounding the adoption of the functional approach and
+compile-time computation that is beyond the scope of this document.</cmath\></p>
+<h3 id="alternatives-to-built-in-integer-types">Alternatives to Built-in Integer Types</h3>
+<p>The reason that <code>ReprType</code> is restricted to built-in integer types
+is that a number of features require the use of a higher - or
+lower-capacity type. Supporting alias templates are defined to
+provide <code>fixed_point</code> with the means to invoke integer types of
+specific capacity and signedness at compile time.</p>
+<p>There is no general purpose way of deducing a higher or
+lower-capacity type given a source type in the same manner as
+<code>make_signed</code> and <code>make_unsigned</code>. If there were, this might be
+adequate to allow alternative choices for <code>ReprType</code>.</p>
+<h3 id="bounded-integers">Bounded Integers</h3>
+<p>The bounded::integer library <a href="http://doublewise.net/c++/bounded/">[2]</a>
+exemplifies the benefits of keeping track of ranges of values in
+arithmetic types at compile time.</p>
+<p>To a limited extent, the <code>trunc_</code> functions defined here also keep
+track of - and modify - the limits of values. However, a combination
+of techniques is capable of producing superior results.</p>
+<p>For instance, consider the following expression:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>make_ufixed&lt;2,&nbsp;6&gt;&nbsp;three(3);</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>auto&nbsp;n&nbsp;=&nbsp;trunc_square(trunc_square(three));</span></span></span></div></pre><p>The type of <code>n</code> is <code>make_ufixed&lt;8, 0&gt;</code> but its value does not
+exceed 81. Hence, an integer bit has been wasted. It may be possible
+to track more accurate limits in the same manner as the
+bounded::integer library in order to improve the precision of types
+returned by <code>trunc_</code> functions. For this reason, the exact value of
+the exponents of these return types is not given.</p>
+<p>Notes:</p>
+<ul>
+<li>Bounded::integer is already supported by fixed-point library,
+fp <a href="https://github.com/mizvekov/fp">[3]</a>.</li>
+<li>A similar library is the boost constrained_value library
+<a href="http://rk.hekko.pl/constrained_value/">[4]</a>.</li>
+</ul>
+<h3 id="alternative-policies">Alternative Policies</h3>
+<p>The behavior of the types specialized from <code>fixed_point</code> represent
+one sub-set of all potentially desirable behaviors. Alternative
+characteristics include:</p>
+<ul>
+<li>different rounding strategies - other than truncation;</li>
+<li>overflow and underflow checks - possibly throwing exceptions;</li>
+<li>operator return type - adopting <code>trunc_</code> or <code>promote_</code> behavior;</li>
+<li>default-initialize to zero - currently uninitialized and</li>
+<li>saturation arithmetic - as opposed to modular arithmetic.</li>
+</ul>
+<p>One way to extend <code>fixed_point</code> to cover these alternatives would be
+to add non-type template parameters containing bit flags or enumerated
+types. The default set of values would reflect <code>fixed_point</code> as it
+stands currently.</p>
+<h2 id="vii-prior-art">VII. Prior Art</h2>
+<p>Many examples of fixed-point support in C and C++ exist. While almost
+all of them aim for low run-time cost and expressive alternatives to
+raw integer manipulation, they vary greatly in detail and in terms of
+their interface.</p>
+<p>One especially interesting dichotomy is between solutions which offer
+a discrete selection of fixed-point types and libraries which contain
+a continuous range of exponents through type parameterization.</p>
+<h3 id="n1169">N1169</h3>
+<p>One example of the former is found in proposal N1169
+<a href="http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf">[5]</a>,
+the intent of which is to expose features found in certain embedded
+hardware. It introduces a succinct set of language-level fixed-point
+types and impose constraints on the number of integer or fractional
+digits each can possess.</p>
+<p>As with all examples of discrete-type fixed-point support, the limited
+choice of exponents is a considerable restriction on the versatility
+and expressiveness of the API.</p>
+<p>Nevertheless, it may be possible to harness performance gains provided
+by N1169 fixed-point types through explicit template specialization.
+This is likely to be a valuable proposition to potential users of the
+library who find themselves targeting platforms which support
+fixed-point arithmetic at the hardware level.</p>
+<h3 id="n3352">N3352</h3>
+<p>There are many other C++ libraries available which fall into the
+latter category of continuous-range fixed-point arithmetic
+<a href="https://github.com/mizvekov/fp">[3]</a>
+<a href="http://www.codeproject.com/Articles/37636/Fixed-Point-Class">[6]</a>
+<a href="https://github.com/viboes/fixed_point">[7]</a>. In particular, an
+existing library proposal, N3352 <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html">[8]</a>,
+aims to achieve very similar goals through similar means and warrants
+closer comparison than N1169.</p>
+<p>N3352 introduces four class templates covering the quadrant of signed
+versus unsigned and fractional versus integer numeric types. It is
+intended to replace built-in types in a wide variety of situations and
+accordingly, is highly compile-time configurable in terms of how
+rounding and overflow are handled. Parameters to these four class
+templates include the storage in bits and - for fractional types - the
+resolution.</p>
+<p>The <code>fixed_point</code> class template could probably - with a few caveats -
+be generated using the two fractional types, <code>nonnegative</code> and
+<code>negatable</code>, replacing the <code>ReprType</code> parameter with the integer bit
+count of <code>ReprType</code>, specifying <code>fastest</code> for the rounding mode and
+specifying <code>undefined</code> as the overflow mode.</p>
+<p>However, fixed_point more closely and concisely caters to the needs of
+users who already use integer types and simply desire a more concise,
+less error-prone form. It more closely follows the four design aims of
+the library and - it can be argued - more closely follows the spirit
+of the standard in its pursuit of zero-cost abstraction.</p>
+<p>Some aspects of the design of the N3352 API which back up these
+conclusion are that:</p>
+<ul>
+<li>the result of arithmetic operations closely resemble the <code>trunc_</code>
+function templates and are potentially more costly at run-time;</li>
+<li>the nature of the range-specifying template parameters - through
+careful framing in mathematical terms - abstracts away valuable
+information regarding machine-critical type size information;</li>
+<li>the breaking up of duties amongst four separate class templates
+introduces four new concepts and incurs additional mental load for
+relatively little gain while further detaching the interface from
+vital machine-level details and</li>
+<li>the absence of the most negative number from signed types reduces
+the capacity of all types by one.</li>
+</ul>
+<p>The added versatility that the N3352 API provides regarding rounding
+and overflow handling are of relatively low priority to users who
+already bear the scars of battles with raw integer types.
+Nevertheless, providing them as options to be turned on or off at
+compile time is an ideal way to leave the choice in the hands of the
+user.</p>
+<p>Many high-performance applications - in which fixed-point is of
+potential value - favor run-time checks during development which are
+subsequently deactivated in production builds. The N3352 interface is
+highly conducive to this style of development. It is an aim of the
+fixed_point design to be similarly extensible in future revisions.</p>
+<h2 id="viii-acknowledgements">VIII. Acknowledgements</h2>
+<p>Subgroup: Guy Davidson, Michael Wong<br>Contributors: Ed Ainsley, Billy Baker, Lance Dyson, Marco Foco,
+Clément Grégoire, Nicolas Guillemot, Matt Kinzelman, Joël Lamotte,
+Sean Middleditch, Patrice Roy, Peter Schregle, Ryhor Spivak</p>
+<h2 id="ix-references">IX. References</h2>
+<ol>
+<li>Why Integer Coordinates?, <a href="http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php">http://www.pathengine.com/Contents/Overview/FundamentalConcepts/WhyIntegerCoordinates/page.php</a></li>
+<li>C++ bounded::integer library, <a href="http://doublewise.net/c++/bounded/">http://doublewise.net/c++/bounded/</a></li>
+<li>fp, C++14 Fixed Point Library, <a href="https://github.com/mizvekov/fp">https://github.com/mizvekov/fp</a></li>
+<li>Boost Constrained Value Libarary, <a href="http://rk.hekko.pl/constrained_value/">http://rk.hekko.pl/constrained_value/</a></li>
+<li>N1169, Extensions to support embedded processors, <a href="http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf">http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1169.pdf</a></li>
+<li>fpmath, Fixed Point Math Library, <a href="http://www.codeproject.com/Articles/37636/Fixed-Point-Class">http://www.codeproject.com/Articles/37636/Fixed-Point-Class</a></li>
+<li>Boost fixed_point (proposed), Fixed point integral and fractional types, <a href="https://github.com/viboes/fixed_point">https://github.com/viboes/fixed_point</a></li>
+<li>N3352, C++ Binary Fixed-Point Arithmetic, <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html">http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3352.html</a></li>
+<li>fixed_point, Reference Implementation of P0037, <a href="https://github.com/johnmcfarlane/fixed_point">https://github.com/johnmcfarlane/fixed_point</a></li>
+</ol>
+<h2 id="x-appendix-1-reference-implementation">X. Appendix 1: Reference Implementation</h2>
+<p>An in-development implementation of the fixed_point class template and
+its essential supporting functions and types is available
+<a href="https://github.com/johnmcfarlane/fixed_point">[9]</a>. It includes a
+utility header containing such things as math and trigonometric
+functions and a partial <code>numeric_limits</code> specialization. Compile-time
+and run-time tests are included as well as benchmarking support. It is
+the source of examples and measurements cited here.</p>
+<h2 id="xi-appendix-2-performance">XI. Appendix 2: Performance</h2>
+<p>Despite a focus on usable interface and direct translation from
+integer-based fixed-point operations, there is an overwhelming
+expectation that the source code result in minimal instructions and
+clock cycles. A few preliminary numbers are presented to give a very
+early idea of how the API might perform.</p>
+<p>Some notes:</p>
+<ul>
+<li>A few test functions were run, ranging from single arithmetic
+operations to basic geometric functions, performed against integer,
+floating-point and fixed-point types for comparison.</li>
+<li><p>Figures were taken from a single CPU, OS and compiler, namely:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>Debian&nbsp;clang&nbsp;version&nbsp;3.5.0-10&nbsp;(tags/RELEASE_350/final)&nbsp;(based&nbsp;on&nbsp;LLVM&nbsp;3.5.0)</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>Target:&nbsp;x86_64-pc-linux-gnu</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>Thread&nbsp;model:&nbsp;posix</span></span></span></div></pre></li>
+<li><p>Fixed inputs were provided to each function, meaning that branch
+prediction rarely fails. Results may also not represent the full
+range of inputs.</p>
+</li>
+<li>Details of the test harness used can be found in the source
+project mentioned in Appendix 1;</li>
+<li>Times are in nanoseconds;</li>
+<li>Code has not yet been optimized for performance.</li>
+</ul>
+<h3 id="types">Types</h3>
+<p>Where applicable various combinations of integer, floating-point and
+fixed-point types were tested with the following identifiers:</p>
+<ul>
+<li><code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>,
+<code>uint64_t</code> and <code>int64_t</code> built-in integer types;</li>
+<li><code>float</code>, <code>double</code> and <code>long double</code> built-in floating-point types;</li>
+<li>s3:4, u4:4, s7:8, u8:8, s15:16, u16:16, s31:32 and u32:32 format
+fixed-point types.</li>
+</ul>
+<h3 id="basic-arithmetic">Basic Arithmetic</h3>
+<p>Plus, minus, multiplication and division were tested in isolation
+using a number of different numeric types with the following results:</p>
+<p>name    cpu_time<br>add(float)    1.78011<br>add(double)    1.73966<br>add(long double)    3.46011<br>add(u4_4)    1.87726<br>add(s3_4)    1.85051<br>add(u8_8)    1.85417<br>add(s7_8)    1.82057<br>add(u16_16)    1.94194<br>add(s15_16)    1.93463<br>add(u32_32)    1.94674<br>add(s31_32)    1.94446<br>add(int8_t)    2.14857<br>add(uint8_t)    2.12571<br>add(int16_t)    1.9936<br>add(uint16_t)    1.88229<br>add(int32_t)    1.82126<br>add(uint32_t)    1.76<br>add(int64_t)    1.76<br>add(uint64_t)    1.83223<br>sub(float)    1.96617<br>sub(double)    1.98491<br>sub(long double)    3.55474<br>sub(u4_4)    1.77006<br>sub(s3_4)    1.72983<br>sub(u8_8)    1.72983<br>sub(s7_8)    1.72983<br>sub(u16_16)    1.73966<br>sub(s15_16)    1.85051<br>sub(u32_32)    1.88229<br>sub(s31_32)    1.87063<br>sub(int8_t)    1.76<br>sub(uint8_t)    1.74994<br>sub(int16_t)    1.82126<br>sub(uint16_t)    1.83794<br>sub(int32_t)    1.89074<br>sub(uint32_t)    1.85417<br>sub(int64_t)    1.83703<br>sub(uint64_t)    2.04914<br>mul(float)    1.9376<br>mul(double)    1.93097<br>mul(long double)    102.446<br>mul(u4_4)    2.46583<br>mul(s3_4)    2.09189<br>mul(u8_8)    2.08<br>mul(s7_8)    2.18697<br>mul(u16_16)    2.12571<br>mul(s15_16)    2.10789<br>mul(u32_32)    2.10789<br>mul(s31_32)    2.10789<br>mul(int8_t)    1.76<br>mul(uint8_t)    1.78011<br>mul(int16_t)    1.8432<br>mul(uint16_t)    1.76914<br>mul(int32_t)    1.78011<br>mul(uint32_t)    2.19086<br>mul(int64_t)    1.7696<br>mul(uint64_t)    1.79017<br>div(float)    5.12<br>div(double)    7.64343<br>div(long double)    8.304<br>div(u4_4)    3.82171<br>div(s3_4)    3.82171<br>div(u8_8)    3.84<br>div(s7_8)    3.8<br>div(u16_16)    9.152<br>div(s15_16)    11.232<br>div(u32_32)    30.8434<br>div(s31_32)    34<br>div(int8_t)    3.82171<br>div(uint8_t)    3.82171<br>div(int16_t)    3.8<br>div(uint16_t)    3.82171<br>div(int32_t)    3.82171<br>div(uint32_t)    3.81806<br>div(int64_t)    10.2286<br>div(uint64_t)    8.304  </p>
+<p>Among the slowest types are <code>long double</code>. It is likely that they are
+emulated in software. The next slowest operations are fixed-point
+multiply and divide operations - especially with 64-bit types. This is
+because values need to be promoted temporarily to double-width types.
+This is a known fixed-point technique which inevitably experiences
+slowdown where a 128-bit type is required on a 64-bit system.</p>
+<p>Here is a section of the disassembly of the s15:16 multiply call:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>30:&nbsp;&nbsp;&nbsp;mov&nbsp;&nbsp;&nbsp;&nbsp;%r14,%rax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>mov&nbsp;&nbsp;&nbsp;&nbsp;%r15,%rax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;movslq&nbsp;-0x28(%rbp),%rax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;movslq&nbsp;-0x30(%rbp),%rcx&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;imul&nbsp;&nbsp;&nbsp;%rax,%rcx&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;shr&nbsp;&nbsp;&nbsp;&nbsp;$0x10,%rcx&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;&nbsp;&nbsp;&nbsp;%ecx,-0x38(%rbp)&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;&nbsp;&nbsp;&nbsp;%r12,%rax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>4c:&nbsp;&nbsp;&nbsp;movzbl&nbsp;(%rbx),%eax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>cmp&nbsp;&nbsp;&nbsp;&nbsp;$0x1,%eax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>↓&nbsp;jne&nbsp;&nbsp;&nbsp;&nbsp;68&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>54:&nbsp;&nbsp;&nbsp;mov&nbsp;&nbsp;&nbsp;&nbsp;0x8(%rbx),%rax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>lea&nbsp;&nbsp;&nbsp;&nbsp;0x1(%rax),%rcx&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;&nbsp;&nbsp;&nbsp;%rcx,0x8(%rbx)&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmp&nbsp;&nbsp;&nbsp;&nbsp;0x38(%rbx),%rax&nbsp;&nbsp;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>↑&nbsp;jb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30</span></span></span></div></pre><p>The two 32-bit numbers are multiplied together and the result shifted
+down - much as it would if raw <code>int</code> values were used. The efficiency
+of this operation varies with the exponent. An exponent of zero should
+mean no shift at all.</p>
+<h3 id="3-dimensional-magnitude-squared">3-Dimensional Magnitude Squared</h3>
+<p>A fast <code>sqrt</code> implementation has not yet been tested with
+<code>fixed_point</code>. (The naive implementation takes over 300ns.) For this
+reason, a magnitude-squared function is measured, combining multiply
+and add operations:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;typename&nbsp;FP&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>constexpr&nbsp;FP&nbsp;magnitude_squared(const&nbsp;FP&nbsp;&amp;&nbsp;x,&nbsp;const&nbsp;FP&nbsp;&amp;&nbsp;y,&nbsp;const&nbsp;FP&nbsp;&amp;&nbsp;z)</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>{</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>return&nbsp;x&nbsp;*&nbsp;x&nbsp;+&nbsp;y&nbsp;*&nbsp;y&nbsp;+&nbsp;z&nbsp;*&nbsp;z;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>}</span></span></span></div></pre><p>Only real number formats are tested:</p>
+<p>float  2.42606<br>double  2.08<br>long double  4.5056<br>s3_4  2.768<br>s7_8  2.77577<br>s15_16  2.752<br>s31_32  4.10331  </p>
+<p>Again, the size of the type seems to have the largest impact.</p>
+<h3 id="circle-intersection">Circle Intersection</h3>
+<p>A similar operation includes a comparison and branch:</p>
+<pre class="editor-colors lang-text"><div class="line"><span class="text plain"><span class="meta paragraph text"><span>template&nbsp;&lt;typename&nbsp;Real&gt;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>bool&nbsp;circle_intersect_generic(Real&nbsp;x1,&nbsp;Real&nbsp;y1,&nbsp;Real&nbsp;r1,&nbsp;Real&nbsp;x2,&nbsp;Real&nbsp;y2,&nbsp;Real&nbsp;r2)</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>{</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>auto&nbsp;x_diff&nbsp;=&nbsp;x2&nbsp;-&nbsp;x1;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;auto&nbsp;y_diff&nbsp;=&nbsp;y2&nbsp;-&nbsp;y1;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;auto&nbsp;distance_squared&nbsp;=&nbsp;x_diff&nbsp;*&nbsp;x_diff&nbsp;+&nbsp;y_diff&nbsp;*&nbsp;y_diff;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>auto&nbsp;touch_distance&nbsp;=&nbsp;r1&nbsp;+&nbsp;r2;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>&nbsp;&nbsp;&nbsp;&nbsp;auto&nbsp;touch_distance_squared&nbsp;=&nbsp;touch_distance&nbsp;*&nbsp;touch_distance;</span></span></span></div><div class="line"><span class="text plain"><span>&nbsp;</span></span></div><div class="line"><span class="text plain"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="meta paragraph text"><span>return&nbsp;distance_squared&nbsp;&lt;=&nbsp;touch_distance_squared;</span></span></span></div><div class="line"><span class="text plain"><span class="meta paragraph text"><span>}</span></span></span></div></pre><p>float    3.46011<br>double    3.48<br>long double    6.4<br>s3_4    3.88<br>s7_8    4.5312<br>s15_16    3.82171<br>s31_32    5.92  </p>
+<p>Again, fixed-point and native performance are comparable.</p></body>
+</html>
