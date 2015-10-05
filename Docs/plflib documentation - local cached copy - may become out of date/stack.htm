@@ -50,7 +50,7 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
 
 <h2>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 13-7-2015 v1.70</i></p>
+<p style="font-size: 75%"><i>Last updated 5-10-2015 v2.20</i></p>
 
 <p>This benchmark compares performance between std::vector and plf::stack. I'm
 using std::vector instead of std::stack, as while std::stack usually uses
@@ -97,26 +97,26 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>331</td>
-      <td>302</td>
-      <td>456</td>
-      <td>508</td>
+      <td>332</td>
+      <td>312</td>
+      <td>433</td>
+      <td>497</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>134</td>
-      <td>114</td>
-      <td>185</td>
       <td>149</td>
+      <td>117</td>
+      <td>167</td>
+      <td>140</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>2.5x</td>
+      <td>2.3x</td>
       <td>2.7x</td>
-      <td>2.5x</td>
-      <td>3.4x</td>
+      <td>2.6x</td>
+      <td>3.6x</td>
       <td>2.8x</td>
     </tr>
   </tbody>
@@ -143,26 +143,26 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     <tr>
       <td>std::vector</td>
       <td>45</td>
-      <td>38</td>
-      <td>52</td>
-      <td>42</td>
+      <td>39</td>
+      <td>30</td>
+      <td>43</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
+      <td>48</td>
+      <td>36</td>
+      <td>30</td>
       <td>46</td>
-      <td>38</td>
-      <td>53</td>
-      <td>44</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>0.98x</td>
+      <td>0.94x</td>
+      <td>1.08x</td>
       <td>1.0x</td>
-      <td>0.98x</td>
-      <td>0.96x</td>
-      <td>0.98x</td>
+      <td>0.94x</td>
+      <td>0.99x</td>
     </tr>
   </tbody>
 </table>
@@ -194,16 +194,16 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>313</td>
-      <td>262</td>
-      <td>438</td>
-      <td>460</td>
+      <td>311</td>
+      <td>269</td>
+      <td>442</td>
+      <td>465</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>97</td>
-      <td>101</td>
+      <td>96</td>
+      <td>103</td>
       <td>99</td>
       <td>104</td>
       <td></td>
@@ -212,9 +212,9 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>stack vs vector performance</td>
       <td>3.2x</td>
       <td>2.6x</td>
-      <td>4.4x</td>
-      <td>4.4x</td>
-      <td>3.7x</td>
+      <td>4.5x</td>
+      <td>4.5x</td>
+      <td>3.8x</td>
     </tr>
   </tbody>
 </table>
@@ -288,27 +288,27 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>188</td>
-      <td>163</td>
-      <td>263</td>
-      <td>233</td>
+      <td>179</td>
+      <td>177</td>
+      <td>288</td>
+      <td>229</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>136</td>
-      <td>135</td>
-      <td>228</td>
-      <td>160</td>
+      <td>138</td>
+      <td>117</td>
+      <td>239</td>
+      <td>161</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>1.4x</td>
-      <td>1.2x</td>
-      <td>1.2x</td>
-      <td>1.5x</td>
       <td>1.3x</td>
+      <td>1.5x</td>
+      <td>1.2x</td>
+      <td>1.4x</td>
+      <td>1.4x</td>
     </tr>
   </tbody>
 </table>
@@ -335,25 +335,25 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>std::vector</td>
       <td>24</td>
       <td>9</td>
-      <td>10</td>
+      <td>17</td>
       <td>29</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>25</td>
+      <td>24</td>
+      <td>13</td>
       <td>17</td>
-      <td>17</td>
-      <td>34</td>
+      <td>37</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>0.96x</td>
-      <td>0.53x</td>
-      <td>0.59x</td>
-      <td>0.85x</td>
-      <td>0.73x</td>
+      <td>1.00x</td>
+      <td>0.69x</td>
+      <td>1.00x</td>
+      <td>0.78x</td>
+      <td>0.87x</td>
     </tr>
   </tbody>
 </table>
