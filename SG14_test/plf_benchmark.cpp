@@ -1,5 +1,7 @@
+// Copyright (c) 2015, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+
 // About: there are 8 tests here;
-// one with a vector of dynamically-allocated objects vs colony, array with boolean field, list, map and deque(small structs)
+// one with a vector of dynamically-allocated objects vs colony, array with boolean field, list, map and deque of dynamically-allocated objects (small structs)
 // one with vector with boolean field, deque with boolean field and array with boolean field vs colony (small structs)
 // three with vector vs colony vs array vs deque with boolean field (unsigned ints, small structs and large structs)
 // three with vector vs plf::stack (unsigned ints, small structs and large structs)
@@ -125,7 +127,7 @@ int main(int argc, char **argv)
 		cin.get();
 
 		cout << "small struct tests begin:" << endl << endl;
-		cout << "milliseconds to add 2000000 generic structs:" << endl;
+		cout << "milliseconds to insert 2000000 generic structs:" << endl;
 		one_sec_delay(); // to remove potential overhead from cout.
 
 		unsigned long current_time, difference1, difference2, difference3, difference4, difference5, difference6;
@@ -149,7 +151,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 2000000; ++num)
 		{
 			the_struct.number = rand() % 1000000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -453,7 +455,7 @@ int main(int argc, char **argv)
 		cin.get();
 
 		cout << "small struct tests begin:" << endl << endl;
-		cout << "milliseconds to add 5000000 generic structs:" << endl;
+		cout << "milliseconds to insert 5000000 generic structs:" << endl;
 		
 		one_sec_delay(); // to remove potential overhead from cout.
 
@@ -476,7 +478,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 5000000; ++num)
 		{
 			the_struct.number = rand() % 5000000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -671,7 +673,7 @@ int main(int argc, char **argv)
 		cin.get();
 	
 		cout << "Unsigned int tests begin." << endl << endl;
-		cout << "Milliseconds to add 50000000 unsigned ints:" << endl;
+		cout << "Milliseconds to insert 50000000 unsigned ints:" << endl;
 		
 		one_sec_delay(); // To remove potential overhead from cout.
 	
@@ -689,7 +691,7 @@ int main(int argc, char **argv)
 	
 		for (unsigned int num = 0; num != 5000000; ++num)
 		{
-			data_colony.add(rand() % 5000000);
+			data_colony.insert(rand() % 5000000);
 		}
 	
 		difference2 = get_time_in_ms() - current_time;
@@ -875,7 +877,7 @@ int main(int argc, char **argv)
 		cin.get();
 
 		cout << "Small struct tests begin:" << endl << endl;
-		cout << "Milliseconds to add 5000000 generic structs:" << endl;
+		cout << "Milliseconds to insert 5000000 generic structs:" << endl;
 		
 		one_sec_delay(); // To remove potential overhead from cout.
 
@@ -896,7 +898,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 5000000; ++num)
 		{
 			the_struct.number = rand() % 5000000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -1087,7 +1089,7 @@ int main(int argc, char **argv)
 		cin.get();
 
 		cout << "Large struct tests begin:" << endl << endl;
-		cout << "Milliseconds to add 10000 large structs:" << endl;
+		cout << "Milliseconds to insert 10000 large structs:" << endl;
   
 		one_sec_delay(); // To remove potential overhead from cout.
 
@@ -1108,7 +1110,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 10000; ++num)
 		{
 			the_struct.number = rand() % 10000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -1523,8 +1525,6 @@ int main(int argc, char **argv)
  		cin.get();
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 	}
-
-
 
 
 	return 0;
