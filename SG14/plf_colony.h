@@ -8,10 +8,14 @@
 #include <cassert>	// assert
 #include <memory>	// allocators
 #include <climits>	// UINT_MAX
-#include <iterator> // inheritance for iterator
-#include <cstddef>	// ptrdiff_t for iterator typedef
+#include <iterator> // typedef inheritance for iterators
 
 #include "plf_stack.h" // Includes plf::stack and compiler-specific Macro defines
+
+
+#ifdef PLF_TYPE_TRAITS_SUPPORT
+    #include <type_traits> // std::is_trivially_destructible
+#endif
 
 #ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -67,10 +71,10 @@ private:
 
 		#ifdef PLF_VARIADICS_SUPPORT
 			group(const unsigned int elements_per_group, group * const previous = NULL):
-				last_endpoint(reinterpret_cast<element_pointer_type>(PLF_ALLOCATE_INITIALIZATION(generic_allocator_type, elements_per_group * (sizeof(element_type) + sizeof(bool)), 0))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is simply initialised to element's base value initially */
+				last_endpoint(reinterpret_cast<element_pointer_type>(PLF_ALLOCATE_INITIALIZATION(generic_allocator_type, elements_per_group * (sizeof(element_type) + sizeof(bool)), (previous == NULL) ? 0 : previous->elements))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is simply initialised to element's base value initially */
 				next_group(NULL),
 				elements(last_endpoint),
-				erased((bool_pointer_type)(elements + elements_per_group)),
+				erased(reinterpret_cast<bool_pointer_type>(elements + elements_per_group)),
 				previous_group(previous),
 				total_number_of_elements(0),
 				group_number((previous == NULL) ? 0 : previous->group_number + 1),
@@ -86,32 +90,30 @@ private:
 			}
 
 		#else
-			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++0x. And to avoid running out of memory + the performance overhead for allocating the same block twice, we're skipping the allocation for these pseudoconstructors - the allocation will happen in the copy constructor.
+			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++0x and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor:
 			group(const unsigned int elements_per_group, group * const previous = NULL) PLF_NOEXCEPT:
-				last_endpoint(NULL),
-				next_group(NULL),
-				elements(NULL),
-				erased(NULL),
+				last_endpoint(reinterpret_cast<element_pointer_type>(PLF_ALLOCATE_INITIALIZATION(generic_allocator_type, elements_per_group * (sizeof(element_type) + sizeof(bool)), (previous == NULL) ? 0 : previous->elements))),
+				elements(NULL), // unique destructor condition
+				erased(reinterpret_cast<bool_pointer_type>(last_endpoint + elements_per_group)),
 				previous_group(previous),
-				total_number_of_elements(0),
 				group_number((previous == NULL) ? 0 : previous->group_number + 1),
 				size(elements_per_group)
-			{}
+			{
+				std::memset(erased, false, sizeof(bool) * size);
+			}
 
 
-			// Not a 'real' copy constructor, only used for the manufacturing of groups using the copy constructor and allocator.construct. Does not copy content of source asides from size and previous group
+			// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++0x for reasons stated above.
 			group(const group &source):
-				last_endpoint(reinterpret_cast<element_pointer_type>(PLF_ALLOCATE_INITIALIZATION(generic_allocator_type, source.size * (sizeof(element_type) + sizeof(bool)), (source.previous_group == NULL) ? 0 : source.previous_group->elements))), 
+				last_endpoint(source.last_endpoint), 
 				next_group(NULL),
-				elements(last_endpoint),
-				erased(reinterpret_cast<bool_pointer_type>(elements + source.size)),
+				elements(source.last_endpoint),
+				erased(source.erased),
 				previous_group(source.previous_group),
 				total_number_of_elements(0),
 				group_number(source.group_number),
 				size(source.size)
-			{
-				std::memset(erased, false, sizeof(bool) * size);
-			}
+			{}
 
 
 			~group() PLF_NOEXCEPT
@@ -142,7 +144,7 @@ private:
 
 public:
 
-	template <class colony_element_type, bool is_const> class colony_iterator : public std::iterator<std::random_access_iterator_tag, element_type, std::ptrdiff_t, element_type *, element_type &>
+	template <class colony_element_type, bool is_const> class colony_iterator : public std::iterator<std::random_access_iterator_tag, element_type>
 	{
 	private:
 		group_pointer_type		group_pointer;
@@ -216,12 +218,12 @@ public:
 
 
 
-		colony_iterator & operator ++ () 
+		colony_iterator & operator ++ ()
 		{
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
-			
-			#if defined (__GNUC__) && defined (__x86_64__) // For some reason, this version compiles to faster code under gcc x64
-				do 
+
+			#if defined(__GNUC__) && defined(__x86_64__) // For some reason, this version compiles to faster code under gcc x64
+				do
 				{
 					if (group_pointer->next_group == NULL)
 					{
@@ -237,7 +239,7 @@ public:
 						erasure_field = group_pointer->erased - 1;
 					}
 				} while (*++erasure_field);
-			#else // Standard version - works better most other compilers
+			#else // Standard version - performs better on most compilers
 				do
 				{
 					++erasure_field;
@@ -554,9 +556,9 @@ public:
 
 	private:
 
-		long long int get_current_index() const PLF_NOEXCEPT
+		unsigned int get_current_index() const PLF_NOEXCEPT
 		{
-			long long int distance_to_beginning = 0;
+			unsigned int distance_to_beginning = 0;
 
 			if (element_pointer != group_pointer->last_endpoint) // colony_iterator does not point to the index one past the last element in group
 			{
@@ -599,14 +601,14 @@ public:
 
 	public:	
 
-		inline long long int operator + (const colony_iterator &rh) const PLF_NOEXCEPT
+		inline unsigned int operator + (const colony_iterator &rh) const PLF_NOEXCEPT
 		{
 			return get_current_index() + rh.get_current_index();
 		}
 
 
 
-		inline long long int operator - (const colony_iterator &rh) const PLF_NOEXCEPT
+		inline int operator - (const colony_iterator &rh) const PLF_NOEXCEPT
 		{
 			return get_current_index() - rh.get_current_index();
 		}
@@ -668,7 +670,7 @@ public:
 
 
 
-	template <class colony_element_type, bool is_const> class colony_reverse_iterator : public std::iterator<std::random_access_iterator_tag, element_type, std::ptrdiff_t, element_type *, element_type &>
+	template <class colony_element_type, bool is_const> class colony_reverse_iterator : public std::iterator<std::random_access_iterator_tag, element_type>
 	{
 	private:
 		typename colony::iterator the_iterator;
@@ -899,14 +901,14 @@ public:
 
 
 
-		inline long long int operator + (const colony_reverse_iterator &rh) const PLF_NOEXCEPT
+		inline unsigned int operator + (const colony_reverse_iterator &rh) const PLF_NOEXCEPT
 		{
 			return the_iterator.get_current_index() + rh.the_iterator.get_current_index();
 		}
 
 
 
-		inline long long int operator - (const colony_reverse_iterator &rh) const PLF_NOEXCEPT
+		inline int operator - (const colony_reverse_iterator &rh) const PLF_NOEXCEPT
 		{
 			return  rh.the_iterator.get_current_index() - the_iterator.get_current_index();
 		}
@@ -1073,7 +1075,8 @@ public:
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group),
 			empty_indexes(std::move(source.empty_indexes))
 		{
-			source.first_group = NULL; // Nullifying the other data members is unnecessary - technically all can be removed except first_group NULL, to allow for clean destructor usage
+			source.first_group = NULL; 
+			source.total_size = 0; // Nullifying the other data members is unnecessary - technically all can be removed except first_group NULL and total_size 0, to allow for clean destructor usage
 		}
 	#endif
 	
@@ -1164,7 +1167,7 @@ private:
 
 	void destroy_all_data() PLF_NOEXCEPT
 	{
-	#ifdef PLF_TRAITS_SUPPORT 
+	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		if (total_size != 0	&& !(std::is_trivially_destructible<element_type>::value)) // Avoid iteration for trivially-destructible types eg. POD, structs, classes with empty destructor
 	#else // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise the 'destruct' loop out for POD types
 		if (total_size != 0)
@@ -1216,6 +1219,7 @@ private:
 			}
 		}
 	}
+
 
 
 
@@ -1347,12 +1351,10 @@ public:
 
 
 	#ifdef PLF_VARIADICS_SUPPORT
-		template<typename... Arguments>
-		iterator emplace(Arguments... parameters)
+		template<typename... Arguments> iterator emplace(Arguments... parameters)
 		{
 			PLF_COLONY_INSERT_MACRO(parameters...) // Use object's parameter'd constructor
 		}
-
 	#endif
 
 
@@ -1755,7 +1757,8 @@ public:
 			// Move source values across:
 			std::memcpy(this, &source, sizeof(colony<element_type, element_allocator_type>));
 
-			source.first_group = NULL; // Nullifying the other data members is unnecessary - first_group NULL required for clean destructor usage
+			source.first_group = NULL; 
+			source.total_size = 0; // Nullifying the other data members is unnecessary - technically all can be removed except first_group NULL and total_size 0, to allow for clean destructor usage
 			return *this;
 		}
 	#endif
@@ -1802,4 +1805,4 @@ public:
 }
 
 
-#endif // plf_colony_H
+#endif

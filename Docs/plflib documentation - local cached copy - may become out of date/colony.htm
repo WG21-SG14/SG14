@@ -84,13 +84,15 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_4-10-2015.zip">here</a>. (20kb)<br>
+<p>Download <a href="plf_colony_6-10-2015.zip">here</a>. (20kb)<br>
 The colony library is a simple .h header file, to be included with a #include
 command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.</p>
 
 <h3>Version history</h3>
 <ul>
+  <li>2015-10-6: v2.24 - Bugfix for C++03 with x64 compilers. Minor
+  corrections, performance improvements for C++03 compilers.</li>
   <li>2015-10-4: v2.21 - Improved gcc x64 iteration. std::find now working with
     reverse_iterator. reverse_iterator function corrections, performance
     improvements. Hintless allocators under C++11 now supported. Allocation now
@@ -171,7 +173,7 @@ by plf::colony.</p>
 
 <h2><a id="benchmarks"></a>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 5-10-2015 v2.20</i></p>
+<p style="font-size: 75%"><i>Last updated 6-10-2015 v2.24</i></p>
 
 <p>All of the benchmarks below are included in the plf_demo.cpp in the
 download, anyone can run them. They do not require any external libraries.</p>
@@ -612,7 +614,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>65</td>
+      <td>68</td>
       <td>55</td>
       <td>98</td>
       <td>68<br>
@@ -621,7 +623,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>plf::colony</td>
-      <td>80</td>
+      <td>78</td>
       <td>72</td>
       <td>106</td>
       <td>77<br>
@@ -639,7 +641,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>std::deque</td>
-      <td>68</td>
+      <td>69</td>
       <td>58</td>
       <td>106</td>
       <td>74<br>
@@ -648,12 +650,12 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>colony vs vector performance</td>
-      <td>0.81x</td>
+      <td>0.87x</td>
       <td>0.76x</td>
       <td>0.92x</td>
       <td>0.88x<br>
       </td>
-      <td>0.84x<br>
+      <td>0.86x<br>
       </td>
     </tr>
   </tbody>
@@ -679,7 +681,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>2755</td>
+      <td>2760</td>
       <td>3540</td>
       <td>2885</td>
       <td>3554<br>
@@ -688,7 +690,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>plf::colony</td>
-      <td>2905</td>
+      <td>2924</td>
       <td>3646</td>
       <td>3059</td>
       <td>3698<br>
@@ -697,7 +699,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>array</td>
-      <td>2749</td>
+      <td>2783</td>
       <td>3518</td>
       <td>2914</td>
       <td>3488<br>
@@ -706,7 +708,7 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>std::deque</td>
-      <td>2907</td>
+      <td>2920</td>
       <td>3823</td>
       <td>4302</td>
       <td>5404<br>
@@ -715,12 +717,12 @@ destruct objects during this process.</p>
     </tr>
     <tr>
       <td>colony vs vector performance</td>
-      <td>0.95x</td>
+      <td>0.94x</td>
       <td>0.97x</td>
       <td>0.94x</td>
       <td>0.96x<br>
       </td>
-      <td>0.96x<br>
+      <td>0.95x<br>
       </td>
     </tr>
   </tbody>
@@ -774,7 +776,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>std::vector</td>
       <td>337</td>
       <td>311</td>
-      <td>434</td>
+      <td>432</td>
       <td>496<br>
       </td>
       <td></td>
@@ -783,7 +785,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>plf::colony</td>
       <td>143</td>
       <td>122</td>
-      <td>189</td>
+      <td>180</td>
       <td>165<br>
       </td>
       <td></td>
@@ -893,7 +895,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>std::vector</td>
       <td>3032</td>
       <td>3517</td>
-      <td>2938</td>
+      <td>2950</td>
       <td>3837<br>
       </td>
       <td></td>
@@ -902,7 +904,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>plf::colony</td>
       <td>2906</td>
       <td>3614</td>
-      <td>3059</td>
+      <td>3037</td>
       <td>3939<br>
       </td>
       <td></td>
@@ -911,7 +913,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>array</td>
       <td>2751</td>
       <td>3485</td>
-      <td>2914</td>
+      <td>2895</td>
       <td>3495<br>
       </td>
       <td></td>
@@ -920,7 +922,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>colony vs vector performance</td>
       <td>1.04x</td>
       <td>0.97x</td>
-      <td>0.96x</td>
+      <td>0.97x</td>
       <td>0.97x<br>
       </td>
       <td>0.99x<br>
@@ -1142,7 +1144,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>std::vector</td>
       <td>88</td>
       <td>76</td>
-      <td>138</td>
+      <td>137</td>
       <td>102<br>
       </td>
       <td></td>
@@ -1151,7 +1153,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>plf::colony</td>
       <td>75</td>
       <td>68</td>
-      <td>141</td>
+      <td>130</td>
       <td>99<br>
       </td>
       <td></td>
@@ -1169,7 +1171,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>colony vs vector performance</td>
       <td>1.2x</td>
       <td>1.1x</td>
-      <td>1.0x</td>
+      <td>1.1x</td>
       <td>1.0x<br>
       </td>
       <td>1.1x<br>
