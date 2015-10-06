@@ -6,9 +6,9 @@
 
 // Compiler-specific defines used by both stack and colony:
 #if __cplusplus >= 201103L
-	#define PLF_TRAITS_SUPPORT
+	#define PLF_TYPE_TRAITS_SUPPORT
 	#define PLF_ALLOCATOR_TRAITS_SUPPORT
-	#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros together
+	#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
 	#define PLF_MOVE_SEMANTICS_SUPPORT
 	#define PLF_NOEXCEPT noexcept
 #elif defined(_MSC_VER)
@@ -18,18 +18,18 @@
 		#define PLF_MOVE_SEMANTICS_SUPPORT
 		#define PLF_NOEXCEPT throw()
 	#elif _MSC_VER == 1700
-		#define PLF_TRAITS_SUPPORT
+		#define PLF_TYPE_TRAITS_SUPPORT
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
 		#define PLF_NOEXCEPT throw()
 	#elif _MSC_VER == 1800
-		#define PLF_TRAITS_SUPPORT
+		#define PLF_TYPE_TRAITS_SUPPORT
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
 		#define PLF_NOEXCEPT throw()
 	#elif _MSC_VER >= 1900
-		#define PLF_TRAITS_SUPPORT
+		#define PLF_TYPE_TRAITS_SUPPORT
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -74,9 +74,14 @@
 #include <climits>	// UINT_MAX
 #include <memory>	// std::uninitialized_copy, allocators
 
-#ifdef PLF_MOVE_SEMANTICS_SUPPORT 
+#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
 #endif
+
+#ifdef PLF_TYPE_TRAITS_SUPPORT
+    #include <type_traits> // std::is_trivially_destructible
+#endif
+
 
 
 
@@ -115,26 +120,27 @@ private:
 
 
 		#else
-			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++0x and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory due to allocating the same block twice, we're skipping the allocation for this pseudoconstructor:
+			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++0x and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor:
 			group(const unsigned int elements_per_group, group_pointer_type const previous = NULL) PLF_NOEXCEPT:
-				elements(NULL),
+				elements(PLF_ALLOCATE_INITIALIZATION(element_allocator_type, elements_per_group, (previous == NULL) ? 0 : previous->elements)),
+				next_group(reinterpret_cast<group_pointer_type>(elements)), // for unique destructor condition
 				previous_group(previous),
-				end(reinterpret_cast<element_pointer_type>(elements_per_group)) // Using end as a temporary to store elements_per_group till copy constructor
+				end(elements + elements_per_group - 1)
 			{}
 
 
-			// Not a "real" copy constructor ie. does not copy content of source asides from previous_group and size. Only used for allocator.construct in C++0x.
+			// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++0x for reasons stated above.
 			group(const group &source):
-				elements(PLF_ALLOCATE_INITIALIZATION(element_allocator_type, reinterpret_cast<unsigned int>(source.end), (source.previous_group == NULL) ? 0 : source.previous_group->elements)),
+				elements(source.elements),
 				next_group(NULL),
 				previous_group(source.previous_group),
-				end(elements + reinterpret_cast<unsigned int>(source.end) - 1)
+				end(source.end)
 			{}
 
 
 			~group() PLF_NOEXCEPT
 			{
-				if (elements != NULL) // Necessary to avoid deallocation for pseudoconstructor above
+				if (next_group != reinterpret_cast<group_pointer_type>(elements)) // Necessary to avoid deallocation for pseudoconstructor above
 				{
 					PLF_DEALLOCATE(element_allocator_type, (*this), elements, (end - elements) + 1);
 				}
@@ -217,7 +223,7 @@ public:
 			total_size(source.total_size),
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group)
 		{
-			// Nullify source object's contents - only first_group required for destructor:
+			// Nullify source object's contents - only first_group and total_size required for destructor:
 			source.first_group = NULL;
 			source.total_size = 0;
 		}
@@ -279,21 +285,20 @@ private:
 
 	void destroy_all_data() PLF_NOEXCEPT
 	{
-	#ifdef PLF_TRAITS_SUPPORT 
+	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		if (total_size != 0 && !(std::is_trivially_destructible<element_type>::value)) // Avoid iteration for trivially-destructible types eg. POD, structs, classes with ermpty destructor
 	#else // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise this loop out for POD types
 		if (total_size != 0)
-	#endif				
+	#endif
 		{
 			total_size = 0;
-
 			group_pointer_type previous_group;
 			element_pointer_type past_end;
-			
+
 			while (first_group != current_group)
 			{
 				past_end = first_group->end + 1;
-				
+
 				for (element_pointer_type element_pointer = first_group->elements; element_pointer != past_end; ++element_pointer)
 				{
 					PLF_DESTROY(element_allocator_type, (*this), element_pointer);
@@ -304,11 +309,11 @@ private:
 
 				PLF_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
 				PLF_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
-			} 
-			
+			}
+
 			// Special case for current group:
 			past_end = current_element + 1;
-			
+
 			for (element_pointer_type element_pointer = start_element; element_pointer != past_end; ++element_pointer)
 			{
 				PLF_DESTROY(element_allocator_type, (*this), element_pointer);
@@ -417,14 +422,14 @@ public:
 	{
 		assert(!empty());
 
-		PLF_DESTROY(element_allocator_type, (*this), current_element); // If total_size is now 0 after decrement (below), this essentially moves current_element back to initial position (start_element - 1). But otherwise, this is a regular pop
+		PLF_DESTROY(element_allocator_type, (*this), current_element);
 
-		if (total_size-- == 1 || current_element != start_element)
+		if (total_size-- == 1 || current_element != start_element) // If total_size is now 0 after decrement, this essentially moves current_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
 		{
 			--current_element;
 		}
 		else
-		{ // ie. is start element, but not first group in stack (or totalsize would be 0 after decrement)
+		{ // ie. is start element, but not first group in stack (if it were, totalsize would be 0 after decrement)
 			current_group = current_group->previous_group;
 			start_element = current_group->elements;
 			current_element = current_group->end;
@@ -434,8 +439,7 @@ public:
 
 
 	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-		// Move-push
-		void push(element_type &&the_element)
+		void push(element_type &&the_element) // Move-push
 		{
 			PLF_STACK_PUSH_MACRO(std::move(the_element)) // Use move constructor
 		}
@@ -443,9 +447,8 @@ public:
 
 
 
-	#ifdef PLF_VARIADICS_SUPPORT 
-		template<typename... Arguments>
-		void emplace(Arguments... parameters)
+	#ifdef PLF_VARIADICS_SUPPORT
+		template<typename... Arguments> void emplace(Arguments... parameters)
 		{
 			PLF_STACK_PUSH_MACRO(parameters...) // Use object's parameter'd constructor
 		}
@@ -563,4 +566,4 @@ public:
 
 }
 
-#endif // plf_stack_H
+#endif
