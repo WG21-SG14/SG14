@@ -1345,7 +1345,7 @@ int main(int argc, char **argv)
 	
 		for (unsigned int num = 0; num != 10000000; ++num)
 		{
-			total += data_stack.back();
+			total += data_stack.top();
 			data_stack.pop();
 		}
 
@@ -1427,7 +1427,7 @@ int main(int argc, char **argv)
  	
  		for (unsigned int num = 0; num != 5000000; ++num)
  		{
- 			the_struct = data_stack.back();
+ 			the_struct = data_stack.top();
  			total += the_struct.number;
  			data_stack.pop();
  		}
@@ -1510,7 +1510,7 @@ int main(int argc, char **argv)
  	
  		for (unsigned int num = 0; num != 10000; ++num)
  		{
- 			the_struct = data_stack.back();
+ 			the_struct = data_stack.top();
  			total += the_struct.number;
  			data_stack.pop();
  		}

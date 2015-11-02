@@ -90,7 +90,7 @@ div {
 ul, ol {
     padding: 0 0 0 1.5em;
     margin-top: 1em;
-    margin-bottom: 3em;
+    margin-bottom: 1em;
    }
 ul ul, ol ol, ul ol, ol ul {
     margin-top: 1em;

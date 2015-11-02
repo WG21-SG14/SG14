@@ -448,12 +448,12 @@ void plf_test_suite()
 		
 		for (unsigned int temp = 0; temp != 200000; ++temp)
 		{
-			total += i_stack.back();
+			total += i_stack.top();
 			i_stack.pop();
 		}
 
 		FAILPASS("Multipop test", i_stack.size() == 50000)
-		FAILPASS("Back() test", total == 2000000)
+		FAILPASS("top() test", total == 2000000)
 
 		do
 		{

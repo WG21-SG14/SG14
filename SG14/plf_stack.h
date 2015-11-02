@@ -1,7 +1,7 @@
 // Copyright (c) 2015, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
-#ifndef plf_stack_H
-#define plf_stack_H
+#ifndef PLF_STACK_H
+#define PLF_STACK_H
 
 
 // Compiler-specific defines used by both stack and colony:
@@ -41,7 +41,6 @@
 
 
 
-
 #ifdef PLF_ALLOCATOR_TRAITS_SUPPORT
 	#ifdef PLF_VARIADICS_SUPPORT
 		#define PLF_CONSTRUCT(allocator_type, allocator_instance, location, ...) std::allocator_traits<allocator_type>::construct(allocator_instance, location, __VA_ARGS__)
@@ -49,10 +48,10 @@
 		#define PLF_CONSTRUCT(allocator_type, allocator_instance, location, data) std::allocator_traits<allocator_type>::construct(allocator_instance, location, data)
 	#endif
 
-	#define PLF_DESTROY(allocator_type, allocator_instance, location) std::allocator_traits<allocator_type>::destroy(allocator_instance, location)
-	#define PLF_ALLOCATE(allocator_type, allocator_instance, size, hint) std::allocator_traits<allocator_type>::allocate(allocator_instance, size, hint)
-	#define PLF_ALLOCATE_INITIALIZATION(allocator_type, size, hint) std::allocator_traits<allocator_type>::allocate(*this, size, hint)
-	#define PLF_DEALLOCATE(allocator_type, allocator_instance, location, size) std::allocator_traits<allocator_type>::deallocate(allocator_instance, location, size)
+	#define PLF_DESTROY(allocator_type, allocator_instance, location) 			std::allocator_traits<allocator_type>::destroy(allocator_instance, location)
+	#define PLF_ALLOCATE(allocator_type, allocator_instance, size, hint) 		std::allocator_traits<allocator_type>::allocate(allocator_instance, size, hint)
+	#define PLF_ALLOCATE_INITIALIZATION(allocator_type, size, hint) 			std::allocator_traits<allocator_type>::allocate(*this, size, hint)
+	#define PLF_DEALLOCATE(allocator_type, allocator_instance, location, size) 	std::allocator_traits<allocator_type>::deallocate(allocator_instance, location, size)
 #else
 	#ifdef PLF_VARIADICS_SUPPORT
 		#define PLF_CONSTRUCT(allocator_type, allocator_instance, location, ...) allocator_instance.construct(location, __VA_ARGS__)
@@ -60,19 +59,19 @@
 		#define PLF_CONSTRUCT(allocator_type, allocator_instance, location, data) allocator_instance.construct(location, data)
 	#endif
 
-	#define PLF_DESTROY(allocator_type, allocator_instance, location) allocator_instance.destroy(location)
-	#define PLF_ALLOCATE(allocator_type, allocator_instance, size, hint) allocator_instance.allocate(size, hint)
-	#define PLF_ALLOCATE_INITIALIZATION(allocator_type, size, hint) allocator_type::allocate(size, hint)
-	#define PLF_DEALLOCATE(allocator_type, allocator_instance, location, size) allocator_instance.deallocate(location, size)
+	#define PLF_DESTROY(allocator_type, allocator_instance, location) 			allocator_instance.destroy(location)
+	#define PLF_ALLOCATE(allocator_type, allocator_instance, size, hint) 		allocator_instance.allocate(size, hint)
+	#define PLF_ALLOCATE_INITIALIZATION(allocator_type, size, hint) 			allocator_type::allocate(size, hint)
+	#define PLF_DEALLOCATE(allocator_type, allocator_instance, location, size) 	allocator_instance.deallocate(location, size)
 #endif
 
 
 
 
-#include <cstring>	// memcpy
+
 #include <cassert>	// assert
 #include <climits>	// UINT_MAX
-#include <memory>	// std::uninitialized_copy, allocators
+#include <memory>	// std::uninitialized_copy, std::allocator
 
 #ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -91,6 +90,16 @@ namespace plf
 
 template <class element_type, class element_allocator_type = std::allocator<element_type> > class stack : private element_allocator_type
 {
+public:
+	// Standard container typedefs:
+	typedef element_type 										value_type;
+	typedef element_allocator_type								allocator_type;
+	typedef typename element_allocator_type::reference			reference;
+	typedef typename element_allocator_type::const_reference	const_reference;
+	typedef unsigned int 										size_type;
+	typedef typename element_allocator_type::pointer			pointer;
+	typedef typename element_allocator_type::const_pointer		const_pointer;
+
 private:
 	struct group; // Forward declaration for typedefs below
 	typedef typename element_allocator_type::template rebind<group>::other group_allocator_type;
@@ -152,7 +161,7 @@ private:
 
 	group_pointer_type		current_group, first_group;
 	element_pointer_type	current_element, start_element;
-	unsigned int			total_size;
+	size_type				total_size;
 	struct ebco_pair : group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 	{
 		unsigned int max_elements_per_group;
@@ -216,10 +225,10 @@ public:
 	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 		// move constructor
 		stack(stack &&source) PLF_NOEXCEPT:
-			current_group(source.current_group),
-			first_group(source.first_group),
-			current_element(source.current_element),
-			start_element(source.start_element),
+			current_group(std::move(source.current_group)),
+			first_group(std::move(source.first_group)),
+			current_element(std::move(source.current_element)),
+			start_element(std::move(source.start_element)),
 			total_size(source.total_size),
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group)
 		{
@@ -285,11 +294,11 @@ private:
 
 	void destroy_all_data() PLF_NOEXCEPT
 	{
-	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		if (total_size != 0 && !(std::is_trivially_destructible<element_type>::value)) // Avoid iteration for trivially-destructible types eg. POD, structs, classes with ermpty destructor
-	#else // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise this loop out for POD types
-		if (total_size != 0)
-	#endif
+		#ifdef PLF_TYPE_TRAITS_SUPPORT
+			if (total_size != 0 && !(std::is_trivially_destructible<element_type>::value)) // Avoid iteration for trivially-destructible types eg. POD, structs, classes with ermpty destructor
+		#else // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise this loop out for POD types
+			if (total_size != 0)
+		#endif
 		{
 			total_size = 0;
 			group_pointer_type previous_group;
@@ -325,6 +334,7 @@ private:
 		}
 		else
 		{
+			// Although technically under a type-traits-supporting compiler total_size could be non-zero at this point, since first_group would already be NULL in the case of double-destruction, it's unnecessary to zero total_size, and for some reason doing so creates a performance regression under gcc x64 (5.1 and below)
 			while (first_group != NULL)
 			{
 				current_group = first_group;
@@ -336,81 +346,138 @@ private:
 	}
 
 
-
-
-	// Begin push macro
-	#ifdef PLF_VARIADICS_SUPPORT
-		#define PLF_STACK_PUSH_MACRO_GROUP_ADD (total_size < group_allocator_pair.max_elements_per_group) ? total_size : group_allocator_pair.max_elements_per_group, current_group 
-	#else
-		#define PLF_STACK_PUSH_MACRO_GROUP_ADD group((total_size < group_allocator_pair.max_elements_per_group) ? total_size : group_allocator_pair.max_elements_per_group, current_group)
-	#endif
-
-
-	#define PLF_STACK_PUSH_MACRO(ASSIGNMENT_OBJECT) \
-		if(current_element != current_group->end) \
-		{ \
-			try \
-			{ \
-				PLF_CONSTRUCT(element_allocator_type, (*this), ++current_element, ASSIGNMENT_OBJECT); \
-			} \
-			catch (...) \
-			{ \
-				--current_element; \
-				throw; \
-			} \
-			\
-			++total_size; \
-		} \
-		else \
-		{ \
-			if (current_group->next_group == NULL) \
-			{ \
-				current_group->next_group = PLF_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group); \
-				\
-				try \
-				{ \
-					PLF_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, PLF_STACK_PUSH_MACRO_GROUP_ADD); \
-				} \
-				catch (...) \
-				{ \
-					PLF_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1); \
-					current_group->next_group = NULL; \
-					throw; \
-				} \
-			} \
-			\
-			current_group = current_group->next_group; \
-			start_element = current_element = current_group->elements; \
-			\
-			try \
-			{ \
-				PLF_CONSTRUCT(element_allocator_type, (*this), current_element, ASSIGNMENT_OBJECT); \
-			} \
-			catch (...) \
-			{ \
-				current_group = current_group->previous_group; \
-				start_element = current_group->elements; \
-				current_element = current_group->end; \
-				throw; \
-			} \
-			\
-			++total_size; \
-		} \
-	// end push macro
-
-
-
 public:
 
 
 	void push(const element_type &the_element)
 	{
-		PLF_STACK_PUSH_MACRO(the_element) // Use copy constructor
+		if(current_element != current_group->end)
+		{
+			try
+			{
+				PLF_CONSTRUCT(element_allocator_type, (*this), ++current_element, the_element);
+			}
+			catch (...)
+			{
+				--current_element;
+				throw;
+			}
+
+			++total_size;
+		}
+		else 
+		{ 
+			if (current_group->next_group == NULL) 
+			{ 
+				current_group->next_group = PLF_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group); 
+				
+				try 
+				{ 
+					#ifdef PLF_VARIADICS_SUPPORT
+						PLF_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, (total_size < group_allocator_pair.max_elements_per_group) ? total_size : group_allocator_pair.max_elements_per_group, current_group); 
+					#else
+						PLF_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group((total_size < group_allocator_pair.max_elements_per_group) ? total_size : group_allocator_pair.max_elements_per_group, current_group));
+					#endif
+				} 
+				catch (...) 
+				{ 
+					PLF_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1); 
+					current_group->next_group = NULL; 
+					throw; 
+				} 
+			} 
+			
+			current_group = current_group->next_group; 
+			start_element = current_element = current_group->elements; 
+			
+			try
+			{ 
+				PLF_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
+			}
+			catch (...)
+			{
+				current_group = current_group->previous_group;
+				start_element = current_group->elements;
+				current_element = current_group->end;
+				throw;
+			}
+			
+			++total_size; 
+		} 
 	}
+
+
+
+	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+		void push(const element_type &&the_element)
+		{
+			if(current_element != current_group->end)
+			{
+				try
+				{
+					PLF_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::move(the_element));
+				}
+				catch (...)
+				{
+					--current_element;
+					throw;
+				}
 	
+				++total_size;
+			}
+			else
+			{
+				if (current_group->next_group == NULL)
+				{
+					current_group->next_group = PLF_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group);
+	
+					try
+					{
+						#ifdef PLF_VARIADICS_SUPPORT
+							PLF_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, (total_size < group_allocator_pair.max_elements_per_group) ? total_size : group_allocator_pair.max_elements_per_group, current_group);
+						#else
+							PLF_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group((total_size < group_allocator_pair.max_elements_per_group) ? total_size : group_allocator_pair.max_elements_per_group, current_group));
+						#endif
+					}
+					catch (...)
+					{
+						PLF_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
+						current_group->next_group = NULL;
+						throw;
+					}
+				}
+	
+				current_group = current_group->next_group;
+				start_element = current_element = current_group->elements;
+	
+				try
+				{
+					PLF_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+				}
+				catch (...)
+				{
+					current_group = current_group->previous_group;
+					start_element = current_group->elements;
+					current_element = current_group->end;
+					throw;
+				}
+	
+				++total_size;
+			}
+		}
 
 
-	inline element_type & back() const PLF_NOEXCEPT
+		#ifdef PLF_VARIADICS_SUPPORT
+			template<typename... Arguments> inline void emplace(Arguments... parameters)
+			{
+				push(element_type(std::forward<Arguments>(parameters)...)); // Use object's parameter'd constructor
+			}
+		#endif
+	#endif
+
+
+
+	inline element_type & top() const PLF_NOEXCEPT
 	{
 		assert(!empty());
 		return *current_element;
@@ -438,24 +505,6 @@ public:
 
 
 
-	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-		void push(element_type &&the_element) // Move-push
-		{
-			PLF_STACK_PUSH_MACRO(std::move(the_element)) // Use move constructor
-		}
-	#endif
-
-
-
-	#ifdef PLF_VARIADICS_SUPPORT
-		template<typename... Arguments> void emplace(Arguments... parameters)
-		{
-			PLF_STACK_PUSH_MACRO(parameters...) // Use object's parameter'd constructor
-		}
-	#endif
-	
-	
-
 	stack & operator = (const stack &source)
 	{
 		assert(&source != this);
@@ -463,8 +512,16 @@ public:
 		destroy_all_data(); // Deallocating before reallocation in copy constructor, to free up memory and avoid potential out-of-memory exceptions
 
 		stack temp_stack(source); // Use copy constructor
-		std::memcpy(this, &temp_stack, sizeof(stack<element_type, element_allocator_type>));
+
+		current_group = temp_stack.current_group;
+		first_group = temp_stack.first_group;
+		current_element = temp_stack.current_element;
+		start_element = temp_stack.start_element;
+		total_size = temp_stack.total_size;
+		group_allocator_pair.max_elements_per_group = temp_stack.group_allocator_pair.max_elements_per_group;
+
 		temp_stack.first_group = NULL;
+		temp_stack.total_size = 0;
 		
 		return *this;
 	}
@@ -478,7 +535,13 @@ public:
 			assert (&source != this);
 
 			destroy_all_data();
-			std::memcpy(this, &source, sizeof(stack<element_type, element_allocator_type>));
+
+			current_group = std::move(source.current_group);
+			first_group = std::move(source.first_group);
+			current_element = std::move(source.current_element);
+			start_element = std::move(source.start_element);
+			total_size = source.total_size;
+			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
 
 			// Nullify source object's contents - only first_group and total_size required to be altered for destructor to work on it:
 			source.first_group = NULL;
@@ -497,7 +560,7 @@ public:
 
 
 	
-	inline unsigned int size() const PLF_NOEXCEPT
+	inline size_type size() const PLF_NOEXCEPT
 	{
 		return total_size;
 	}
@@ -566,4 +629,20 @@ public:
 
 }
 
+
+#ifndef PLF_COLONY_H
+	#undef PLF_TYPE_TRAITS_SUPPORT
+	#undef PLF_ALLOCATOR_TRAITS_SUPPORT
+	#undef PLF_VARIADICS_SUPPORT
+	#undef PLF_MOVE_SEMANTICS_SUPPORT
+	#undef PLF_NOEXCEPT
+
+	#undef PLF_CONSTRUCT
+	#undef PLF_DESTROY
+	#undef PLF_ALLOCATE
+	#undef PLF_ALLOCATE_INITIALIZATION
+	#undef PLF_DEALLOCATE
 #endif
+
+
+#endif // PLF_STACK_H
