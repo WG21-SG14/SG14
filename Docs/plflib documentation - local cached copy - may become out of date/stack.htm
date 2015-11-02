@@ -17,14 +17,12 @@
 <h2>Intro</h2>
 
 <p>plf::stack is used internally by plf::colony but can also be used
-separately. It is essentially a more efficient implementation of the STL's
-std::stack container (which typically uses std::vector internally), using the
-same memory strategy as <a href="plf_colony.htm#intro">plf::colony</a>.</p>
+separately. It is, essentially, a more efficient implementation of the STL's std::stack
+container (which typically uses std::vector internally), using the same memory
+strategy as <a href="colony.htm#intro">plf::colony</a>. Like plf::colony, it never invalidates references/pointers to non-popped elements, making it a perfect stack replacement for true object-oriented programming with containers of interrelated data structures.</p>
 
-<p>Again, like colonies, the larger the object being store in the colony is,
-the greater the speed advantage over std::stack. Typically push speed is much
-faster, pop speed about the same or worse for smaller, scalar types like
-int.</p>
+<p>plf::stack is faster than all std:: containers in the context of a stack, though depending on
+the compiler it may sacrifice a small amount of pop speed for a much larger gain in push speed (versus std::vector).</p>
 
 <h2><a id="license"></a>License</h2>
 
@@ -44,7 +42,7 @@ restrictions:</p>
 <h2>Download</h2>
 
 <p>Download on the plf::colony page <a
-href="plf_colony.htm#download">here</a>.<br>
+href="colony.htm#download">here</a>.<br>
 Both plf::stack and plf::colony are simple .h header files, to be included with
 a #include command. The package includes both plf::colony and plf::stack.</p>
 
@@ -57,7 +55,7 @@ using std::vector instead of std::stack, as while std::stack usually uses
 std::vector internally, sometimes it doesn't depending on the implementation,
 which would make the implementation slower than if it were vector internally.
 So to make things simpler and a more fair comparison, I'm using std::vector
-directly. The benchmarks are included in the demo.cpp in the download, anyone
+directly. The benchmarks are included in the plf_demo.cpp in the download, anyone
 can run them.</p>
 
 <p>The test setup is an E8500 on an Intel motherboard, 8GB ram. Results are
@@ -69,7 +67,7 @@ GCC.</p>
 
 <p>There are three tests; one with a simple small struct consisting of 2
 doubles, 2 pointers and 2 integers, one with a larger struct containing several
-large arrays, and one with only unsigned ints ie. a scalar type. We'll start
+large arrays, and one with only unsigned ints ie. a primitive type. We'll start
 with the small structs. Numbers are milliseconds, lower is better.</p>
 
 <p></p>
@@ -133,7 +131,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Back + Pop duration in ms</td>
+      <td>Top + Pop duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -185,7 +183,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total push duration in ms</td>
+      <td>Push duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -230,7 +228,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total back + pop duration in ms</td>
+      <td>Top + pop duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -266,7 +264,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
 
 <p></p>
 
-<h4>Unsigned int test (small scalar type)</h4>
+<h4>Small primitive type test</h4>
 
 <table style="width: 100%" border="1">
   <caption>Push 10000000 random unsigned ints</caption>
@@ -279,7 +277,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total push duration in ms</td>
+      <td>Push duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -324,7 +322,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total back + pop duration in ms</td>
+      <td>Top + pop duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -362,13 +360,12 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
 
 <h2>Function Descriptions and syntax</h2>
 
-<p>Functions and functionality mostly match the STL's std::stack, but push
-performance is typically twice as fast (pop is usually more-or-less the same).
-Only additional function is reinitialize.</p>
+<p>Functions and functionality mostly match the STL's std::stack, the only
+additional function is "reinitialize".</p>
 
 <h3>Constructors</h3>
 <ul>
-  <li><code>stack&lt;the_type&gt; a_stack</code> 
+  <li><code>stack&lt;the_type&gt; a_stack</code>
     <p>Default constructor - group size is initially 8 <br>
     Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack;</code>
     </p>
@@ -413,26 +410,11 @@ Only additional function is reinitialize.</p>
   </li>
 </ul>
 
-<p>Other functions matching STL functionality: push, back, pop, size, empty,
+<p>Other functions matching STL functionality: push, top, pop, size, empty,
 clear, =, ==, !=, move assignment.</p>
 
 <p>Other functions matching plf::colony functionality: reinitialize, emplace
-(does not return iterator, access via back() function, the same as push()).</p>
-
-<p>Other functions:<br>
-</p>
-<ul>
-  <li><code>push()</code> 
-    <p>Similar to plf::colony's empty add() function, this is semantically the
-    same as push(the_type()). For a scalar datatype it leaves it uninitialised,
-    for a type with a constructor it requires a default, parameterless
-    constructor. Useful for when you want to write an element directly within
-    the stack, without constructing one separately and copying it in. Unlike
-    plf:colony's add(), this does not return an iterator. Like push(the_type)
-    you must access the newly-created element via the back() command.</p>
-  </li>
-</ul>
-<br>
+(does not return iterator, access via top() function, the same as push()).</p>
 <br>
 
 

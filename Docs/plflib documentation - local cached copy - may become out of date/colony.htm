@@ -10,11 +10,12 @@
 </head>
 
 <body>
-<a href="index.htm">Home</a> 
+<a href="index.htm">Home</a>
 
 <h1>PLF C++ Library - plf::colony</h1>
 <ul>
   <li><a href="#intro">Intro</a></li>
+  <li><a href="#details">Details</a></li>
   <li><a href="#license">License</a></li>
   <li><a href="#download">Download</a></li>
   <li><a href="#benchmarks">Benchmarks</a></li>
@@ -22,50 +23,76 @@
   <li><a href="#faq">Frequently-asked Questions</a></li>
 </ul>
 
+
+
 <h2><a id="intro"></a>Intro</h2>
 
-<p>A colony is a vector-like template class without pointer/iterator
-invalidation and with better performance for larger-than-scalar types (ie.
-structs, classes etc). Instead of using one single block of memory and
-reallocating, it utilises chains of increasingly-larger memory blocks to form a
-cache-contiguous container. Performance is better than std::vector in terms of
-inserting elements, iteration can be slower or faster than std::vector,
-depending on compiler, size of data-type stored and platform it is running on,
-but in terms of element deletion colonies are many powers of 10 faster. Using a
-boolean field to indicate element deletion, instead of relocating data, the
-increasingly large erase times that we typically see with vectors as the data
-scale becomes higher are non-existent. A brief visual summary of the
-differences between vector allocation and colony allocation follows.</p>
+<p>A colony is a C++ data container for unordered data which provides better
+performance than any std:: library container when:</p>
+<ol type="a">
+  <li>Insertions and erasures to the container are occuring in realtime ie. in
+    performance-critical code,
+    <i><b>and/or</b></i>
+  </li>
+  <li>Pointers and iterators which point to non-erased container elements must
+    not be invalided by insertion or erasure.</li>
+</ol>
+<p>While the benchmarks in the section below are a better area to get a feel for the
+performance benefits, the general speed characteristics are:<br>
+<i>Insert</i>: 2-4x vector speed (with small scalar types around 1.1x)<br>
 
-<h3>Inserting into a full vector/colony</h3>
-<img src="vector_addition.gif"
-alt="Visual demonstration of adding to a full vector" height="540" width="960">
-<img src="colony_addition.gif"
-alt="Visual demonstration of adding to a full colony" height="540" width="960"> 
+<i>Erase</i>: 20-40000x vector speed (dependent on size of data stored)<br>
 
-<h3>Erasing randomly within a vector/colony</h3>
-<img src="vector_erasure.gif"
-alt="Visual demonstration of randomly erasing from a vector" height="540"
-width="960"> <img src="colony_erasure.gif"
-alt="Visual demonstration of randomly erasing from a colony" height="540"
-width="960"> 
+<i>Iteration</i>: 0.86-1.4x vector speed (with an exception for small scalar
+types, which typically perform worse for iteration)</p>
 
-<p>Colonies are best suited for collections of data where order is not
-important. Using the insert function, new elements may be put in recycled (ie
-previously erased) element slots, but otherwise it pushes the data to the back
-of the colony much like a vector would. Random placement insertion in colonies
-is not possible due to the memory model. Having said all that, using a sort
-function with your existing colony data is possible, so sorted content is not
-particularly difficult to achieve.</p>
+<p>It has other advantages including the freeing and recycling of unused memory
+on-the-fly, the guaranteed stability of pointers/references/iterators to
+non-erased elements (which makes programming with containers of interrelated
+data structures faster and much easier), and broad cross-compiler support.</p>
 
-<p>While performance is compiler-dependent (you will get different results
-using clang vs gcc, or vc++ vs clang), the greatest performance advantage is
-shown in "release" compilation mode ie. -O2 on most compilers - there has been
-less optimisation done for debug mode (-O0). The larger the object being store
-in the colony is, the greater the speed advantage over vectors tends to be. For
-primitive datatypes eg. int's, vectors tend to have an advantage over colonies
-in terms of iteration, but not in terms of inserting or erasing elements to the
-container.</p>
+<h2><a id="details"></a>Details</h2>
+
+<p>Both plf::colony and plf::stack use the same storage mechanism: doubly-linked chains of element "groups" (memory blocks with additional structure metadata). Each container starts with only one group. Once that group is filled, a new group is created which doubles the total element capacity of the container. Here is how that storage mechanism differs from a std::vector:</p>
+
+<img src="vector_addition.gif" alt="Visual demonstration of inserting to a full vector" height="540" width="960">
+<img src="colony_addition.gif" alt="Visual demonstration of inserting to a full colony" height="540" width="960">
+
+<p>Because of this storage mechanism, data is not reallocated upon reaching "full" capacity, meaning that all references/pointers/iterators to container elements stay valid regardless of both erasure and insertions to the containers (pop and push, for stack of course). This explains why adding to a stack or colony is between 1x-4x faster than adding to a vector or std::stack (variability based on element sizeof and amount of elements).</p>
+
+<p>Stack is an ordered data container and does not require any further mechanisms to achieve pointer/reference validity.</p>
+
+<p>Colony however has two additional properties, and is an unordered data container.
+Like a vector/list/etc, a colony has random-access iterators. However it is faster than any other std:: container at what it does. It achieves this by having a boolean erasure field corresponding to every element in the container, and, a plf::stack of previously-used element locations which have been erased and can be reused.</p>
+
+<p>What this means is that when an element is erased in a vector, the following happens:</p>
+
+<img src="vector_erasure.gif" alt="Visual demonstration of randomly erasing from a vector" height="540" width="960">
+
+<p>When an element is erased in a colony, the following happens:</p>
+
+<img src="colony_erasure.gif" alt="Visual demonstration of randomly erasing from a colony" height="540" width="960">
+
+<p>This explains the 20x-40000x speed-up you get when erasing from a colony (variability based on element sizeof and amount of elements) versus erasing from a vector.</p>
+
+
+<p>When you add to a colony after having previously erased from it, the colony will check to see if the empty_indexes stack is empty. If it is, it inserts to the end of the colony and creates a new group if no element slots are left on the old one.
+If the empty_indexes stack is not empty, it pops an element location off the stack and reuses that element "slot".</p>
+
+
+<p>If you erase all the elements in any given group in a colony, that group is removed from the group chain and it's entries are also removed from the empty_indexes stack (consolidate_empty_indexes()). In addition a plf::stack, like a vector, never deallocates new space it has allocated for performance reasons. However the colony is a friend class, and it will free up any empty tail groups present in the empty_indexes plf::stack when calling consolidate_empty_indexes(). These two aspects explain how a colony is able to free up it's unused allocated memory on the fly.</p>
+
+
+<p>Colony iterators are fairly simple. In a simple ++ or -- increment/decrement, they will check if the next slot has been erased, and if so, skip to the next slot, check again, etc. The speed is typically 90-95% of vector iteration, but 140% the speed of a vector of pointers to dynamically-allocated objects (ie. the only way to have a vector where pointers/references/iterators stay valid despite insertion or erasure). The only exception to this is the storage of small scalar types (such as int, etc), where iteration speed typically is between 50% and 95% of std::vector iteration speed, depending on the compiler. However the insert and erase speeds more than make up for this in overall benchmarks.</p>
+
+<p>+=/-= and +/- multi-increments/decrements are more complex, and use the group structural metadata to make faster traversals across colony groups than would be possible with the simple singular increments.</p>
+
+<p>reverse_iterator, const_iterator and const_reverse_iterator are also provided.</p>
+<p>All random-access-iterator standard operators are provided, although programmers should not typically use the [ ] operator (as a general rule) because it will result in poor performance, as it equates to colony.begin() + index, which, being a multi-increment operation, is slow compared to other methods for accessing colony contents such as storing an iterator. I feel this will be misused by novice programmers and newcomers to colony eg. in for-loops, and have only provided this to fill this purely technical requirement.</p>
+
+<p>As mentioned previously, the doubling of size on reaching current full capacity for both plf::stack and plf::colony offers the best performance in the majority of scenarios (which is why the strategy is also used for the majority of  vector implementations), but if there are scenarios where a smaller or more static increase is required or offers better performance, group sizes can be customised to a limited extent (min and max sizes can be specified).</p>
+
+
 
 <h2><a id="license"></a>License</h2>
 
@@ -84,26 +111,28 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_6-10-2015.zip">here</a>. (20kb)<br>
+<p>Download <a href="plf_colony_2-11-2015.zip">here</a>. (20kb)<br>
 The colony library is a simple .h header file, to be included with a #include
 command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.</p>
 
 <h3>Version history</h3>
 <ul>
+  <li>2015-11-2: v2.32 - Minor bugfix for non-trivial pointers and non-trivial stack contents.</li>
+  <li>2015-10-31: v2.31 - Allocators which supply non-trivial pointers are now supported. Large macros removed. Some code cleanup and minor performance gain.</li>
+  <li>2015-10-10: v2.26 - 'back()' in plf::stack changed to 'top()' to better reflect std:: library stack implementation function titles. Added standard container typedefs to colony and stack. Colony iterators now return element_allocator::pointer and element_allocator::reference instead of element_type * and element_type &amp;. Some minor code cleanup.</li>
   <li>2015-10-6: v2.24 - Bugfix for C++03 with x64 compilers. Minor
-  corrections, performance improvements for C++03 compilers.</li>
+    corrections, performance improvements for C++03 compilers.</li>
   <li>2015-10-4: v2.21 - Improved gcc x64 iteration. std::find now working with
     reverse_iterator. reverse_iterator function corrections, performance
     improvements. Hintless allocators under C++11 now supported. Allocation now
     uses allocator_traits under C++11.</li>
-  <li>2015-9-30: v2.13 - Fixed performance regression with small scalar types
-    and MS VCC. Small bugfixes. Return type for iterator +/- iterator changed
-    to long long int. Small performance things.</li>
+  <li>2015-9-30: v2.13 - Fixed performance regression with small primitive
+    types and MS VCC. Small bugfixes.</li>
   <li>2015-9-28: v2.12 - Added const_iterator, const_reverse_iterator, .cbegin,
     .cend, .crbegin, .crend. Some small bugfixes.</li>
   <li>2015-9-27: v2.00 - Larger performance improvements, particularly for
-    small scalar type storage. Corrections to exception handling and EBCO.
+    small primitive type storage. Corrections to exception handling and EBCO.
     ".insert" replaces ".add" (realised there is precedence for
     non-position-based insert via unordered_map/unordered_set). Added postfix
     iterator increment and decrement. Zero-argument ".add()" and ".push()"
@@ -194,8 +223,8 @@ href="http://www.libsdl.org">SDL</a> was used for more precise timing.</p>
 <ol type="1">
   <li>wish to be able to insert to a container "on the fly"</li>
   <li>wish to be able to erase container elements</li>
-  <li>do not wish to have any pointer/iterator invalidation, so that references
-    between objects in containers remain valid</li>
+  <li>do not wish to have any pointer/iterator invalidation with the above, so
+    that references between objects in containers remain valid</li>
 </ol>
 
 <p>Vector and deque only satisfy these demands in one scenario; where we have a
@@ -730,10 +759,11 @@ destruct objects during this process.</p>
 <br>
 
 
-<p>While we can see that vectors and arrays have a slight lead in iteration
-performance in this circumstance, the difference is minimal and while the array
-and vector are not freeing up memory or calling destructors, the colony is -
-and hence provides more headroom for memory during execution.</p>
+<p>While we can see that vectors and arrays have a slight lead in iteration and
+erasure performance in this circumstance, the difference is minimal compared to
+the increase in insertion speed and while the array and vector are not freeing
+up memory or calling destructors, the colony is - and hence provides more
+headroom for memory during execution.</p>
 
 <h3>Non-Object-Oriented, "Raw" tests</h3>
 
@@ -1030,7 +1060,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>&lt; 1</td>
       <td>1</td>
       <td>1</td>
-      <td>0<br>
+      <td>&lt; 1<br>
       </td>
       <td></td>
     </tr>
@@ -1039,7 +1069,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>&lt; 1</td>
       <td>&lt; 1</td>
       <td>&lt; 1</td>
-      <td>0<br>
+      <td>&lt; 1<br>
       </td>
       <td></td>
     </tr>
@@ -1550,10 +1580,11 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
   </li>
   <li><h4>What are the performance characteristics?</h4>
     <p>As above, also, see the <a href="#benchmarks">benchmarks</a>. On
-    larger-than-scalar types, inserting to a colony is typically twice as fast
-    as a vector, erasing from is many multiples-of-ten faster, and iteration
-    about the same (or slightly slower, but not by a meaningful ratio). For
-    scalar types (ie. int, float etc) it does not perform as well.</p>
+    larger-than-primitive types, inserting to a colony is typically twice as
+    fast as a vector, erasing from is many multiples-of-ten faster, and
+    iteration about the same (or slightly slower, but not by a meaningful
+    ratio). For primitive types (ie. int, float etc) it does not perform as
+    well.</p>
   </li>
   <li><h4>What are some examples of situations where a colony improves
     performance?</h4>
@@ -1574,7 +1605,7 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     the program (which would necessitate a vector of pointers to
     dynamically-allocated objects in order to ensure reference validity - which
     has poor cache performance).</p>
-    <p>In the case of small scalar types and low amounts of realtime
+    <p>In the case of small primitive types and low amounts of realtime
     insert/erase, you may find a vector faster, although insert/erase are
     always at least factors of ten longer in duration than iteration times,
     regardless of container. So benchmarking is required.</p>
@@ -1583,7 +1614,7 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     swapping/sorting function, but you cannot control insertion placement.</p>
   </li>
   <li><h4>Is it similar to a deque?</h4>
-    <p>No, a deque is very disimilar to a colony. A deque is a double-ended
+    <p>No, a deque is very dissimilar to a colony. A deque is a double-ended
     queue, which requires a very different internal framework. It may or may
     not use a linked-list of memory blocks, dependent on the compiler, and has
     no comparable performance characteristics. Deque element erasure varies
