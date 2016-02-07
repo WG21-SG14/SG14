@@ -83,6 +83,7 @@ void SlowUpdateExample()
 		mytimer timer;
 		for (float t = 0.0f; t < 1.0; t += 0.05f) {
 			for (auto &a : entity_vec) {
+				// slow version each object has a virtual update.
 				a->Update(t);
 			}
 		}
@@ -133,15 +134,19 @@ void SlowComplicatedUpdateExample()
 		mytimer timer;
 		for (float t = 0.0f; t < 1.0; t += 0.05f) {
 			for (auto &a : entity_vec) {
+				// if we have a fast loop for this object don't update
+				// so in this case we on the hermite entity but not the lerp ones. 
 				if (a->GetType() != entity_lerp_fast::type)	{
 					a->Update(t);
 				}
 			}
+			// fast loop with no virtual functions and maybe a different data format. 
 			entity_lerp_fast::UpdateAll(t);
 		}
 		gSlowComplicatedUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
+
 
 void FastUpdateExampleTimers()
 {
@@ -186,21 +191,91 @@ void FastUpdateExampleTimers()
 		mytimer timer;
 		for (float t = 0.0f; t < 1.0; t += 0.05f) {
 			for (auto &a : entity_vec) {
+				// if we have a fast loop for this object don't update
+				// so in this case we on the hermite entity but not the lerp ones. 
 				if (*a->m_typedata != entity_lerp_fast::type) {
 					a->Update(t);
 				}
 			}
+			// fast loop with no virtual functions and maybe a different data format. 
 			entity_lerp_fast::UpdateAll(t);
 		}
 		gFastUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
 
+
+void MethodPointerUpdateExampleTimers()
+{
+#ifdef PRINT
+	cout << "MethodPointerUpdateExampleTimers" << endl;
+#endif
+	default_random_engine generator;
+	uniform_real_distribution<float> distribution(0, 1);
+
+	int number_of_lerp = 400;
+	int number_of_hermite = 1000;
+	vector<long long> create_types;
+	for (int i = 0; i < number_of_lerp; i++)
+	{
+		create_types.emplace_back(entity_lerp_fast::type);
+	}
+	for (int i = 0; i < number_of_hermite; i++)
+	{
+		create_types.emplace_back(entity_hermite::type);
+	}
+
+	shuffle(create_types.begin(), create_types.end(), generator);
+
+	vector<unique_ptr<entity>> entity_vec;
+	for (auto &create_type : create_types)
+	{
+		if (create_type == entity_hermite::type)
+		{
+			unique_ptr<entity> a(create_entity_hermite(distribution(generator), distribution(generator), distribution(generator), distribution(generator)));
+			entity_vec.emplace_back(std::move(a));
+		}
+		else
+		{
+			unique_ptr<entity> a(create_entity_lerp_fast(distribution(generator), distribution(generator)));
+			entity_vec.emplace_back(std::move(a));
+		}
+	}
+
+
+	{
+		// change styles for document 
+		mytimer timer;
+		// make a typedef to avoid mistakes
+		typedef  void (entity_lerp_fast::*memfun)(float y) const;
+		// create a member function that points to update function that I have a fast loop for 
+		memfun mf = &entity_lerp_fast::Update;
+		// The GCC extention looks like you can do this. 
+		// typedef  void(*as_normfun)(entity *_this, float y);
+		// as_normfun nf = (as_normfun)&entity::Update;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+			for (auto &a : entity_vec) {
+				
+				// if we have a fast loop for this object don't update
+				// so in this case we on the hermite entity but not the lerp ones. 
+				//if (mf != &((*a).*mf)) {
+					a->Update(t);
+				//}
+			}
+			// fast loop with no virtual functions and maybe a different data format. 
+			entity_lerp_fast::UpdateAll(t);
+		}
+		gFastUpdateExampleTimers.emplace_back(timer.stop());
+	}
+}
+
+
 int main()
 {
 	SlowUpdateExample();
 	SlowComplicatedUpdateExample();
 	FastUpdateExampleTimers();
+	MethodPointerUpdateExampleTimers();
 
 	for (auto a : dummyOut)
 	{
