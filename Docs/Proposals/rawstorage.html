@@ -2,8 +2,12 @@
 <HTML><HEAD><TITLE>Extending raw_storage_iterator</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=windows-1252">
 </HEAD>
-<BODY><FONT size=-1>Brent Friedman &lt;fourthgeek@gmail.com&gt; <BR>15-8-2015
-<BR>Document number: unassigned</FONT>
+<BODY>
+LEWG, SG14: D0039R0
+<BR>11-9-2015
+<BR>Brent Friedman 
+<br>fourthgeek@gmail.com
+
 
 <H1>Extending raw_storage_iterator</H1>
 
@@ -16,16 +20,23 @@
 
 <H3>Move construction</H3>
 <p>raw_storage_iterator lacks support for move construction of elements. Currently users will be faced with the surprising behavior of copy construction in all circumstances.
-<blockquote><tt>*rawit = std::move(x); //copy constructs using x</blockquote></tt>
+<blockquote><code>*it = std::move(x); //copy constructs using x</code></blockquote>
 
 <H3>Factory function</H3>
 <p>raw_storage_iterator requires two template parameters which make its usage fairly verbose. We propose a factory function similar to make_shared for improving readability and making its use less error prone.</p>
 
 <H3>Placement new support</H3>
-<p>The primary use of raw_storage_iterator is to serve as a helper for constructing objects in place. Despite this, it does not support placement new syntax. Support for placement new into a raw storage iterator makes this iterator useful in new contexts like the uninitialized_* algorithms.</p>
+<p>The primary use of raw_storage_iterator is to serve as a helper for constructing objects in place. Despite this, it does not support placement new syntax. Support for placement new into a raw storage iterator makes this iterator useful in new contexts.</p>
 
+<H2>III. Discussion</H2>
+<p>Comments at Lenexa stated that raw_storage_iterator is obscure and underused. Fixing these holes should at least open room for this class to be utilized more frequently and to exhibit expected behavior.</p>
+<p>No facilities are provided for conditional move, as with move_if_noexcept. The structure of this class would require an understanding of move_if_noexcept to be built-in to the type system and so seems to have no good avenue for pursuit. Users of raw_storage_iterator should use move_if_noexcept at the callsite as they would with any other iterator:<br>
+<code>
+*it = move_if_noexcept(v);
+</code>
+</p> 
 
-<H2>III. Proposed Text</H2>
+<H2>IV. Proposed Text</H2>
 
 <p>Make the following changes in [storage.iterator]: <br>
 
