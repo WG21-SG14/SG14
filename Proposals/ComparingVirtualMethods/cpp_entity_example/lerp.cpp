@@ -24,6 +24,9 @@ float lerp(float t, float s, float d)
 	return t * (s - d) + d;
 }
 
+const long long entity_lerp_slow::type = 1LL;
+
+
 class entity_lerp_slow_impl : public entity_lerp_slow
 {
 	float m_s;
@@ -58,6 +61,9 @@ struct Pos
 	float x;
 	float y;
 };
+
+const long long entity_lerp_fast::type = 2LL;
+
 
 class entity_lerp_fast_impl : public entity_lerp_fast
 {

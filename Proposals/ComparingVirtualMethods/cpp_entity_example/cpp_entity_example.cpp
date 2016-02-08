@@ -251,19 +251,19 @@ void MethodPointerUpdateExampleTimers()
 		// create a member function that points to update function that I have a fast loop for 
 		memfun mf = &entity_lerp_fast::Update;
 		// The GCC extention looks like you can do this. 
-		// typedef  void(*as_normfun)(entity *_this, float y);
-		// as_normfun nf = (as_normfun)&entity::Update;
+		typedef  void(*as_normfun)(entity *_this, float y);
+		as_normfun nf = (as_normfun)&entity::Update;
 		for (float t = 0.0f; t < 1.0; t += 0.05f) {
 			for (auto &a : entity_vec) {
 				
 				// if we have a fast loop for this object don't update
 				// so in this case we on the hermite entity but not the lerp ones. 
 				//if (mf != &((*a).*mf)) {
-					a->Update(t);
+					//a->Update(t);
 				//}
 			}
 			// fast loop with no virtual functions and maybe a different data format. 
-			entity_lerp_fast::UpdateAll(t);
+			//entity_lerp_fast::UpdateAll(t);
 		}
 		gFastUpdateExampleTimers.emplace_back(timer.stop());
 	}

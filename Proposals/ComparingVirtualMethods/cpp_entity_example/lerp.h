@@ -2,7 +2,7 @@
 class entity_lerp_slow : public entity
 {
 public:
-	const static long long type = 1LL;
+	const static long long type;
 	entity_lerp_slow() :entity(&type) {}
 
 	virtual int GetType() const override = 0;
@@ -12,7 +12,7 @@ public:
 class entity_lerp_fast : public entity
 {
 public:
-	const static long long type = 2LL;
+	const static long long type;
 	entity_lerp_fast() :entity(&type) {}
 
 	virtual int GetType() const override = 0;

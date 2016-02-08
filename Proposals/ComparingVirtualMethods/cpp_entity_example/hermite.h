@@ -4,7 +4,7 @@
 class entity_hermite : public entity
 {
 public:
-	const static long long type = 3LL;
+	const static long long type;
 	entity_hermite() :entity(&type) {}
 
 	virtual int GetType() const override = 0;
