@@ -22,6 +22,7 @@ int dummyOutIndex = 0;
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gSlowSimpleUpdateExampleTimers;
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gSlowComplicatedUpdateExampleTimers;
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gFastUpdateExampleTimers;
+vector<std::chrono::duration<double, std::ratio<1, 1000>>> gMethodPointerUpdateExampleTimers;
 
 
 class mytimer
@@ -205,6 +206,10 @@ void FastUpdateExampleTimers()
 }
 
 
+class entity;
+typedef  void(*as_normfun)(entity *_this, float y);		
+
+
 void MethodPointerUpdateExampleTimers()
 {
 #ifdef PRINT
@@ -242,30 +247,32 @@ void MethodPointerUpdateExampleTimers()
 		}
 	}
 
-
 	{
 		// change styles for document 
 		mytimer timer;
 		// make a typedef to avoid mistakes
-		typedef  void (entity_lerp_fast::*memfun)(float y) const;
+		typedef  void (entity::*memfun)(float y) const;
 		// create a member function that points to update function that I have a fast loop for 
-		memfun mf = &entity_lerp_fast::Update;
 		// The GCC extention looks like you can do this. 
-		typedef  void(*as_normfun)(entity *_this, float y);
-		as_normfun nf = (as_normfun)&entity::Update;
+		memfun mf = &entity::Update;
+
+		as_normfun snf = (as_normfun)(&entity_lerp_fast_impl::Update);
 		for (float t = 0.0f; t < 1.0; t += 0.05f) {
 			for (auto &a : entity_vec) {
 				
+				const entity& e = *(&(*a)); 
+
+				as_normfun dnf = (as_normfun)(e.*mf);
 				// if we have a fast loop for this object don't update
 				// so in this case we on the hermite entity but not the lerp ones. 
-				//if (mf != &((*a).*mf)) {
-					//a->Update(t);
-				//}
+				if (snf != dnf) {
+					a->Update(t);
+				}
 			}
 			// fast loop with no virtual functions and maybe a different data format. 
-			//entity_lerp_fast::UpdateAll(t);
+			entity_lerp_fast::UpdateAll(t);
 		}
-		gFastUpdateExampleTimers.emplace_back(timer.stop());
+		gMethodPointerUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
 
@@ -293,6 +300,10 @@ int main()
 	for (auto & t : gFastUpdateExampleTimers)
 	{
 		cout << "gFastUpdateExampleTimers ms " << t.count() << endl;
+	}
+	for (auto & t : gMethodPointerUpdateExampleTimers)
+	{
+		cout << "gMethodPointerUpdateExampleTimers ms " << t.count() << endl;
 	}
 	return 0;
 }
