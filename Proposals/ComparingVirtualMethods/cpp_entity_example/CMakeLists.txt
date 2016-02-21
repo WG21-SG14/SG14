@@ -8,7 +8,9 @@ set (CMAKE_CXX_STANDARD 11)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-pmf-conversions" ) 
-	# add_definitions("-Wno-c++11-extensions")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -Wall")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -Wall")	
 endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
 # http://cognitivewaves.wordpress.com/cmake-and-visual-studio/
