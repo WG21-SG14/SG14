@@ -14,6 +14,8 @@
 #include <chrono>
 #include <ctime>
 #include <algorithm>
+#include <conio.h>
+
 using namespace std;
 
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
@@ -22,7 +24,9 @@ int dummyOutIndex = 0;
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gSlowSimpleUpdateExampleTimers;
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gSlowComplicatedUpdateExampleTimers;
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gFastUpdateExampleTimers;
+#ifdef __GNUC__
 vector<std::chrono::duration<double, std::ratio<1, 1000>>> gMethodPointerUpdateExampleTimers;
+#endif
 
 
 class mytimer
@@ -209,7 +213,7 @@ void FastUpdateExampleTimers()
 class entity;
 typedef  void(*as_normfun)(entity *_this, float y);		
 
-
+#ifdef __GNUC__
 void MethodPointerUpdateExampleTimers()
 {
 #ifdef PRINT
@@ -275,14 +279,16 @@ void MethodPointerUpdateExampleTimers()
 		gMethodPointerUpdateExampleTimers.emplace_back(timer.stop());
 	}
 }
-
+#endif
 
 int main()
 {
 	SlowUpdateExample();
 	SlowComplicatedUpdateExample();
 	FastUpdateExampleTimers();
+#ifdef __GNUC__
 	MethodPointerUpdateExampleTimers();
+#endif
 
 	for (auto a : dummyOut)
 	{
@@ -301,10 +307,13 @@ int main()
 	{
 		cout << "gFastUpdateExampleTimers ms " << t.count() << endl;
 	}
+#ifdef __GNUC__
 	for (auto & t : gMethodPointerUpdateExampleTimers)
 	{
 		cout << "gMethodPointerUpdateExampleTimers ms " << t.count() << endl;
 	}
+#endif
+	_getch();
 	return 0;
 }
 
