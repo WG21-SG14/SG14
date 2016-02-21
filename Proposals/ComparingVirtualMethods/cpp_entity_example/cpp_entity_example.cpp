@@ -14,7 +14,6 @@
 #include <chrono>
 #include <ctime>
 #include <algorithm>
-#include <conio.h>
 
 using namespace std;
 
@@ -313,7 +312,6 @@ int main()
 		cout << "gMethodPointerUpdateExampleTimers ms " << t.count() << endl;
 	}
 #endif
-	_getch();
 	return 0;
 }
 
