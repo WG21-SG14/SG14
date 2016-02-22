@@ -1,37 +1,38 @@
 #include <iostream>
 #include <algorithm>
-#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
 #include "plf_colony.h"
 
 
-#define TITLE1(title_text) \
-	std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl; \
+void title1(const char *title_text)
+{
+	std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
 	std::cout << "===========================================" << std::endl << std::endl << std::endl; 
+}
 
-#define TITLE2(title_text) \
-	std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl; 
+void title2(const char *title_text)
+{
+	std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
+}
 
 	
-#define PASS std::cout << "Pass" << std::endl;
-
-#define FAIL std::cout << "Fail" << std::endl;
-
-#define FAILPASS(test_type, condition) \
-	std::cout << test_type << ": "; \
-	\
-	if (condition) \
-	{ \
-		PASS \
-	} \
-	else \
-	{ \
-		FAIL \
-		std::cin.get(); \
-		abort(); \
+void failpass(const char *test_type, bool condition)
+{
+	std::cout << test_type << ": ";
+	
+	if (condition) 
+	
+	{ 
+		std::cout << "Pass" << std::endl;
+	} 
+	else 
+	{ 
+		std::cout << "Fail" << std::endl;
+		std::cin.get(); 
+		abort(); 
 	}
-
+}
 
 
 namespace sg14_test
@@ -46,32 +47,33 @@ void plf_test_suite()
 
 
 	unsigned int looper = 0;
-	
+
+
 	while (++looper != 50)
 	{
 
 	{
-		TITLE1("Colony")
-		TITLE2("Test Basics")
+		title1("Colony");
+		title2("Test Basics");
 		
 		colony<int *> p_colony;
 		
-		FAILPASS("Colony empty", p_colony.empty())
+		failpass("Colony empty", p_colony.empty());
 		
 		int ten = 10;
 		p_colony.insert(&ten);
 		
-		FAILPASS("Colony not-empty", !p_colony.empty())
+		failpass("Colony not-empty", !p_colony.empty());
 	
-		TITLE2("Iterator tests")
+		title2("Iterator tests");
 		
-		FAILPASS("Begin() working", **p_colony.begin() == 10)
-		FAILPASS("End() working", p_colony.begin() != p_colony.end())
+		failpass("Begin() working", **p_colony.begin() == 10);
+		failpass("End() working", p_colony.begin() != p_colony.end());
 		
 
 		p_colony.clear();
 
-		FAILPASS("Begin = End after clear", p_colony.begin() == p_colony.end())
+		failpass("Begin = End after clear", p_colony.begin() == p_colony.end());
 
 		int twenty = 20;
 		
@@ -89,24 +91,35 @@ void plf_test_suite()
 			numtotal += **the_iterator;
 		}
 		
-		FAILPASS("Iteration count test", total == 400)
-		FAILPASS("Iterator access test", numtotal == 6000)
+		failpass("Iteration count test", total == 400);
+		failpass("Iterator access test", numtotal == 6000);
 
-		FAILPASS("Iterator + Iterator test", (p_colony.begin() + (p_colony.begin() + 20)) == 20);
-		FAILPASS("Iterator - Iterator test", ((p_colony.begin() + 200) - p_colony.begin() == 200));
+		colony<int *>::iterator plus_twenty = p_colony.begin();
+		p_colony.advance(plus_twenty, 20);
+		colony<int *>::iterator plus_two_hundred = p_colony.begin();
+		p_colony.advance(plus_two_hundred, 200);
+		
+		failpass("Iterator + distance test", p_colony.distance(p_colony.begin(), plus_twenty) == 20);
+		failpass("Iterator - distance test", p_colony.distance(plus_two_hundred, p_colony.begin()) == -200);
+		
+		colony<int *>::iterator next_iterator = p_colony.next(p_colony.begin(), 5);
+		colony<int *>::const_iterator prev_iterator = p_colony.prev(p_colony.cend(), 300);
+		
+		failpass("Iterator next test", p_colony.distance(p_colony.begin(), next_iterator) == 5);
+		failpass("Const iterator prev test", p_colony.distance(p_colony.cend(), prev_iterator) == -300);
 		
 		colony<int *> p_colony2 = p_colony;
 		colony<int *> p_colony3(p_colony);
 		
-		FAILPASS("Copy test", p_colony2.size() == 400)
-		FAILPASS("Copy construct test", p_colony3.size() == 400)
-		
-		FAILPASS("Equality operator test", p_colony == p_colony2)
-		FAILPASS("Equality operator test 2", p_colony2 == p_colony3)
+		failpass("Copy test", p_colony2.size() == 400);
+		failpass("Copy construct test", p_colony3.size() == 400);
+
+		failpass("Equality operator test", p_colony == p_colony2);
+		failpass("Equality operator test 2", p_colony2 == p_colony3);
 		
 		p_colony2.insert(&ten);
 		
-		FAILPASS("Inequality operator test", p_colony2 != p_colony3)
+		failpass("Inequality operator test", p_colony2 != p_colony3);
 
 		numtotal = 0;
 		total = 0;
@@ -118,20 +131,31 @@ void plf_test_suite()
 		}
 
 
-		FAILPASS("Reverse iteration count test", total == 400)
-		FAILPASS("Reverse iterator access test", numtotal == 6000)
+		failpass("Reverse iteration count test", total == 400);
+		failpass("Reverse iterator access test", numtotal == 6000);
+		
+		colony<int *>::reverse_iterator r_iterator = p_colony.rbegin();
+		p_colony.advance(r_iterator, 50);
+		
+		failpass("Reverse iterator advance and distance test", p_colony.distance(p_colony.rbegin(), r_iterator) == -50);
+
+		colony<int *>::reverse_iterator r_iterator2 = p_colony.next(r_iterator, 2);
+
+		cout << p_colony.distance(p_colony.rbegin(), r_iterator2) << endl;
+		
+		failpass("Reverse iterator next and distance test", p_colony.distance(p_colony.rbegin(), r_iterator2) == -52);
 		
 		numtotal = 0;
 		total = 0;
 
-		for(colony<int *>::iterator the_iterator = p_colony.begin(); the_iterator < p_colony.end(); the_iterator += 2)
+		for(colony<int *>::iterator the_iterator = p_colony.begin(); the_iterator < p_colony.end(); p_colony.advance(the_iterator, 2))
 		{
 			++total;
 			numtotal += **the_iterator;
 		}
 
-		FAILPASS("Multiple iteration test", total == 200)
-		FAILPASS("Multiple iteration access test", numtotal == 2000)
+		failpass("Multiple iteration test", total == 200);
+		failpass("Multiple iteration access test", numtotal == 2000);
 
 		numtotal = 0;
 		total = 0;
@@ -142,32 +166,32 @@ void plf_test_suite()
 			numtotal += **the_iterator;
 		}
 
-		FAILPASS("Const_iterator test", total == 400)
-		FAILPASS("Const_iterator access test", numtotal == 6000)
+		failpass("Const_iterator test", total == 400);
+		failpass("Const_iterator access test", numtotal == 6000);
 
 
 		numtotal = 0;
 		total = 0;
 
-		for(colony<int *>::const_reverse_iterator the_iterator = p_colony.crend() - 1; the_iterator != p_colony.crbegin() - 1; --the_iterator)
+		for(colony<int *>::const_reverse_iterator the_iterator = --colony<int *>::const_reverse_iterator(p_colony.crend()); the_iterator != --colony<int *>::const_reverse_iterator(p_colony.crbegin()); --the_iterator)
 		{
 			++total;
 			numtotal += **the_iterator;
 		}
 
-		FAILPASS("Const_reverse_iterator -- test", total == 400)
-		FAILPASS("Const_reverse_iterator -- access test", numtotal == 6000)
+		failpass("Const_reverse_iterator -- test", total == 400);
+		failpass("Const_reverse_iterator -- access test", numtotal == 6000);
 
 		total = 0;
 		
-		for(colony<int *>::iterator the_iterator = p_colony.begin() + 1; the_iterator < p_colony.end(); ++the_iterator)
+		for(colony<int *>::iterator the_iterator = ++colony<int *>::iterator(p_colony.begin()); the_iterator < p_colony.end(); ++the_iterator)
 		{
 			++total;
 			the_iterator = p_colony.erase(the_iterator);
 		}
 
-		FAILPASS("Partial erase iteration test", total == 200)
-		FAILPASS("Post-erase size test", p_colony.size() == 200)
+		failpass("Partial erase iteration test", total == 200);
+		failpass("Post-erase size test", p_colony.size() == 200);
 
 		total = 0;
 
@@ -178,8 +202,8 @@ void plf_test_suite()
 			++total;
 		}
 
-		FAILPASS("Full erase reverse iteration test", total == 200)
-		FAILPASS("Post-erase size test", p_colony.size() == 0)
+		failpass("Full erase reverse iteration test", total == 200);
+		failpass("Post-erase size test", p_colony.size() == 0);
 
 		for (unsigned int temp = 0; temp != 200; ++temp)
 		{
@@ -189,27 +213,27 @@ void plf_test_suite()
 		
 		total = 0;
 
-		for(colony<int *>::iterator the_iterator = p_colony.end() - 1; the_iterator != p_colony.begin(); --the_iterator)
+		for(colony<int *>::iterator the_iterator = --colony<int *>::iterator(p_colony.end()); the_iterator != p_colony.begin(); --the_iterator)
 		{
 			++total;
 		}
 		
-		FAILPASS("Negative iteration test", total == 399)
+		failpass("Negative iteration test", total == 399);
 
 
 		total = 0;
 
-		for(colony<int *>::iterator the_iterator = p_colony.end() - 1; the_iterator != p_colony.begin(); the_iterator -= 2)
+		for(colony<int *>::iterator the_iterator = --(colony<int *>::iterator(p_colony.end())); the_iterator != p_colony.begin(); p_colony.advance(the_iterator, -2))
 		{
 			++total;
 		}
 
-		FAILPASS("Negative multiple iteration test", total == 200)
+		failpass("Negative multiple iteration test", total == 200);
 	}
-	
+
 	
 	{
-		TITLE1("Insert and Erase tests")
+		title1("Insert and Erase tests");
 		
 		colony<int> i_colony;
 
@@ -219,17 +243,17 @@ void plf_test_suite()
 		}
 		
 		
-		FAILPASS("Size after insert test", i_colony.size() == 500000)
+		failpass("Size after insert test", i_colony.size() == 500000);
 
 
-		colony<int>::iterator found_item = std::find(i_colony.begin(), i_colony.end(), 5000);
+		colony<int>::iterator found_item = std::find(i_colony.begin(), i_colony.end(), 5000);;
 		
-		FAILPASS("std::find iterator test", *found_item == 5000)
+		failpass("std::find iterator test", *found_item == 5000);
 		
 		
-		colony<int>::reverse_iterator found_item2 = std::find(i_colony.rbegin(), i_colony.rend(), 5000);
+		colony<int>::reverse_iterator found_item2 = std::find(i_colony.rbegin(), i_colony.rend(), 5000);;
 		
-		FAILPASS("std::find reverse_iterator test", *found_item2 == 5000)
+		failpass("std::find reverse_iterator test", *found_item2 == 5000);
 		
 		
 		for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end(); ++the_iterator)
@@ -237,7 +261,7 @@ void plf_test_suite()
 			the_iterator = i_colony.erase(the_iterator);
 		}
 
-		FAILPASS("Erase alternating test", i_colony.size() == 250000)
+		failpass("Erase alternating test", i_colony.size() == 250000);
 
 		do
 		{
@@ -249,13 +273,14 @@ void plf_test_suite()
 				}
 				else
 				{
+					colony<int>::iterator temp_iterator = the_iterator;
 					++the_iterator;
 				}
 			}
 			
 		} while (!i_colony.empty());
 		
-		FAILPASS("Erase randomly till-empty test", i_colony.size() == 0)
+		failpass("Erase randomly till-empty test", i_colony.size() == 0);
 
 
 		i_colony.reinitialize(10000);
@@ -265,7 +290,7 @@ void plf_test_suite()
 			i_colony.insert(1);
 		}
 		
-		FAILPASS("Size after reinitialize + insert test", i_colony.size() == 30000)
+		failpass("Size after reinitialize + insert test", i_colony.size() == 30000);
 
 
 		unsigned int sum = 0;
@@ -284,7 +309,7 @@ void plf_test_suite()
 			}
 		}
 		
-		FAILPASS("Alternating insert/erase test", i_colony.size() == 45001)
+		failpass("Alternating insert/erase test", i_colony.size() == 45001);
 
 		
 		do
@@ -301,9 +326,9 @@ void plf_test_suite()
 					the_iterator = i_colony.erase(the_iterator);
 				}
 			}
-		} while (!i_colony.empty());
+		} while (!i_colony.empty());;
 		
-		FAILPASS("Random insert/erase till empty test", i_colony.size() == 0)
+		failpass("Random insert/erase till empty test", i_colony.size() == 0);
 
 		
 		for (unsigned int temp = 0; temp != 500000; ++temp)
@@ -311,14 +336,17 @@ void plf_test_suite()
 			i_colony.insert(10);
 		}
 		
-		FAILPASS("Insert post-erase test", i_colony.size() == 500000)
+		failpass("Insert post-erase test", i_colony.size() == 500000);
+		colony<int>::iterator the_iterator = i_colony.begin();
+		i_colony.advance(the_iterator, 250000);
+		
 
-		for (colony<int>::iterator the_iterator = i_colony.begin() + 250000; the_iterator != i_colony.end();)
+		for (; the_iterator != i_colony.end();)
 		{
 			the_iterator = i_colony.erase(the_iterator);
 		}
 		
-		FAILPASS("Large multi-increment iterator test", i_colony.size() == 250000)
+		failpass("Large multi-increment iterator test", i_colony.size() == 250000);
 
 		
 		for (unsigned int temp = 0; temp != 250000; ++temp)
@@ -326,14 +354,15 @@ void plf_test_suite()
 			i_colony.insert(10);
 		}
 		
-		colony<int>::iterator end_iterator = i_colony.end() - 250000;
+		colony<int>::iterator end_iterator = i_colony.end();
+		i_colony.advance(end_iterator, -250000);
 		
 		for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != end_iterator;)
 		{
 			the_iterator = i_colony.erase(the_iterator);
 		}
 
-		FAILPASS("Large multi-decrement iterator test", i_colony.size() == 250000)
+		failpass("Large multi-decrement iterator test", i_colony.size() == 250000);
 
 		
 		for (unsigned int temp = 0; temp != 250000; ++temp)
@@ -349,18 +378,20 @@ void plf_test_suite()
 			total += *the_iterator;
 		}
 
-		FAILPASS("Re-insert post-heavy-erasure test", total == 5000000)
+		failpass("Re-insert post-heavy-erasure test", total == 5000000);
 		
 
-		end_iterator = i_colony.end() - 1;
-		end_iterator -= 50000;
+		end_iterator = i_colony.end();
+		i_colony.advance(end_iterator, -50001);
+		colony<int>::iterator begin_iterator = i_colony.begin();
+		i_colony.advance(begin_iterator, 300000);
 
-		for (colony<int>::iterator the_iterator = i_colony.begin() + 300000; the_iterator != end_iterator;)
+		for (colony<int>::iterator the_iterator = begin_iterator; the_iterator != end_iterator;)
 		{
 			the_iterator = i_colony.erase(the_iterator);
 		}
 
-		FAILPASS("Non-end decrement + erase test", i_colony.size() == 350001)
+		failpass("Non-end decrement + erase test", i_colony.size() == 350001);
 		
 
 		for (unsigned int temp = 0; temp != 100000; ++temp)
@@ -368,8 +399,8 @@ void plf_test_suite()
 			i_colony.insert(10);
 		}
 		
-		colony<int>::iterator begin_iterator = i_colony.begin() + 2;
-		begin_iterator += 299998;
+		begin_iterator = i_colony.begin();
+		i_colony.advance(begin_iterator, 300000);
 		
 		
 		for (colony<int>::iterator the_iterator = begin_iterator; the_iterator != i_colony.end();)
@@ -377,14 +408,14 @@ void plf_test_suite()
 			the_iterator = i_colony.erase(the_iterator);
 		}
 		
-		FAILPASS("Non-beginning increment + erase test", i_colony.size() == 300000)
+		failpass("Non-beginning increment + erase test", i_colony.size() == 300000);
 		
 		for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 		{
 			the_iterator = i_colony.erase(the_iterator);
 		}
 		
-		FAILPASS("Final erase test", i_colony.empty())
+		failpass("Final erase test", i_colony.empty());
 		
 		
 		i_colony.reinitialize(3);
@@ -416,14 +447,14 @@ void plf_test_suite()
 			}
 		}
 		
-		FAILPASS("Multiple sequential small insert/erase commands test", count == i_colony.size())
+		failpass("Multiple sequential small insert/erase commands test", count == i_colony.size());
 		
 	}
 
 
 
 	{
-		TITLE1("Stack Tests")
+		title1("Stack Tests");
 
 		stack<unsigned int> i_stack(50);
 		
@@ -432,18 +463,26 @@ void plf_test_suite()
 			i_stack.push(10);
 		}
 		
-		FAILPASS("Multipush test", i_stack.size() == 250000)
+		failpass("Multipush test", i_stack.size() == 250000);
 		
 		stack<unsigned int> i_stack2 = i_stack;
 		stack<unsigned int> i_stack3(i_stack);
-		
-		FAILPASS("Copy test", i_stack2.size() == 250000)
-		FAILPASS("Copy constructor test", i_stack3.size() == 250000)
 
-		FAILPASS("Equality operator test", i_stack == i_stack2);
-		FAILPASS("Equality operator test 2", i_stack2 == i_stack3);
-		
-		
+        #ifdef PLF_MOVE_SEMANTICS_SUPPORT
+			stack<unsigned int> i_stack4 = std::move(i_stack3);
+		#endif
+
+		failpass("Copy test", i_stack2.size() == 250000);
+		failpass("Copy constructor test", i_stack3.size() == 250000);
+
+		failpass("Equality operator test", i_stack == i_stack2);
+
+	    #ifdef PLF_MOVE_SEMANTICS_SUPPORT
+			failpass("Move equality operator test 2", i_stack2 == i_stack4);
+		#else
+			failpass("Equality operator test 2", i_stack2 == i_stack3);
+    	#endif
+
 		unsigned int total = 0;
 		
 		for (unsigned int temp = 0; temp != 200000; ++temp)
@@ -452,8 +491,8 @@ void plf_test_suite()
 			i_stack.pop();
 		}
 
-		FAILPASS("Multipop test", i_stack.size() == 50000)
-		FAILPASS("top() test", total == 2000000)
+		failpass("Multipop test", i_stack.size() == 50000);
+		failpass("top() test", total == 2000000);
 
 		do
 		{
@@ -465,17 +504,15 @@ void plf_test_suite()
 			{
 				i_stack.pop();
 			}
-		} while (!i_stack.empty());
+		} while (!i_stack.empty());;
 		
-		FAILPASS("Randomly pop/push till empty test", i_stack.size() == 0)
+		failpass("Randomly pop/push till empty test", i_stack.size() == 0);
 	}
 
 	}
 
-	TITLE1("Test Suite PASS - Press ENTER to Exit")
+	title1("Test Suite PASS - Press ENTER to Exit");
 	cin.get();
 
 	return 0;
-}
-
 }

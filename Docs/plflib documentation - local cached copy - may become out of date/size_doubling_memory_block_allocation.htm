@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description"
+  content="PLF C++ Library">
+  <meta name="keywords"
+  content="C++, C, PLF, colony, stack, STL, containers, optimize, performance, pointer, iterator, theyaton, boolean, field">
+  <title>PLF C++ Library - Size-doubling memory-block allocation</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<a href="index.htm">Home</a>
+
+<h1>Size-doubling memory-block allocation</h1>
+<p>By Matthew Bentley 26/01/2016</p>
+
+<h2>Abstract</h2>
+
+<p>This document describes a pattern of memory expansion for data containers, namely doubly-linked chains of increasingly-large memory blocks, each of which doubles the number of elements capable of being stored within the container prior to it's instantiation.</p>
+
+
+<h2>Explanation</h2>
+
+<p>This is a simple technique for allocating memory in a situation where the amount of memory needed is not known in advance, for example, for a dynamically-expanding data container such as a dynamic array or C++ vector.</p>
+
+<p>To start with, you allocate a small block of memory of fixed size. As an example, let's hypothesize a C++ vector of 32-bit integers, using this memory pattern. We initialize the vector, and it creates a memory block large enough to hold 8 integers as it's initial memory block:</p>
+
+<code>Memory block 1: 0 0 0 0 0 0 0 0</code>
+
+
+<p>Once that block is full (ie. the container has had enough objects inserted into it to fill up the available space), we allocate another memory block large enough to double the number of objects that can be held within the container. Continuing the vector example above, let's say we've now filled the initial 8 spaces available:</p>
+
+<code>Memory block 1: 1 5 6 2 7 1 5 2</code>
+
+
+<p>and now wish to add another number to the vector. At this point we must double the space available, which means we need to adding another memory block large enough to hold 8 integers:</p>
+
+<code>Memory block 1: 1 5 6 2 7 1 5 2<br>
+Memory block 2: 0 0 0 0 0 0 0 0</code>
+
+
+<p>and insert into it:</p>
+
+<code>Memory block 1: 1 5 6 2 7 1 0 2<br>
+Memory block 2: 4 0 0 0 0 0 0 0</code>
+
+
+<p>Now we simply continue this pattern every time we run out of space. Continuing the vector example above, the next allocated memory block would be large enough to hold 16 integers:</p>
+
+<code>Memory block 1: 1 5 6 2 7 1 5 2<br>
+Memory block 2: 4 3 1 3 4 1 6 4<br>
+Memory block 3: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0</code>
+
+
+<p>and the next memory block after that would be large enough to hold 32 integers, etcetera.</p>
+
+<h3>Implicit advantages</h3>
+
+<p>The most significant advantage of this technique over the method of reallocating all elements to a singular larger memory block (as is favoured by std::vector and many others) is the stability of pointers/iterators, which is unaffected by element insertion. No matter how many elements get added to a container using this pattern, adding elements never triggers pointer/iterator invalidation - which is highly significant for both modular and object-oriented programming architectures, as it decreases busywork and workarounds for invalidations, and thus decreases development time.<p>
+
+<p>In addition, adding elements to a container using this pattern is typically twice as fast as adding to a container using a reallocation method (in real-world benchmarks) due to the fact that no data needs to be reallocated upon expansion. Freeing up unused memory also becomes a possibility when memory blocks become empty due to erasures, by removing the block and joining the previous block and subsequent block to each other instead (or in the case of a stack, removing trailing blocks). The blocks must be, of course, doubly-linked, to ensure that both forward and reverse iteration remain possible.</p>
+
+<p>In terms of iteration over all container elements, an entirely-contiguous single memory block will, of course, result in a lower iteration duration, but the difference tends to be minimal given a decent implementation. A check for end-of-block is required for each +1 forward-iteration through a data using this expansion model, just as a check for beginning-of-block is required for each -1 reverse-iteration through. This proves to be minimally-detrimental in actual benchmarking, as cache-misses only occur in the least-common case of end-block/beginning-block.</p>
+
+<p>In comparison to a similar pattern using multiple fixed-and-equal memory block sizes, the 2x expansion improves both iteration and insertion performance, as there are overall fewer instances of memory allocation during insertion, and there are greater expanses of contiguous elements during iteration.</p>
+
+<p>There's also an advantage to using this pattern in terms of recovering unused memory - with a single-block model, when there are large portions of the singular memory block not being used, reclaiming that memory for the OS is not possible without first reallocating all data. With a 2x block expansion pattern, any empty block can be freed to the OS without reallocation of data. In practice with some containers this could lead to having large memory blocks with only a few objects within them, which cannot be reclaimed, and within this case, depending on the data container in question, other methods of memory reclamation must be considered.</p>
+<br>
+<p>Contact: <img src="footer.gif"><br>
+plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
+</body>
+</html>
