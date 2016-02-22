@@ -1,0 +1,765 @@
+void FastUpdateExampleTimers()
+{
+  403f40:	41 56                	push   %r14
+	pointer _M_start;
+	pointer _M_finish;
+	pointer _M_end_of_storage;
+
+	_Vector_impl()
+	: _Tp_alloc_type(), _M_start(0), _M_finish(0), _M_end_of_storage(0)
+  403f42:	31 c0                	xor    %eax,%eax
+  403f44:	31 f6                	xor    %esi,%esi
+  403f46:	41 55                	push   %r13
+  403f48:	41 54                	push   %r12
+  403f4a:	55                   	push   %rbp
+  403f4b:	53                   	push   %rbx
+  403f4c:	bb 90 01 00 00       	mov    $0x190,%ebx
+  403f51:	48 83 ec 70          	sub    $0x70,%rsp
+
+#if __cplusplus >= 201103L
+      template<typename _Up, typename... _Args>
+        void
+        construct(_Up* __p, _Args&&... __args)
+	{ ::new((void *)__p) _Up(std::forward<_Args>(__args)...); }
+  403f55:	48 8b 2d 9c 17 00 00 	mov    0x179c(%rip),%rbp        # 4056f8 <_ZN16entity_lerp_fast4typeE>
+    {
+      if ((__detail::__mod<_UIntType, __m>(__c) == 0)
+	  && (__detail::__mod<_UIntType, __m>(__s) == 0))
+	_M_x = 1;
+      else
+	_M_x = __detail::__mod<_UIntType, __m>(__s);
+  403f5c:	48 c7 44 24 10 01 00 	movq   $0x1,0x10(%rsp)
+  403f63:	00 00 
+  403f65:	48 c7 44 24 30 00 00 	movq   $0x0,0x30(%rsp)
+  403f6c:	00 00 
+  403f6e:	48 c7 44 24 38 00 00 	movq   $0x0,0x38(%rsp)
+  403f75:	00 00 
+  403f77:	48 c7 44 24 40 00 00 	movq   $0x0,0x40(%rsp)
+  403f7e:	00 00 
+  403f80:	eb 1c                	jmp    403f9e <_Z23FastUpdateExampleTimersv+0x5e>
+  403f82:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+  403f88:	48 85 f6             	test   %rsi,%rsi
+  403f8b:	74 03                	je     403f90 <_Z23FastUpdateExampleTimersv+0x50>
+  403f8d:	48 89 2e             	mov    %rbp,(%rsi)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+	  {
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+  403f90:	48 83 c6 08          	add    $0x8,%rsi
+	uniform_real_distribution<float> distribution(0, 1);
+
+	int number_of_lerp = 400;
+	int number_of_hermite = 1000;
+	vector<long long> create_types;
+	for (int i = 0; i < number_of_lerp; i++)
+  403f94:	83 eb 01             	sub    $0x1,%ebx
+  403f97:	48 89 74 24 38       	mov    %rsi,0x38(%rsp)
+  403f9c:	74 23                	je     403fc1 <_Z23FastUpdateExampleTimersv+0x81>
+    template<typename... _Args>
+      void
+      vector<_Tp, _Alloc>::
+      emplace_back(_Args&&... __args)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+  403f9e:	48 39 c6             	cmp    %rax,%rsi
+  403fa1:	75 e5                	jne    403f88 <_Z23FastUpdateExampleTimersv+0x48>
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+	  }
+	else
+	  _M_emplace_back_aux(std::forward<_Args>(__args)...);
+  403fa3:	48 8d 7c 24 30       	lea    0x30(%rsp),%rdi
+  403fa8:	be f8 56 40 00       	mov    $0x4056f8,%esi
+  403fad:	e8 4e 0c 00 00       	callq  404c00 <_ZNSt6vectorIxSaIxEE19_M_emplace_back_auxIIRKxEEEvDpOT_>
+  403fb2:	83 eb 01             	sub    $0x1,%ebx
+  403fb5:	48 8b 74 24 38       	mov    0x38(%rsp),%rsi
+  403fba:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+  403fbf:	75 dd                	jne    403f9e <_Z23FastUpdateExampleTimersv+0x5e>
+  403fc1:	bb e8 03 00 00       	mov    $0x3e8,%ebx
+  403fc6:	48 8b 2d 43 18 00 00 	mov    0x1843(%rip),%rbp        # 405810 <_ZN14entity_hermite4typeE>
+  403fcd:	eb 1c                	jmp    403feb <_Z23FastUpdateExampleTimersv+0xab>
+  403fcf:	90                   	nop
+  403fd0:	48 85 f6             	test   %rsi,%rsi
+  403fd3:	74 03                	je     403fd8 <_Z23FastUpdateExampleTimersv+0x98>
+  403fd5:	48 89 2e             	mov    %rbp,(%rsi)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+	  {
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+  403fd8:	48 83 c6 08          	add    $0x8,%rsi
+	{
+		create_types.emplace_back(entity_lerp_fast::type);
+	}
+	for (int i = 0; i < number_of_hermite; i++)
+  403fdc:	83 eb 01             	sub    $0x1,%ebx
+  403fdf:	48 89 74 24 38       	mov    %rsi,0x38(%rsp)
+  403fe4:	74 23                	je     404009 <_Z23FastUpdateExampleTimersv+0xc9>
+  403fe6:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+    template<typename... _Args>
+      void
+      vector<_Tp, _Alloc>::
+      emplace_back(_Args&&... __args)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+  403feb:	48 39 c6             	cmp    %rax,%rsi
+  403fee:	75 e0                	jne    403fd0 <_Z23FastUpdateExampleTimersv+0x90>
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+	  }
+	else
+	  _M_emplace_back_aux(std::forward<_Args>(__args)...);
+  403ff0:	48 8d 7c 24 30       	lea    0x30(%rsp),%rdi
+  403ff5:	be 10 58 40 00       	mov    $0x405810,%esi
+  403ffa:	e8 01 0c 00 00       	callq  404c00 <_ZNSt6vectorIxSaIxEE19_M_emplace_back_auxIIRKxEEEvDpOT_>
+  403fff:	83 eb 01             	sub    $0x1,%ebx
+  404002:	48 8b 74 24 38       	mov    0x38(%rsp),%rsi
+  404007:	75 dd                	jne    403fe6 <_Z23FastUpdateExampleTimersv+0xa6>
+	{
+		create_types.emplace_back(entity_hermite::type);
+	}
+
+	shuffle(create_types.begin(), create_types.end(), generator);
+  404009:	48 8b 7c 24 30       	mov    0x30(%rsp),%rdi
+  40400e:	48 8d 54 24 10       	lea    0x10(%rsp),%rdx
+  404013:	e8 c8 0f 00 00       	callq  404fe0 <_ZSt7shuffleIN9__gnu_cxx17__normal_iteratorIPxSt6vectorIxSaIxEEEERSt26linear_congruential_engineImLm16807ELm0ELm2147483647EEEvT_SA_OT0_>
+  404018:	48 8b 5c 24 30       	mov    0x30(%rsp),%rbx
+  40401d:	4c 8b 64 24 38       	mov    0x38(%rsp),%r12
+  404022:	48 c7 44 24 50 00 00 	movq   $0x0,0x50(%rsp)
+  404029:	00 00 
+  40402b:	48 c7 44 24 58 00 00 	movq   $0x0,0x58(%rsp)
+  404032:	00 00 
+  404034:	48 c7 44 24 60 00 00 	movq   $0x0,0x60(%rsp)
+  40403b:	00 00 
+
+	vector<unique_ptr<entity>> entity_vec;
+	for (auto &create_type : create_types)
+  40403d:	4c 39 e3             	cmp    %r12,%rbx
+  404040:	0f 84 81 03 00 00    	je     4043c7 <_Z23FastUpdateExampleTimersv+0x487>
+  404046:	0f 57 db             	xorps  %xmm3,%xmm3
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+	  if (__m)
+	    __res %= __m;
+  404049:	48 bd 05 00 00 00 02 	movabs $0x200000005,%rbp
+  404050:	00 00 00 
+  404053:	f3 0f 11 5c 24 0c    	movss  %xmm3,0xc(%rsp)
+  404059:	e9 06 01 00 00       	jmpq   404164 <_Z23FastUpdateExampleTimersv+0x224>
+  40405e:	66 90                	xchg   %ax,%ax
+      struct _Mod<_Tp, __m, __a, __c, true, __s>
+      {
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+  404060:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+  404065:	48 69 f0 a7 41 00 00 	imul   $0x41a7,%rax,%rsi
+	  if (__m)
+	    __res %= __m;
+  40406c:	48 89 f0             	mov    %rsi,%rax
+  40406f:	48 f7 e5             	mul    %rbp
+  404072:	48 89 f0             	mov    %rsi,%rax
+  404075:	48 29 d0             	sub    %rdx,%rax
+  404078:	48 d1 e8             	shr    %rax
+  40407b:	48 8d 0c 02          	lea    (%rdx,%rax,1),%rcx
+  40407f:	48 c1 e9 1e          	shr    $0x1e,%rcx
+  404083:	48 89 c8             	mov    %rcx,%rax
+  404086:	48 c1 e0 1f          	shl    $0x1f,%rax
+  40408a:	48 29 c8             	sub    %rcx,%rax
+  40408d:	48 89 f1             	mov    %rsi,%rcx
+  404090:	48 29 c1             	sub    %rax,%rcx
+      struct _Mod<_Tp, __m, __a, __c, true, __s>
+      {
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+  404093:	48 69 f1 a7 41 00 00 	imul   $0x41a7,%rcx,%rsi
+	  if (__m)
+	    __res %= __m;
+  40409a:	48 89 f0             	mov    %rsi,%rax
+  40409d:	48 f7 e5             	mul    %rbp
+  4040a0:	48 89 f0             	mov    %rsi,%rax
+  4040a3:	48 29 d0             	sub    %rdx,%rax
+  4040a6:	48 d1 e8             	shr    %rax
+  4040a9:	48 01 c2             	add    %rax,%rdx
+  4040ac:	48 c1 ea 1e          	shr    $0x1e,%rdx
+  4040b0:	48 89 d0             	mov    %rdx,%rax
+  4040b3:	48 c1 e0 1f          	shl    $0x1f,%rax
+  4040b7:	48 29 d0             	sub    %rdx,%rax
+  4040ba:	48 89 f2             	mov    %rsi,%rdx
+  4040bd:	48 29 c2             	sub    %rax,%rdx
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  4040c0:	48 83 e9 01          	sub    $0x1,%rcx
+       * @brief Gets the next random number in the sequence.
+       */
+      result_type
+      operator()()
+      {
+	_M_x = __detail::__mod<_UIntType, __m, __a, __c>(_M_x);
+  4040c4:	48 89 54 24 10       	mov    %rdx,0x10(%rsp)
+  4040c9:	0f 88 51 02 00 00    	js     404320 <_Z23FastUpdateExampleTimersv+0x3e0>
+  4040cf:	f3 48 0f 2a c9       	cvtsi2ss %rcx,%xmm1
+  4040d4:	f3 0f 10 64 24 0c    	movss  0xc(%rsp),%xmm4
+  4040da:	48 83 ea 01          	sub    $0x1,%rdx
+  4040de:	f3 0f 58 cc          	addss  %xmm4,%xmm1
+	  __tmp *= __r;
+	}
+      return __sum / __tmp;
+  4040e2:	f3 0f 59 0d e2 17 00 	mulss  0x17e2(%rip),%xmm1        # 4058cc <_ZN14entity_hermite4typeE+0xbc>
+  4040e9:	00 
+	operator()(_UniformRandomNumberGenerator& __urng,
+		   const param_type& __p)
+	{
+	  __detail::_Adaptor<_UniformRandomNumberGenerator, result_type>
+	    __aurng(__urng);
+	  return (__aurng() * (__p.b() - __p.a())) + __p.a();
+  4040ea:	f3 0f 58 cc          	addss  %xmm4,%xmm1
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  4040ee:	0f 88 0c 02 00 00    	js     404300 <_Z23FastUpdateExampleTimersv+0x3c0>
+  4040f4:	f3 48 0f 2a c2       	cvtsi2ss %rdx,%xmm0
+  4040f9:	f3 0f 10 6c 24 0c    	movss  0xc(%rsp),%xmm5
+  4040ff:	f3 0f 58 c5          	addss  %xmm5,%xmm0
+	  __tmp *= __r;
+	}
+      return __sum / __tmp;
+  404103:	f3 0f 59 05 c1 17 00 	mulss  0x17c1(%rip),%xmm0        # 4058cc <_ZN14entity_hermite4typeE+0xbc>
+  40410a:	00 
+  40410b:	f3 0f 58 c5          	addss  %xmm5,%xmm0
+			unique_ptr<entity> a(create_entity_hermite(distribution(generator), distribution(generator), distribution(generator), distribution(generator)));
+			entity_vec.emplace_back(std::move(a));
+		}
+		else
+		{
+			unique_ptr<entity> a(create_entity_lerp_fast(distribution(generator), distribution(generator)));
+  40410f:	e8 ac ed ff ff       	callq  402ec0 <_Z23create_entity_lerp_fastff>
+    template<typename... _Args>
+      void
+      vector<_Tp, _Alloc>::
+      emplace_back(_Args&&... __args)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+  404114:	48 8b 54 24 58       	mov    0x58(%rsp),%rdx
+  404119:	48 3b 54 24 60       	cmp    0x60(%rsp),%rdx
+  40411e:	48 89 44 24 20       	mov    %rax,0x20(%rsp)
+  404123:	0f 84 87 02 00 00    	je     4043b0 <_Z23FastUpdateExampleTimersv+0x470>
+  404129:	48 85 d2             	test   %rdx,%rdx
+  40412c:	0f 84 0e 02 00 00    	je     404340 <_Z23FastUpdateExampleTimersv+0x400>
+      // Modifiers.
+      pointer
+      release() noexcept
+      {
+	pointer __p = get();
+	std::get<0>(_M_t) = pointer();
+  404132:	48 c7 44 24 20 00 00 	movq   $0x0,0x20(%rsp)
+  404139:	00 00 
+  40413b:	48 89 02             	mov    %rax,(%rdx)
+  40413e:	48 8b 7c 24 20       	mov    0x20(%rsp),%rdi
+	  {
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+  404143:	48 83 c2 08          	add    $0x8,%rdx
+  404147:	48 89 54 24 58       	mov    %rdx,0x58(%rsp)
+
+      // Destructor.
+      ~unique_ptr() noexcept
+      {
+	auto& __ptr = std::get<0>(_M_t);
+	if (__ptr != nullptr)
+  40414c:	48 85 ff             	test   %rdi,%rdi
+  40414f:	74 06                	je     404157 <_Z23FastUpdateExampleTimersv+0x217>
+      void
+      operator()(_Tp* __ptr) const
+      {
+	static_assert(sizeof(_Tp)>0,
+		      "can't delete pointer to incomplete type");
+	delete __ptr;
+  404151:	48 8b 07             	mov    (%rdi),%rax
+  404154:	ff 50 18             	callq  *0x18(%rax)
+  404157:	48 83 c3 08          	add    $0x8,%rbx
+	}
+
+	shuffle(create_types.begin(), create_types.end(), generator);
+
+	vector<unique_ptr<entity>> entity_vec;
+	for (auto &create_type : create_types)
+  40415b:	49 39 dc             	cmp    %rbx,%r12
+  40415e:	0f 84 6c 02 00 00    	je     4043d0 <_Z23FastUpdateExampleTimersv+0x490>
+	{
+		if (create_type == entity_hermite::type)
+  404164:	48 8b 05 a5 16 00 00 	mov    0x16a5(%rip),%rax        # 405810 <_ZN14entity_hermite4typeE>
+  40416b:	48 39 03             	cmp    %rax,(%rbx)
+  40416e:	0f 85 ec fe ff ff    	jne    404060 <_Z23FastUpdateExampleTimersv+0x120>
+      struct _Mod<_Tp, __m, __a, __c, true, __s>
+      {
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+  404174:	48 8b 54 24 10       	mov    0x10(%rsp),%rdx
+  404179:	48 69 ca a7 41 00 00 	imul   $0x41a7,%rdx,%rcx
+	  if (__m)
+	    __res %= __m;
+  404180:	48 89 c8             	mov    %rcx,%rax
+  404183:	48 f7 e5             	mul    %rbp
+  404186:	48 89 c8             	mov    %rcx,%rax
+  404189:	48 29 d0             	sub    %rdx,%rax
+  40418c:	48 d1 e8             	shr    %rax
+  40418f:	48 8d 3c 02          	lea    (%rdx,%rax,1),%rdi
+  404193:	48 c1 ef 1e          	shr    $0x1e,%rdi
+  404197:	48 89 f8             	mov    %rdi,%rax
+  40419a:	48 c1 e0 1f          	shl    $0x1f,%rax
+  40419e:	48 29 f8             	sub    %rdi,%rax
+  4041a1:	48 29 c1             	sub    %rax,%rcx
+  4041a4:	48 89 cf             	mov    %rcx,%rdi
+      struct _Mod<_Tp, __m, __a, __c, true, __s>
+      {
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+  4041a7:	48 69 c9 a7 41 00 00 	imul   $0x41a7,%rcx,%rcx
+	  if (__m)
+	    __res %= __m;
+  4041ae:	48 89 c8             	mov    %rcx,%rax
+  4041b1:	48 f7 e5             	mul    %rbp
+  4041b4:	48 89 c8             	mov    %rcx,%rax
+  4041b7:	48 29 d0             	sub    %rdx,%rax
+  4041ba:	48 d1 e8             	shr    %rax
+  4041bd:	48 8d 34 02          	lea    (%rdx,%rax,1),%rsi
+  4041c1:	48 c1 ee 1e          	shr    $0x1e,%rsi
+  4041c5:	48 89 f0             	mov    %rsi,%rax
+  4041c8:	48 c1 e0 1f          	shl    $0x1f,%rax
+  4041cc:	48 29 f0             	sub    %rsi,%rax
+  4041cf:	48 29 c1             	sub    %rax,%rcx
+      struct _Mod<_Tp, __m, __a, __c, true, __s>
+      {
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+  4041d2:	4c 69 c1 a7 41 00 00 	imul   $0x41a7,%rcx,%r8
+	  if (__m)
+	    __res %= __m;
+  4041d9:	48 89 ce             	mov    %rcx,%rsi
+  4041dc:	4c 89 c0             	mov    %r8,%rax
+  4041df:	48 f7 e5             	mul    %rbp
+  4041e2:	4c 89 c0             	mov    %r8,%rax
+  4041e5:	48 29 d0             	sub    %rdx,%rax
+  4041e8:	48 d1 e8             	shr    %rax
+  4041eb:	48 8d 0c 02          	lea    (%rdx,%rax,1),%rcx
+  4041ef:	48 c1 e9 1e          	shr    $0x1e,%rcx
+  4041f3:	48 89 c8             	mov    %rcx,%rax
+  4041f6:	48 c1 e0 1f          	shl    $0x1f,%rax
+  4041fa:	48 29 c8             	sub    %rcx,%rax
+  4041fd:	4c 89 c1             	mov    %r8,%rcx
+  404200:	48 29 c1             	sub    %rax,%rcx
+      struct _Mod<_Tp, __m, __a, __c, true, __s>
+      {
+	static _Tp
+	__calc(_Tp __x)
+	{
+	  _Tp __res = __a * __x + __c;
+  404203:	4c 69 c1 a7 41 00 00 	imul   $0x41a7,%rcx,%r8
+	  if (__m)
+	    __res %= __m;
+  40420a:	4c 89 c0             	mov    %r8,%rax
+  40420d:	48 f7 e5             	mul    %rbp
+  404210:	4c 89 c0             	mov    %r8,%rax
+  404213:	48 29 d0             	sub    %rdx,%rax
+  404216:	48 d1 e8             	shr    %rax
+  404219:	48 01 c2             	add    %rax,%rdx
+  40421c:	48 c1 ea 1e          	shr    $0x1e,%rdx
+  404220:	48 89 d0             	mov    %rdx,%rax
+  404223:	48 c1 e0 1f          	shl    $0x1f,%rax
+  404227:	48 29 d0             	sub    %rdx,%rax
+  40422a:	4c 89 c2             	mov    %r8,%rdx
+  40422d:	48 29 c2             	sub    %rax,%rdx
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  404230:	48 83 ef 01          	sub    $0x1,%rdi
+       * @brief Gets the next random number in the sequence.
+       */
+      result_type
+      operator()()
+      {
+	_M_x = __detail::__mod<_UIntType, __m, __a, __c>(_M_x);
+  404234:	48 89 54 24 10       	mov    %rdx,0x10(%rsp)
+  404239:	0f 88 23 01 00 00    	js     404362 <_Z23FastUpdateExampleTimersv+0x422>
+  40423f:	f3 48 0f 2a df       	cvtsi2ss %rdi,%xmm3
+  404244:	f3 0f 10 7c 24 0c    	movss  0xc(%rsp),%xmm7
+  40424a:	48 83 ee 01          	sub    $0x1,%rsi
+  40424e:	f3 0f 58 df          	addss  %xmm7,%xmm3
+	  __tmp *= __r;
+	}
+      return __sum / __tmp;
+  404252:	f3 0f 59 1d 72 16 00 	mulss  0x1672(%rip),%xmm3        # 4058cc <_ZN14entity_hermite4typeE+0xbc>
+  404259:	00 
+	operator()(_UniformRandomNumberGenerator& __urng,
+		   const param_type& __p)
+	{
+	  __detail::_Adaptor<_UniformRandomNumberGenerator, result_type>
+	    __aurng(__urng);
+	  return (__aurng() * (__p.b() - __p.a())) + __p.a();
+  40425a:	f3 0f 58 df          	addss  %xmm7,%xmm3
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  40425e:	0f 88 32 01 00 00    	js     404396 <_Z23FastUpdateExampleTimersv+0x456>
+  404264:	f3 48 0f 2a d6       	cvtsi2ss %rsi,%xmm2
+  404269:	f3 0f 10 7c 24 0c    	movss  0xc(%rsp),%xmm7
+  40426f:	48 83 e9 01          	sub    $0x1,%rcx
+  404273:	f3 0f 58 d7          	addss  %xmm7,%xmm2
+	  __tmp *= __r;
+	}
+      return __sum / __tmp;
+  404277:	f3 0f 59 15 4d 16 00 	mulss  0x164d(%rip),%xmm2        # 4058cc <_ZN14entity_hermite4typeE+0xbc>
+  40427e:	00 
+  40427f:	f3 0f 58 d7          	addss  %xmm7,%xmm2
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  404283:	0f 88 f3 00 00 00    	js     40437c <_Z23FastUpdateExampleTimersv+0x43c>
+  404289:	f3 48 0f 2a c9       	cvtsi2ss %rcx,%xmm1
+  40428e:	f3 0f 10 74 24 0c    	movss  0xc(%rsp),%xmm6
+  404294:	48 83 ea 01          	sub    $0x1,%rdx
+  404298:	f3 0f 58 ce          	addss  %xmm6,%xmm1
+	  __tmp *= __r;
+	}
+      return __sum / __tmp;
+  40429c:	f3 0f 59 0d 28 16 00 	mulss  0x1628(%rip),%xmm1        # 4058cc <_ZN14entity_hermite4typeE+0xbc>
+  4042a3:	00 
+  4042a4:	f3 0f 58 ce          	addss  %xmm6,%xmm1
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  4042a8:	0f 88 9a 00 00 00    	js     404348 <_Z23FastUpdateExampleTimersv+0x408>
+  4042ae:	f3 48 0f 2a c2       	cvtsi2ss %rdx,%xmm0
+  4042b3:	f3 0f 10 7c 24 0c    	movss  0xc(%rsp),%xmm7
+  4042b9:	f3 0f 58 c7          	addss  %xmm7,%xmm0
+	  __tmp *= __r;
+	}
+      return __sum / __tmp;
+  4042bd:	f3 0f 59 05 07 16 00 	mulss  0x1607(%rip),%xmm0        # 4058cc <_ZN14entity_hermite4typeE+0xbc>
+  4042c4:	00 
+  4042c5:	f3 0f 58 c7          	addss  %xmm7,%xmm0
+		{
+			unique_ptr<entity> a(create_entity_hermite(distribution(generator), distribution(generator), distribution(generator), distribution(generator)));
+  4042c9:	e8 02 ef ff ff       	callq  4031d0 <_Z21create_entity_hermiteffff>
+    template<typename... _Args>
+      void
+      vector<_Tp, _Alloc>::
+      emplace_back(_Args&&... __args)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+  4042ce:	48 8b 54 24 58       	mov    0x58(%rsp),%rdx
+  4042d3:	48 3b 54 24 60       	cmp    0x60(%rsp),%rdx
+  4042d8:	48 89 44 24 20       	mov    %rax,0x20(%rsp)
+  4042dd:	0f 85 46 fe ff ff    	jne    404129 <_Z23FastUpdateExampleTimersv+0x1e9>
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+	  }
+	else
+	  _M_emplace_back_aux(std::forward<_Args>(__args)...);
+  4042e3:	4c 8d 6c 24 50       	lea    0x50(%rsp),%r13
+  4042e8:	48 8d 74 24 20       	lea    0x20(%rsp),%rsi
+  4042ed:	4c 89 ef             	mov    %r13,%rdi
+  4042f0:	e8 cb 0e 00 00       	callq  4051c0 <_ZNSt6vectorISt10unique_ptrI6entitySt14default_deleteIS1_EESaIS4_EE19_M_emplace_back_auxIIS4_EEEvDpOT_>
+  4042f5:	48 8b 7c 24 20       	mov    0x20(%rsp),%rdi
+  4042fa:	e9 4d fe ff ff       	jmpq   40414c <_Z23FastUpdateExampleTimersv+0x20c>
+  4042ff:	90                   	nop
+      size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
+      _RealType __sum = _RealType(0);
+      _RealType __tmp = _RealType(1);
+      for (; __k != 0; --__k)
+	{
+	  __sum += _RealType(__urng() - __urng.min()) * __tmp;
+  404300:	48 89 d0             	mov    %rdx,%rax
+  404303:	83 e2 01             	and    $0x1,%edx
+  404306:	48 d1 e8             	shr    %rax
+  404309:	48 09 d0             	or     %rdx,%rax
+  40430c:	f3 48 0f 2a c0       	cvtsi2ss %rax,%xmm0
+  404311:	f3 0f 58 c0          	addss  %xmm0,%xmm0
+  404315:	e9 df fd ff ff       	jmpq   4040f9 <_Z23FastUpdateExampleTimersv+0x1b9>
+  40431a:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+  404320:	48 89 c8             	mov    %rcx,%rax
+  404323:	83 e1 01             	and    $0x1,%ecx
+  404326:	48 d1 e8             	shr    %rax
+  404329:	48 09 c8             	or     %rcx,%rax
+  40432c:	f3 48 0f 2a c8       	cvtsi2ss %rax,%xmm1
+  404331:	f3 0f 58 c9          	addss  %xmm1,%xmm1
+  404335:	e9 9a fd ff ff       	jmpq   4040d4 <_Z23FastUpdateExampleTimersv+0x194>
+  40433a:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+  404340:	48 89 c7             	mov    %rax,%rdi
+  404343:	e9 fb fd ff ff       	jmpq   404143 <_Z23FastUpdateExampleTimersv+0x203>
+  404348:	48 89 d0             	mov    %rdx,%rax
+  40434b:	83 e2 01             	and    $0x1,%edx
+  40434e:	48 d1 e8             	shr    %rax
+  404351:	48 09 d0             	or     %rdx,%rax
+  404354:	f3 48 0f 2a c0       	cvtsi2ss %rax,%xmm0
+  404359:	f3 0f 58 c0          	addss  %xmm0,%xmm0
+  40435d:	e9 51 ff ff ff       	jmpq   4042b3 <_Z23FastUpdateExampleTimersv+0x373>
+  404362:	48 89 f8             	mov    %rdi,%rax
+  404365:	83 e7 01             	and    $0x1,%edi
+  404368:	48 d1 e8             	shr    %rax
+  40436b:	48 09 f8             	or     %rdi,%rax
+  40436e:	f3 48 0f 2a d8       	cvtsi2ss %rax,%xmm3
+  404373:	f3 0f 58 db          	addss  %xmm3,%xmm3
+  404377:	e9 c8 fe ff ff       	jmpq   404244 <_Z23FastUpdateExampleTimersv+0x304>
+  40437c:	48 89 c8             	mov    %rcx,%rax
+  40437f:	83 e1 01             	and    $0x1,%ecx
+  404382:	48 d1 e8             	shr    %rax
+  404385:	48 09 c8             	or     %rcx,%rax
+  404388:	f3 48 0f 2a c8       	cvtsi2ss %rax,%xmm1
+  40438d:	f3 0f 58 c9          	addss  %xmm1,%xmm1
+  404391:	e9 f8 fe ff ff       	jmpq   40428e <_Z23FastUpdateExampleTimersv+0x34e>
+  404396:	48 89 f0             	mov    %rsi,%rax
+  404399:	83 e6 01             	and    $0x1,%esi
+  40439c:	48 d1 e8             	shr    %rax
+  40439f:	48 09 f0             	or     %rsi,%rax
+  4043a2:	f3 48 0f 2a d0       	cvtsi2ss %rax,%xmm2
+  4043a7:	f3 0f 58 d2          	addss  %xmm2,%xmm2
+  4043ab:	e9 b9 fe ff ff       	jmpq   404269 <_Z23FastUpdateExampleTimersv+0x329>
+  4043b0:	4c 8d 6c 24 50       	lea    0x50(%rsp),%r13
+  4043b5:	48 8d 74 24 20       	lea    0x20(%rsp),%rsi
+  4043ba:	4c 89 ef             	mov    %r13,%rdi
+  4043bd:	e8 fe 0d 00 00       	callq  4051c0 <_ZNSt6vectorISt10unique_ptrI6entitySt14default_deleteIS1_EESaIS4_EE19_M_emplace_back_auxIIS4_EEEvDpOT_>
+  4043c2:	e9 2e ff ff ff       	jmpq   4042f5 <_Z23FastUpdateExampleTimersv+0x3b5>
+  4043c7:	0f 57 d2             	xorps  %xmm2,%xmm2
+  4043ca:	f3 0f 11 54 24 0c    	movss  %xmm2,0xc(%rsp)
+public:
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_end;
+	mytimer()
+	{
+		m_start = std::chrono::high_resolution_clock::now();
+  4043d0:	e8 bb e1 ff ff       	callq  402590 <_ZNSt6chrono3_V212system_clock3nowEv@plt>
+  4043d5:	4c 8b 25 1c 13 00 00 	mov    0x131c(%rip),%r12        # 4056f8 <_ZN16entity_lerp_fast4typeE>
+  4043dc:	49 89 c6             	mov    %rax,%r14
+  4043df:	41 bd 14 00 00 00    	mov    $0x14,%r13d
+  4043e5:	0f 1f 00             	nopl   (%rax)
+  4043e8:	48 8b 6c 24 58       	mov    0x58(%rsp),%rbp
+  4043ed:	48 8b 5c 24 50       	mov    0x50(%rsp),%rbx
+
+	{
+		// change styles for document 
+		mytimer timer;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+			for (auto &a : entity_vec) {
+  4043f2:	48 39 eb             	cmp    %rbp,%rbx
+  4043f5:	74 29                	je     404420 <_Z23FastUpdateExampleTimersv+0x4e0>
+  4043f7:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+  4043fe:	00 00 
+	return get();
+      }
+
+      pointer
+      get() const noexcept
+      { return std::get<0>(_M_t); }
+  404400:	48 8b 3b             	mov    (%rbx),%rdi
+				// if we have a fast loop for this object don't update
+				// so in this case we on the hermite entity but not the lerp ones. 
+				if (*a->m_typedata != entity_lerp_fast::type) {
+  404403:	48 8b 47 08          	mov    0x8(%rdi),%rax
+  404407:	4c 39 20             	cmp    %r12,(%rax)
+  40440a:	74 0b                	je     404417 <_Z23FastUpdateExampleTimersv+0x4d7>
+					a->Update(t);
+  40440c:	48 8b 07             	mov    (%rdi),%rax
+  40440f:	f3 0f 10 44 24 0c    	movss  0xc(%rsp),%xmm0
+  404415:	ff 10                	callq  *(%rax)
+  404417:	48 83 c3 08          	add    $0x8,%rbx
+
+	{
+		// change styles for document 
+		mytimer timer;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+			for (auto &a : entity_vec) {
+  40441b:	48 39 dd             	cmp    %rbx,%rbp
+  40441e:	75 e0                	jne    404400 <_Z23FastUpdateExampleTimersv+0x4c0>
+				if (*a->m_typedata != entity_lerp_fast::type) {
+					a->Update(t);
+				}
+			}
+			// fast loop with no virtual functions and maybe a different data format. 
+			entity_lerp_fast::UpdateAll(t);
+  404420:	f3 0f 10 44 24 0c    	movss  0xc(%rsp),%xmm0
+  404426:	e8 35 e9 ff ff       	callq  402d60 <_ZN16entity_lerp_fast9UpdateAllEf>
+
+
+	{
+		// change styles for document 
+		mytimer timer;
+		for (float t = 0.0f; t < 1.0; t += 0.05f) {
+  40442b:	f3 0f 10 35 95 14 00 	movss  0x1495(%rip),%xmm6        # 4058c8 <_ZN14entity_hermite4typeE+0xb8>
+  404432:	00 
+  404433:	41 83 ed 01          	sub    $0x1,%r13d
+  404437:	f3 0f 58 74 24 0c    	addss  0xc(%rsp),%xmm6
+  40443d:	f3 0f 11 74 24 0c    	movss  %xmm6,0xc(%rsp)
+  404443:	75 a3                	jne    4043e8 <_Z23FastUpdateExampleTimersv+0x4a8>
+	{
+		m_start = std::chrono::high_resolution_clock::now();
+	}
+	std::chrono::duration<double> stop()
+	{
+		m_end = std::chrono::high_resolution_clock::now();
+  404445:	e8 46 e1 ff ff       	callq  402590 <_ZNSt6chrono3_V212system_clock3nowEv@plt>
+		const duration<_Rep2, _Period2>& __rhs)
+      {
+	typedef duration<_Rep1, _Period1>			__dur1;
+	typedef duration<_Rep2, _Period2>			__dur2;
+	typedef typename common_type<__dur1,__dur2>::type	__cd;
+	return __cd(__cd(__lhs).count() - __cd(__rhs).count());
+  40444a:	4c 29 f0             	sub    %r14,%rax
+	  static constexpr _ToDur
+	  __cast(const duration<_Rep, _Period>& __d)
+	  {
+	    typedef typename _ToDur::rep			__to_rep;
+	    return _ToDur(static_cast<__to_rep>(
+	      static_cast<_CR>(__d.count()) / static_cast<_CR>(_CF::den)));
+  40444d:	f2 48 0f 2a c0       	cvtsi2sd %rax,%xmm0
+    template<typename... _Args>
+      void
+      vector<_Tp, _Alloc>::
+      emplace_back(_Args&&... __args)
+      {
+	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+  404452:	48 8b 05 8f 2e 20 00 	mov    0x202e8f(%rip),%rax        # 6072e8 <gFastUpdateExampleTimers+0x8>
+  404459:	48 3b 05 90 2e 20 00 	cmp    0x202e90(%rip),%rax        # 6072f0 <gFastUpdateExampleTimers+0x10>
+  404460:	f2 0f 5e 05 58 14 00 	divsd  0x1458(%rip),%xmm0        # 4058c0 <_ZN14entity_hermite4typeE+0xb0>
+  404467:	00 
+				}
+			}
+			// fast loop with no virtual functions and maybe a different data format. 
+			entity_lerp_fast::UpdateAll(t);
+		}
+		gFastUpdateExampleTimers.emplace_back(timer.stop());
+  404468:	f2 0f 11 44 24 20    	movsd  %xmm0,0x20(%rsp)
+  40446e:	74 79                	je     4044e9 <_Z23FastUpdateExampleTimersv+0x5a9>
+  404470:	48 85 c0             	test   %rax,%rax
+  404473:	74 0c                	je     404481 <_Z23FastUpdateExampleTimersv+0x541>
+	  static constexpr _ToDur
+	  __cast(const duration<_Rep, _Period>& __d)
+	  {
+	    typedef typename _ToDur::rep			__to_rep;
+	    return _ToDur(static_cast<__to_rep>(
+	      static_cast<_CR>(__d.count()) * static_cast<_CR>(_CF::num)));
+  404475:	f2 0f 59 05 3b 14 00 	mulsd  0x143b(%rip),%xmm0        # 4058b8 <_ZN14entity_hermite4typeE+0xa8>
+  40447c:	00 
+	template<typename _Rep2, typename _Period2, typename = typename
+	       enable_if<treat_as_floating_point<rep>::value
+			 || (ratio_divide<_Period2, period>::den == 1
+			     && !treat_as_floating_point<_Rep2>::value)>::type>
+	  constexpr duration(const duration<_Rep2, _Period2>& __d)
+	  : __r(duration_cast<duration>(__d).count()) { }
+  40447d:	f2 0f 11 00          	movsd  %xmm0,(%rax)
+       *  not touched in any way.  Managing the pointer is the user's
+       *  responsibility.
+       */
+      ~vector() _GLIBCXX_NOEXCEPT
+      { std::_Destroy(this->_M_impl._M_start, this->_M_impl._M_finish,
+		      _M_get_Tp_allocator()); }
+  404481:	48 8b 6c 24 58       	mov    0x58(%rsp),%rbp
+  404486:	48 8b 5c 24 50       	mov    0x50(%rsp),%rbx
+	  {
+	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+				     std::forward<_Args>(__args)...);
+	    ++this->_M_impl._M_finish;
+  40448b:	48 83 c0 08          	add    $0x8,%rax
+  40448f:	48 89 05 52 2e 20 00 	mov    %rax,0x202e52(%rip)        # 6072e8 <gFastUpdateExampleTimers+0x8>
+  404496:	48 39 dd             	cmp    %rbx,%rbp
+  404499:	74 6c                	je     404507 <_Z23FastUpdateExampleTimersv+0x5c7>
+  40449b:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+
+      // Destructor.
+      ~unique_ptr() noexcept
+      {
+	auto& __ptr = std::get<0>(_M_t);
+	if (__ptr != nullptr)
+  4044a0:	48 8b 3b             	mov    (%rbx),%rdi
+  4044a3:	48 85 ff             	test   %rdi,%rdi
+  4044a6:	74 06                	je     4044ae <_Z23FastUpdateExampleTimersv+0x56e>
+      void
+      operator()(_Tp* __ptr) const
+      {
+	static_assert(sizeof(_Tp)>0,
+		      "can't delete pointer to incomplete type");
+	delete __ptr;
+  4044a8:	48 8b 07             	mov    (%rdi),%rax
+  4044ab:	ff 50 18             	callq  *0x18(%rax)
+      ~unique_ptr() noexcept
+      {
+	auto& __ptr = std::get<0>(_M_t);
+	if (__ptr != nullptr)
+	  get_deleter()(__ptr);
+	__ptr = pointer();
+  4044ae:	48 c7 03 00 00 00 00 	movq   $0x0,(%rbx)
+  4044b5:	48 83 c3 08          	add    $0x8,%rbx
+  4044b9:	48 39 dd             	cmp    %rbx,%rbp
+  4044bc:	75 e2                	jne    4044a0 <_Z23FastUpdateExampleTimersv+0x560>
+  4044be:	48 8b 7c 24 50       	mov    0x50(%rsp),%rdi
+      { return __n != 0 ? _M_impl.allocate(__n) : 0; }
+
+      void
+      _M_deallocate(pointer __p, size_t __n)
+      {
+	if (__p)
+  4044c3:	48 85 ff             	test   %rdi,%rdi
+  4044c6:	74 05                	je     4044cd <_Z23FastUpdateExampleTimersv+0x58d>
+      }
+
+      // __p is not permitted to be a null pointer.
+      void
+      deallocate(pointer __p, size_type)
+      { ::operator delete(__p); }
+  4044c8:	e8 83 e0 ff ff       	callq  402550 <_ZdlPv@plt>
+      }
+#endif
+
+      ~_Vector_base()
+      { _M_deallocate(this->_M_impl._M_start, this->_M_impl._M_end_of_storage
+		      - this->_M_impl._M_start); }
+  4044cd:	48 8b 7c 24 30       	mov    0x30(%rsp),%rdi
+      { return __n != 0 ? _M_impl.allocate(__n) : 0; }
+
+      void
+      _M_deallocate(pointer __p, size_t __n)
+      {
+	if (__p)
+  4044d2:	48 85 ff             	test   %rdi,%rdi
+  4044d5:	74 05                	je     4044dc <_Z23FastUpdateExampleTimersv+0x59c>
+  4044d7:	e8 74 e0 ff ff       	callq  402550 <_ZdlPv@plt>
+	}
+}
+
