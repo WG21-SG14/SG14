@@ -23,26 +23,21 @@
   <li><a href="#faq">Frequently-asked Questions</a></li>
 </ul>
 
-
-
 <h2><a id="intro"></a>Intro</h2>
 
-<p>A colony is a C++ data container for unordered data which provides better
-performance than any std:: library container when:</p>
+<p>A colony is a C++ template-based unordered data container which provides
+better performance than any std:: library container when:</p>
 <ol type="a">
   <li>Insertions and erasures to the container are occuring in realtime ie. in
-    performance-critical code,
-    <i><b>and/or</b></i>
-  </li>
+    performance-critical code, <i><b>and/or</b></i> </li>
   <li>Pointers and iterators which point to non-erased container elements must
     not be invalided by insertion or erasure.</li>
 </ol>
-<p>While the benchmarks in the section below are a better area to get a feel for the
-performance benefits, the general speed characteristics are:<br>
+
+<p>While the benchmarks in the section below are a better area to get a feel
+for the performance benefits, the general speed characteristics are:<br>
 <i>Insert</i>: 2-4x vector speed (with small scalar types around 1.1x)<br>
-
 <i>Erase</i>: 20-40000x vector speed (dependent on size of data stored)<br>
-
 <i>Iteration</i>: 0.86-1.4x vector speed (with an exception for small scalar
 types, which typically perform worse for iteration)</p>
 
@@ -51,48 +46,81 @@ on-the-fly, the guaranteed stability of pointers/references/iterators to
 non-erased elements (which makes programming with containers of interrelated
 data structures faster and much easier), and broad cross-compiler support.</p>
 
+<p>As it was initially developed predominantly for game development, Colony
+emphasises small and large struct/class performance over scalar-type (float, int,
+etc) performance. As of v3.0, Colony uses a <a
+href="jump_counting_skipfield_pattern.htm">jump-counting skipfield</a> instead of a
+boolean field, which mitigates performance degradation in worst-case iteration
+scenarios ie. large consecutive blocks of erased elements.</p>
+
 <h2><a id="details"></a>Details</h2>
 
-<p>Both plf::colony and plf::stack use the same storage mechanism: doubly-linked chains of element "groups" (memory blocks with additional structure metadata). Each container starts with only one group. Once that group is filled, a new group is created which doubles the total element capacity of the container. Here is how that storage mechanism differs from a std::vector:</p>
+<p>plf::colony uses a <a href="size_doubling_memory_block_allocation.htm">size-doubling memory-block allocation model</a>, utilizing doubly-linked chains of element "groups"
+(memory blocks with additional structure metadata and a jump-counting skipfield),
+removing the need for data reallocation. Because data is not reallocated, all
+references/pointers/iterators to container elements will stay valid regardless
+of erasures and insertions to the containers. Here is how the storage mechanism
+differs from a std::vector:</p>
+<img src="vector_addition.gif"
+alt="Visual demonstration of inserting to a full vector" height="540"
+width="960"> <img src="colony_addition.gif"
+alt="Visual demonstration of inserting to a full colony" height="540"
+width="960"> 
 
-<img src="vector_addition.gif" alt="Visual demonstration of inserting to a full vector" height="540" width="960">
-<img src="colony_addition.gif" alt="Visual demonstration of inserting to a full colony" height="540" width="960">
+<p>The lack of reallocation also explains why adding to a stack or colony is
+between 1x-4x faster than adding to a std::vector (variability based on element
+sizeof and amount of elements). </p>
 
-<p>Because of this storage mechanism, data is not reallocated upon reaching "full" capacity, meaning that all references/pointers/iterators to container elements stay valid regardless of both erasure and insertions to the containers (pop and push, for stack of course). This explains why adding to a stack or colony is between 1x-4x faster than adding to a vector or std::stack (variability based on element sizeof and amount of elements).</p>
+<p>Colony has two other internal mechanisms: one is the jump-counting skipfield,
+utilising a 16-bit integer corresponding to every element in the container, and
+enabling the colony to skip over erased elements during iteration. The second
+is a plf::stack of erased element locations which can be reused. When an
+element is erased in a std::vector, the following happens:</p>
+<img src="vector_erasure.gif"
+alt="Visual demonstration of randomly erasing from a vector" height="540"
+width="960"> 
 
-<p>Stack is an ordered data container and does not require any further mechanisms to achieve pointer/reference validity.</p>
+<p>But when an element is erased in a colony, this happens:</p>
+<img src="colony_erasure.gif"
+alt="Visual demonstration of randomly erasing from a colony" height="540"
+width="960">
 
-<p>Colony however has two additional properties, and is an unordered data container.
-Like a vector/list/etc, a colony has random-access iterators. However it is faster than any other std:: container at what it does. It achieves this by having a boolean erasure field corresponding to every element in the container, and, a plf::stack of previously-used element locations which have been erased and can be reused.</p>
+<p>This explains the 20x-40000x speed-up you get when erasing from a colony
+(variability based on element sizeof and amount of elements) versus erasing
+from a std::vector. </p>
 
-<p>What this means is that when an element is erased in a vector, the following happens:</p>
+<p>When you add to a colony after having previously erased from it, the colony
+will check to see if the empty_indexes stack is empty. If it is empty, it
+inserts to the end of the colony, creating a new group if the old group is
+full. If the empty_indexes stack isn't empty, it instead pops an element
+location off the stack and reuses that element location for the newly-inserted
+element.</p>
 
-<img src="vector_erasure.gif" alt="Visual demonstration of randomly erasing from a vector" height="540" width="960">
+<p>If you erase all the elements in any given group in a colony, the group is
+removed from the colony's group chain and it's entries are removed from the
+empty_indexes stack. </p>
 
-<p>When an element is erased in a colony, the following happens:</p>
+<p>Colony iterators are bidirectional but also include the &gt;, &lt;, &gt;=
+and &lt;= operators (all O(1)) for convenience. In a simple ++ or --
+increment/decrement, they will check if the next slot has been erased, and if
+so, skip to the next non-erased slot. The speed is typically 90-95% of vector
+iteration, but 140% the speed of a vector of pointers to dynamically-allocated
+objects (ie. the only way to have a vector where pointers/references/iterators
+stay valid despite insertion or erasure). The only exception to this is the
+storage of small scalar types (such as int, etc), where iteration speed
+typically is 46%-95% of std::vector iteration speed, depending on the compiler.
+However the insert and erase performance increases make up for this in overall
+benchmarks.</p>
 
-<img src="colony_erasure.gif" alt="Visual demonstration of randomly erasing from a colony" height="540" width="960">
+<p>reverse_iterator, const_iterator and const_reverse_iterator are also
+provided. </p>
 
-<p>This explains the 20x-40000x speed-up you get when erasing from a colony (variability based on element sizeof and amount of elements) versus erasing from a vector.</p>
-
-
-<p>When you add to a colony after having previously erased from it, the colony will check to see if the empty_indexes stack is empty. If it is, it inserts to the end of the colony and creates a new group if no element slots are left on the old one.
-If the empty_indexes stack is not empty, it pops an element location off the stack and reuses that element "slot".</p>
-
-
-<p>If you erase all the elements in any given group in a colony, that group is removed from the group chain and it's entries are also removed from the empty_indexes stack (consolidate_empty_indexes()). In addition a plf::stack, like a vector, never deallocates new space it has allocated for performance reasons. However the colony is a friend class, and it will free up any empty tail groups present in the empty_indexes plf::stack when calling consolidate_empty_indexes(). These two aspects explain how a colony is able to free up it's unused allocated memory on the fly.</p>
-
-
-<p>Colony iterators are fairly simple. In a simple ++ or -- increment/decrement, they will check if the next slot has been erased, and if so, skip to the next slot, check again, etc. The speed is typically 90-95% of vector iteration, but 140% the speed of a vector of pointers to dynamically-allocated objects (ie. the only way to have a vector where pointers/references/iterators stay valid despite insertion or erasure). The only exception to this is the storage of small scalar types (such as int, etc), where iteration speed typically is between 50% and 95% of std::vector iteration speed, depending on the compiler. However the insert and erase speeds more than make up for this in overall benchmarks.</p>
-
-<p>+=/-= and +/- multi-increments/decrements are more complex, and use the group structural metadata to make faster traversals across colony groups than would be possible with the simple singular increments.</p>
-
-<p>reverse_iterator, const_iterator and const_reverse_iterator are also provided.</p>
-<p>All random-access-iterator standard operators are provided, although programmers should not typically use the [ ] operator (as a general rule) because it will result in poor performance, as it equates to colony.begin() + index, which, being a multi-increment operation, is slow compared to other methods for accessing colony contents such as storing an iterator. I feel this will be misused by novice programmers and newcomers to colony eg. in for-loops, and have only provided this to fill this purely technical requirement.</p>
-
-<p>As mentioned previously, the doubling of size on reaching current full capacity for both plf::stack and plf::colony offers the best performance in the majority of scenarios (which is why the strategy is also used for the majority of  vector implementations), but if there are scenarios where a smaller or more static increase is required or offers better performance, group sizes can be customised to a limited extent (min and max sizes can be specified).</p>
-
-
+<p>While the the doubling of the size of the colony on reaching current full
+capacity offers the best performance in the majority of scenarios (which is why
+the 2x strategy is also used for the majority of vector implementations), if
+there are scenarios where a smaller or more static increase is required or
+offers better performance, the colony memory block minimum and maximum
+allocation sizes can be customised.</p>
 
 <h2><a id="license"></a>License</h2>
 
@@ -111,16 +139,38 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_2-11-2015.zip">here</a>. (20kb)<br>
+<p>Version 3 under development. Downloads disabled for the moment.<br>
+<!-- <p>Download <a href="plf_colony_20-11-2015.zip">here</a>. (21kb)<br> -->
 The colony library is a simple .h header file, to be included with a #include
 command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.</p>
 
 <h3>Version history</h3>
 <ul>
-  <li>2015-11-2: v2.32 - Minor bugfix for non-trivial pointers and non-trivial stack contents.</li>
-  <li>2015-10-31: v2.31 - Allocators which supply non-trivial pointers are now supported. Large macros removed. Some code cleanup and minor performance gain.</li>
-  <li>2015-10-10: v2.26 - 'back()' in plf::stack changed to 'top()' to better reflect std:: library stack implementation function titles. Added standard container typedefs to colony and stack. Colony iterators now return element_allocator::pointer and element_allocator::reference instead of element_type * and element_type &amp;. Some minor code cleanup.</li>
+  <li>2015-11-20: v3.00 - Colony now uses a <a
+    href="jump_counting_skipfield_pattern.htm">jump-counting skipfield</a> instead of a
+    boolean field, which mitigates worst-case scenario performance by factors
+    of ten. Iterators now bidirectional instead of random-access, and compliant
+    with C++-specification's time-complexity requirements (all operations O(1)
+    amortised). There is greater compliance with allocators in general. Group
+    size now limited to 65535 max for colony, to decrease memory wastage and
+    improve skipfield performance. Various bugfixes and corrections to
+    oversights. plf::stack storage limit no longer 32-bit uint max (relies on
+    allocator to supply correct size_type). Added std::stack comparison to
+    plf::stack benchmark.</li>
+  <li>2015-11-20: v2.34 - Correction to clear() and reinitialize()
+  functions.</li>
+  <li>2015-11-17: v2.33 - Minor bugfix for GCC versions &lt; 5.</li>
+  <li>2015-11-2: v2.32 - Minor bugfix for non-trivial pointers and non-trivial
+    stack contents.</li>
+  <li>2015-10-31: v2.31 - Allocators which supply non-trivial pointers are now
+    supported. Large macros removed. Some code cleanup and minor performance
+    gain.</li>
+  <li>2015-10-10: v2.26 - 'back()' in plf::stack changed to 'top()' to better
+    reflect std:: library stack implementation function titles. Added standard
+    container typedefs to colony and stack. Colony iterators now return
+    element_allocator::pointer and element_allocator::reference instead of
+    element_type * and element_type &amp;. Some minor code cleanup.</li>
   <li>2015-10-6: v2.24 - Bugfix for C++03 with x64 compilers. Minor
     corrections, performance improvements for C++03 compilers.</li>
   <li>2015-10-4: v2.21 - Improved gcc x64 iteration. std::find now working with
@@ -179,8 +229,8 @@ by plf::colony.</p>
   <li>2015-5-16: v1.41 - Fixed demo on pre-C++11 compilers. Minor fixes in code
     and corrections in tests. Performance improvements.</li>
   <li>2015-5-11: v1.40 - Improved iterator ++ speed and Add speed, added
-    real-world OO performance tests to demo. Added max block-size tuning (max
-    number of elements per block).</li>
+    real-world OO performance tests to demo. Added max group-size tuning (max
+    number of elements per group).</li>
   <li>2015-5-6: v1.34 - Improved iterator ++ speed under VC2010 and GCC
   x64.</li>
   <li>2015-5-5: v1.33 - Improved erase, and some small performance tweaks.</li>
@@ -207,13 +257,11 @@ by plf::colony.</p>
 <p>All of the benchmarks below are included in the plf_demo.cpp in the
 download, anyone can run them. They do not require any external libraries.</p>
 
-<p>My test setup is an E8500 on an Intel motherboard, 8GB ram. Results are much
-the same for other x64 platforms. Compilers are mingw TDM GCC 5.1 (32-bit and
-64-bit versions), MS VC++ 2010 and MS VC++ 2013. I've ignored clang as the
-results were much the same as GCC. Release compilation settings only, no debug
-mode. Release settings for MS compilers: "/O2 /Oi /Ot /Oy /GL /GS- /GY-
-/arch:SSE2 /MT". Release settings for GCC: "-O2 -march=native -std=c++11". <a
-href="http://www.libsdl.org">SDL</a> was used for more precise timing.</p>
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram. Results are
+much the same on other Intel x64 platforms. Compilers are mingw TDM GCC 5.1
+(both 32-bit and 64-bit versions), MS VC++2010 and MS VC++2013. I've forgone
+clang as the results were much the same as GCC. Release compilation settings
+only, settings for MS compilers are "/O2 /Oi /Ot /Oy /GL /GS- /GY- /arch:SSE2 /MT", for GCC they are "-O2;-march=native;-std=c++11". <a href="http://www.libsdl.org">SDL</a> was used for more precise timing.</p>
 
 <h3>Real-world Object-Oriented tests</h3>
 
@@ -1338,22 +1386,24 @@ similar to all std:: c++ libraries. However there are a few key differences,
 such as the meaning of using a number in the constructor.</p>
 
 <h3>Constructors</h3>
+
+<p></p>
 <ul>
-  <li><code>colony&lt;the_type&gt; a_colony</code> 
-    <p>Default constructor - group size is initially 8. <br>
+  <li><code>colony&lt;the_type&gt; a_colony</code>
+    <p>Default constructor - initial group size is 8. <br>
     Example: <code style="color: brown">plf::colony&lt;int&gt;
     int_colony;</code> </p>
   </li>
   <li><code>colony&lt;the_type, the_allocator&lt;the_type&gt; &gt;
-    a_colony</code> 
+    a_colony</code>
     <p>Default constructor, but using a custom memory allocator eg. something
     other than std::allocator. Custom allocators can also be used with all the
     definitions below, of course. <br>
     Example: <code style="color: brown">plf::colony&lt;int,
     tbb::allocator&lt;int&gt; &gt; int_colony;</code> </p>
   </li>
-  <li><code>colony&lt;the_type&gt; a_colony(initial_group_size)</code> 
-    <p>Directed constructor where the initial group size is defined. For
+  <li><code>colony&lt;the_type&gt; a_colony(const size_type initial_group_size)</code>
+    <p>Directed constructor where the initial group size is defined. Minimum group size is 3. For
     example if it were 50, the max number of elements in the first colony group
     would be 50 - the next group would have 100, and so on. Unlike a vector,
     these 50 elements are not constructed, only the memory is allocated. By
@@ -1365,29 +1415,28 @@ such as the meaning of using a number in the constructor.</p>
     Example: <code style="color: brown">plf::colony&lt;int&gt;
     int_colony(62);</code></p>
   </li>
-  <li><code>colony&lt;the_type&gt; a_colony(initial_group_size,
-    maximum_group_size)</code> 
+  <li><code>colony&lt;the_type&gt; a_colony(const size_type initial_group_size,
+    const size_type maximum_group_size)</code>
     <p>Like the above this is a directed constructor - the first number sets
     the number of elements in the first group, while the second number sets the
     absolute maximum number of elements any given group may hold ie. Once a
-    group reaches this size, further groups will not increase in size. By
-    default the maximum size a colony group can reach is half of UINT_MAX (ie.
-    half the maximum unsigned int size for any given compiler). This could be
-    useful in a scenario where memory is at a premium and where large amounts
-    of erasures are occuring. In that situation, by defining a lower group size
-    you increase the likelihood of any given group becoming empty and hence
-    deallocated and freed to system memory.<br>
+    group reaches this size, further groups will not increase in size. Minimum initial group size is 3. This
+    could be useful in a scenario where memory is at a premium and where large
+    amounts of erasures are occuring. In that situation, by defining a lower
+    group size you increase the likelihood of any given group becoming empty
+    and hence deallocated and freed to system memory. The maximum size of a
+    colony group is 65535.<br>
     Example: <code style="color: brown">plf::colony&lt;int&gt; int_colony(64,
     512);</code></p>
   </li>
-  <li><code>colony&lt;the_type&gt; a_colony(another_colony)</code> 
+  <li><code>colony&lt;the_type&gt; a_colony(const colony &another_colony)</code>
     <p>Copy constructor - copies all contents from another_colony, removes any
     empty (erased) element spaces. Initial group size is the total size of
     another_colony. <br>
     Example: <code style="color: brown">plf::colony&lt;int&gt;
     int_colony_2(int_colony_1);</code></p>
   </li>
-  <li><code>colony&lt;the_type&gt; a_colony(std::move(another_colony))</code> 
+  <li><code>colony&lt;the_type&gt; a_colony(colony &amp;&amp;another_colony)</code>
     <p>Move constructor - moves all contents from another colony, does not
     remove any erased elements or alter any group sizes. another_colony is now
     void of contents, can be safely destructed. <br>
@@ -1398,60 +1447,61 @@ such as the meaning of using a number in the constructor.</p>
 
 <h3>Iterators/Reverse_iterators</h3>
 
-<p>Similar to all std:: iterators. Functionality for iterator,
-reverse_iterator, const_iterator and const_reverse_iterator below:</p>
-<code>*<br>
--&gt;<br>
-++<br>
---<br>
-+=<br>
--=<br>
-+<br>
--<br>
-=<br>
-==<br>
-!=<br>
-&gt;<br>
-&lt;<br>
-&gt;=<br>
-&lt;=</code> 
+<p>All iterators are bidirectional but also provide &gt;, &lt;, &gt;= and &lt;=
+for convenience (for example, in for loops). Functions for iterator,
+reverse_iterator, const_iterator and const_reverse_iterator follow:</p>
+
+<p><code>operator *<br>
+operator -&gt;<br>
+operator ++<br>
+operator --<br>
+operator =<br>
+operator ==<br>
+operator !=<br>
+operator &lt;<br>
+operator &gt;<br>
+operator &lt;=<br>
+operator &gt;=<br>
+</code> </p>
+
+<p>All operators have O(1) amortised time-complexity. Originally there were +=, -=, + and - operators, however the time complexity of these varied from O(n) to O(1) depending on the underlying state of the colony, averaging in at O(log n). As such they were not includable in the iterator functions (as per C++ standards). These have been transplanted to colony's advance(), next(), prev() and distance() functions.</p>
 
 <p>Greater-than/lesser-than usage indicates whether an iterator is higher/lower
 in position compared to another iterator in the same colony (ie. closer to the
 end/beginning).</p>
 
-<p>reverse_iterator also has the base() command (same as STL) to return the
+<p>reverse_iterator and const_reverse_iterator also have the base() command which returns the
 internal iterator.</p>
 
 <p>Colony contains begin(), end(), rbegin(), rend(), cbegin(), cend(),
-crbegin() and crend() iterator/const_iterator return functions which follow
+crbegin() and crend() iterator/const_iterator/reverse_iterator/const_reverse_iterator return functions which follow
 standard std:: library rules. Example of usage:</p>
 <code style="color: brown">for (plf::colony&lt;int&gt;::iterator the_iterator =
 data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
 {<br>
-   total += *the_iterator;<br>
-}</code> 
+&nbsp;&nbsp;&nbsp;total += *the_iterator;<br>
+}</code>
 
 <h3>Basic functions</h3>
 <ul>
-  <li><code>iterator insert(const the_type &amp;element)</code> 
+  <li><code>iterator insert(const the_type &amp;element)</code>
     <p>Inserts the element supplied to the colony, using the object's
-    copy-constructor. Will place the element in a previously erased element
-    slot if one exists, otherwise will push to back of colony. Returns iterator
-    to location of pushed element. Example:</p>
+    copy-constructor. Will insert the element into a previously erased element
+    slot if one exists, otherwise will insert to back of colony. Returns iterator
+    to location of inserted element. Example:</p>
     <code style="color: brown">plf::colony&lt;unsigned int&gt;
     data_colony(50);<br>
     data_colony.insert(23);</code> </li>
   <li><code>iterator insert(the_type &amp;&amp;element) <b>C++11
-    only</b></code> 
+    only</b></code>
     <p>Moves the element supplied to the colony, using the object's
-    move-constructor. Will place the element in a previously erased element
-    slot if one exists, otherwise will push to back of colony. Returns iterator
-    to location of pushed element. Example:</p>
+    move-constructor. Will insert the element in a previously erased element
+    slot if one exists, otherwise will insert to back of colony. Returns iterator
+    to location of inserted element. Example:</p>
     <p><code style="color: brown">struct just_struct<br>
     {<br>
-      unsigned int number;<br>
-      std::string string1;<br>
+    &nbsp;&nbsp;unsigned int number;<br>
+    &nbsp;&nbsp;std::string string1;<br>
     };<br>
     <br>
     just_struct X;<br>
@@ -1461,106 +1511,123 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     plf::colony&lt;just_struct&gt; data_colony(50);<br>
     data_colony.insert(std::move(X));</code> </p>
   </li>
-  <li><code>void insert(iterator begin_iterator, iterator end_iterator)</code> 
-    <p>Inserts the contents of a colony of same element type (eg. int, float, a
-    particular class, etcetera) to the given colony. Stops inserting once it
-    reaches the end iterator. Example:</p>
+  <li><code>void insert(iterator start_iterator, iterator stop_iterator)</code>
+    <p>Inserts the contents of a colony of the same element type (eg. int, float, a
+    particular class, etcetera) into the given colony. Stops inserting once it
+    reaches the stop_iterator. Example:</p>
     <code style="color: brown">// Insert all contents of colony2 into
     colony1:<br>
     colony1.insert(colony2.begin(), colony2.end());</code> </li>
-  <li><code>iterator emplace(parameters...) <b>C++11 only</b></code> 
-    <p>Same as insert but constructs object in-place rather than copying
-    another object into the colony. Similar to std:: library emplace with the
-    exception that no insertion location is specified. Location depends on same
-    behaviour as insert. "parameters..." are whatever parameters are required
+  <li><code>iterator emplace(Arguments ...parameters) <b>C++11 only</b></code>
+    <p>Constructs new element directly within colony. Will insert the element in a previously erased element
+    slot if one exists, otherwise will insert to back of colony. Returns iterator
+    to location of inserted element. "...parameters" are whatever parameters are required
     by the object's constructor. Example:</p>
     <p><code style="color: brown">class simple_class<br>
     {<br>
     private:<br>
-     int number;<br>
+    &nbsp;int number;<br>
     public:<br>
-     simple_class(int a_number): number (a_number) {};<br>
+    &nbsp;simple_class(int a_number): number (a_number) {};<br>
     };<br>
     <br>
     plf::colony&lt;simple_class&gt; simple_classes;<br>
     simple_classes.emplace(45); </code> </p>
   </li>
-  <li><code>iterator erase(const iterator &amp;the_iterator)</code> 
+  <li><code>iterator erase(const iterator &amp;the_iterator)</code>
     <p>Removes the element pointed to by the supplied iterator, from the
-    colony. Similarly to STL erase command, returns an iterator pointing to the
+    colony. Returns an iterator pointing to the
     next non-erased element in the colony (or to end() if no more elements are
-    available). Must return an iterator because if a colony group becomes
+    available). This must return an iterator because if a colony group becomes
     entirely empty, it will be removed from the colony, invalidating the
-    existing iterator. Example:</p>
+    existing iterator. Example of erasure:</p>
     <code style="color: brown">plf::colony&lt;unsigned int&gt;
     data_colony(50);<br>
     plf::colony&lt;unsigned int&gt;::iterator an_iterator;<br>
     an_iterator = data_colony.insert(23);<br>
     an_iterator = data_colony.erase(an_iterator);</code> </li>
   <li><code>void erase(const iterator &amp;begin_iterator, const iterator
-    &amp;end_iterator)</code> 
+    &amp;end_iterator)</code>
     <p>Erases all contents of a given colony from the begin_iterator to the
     element before the end_iterator. Example:</p>
     <code style="color: brown">plf::colony&lt;int&gt; iterator1 =
     colony1.begin() + 10;<br>
     plf::colony&lt;int&gt; iterator2 = colony1.begin() + 20;<br>
     colony1.erase(iterator1, iterator2);</code> </li>
-  <li><code>Assignment (=), move assignment (std::move), comparison (==) and
-    not-comparison (!=)</code> 
-    <p>Standard assignment/move-assignment operators. Example:</p>
-    <code style="color: brown">// Manual swap in C++0x<br>
+   <li><code>bool empty()</code>
+   <p>Returns a boolean indicating whether the colony is currently empty of elements.<br>
+   Example: <code style="color: brown">if (object_colony.empty()) return;</code></p></li>
+   <li><code>void clear()</code>
+   <p>Empties the colony and removes all elements. Deallocates all groups and creates a new starting group of the same size as the original starting group (8, unless specified otherwise by constructor or reinitialize call).<br>
+   Example: <code style="color: brown">object_colony.clear();</code></p></li>
+   <li><code>void reinitialize(const size_type new_size)</code>
+   <p>Clears the colony, creates a new starting group of the size specified.<br>
+   Example: <code style="color: brown">object_colony.reinitialize(1000);</code></p></li>
+   <li><code>void reinitialize(const size_type new_size, const size_type maximum_size)</code>
+   <p>Clears the colony, creates a new starting group of the size specified, with the maximum potential group size set to maximum_size.<br>
+   Example: <code style="color: brown">object_colony.reinitialize(1000, 100000);</code></p></li>
+
+   <li><code>colony & operator = (const colony &amp;source)</code>
+   <p>Copy the elements from another colony to this colony, clearing this colony of existing elements first.<br>
+   Example: <code style="color: brown">// Manually swap data_colony1 and data_colony2 in C++03<br>
     data_colony3 = data_colony1;<br>
     data_colony1 = data_colony2;<br>
-    data_colony2 = data_colony3;</code><br>
-    <code style="color: brown">// Manual swap in C++11<br>
-    data_colony3 = std::move(data_colony1);<br>
+    data_colony2 = data_colony3;</code></p></li>
+   <li><code>colony & operator = (const colony &amp;&amp;source) <b>C++11 only</b></code>
+   <p>Move the elements from another colony to this colony, clearing this colony of existing elements first. Source colony becomes invalid but can be safely destructed without undefined behaviour.<br>
+   Example: <code style="color: brown">// Manually swap data_colony1 and data_colony2 in C++11<br>
+   data_colony3 = std::move(data_colony1);<br>
     data_colony1 = std::move(data_colony2);<br>
-    data_colony2 = std::move(data_colony3);</code> </li>
-  <li><code>Comparison (==) and not-comparison (!=)</code> 
-    <p>These check that the content of the two colonies are the same - not that
-    they are the same colony. Will abort if they are the same colony.
-    Example:</p>
-    <code style="color: brown">if (colony1 == colony2) {   std::cout &lt;&lt;
-    "Somehow the contents match!" &lt;&lt; std::endl; } </code></li>
-  <li><code>void clear()</code> 
-    <p>Removes all content from colony.</p>
-  </li>
-  <li><code>bool empty()</code> 
-    <p>Returns empty status of colony.</p>
-  </li>
-  <li><code>unsigned int size()</code> 
-    <p>Returns number of elements in colony.</p>
-  </li>
-  <li><code>void reinitialize(unsigned int _elements_per_group, (optional)
-    unsigned int _max_elements_per_group)</code> 
-    <p>Removes all content from colony and reinitialises using the supplied
-    elements_per_group as the initial group size, and (optionally) the supplied
-    max_elements_per_group as the maximum size of any colony group. If
-    max_elements_per_group is not specified the prior maximum of the colony
-    will be used.</p>
-  </li>
-  <li><code>iterator begin(), iterator end()</code> 
+    data_colony2 = std::move(data_colony3);</code></p></li>
+   <li><code>bool operator == (const colony &amp;source)</code>
+   <p>Compare contents of another colony to this colony. Returns a boolean as to whether they are equal.<br>
+   Example: <code style="color: brown">if (object_colony == object_colony2) return;</code></p></li>
+   <li><code>bool operator != (const colony &amp;source)</code>
+   <p>Compare contents of another colony to this colony. Returns a boolean as to whether they are not equal.<br>
+   Example: <code style="color: brown">if (object_colony != object_colony2) return;</code></p></li>
+  <li><code>iterator begin(), iterator end(), const_iterator cbegin(), const_iterator cend()</code>
     <p>Return iterators pointing to, respectively, the first element of the
     colony and the element one-past the end of the colony (as per standard STL
     guidelines).</p>
   </li>
-  <li><code>reverse_iterator rbegin(), reverse_iterator rend()</code> 
+  <li><code>reverse_iterator rbegin(), reverse_iterator rend(), const_reverse_iterator cbegin(), const_reverse_iterator cend()</code>
     <p>Return reverse iterators pointing to, respectively, the last element of
     the colony and the element one-before the first element of the colony (as
     per standard STL guidelines).</p>
   </li>
 </ul>
 
+<h3>iterator/const_iterator/reverse_iterator/const_reverse_iterator functions</h3>
+<ul>
+   <li><code>template &lt;class iterator_type, class distance_type&gt;  void advance(iterator_type iterator, distance_type distance)</code>
+   <p>Increments/decrements the iterator supplied by the positive or negative amount indicated by <i>distance</i>. Speed of incrementation will almost always be faster than using the ++ operator on the iterator. In some cases it may approximate O(1).<br>
+   Example: <code style="color: brown">colony&lt;int&gt;::iterator it = i_colony.begin();<br>
+   i_colony.advance(it, 20);
+   </code></p></li>
+   <li><code>template &lt;class iterator_type, class distance_type&gt;  iterator_type next(const iterator_type &iterator, distance_type distance)</code>
+   <p>Creates a copy of the iterator supplied, then increments/decrements this iterator by the positive or negative amount indicated by <i>distance</i>. As above, speed of incrementation will almost always be faster than using the ++ operator on the iterator.<br>
+   Example: <code style="color: brown">colony&lt;int&gt;::iterator it = i_colony.next(i_colony.begin(), 20);</code></p> </li>
+   <li><code>template &lt;class iterator_type, class distance_type&gt;  iterator_type prev(const iterator_type &iterator, distance_type distance)</code>
+   <p>Creates a copy of the iterator supplied, then decrements/increments this iterator by the positive or negative amount indicated by <i>distance</i>. As above, speed of incrementation will almost always be faster than using the ++ operator on the iterator.<br>
+   Example: <code style="color: brown">colony&lt;int&gt;::iterator it2 = i_colony.prev(i_colony.end(), 20);</code></p> </li>
+   <li><code>template &lt;class iterator_type&gt;  std::iterator_traits&lt;iterator_type&gt;::difference_type distance(const iterator_type &first, const iterator_type &last)</code>
+   <p>Measures the distance between two iterators, returning the result, which will be negative if the second iterator supplied is before the first iterator supplied in terms of it's location in the colony.<br>
+   Example: <code style="color: brown">colony&lt;int&gt;::iterator it = i_colony.next(i_colony.begin(), 20);<br>
+   colony&lt;int&gt;::iterator it2 = i_colony.prev(i_colony.end(), 20);<br>
+   std::cout << "Distance: " << i_colony.distance(it, it2) << std::endl;</code></p> </li>
+</ul>
+
 <h2><a id="faq"></a>Frequently Asked Questions</h2>
 <ol>
   <li><h4>TLDR, what is a colony?</h4>
-    <p>A combination of a linked-list of memory blocks, combined with a boolean
-    erasure field, combined with custom memory location stack, which results in
-    a std::-style C++ container with better performance characteristics than
-    most std:: containers.</p>
+    <p>A combination of a linked-list of increasingly-large memory blocks,
+    combined with a jump-counting skipfield, combined with a custom erased-element
+    memory-location stack, resulting in a std::-styled C++ template data
+    container with better performance characteristics for most unordered data
+    in most scenarios.</p>
   </li>
   <li><h4>Where should it be used in place of the other std:: containers?</h4>
-    <p>It should be used for performance reasons in any situation where the
+    <p>It should be used, for performance reasons, in any situation where the
     order of container elements is not important, and:</p>
     <ol type="a">
       <li>Pointers and iterators which point to container elements must stay
@@ -1571,29 +1638,26 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
       <li>Insertions and erasures to the container will be occuring in realtime
         ie. in performance-critical code.</li>
     </ol>
-    <p>Under these circumstances a colony out-performs all std:: containers.<br>
-    In addition: because it never invalidates pointer or iterator references to
+    <p>Under these circumstances a colony out-performs other std:: containers.
+    In addition, because it never invalidates pointer or iterator references to
     container elements (except when the element being referred to has been
-    previously erased) it can make many tasks involving interrelating
-    structures in an object-oriented environment much easier, and should be
-    considered in those circumstances.</p>
+    previously erased) it can make many programming tasks involving
+    interrelating structures in an object-oriented or modular environment much
+    easier/faster, and can be considered in those circumstances.</p>
   </li>
   <li><h4>What are the performance characteristics?</h4>
     <p>As above, also, see the <a href="#benchmarks">benchmarks</a>. On
-    larger-than-primitive types, inserting to a colony is typically twice as
-    fast as a vector, erasing from is many multiples-of-ten faster, and
-    iteration about the same (or slightly slower, but not by a meaningful
-    ratio). For primitive types (ie. int, float etc) it does not perform as
-    well.</p>
+    larger-than-scalar types, inserting to a colony is typically 2-4 times as
+    fast as a vector, erasure is many factors-of-ten faster, and iteration
+    about 90-95% as fast. For primitive types (ie. int, float etc) it does not
+    perform as well.</p>
   </li>
-  <li><h4>What are some examples of situations where a colony improves
+  <li><h4>What are some examples of situations where a colony strongly improves
     performance?</h4>
     <p>Some ideal situations to use a colony: quadtree, persistent octtree,
-    "enemy entities" or destructible-object containers in a video game,
-    particle objects, etc, etc.<br>
-    Also, anywhere where a vector of pointers to dynamically-allocated objects
-    would typically end up being used, in order to preserve object
-    references.</p>
+    general game entities or destructible-objects in a video game, anywhere where objects are being created and destroyed continuously such as a particle engine, etc. Also, anywhere where a vector of pointers to
+    dynamically-allocated objects would typically end up being used in order to
+    preserve object references.</p>
   </li>
   <li><h4>Are there situations where one would prefer a vector over a
     colony?</h4>
@@ -1608,107 +1672,116 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     <p>In the case of small primitive types and low amounts of realtime
     insert/erase, you may find a vector faster, although insert/erase are
     always at least factors of ten longer in duration than iteration times,
-    regardless of container. So benchmarking is required.</p>
+    regardless of which container we're discussing. So benchmarking is required.</p>
     <p>Also, as noted, a vector is easier to use when dealing with ordered
     data. You may sort the data in a colony by iterating over it with a
     swapping/sorting function, but you cannot control insertion placement.</p>
+    <p>Lastly, as noted in the "worst case iteration scenario" benchmark the
+    worst-case scenario for iteration speed in a colony is a few non-erased
+    elements per group followed by a large number of erased elements. This
+    scenario could occur if the colony were filled up, then large numbers of
+    consecutive elements were erased, but the consecutive series were smaller
+    than the group sizes, so that no groups were removed from the colony chain.
+    In this case and as demonstrated in the benchmark, the erasure performance
+    loss of a vector compared to a colony would still dwarf the iteration
+    performance loss of the colony compared to the vector, by multiple factors
+    of ten (in the benchmark you would need to be iterating over the data &gt;
+    32000 times for the vector to be better-performing overall). If you know
+    that this kind of erasure pattern will occur in advance, you can mitigate
+    the problem by controlling your group sizes via a colony's constructor, so
+    that no group is larger than the number of multiple consecutive erasures.
+    See the documentation or the last entry in this FAQ to see how this works.
+    However if you are getting these kinds of erasure patterns but don't know
+    the series size, and are iterating over your data more than 32000 more
+    times than you are erasing from that data, you will probably be better off
+    with a vector.</p>
   </li>
   <li><h4>Is it similar to a deque?</h4>
-    <p>No, a deque is very dissimilar to a colony. A deque is a double-ended
-    queue, which requires a very different internal framework. It may or may
-    not use a linked-list of memory blocks, dependent on the compiler, and has
-    no comparable performance characteristics. Deque element erasure varies
-    quite wildly depending on the compiler compared to std::vector, and it does
-    not free unused memory blocks to the OS once they are empty, unlike a
-    colony. In addition a deque invalidates references to subsequent container
-    elements when erasing elements, which a colony does not. A colony never
-    invalidates pointers/iterators to elements unless the element being
-    referred to is erased.</p>
+    <p>A deque is fairly dissimilar to a colony. A deque is a double-ended queue,
+    which requires a very different internal framework. It may or may not use a
+    linked-list of memory blocks, dependent on the compiler or implementation,
+    and has no comparable performance characteristics. Deque element erasure performance 
+    varies quite wildly depending on the compiler compared to std::vector, and
+    it does not free unused memory blocks to the OS once they are empty, unlike
+    a colony. In addition a deque invalidates references to subsequent
+    container elements when erasing elements, which a colony does not. A colony
+    never invalidates pointers/iterators to elements unless the element being
+    referred to is erased. </p>
   </li>
   <li><h4>What is it most similar to?</h4>
-    <p>A vector. Because the performance characteristics are more similar
-    (better cache performance) and also because colonies follow the same
-    doubling-of-memory-space-on-expansion rule that vectors do, colonies are
-    probably more similar to a vector despite using a very different internal
-    schema.</p>
+    <p>A vector, because the performance characteristics are more similar
+    (better cache performance) than other data containers, and because colonies
+    follow the same doubling-of-memory-space-on-expansion rule that vectors
+    do.</p>
   </li>
+  <li><h4>What are the thread-safe guarantees?</h4>
+  <p>Same as STL, multiple consecutives reads are fine, multiple consecutive writes are not. Somebody can step up and make a write-threadsafe version using atomics if they feel the need.</p>
   <li><h4>Will ordered insert be added to the functions?</h4>
-    <p>It is possible, and would be much faster than vector's insert - as
-    reallocation would only be necessary for the particular memory block the
-    insertion occured in - not all elements after the insertion point, ala
-    vector - which could result in ordered insertion times between 1000x and 2x
-    faster than vector, depending on where the insertion occurs. However one of
-    the main points in making this container was to preserve element
-    references, and position-based insert would of course invalidate that
-    principle. In addition, adding ordered insertion to colony would also
-    result in push_back being a desired function, which users would likely use
-    in a naive sense, thinking that, like vector, push_back would be fastest
-    (in this case it would be, but it would make iteration slower as unused
-    memory slots would not get recycled and hence you would end up with
-    redundant space). I've more-or-less decided that adding the ability to
-    order element insertion disrupts a colony's natural potential, and have
-    avoided it. Having said that, I am looking at it, but only as a
-    proof-of-concept.</p>
-  </li>
-  <li><h4>Will a [ ] operator be added?</h4>
-    <p>No. The internal implementation of colony[10] would be colony.begin() +
-    10 - and there is no way around this due to the erased element slots, which
-    must be incremented over, and due to the fact that a colony frees empty
-    memory blocks to the OS. Since using [ ] repeatedly would be very
-    inefficient (involving multiple incrementations over the begin() iterator)
-    compared to simply using an incrementing iterator starting from begin(), it
-    is better the user realise what they are doing, rather than having it
-    obsfucated from them.</p>
+    <p>It would only be possible in a vector implementation using the colony
+    architecture, but isn't possible in colony itself. Theoretically, it would
+    be much faster than std::vector's insert and erase - as reallocation would
+    only be necessary for the particular memory block the insertion occured in
+    - not all elements after the insertion point, ala std::vector - which could
+    result in ordered insertion times between 1000x and 2x faster than vector,
+    depending on where the insertion occurs. However one of the main points in
+    making this container was to preserve element references, and
+    position-based insert would of course invalidate that principle. In
+    addition, adding ordered insertion to colony would also result in push_back
+    being a desired function, which users would likely use in a naive sense,
+    thinking that, like vector, push_back would be fastest (in this case it
+    would be, but it would make iteration slower as unused memory slots would
+    not get recycled and hence you would end up with redundant space). I've
+    more-or-less decided that adding the ability to order element insertion
+    disrupts a colony's natural potential, and have avoided it. Having said
+    that, I am looking at it as a proof-of-concept.</p>
   </li>
   <li><h4>Any "gotcha"'s to watch out for?</h4>
     <p>Only a few:</p>
     <ol type="a">
       <li>"insert" placement can be at the back, front, or frankly anywhere in
         the container, depending on what's been deleted previously and where it
-        was.</li>
+        was. Insertion is essentially random unless no erasures have been made prior, or an equal number of erasures and insertions have been made prio.</li>
       <li><code>plf::colony&lt;int&gt; a_colony(500);</code> does not mean the
         same thing as <code>std::vector&lt;int&gt; a_vector(500);</code>. A
         vector inserts 500 elements using the type's default constructor when
         "(500)" is specified, a colony creates it's first memory block to be
-        500 elements big but does not insert the empty elements ie. it's the
+        500 elements large but does not insert the empty elements ie. it's the
         same as vector.reserve(500).<br>
         The only difference is because it occurs during construction, it
         doesn't waste CPU cycles deallocating and reallocating memory.<br>
         It can be combined with a maximum-block-size specifier as per the faq
         entry below.</li>
-      <li>While you Can subtract the value of the .begin() iterator from the
-        current position iterator to get a colony "index" number like you would
-        with vector, this is slow and not a useful practice - the ability to do
-        so is primarily included for compatibility with std::find and other
-        std:: algorithms. Index numbers will be invalidated in colonies by
-        erasures (just like other standard containers), whereas iterators and
-        pointers are not.</li>
       <li>Once an element has been erased, any iterator or pointer pointing to
         that element is no longer valid. This is the same as vector and other
-        std:: container rules, but not the same as an array. In this case, the
-        memory block the iterator pointed to may no longer exist. This is the
-        only way that iterators and pointers to a colony element can become
-        invalidated.</li>
+        std:: container rules, but not the same as an array. In the case of
+        colony, the memory block the iterator pointed to may no longer exist,
+        because, if it were the final remaining element in the memory block,
+        the group containing the memory block will have been removed from the
+        colony chain. Erasure of the specific element is the only way that iterators and pointers to a
+        colony element can become invalidated.</li>
     </ol>
   </li>
   <li><h4>Any special-case uses?</h4>
     <p>In the special case where many, many elements are being continually
     erased/inserted in realtime, you might want to consider limiting the size
-    of your internal memory blocks in the constructor. The form of this is as
+    of your internal memory groups in the constructor. The form of this is as
     follows:<br>
     <code>plf::vector&lt;object&gt; a_vector(500, 5000);</code><br>
-    where the first number is the minimum size of the internal memory blocks
-    and the second is the maximum size.<br>
-    The reason for this is that it is, slightly, slower to pop an element
+    where the first number is the minimum size of the internal memory groups
+    and the second is the maximum size. Note these can be the same size,
+    resulting in an unchanging group size for the lifetime of the colony.<br>
+    One reason to do this is that it is, slightly, slower to pop an element
     location off the internal memory position recycling stack, than it is to
     insert a new element to the end of the colony (the default behaviour when
     there are no previously-erased elements). If there are any erased elements
     in the colony, the colony will recycle those memory locations, unless the
-    entire block is empty, at which point it is freed to memory. If a block
-    size is too big and many, many erasures occur, the number of erased element
-    locations in the recycling stack can get very large before the entire block
-    is empty. In that case you may want to run a benchmark limiting the maximum
-    size of the blocks, and tune it until you find optimal usage.</p>
+    entire group is empty, at which point it is freed to memory. So if a group
+    size is large and many, many erasures occur but the group is not completely
+    emptied, (a) the number of erased element locations in the recycling stack
+    could get very large, resulting in a detriment to performance and (b)
+    iteration speed will suffer. In that scenario you may want to run a
+    benchmark limiting the minimum/maximum sizes of the groups, and tune it
+    until you find optimal usage.</p>
   </li>
 </ol>
 <br>
