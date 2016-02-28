@@ -1,22 +1,27 @@
-// About: there are 8 tests here;
-// one with a vector of dynamically-allocated objects vs colony, array with boolean field, list, map and deque(small structs)
+// About: there are 12 tests here;
+// one with a vector of dynamically-allocated objects vs colony, array with boolean field, list, map, multiset and deque of dynamically-allocated objects (small structs)
 // one with vector with boolean field, deque with boolean field and array with boolean field vs colony (small structs)
+// one with vector of pointers to data members in another vector vs a colony of data members
 // three with vector vs colony vs array vs deque with boolean field (unsigned ints, small structs and large structs)
+// three testing best and worst-case iteration scenarios with colony vs vector
 // three with vector vs plf::stack (unsigned ints, small structs and large structs)
 
 // The array results simply show comparative performance using C-arrays - only appropriate for a situation where absolute size is known in advance and no objects are expected to be added to or genuinely erased from the container ('erasure' is simulated via a boolean flag, but no actual destructors are called or memory deallocated, as is the case with colonies).
 // Comment/uncomment tests as appropriate. Timing may be fickle for small tests if using STL clock for timing instead of SDL, as below.
 
 
+
 #include <vector>
 #include <list>
 #include <map>
 #include <deque>
+#include <stack>
+#include <set>
 #include <iostream>
-#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
-//#include "SDL_timer.h" // Install and use SDL2 (libsdl.org) instead of ctime for more accurate cross-platform timing - regular STL/C timing may only be accurate to around 15ms, regardless of function used (including high_resolution_clock), depending on the OS and compiler.
+#include <cstdio> // freopen
+//#include "SDL_timer.h" // Install and use SDL2 (libsdl.org) instead of ctime for more accurate cross-platform timing - regular STL/boost/C timing may only be accurate to around 15ms, regardless of function used (including high_resolution_clock), depending on the OS and compiler.
 
 #include "plf_colony.h"
 
@@ -47,6 +52,12 @@ struct generic
 	double *empty_field_3;
 	double number;
 	unsigned int empty_field4;
+	
+	// This function is required for comparing multiset against colony:
+	inline bool operator < (const generic &rh) const
+	{
+		return rh.number < this->number;
+	}
 };
 
 
@@ -97,17 +108,46 @@ struct large_generic_for_array
 
 int main(int argc, char **argv)
 {
-	srand(clock()); // Note: using random numbers to avoid CPU prediction
-//	srand(SDL_GetTicks());
-
 	using namespace std;
 	using namespace plf;
 
+	{
+		time_t timer;
+		time(&timer);
+		srand((unsigned int)timer); // Note: using random numbers to avoid CPU prediction
+	}
+
+	cout << "Output results to (c)onsole or (l)ogfile? Type l or c and press Enter." << endl;
+	
+	char output_option;
+	bool console_output = true;
+	
+	cin.get(output_option);
+	
+	while (output_option != 'c' && output_option != 'C' && output_option != 'l' && output_option != 'L')
+	{
+		cin.get(output_option);
+	}
+	
+
+	cout << endl << endl << endl;
+	
+	if (output_option == 'l' || output_option == 'L')
+	{
+		char logfile[256];
+		sprintf(logfile, "%s.txt", argv[0]);
+		
+		cout << "Outputting results to logfile " << logfile << "." << endl << "Please wait while program completes. This may take a while. Program will close once complete.";
+		
+		freopen(logfile,"w", stdout);
+		console_output = false;
+	}
 
 
-	cout << "OO TESTS:\n=========\n\n";
 
+	cout << "COLONY TESTS: REAL-WORLD SPEED\n===========================\n\n";
 
+	
 	// 1st real-world test - plf_colony speed against vector of pointers to objects, array with boolean field, std::map and std::list with a generic small struct:
 	{
 		vector<generic *> data_vector;
@@ -115,20 +155,25 @@ int main(int argc, char **argv)
 		deque<generic *> data_deque;
 		list<generic> data_list;
 		map<unsigned int, generic> data_map;
+		multiset<generic> data_multiset;
 		colony<generic> data_colony(50000);
 
 		generic_for_array *data_array = new generic_for_array[2000000];
 
 
 		cout << "Real-world OO performance comparison between a std::vector of pointers to objects, plf::colony, an array with a boolean field, a list and a map using small structs." << endl;
-		cout << "press enter to continue" << endl << endl;
-		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
 
 		cout << "small struct tests begin:" << endl << endl;
-		cout << "milliseconds to add 2000000 generic structs:" << endl;
+		cout << "milliseconds to insert 2000000 generic structs:" << endl;
 		one_sec_delay(); // to remove potential overhead from cout.
 
-		unsigned long current_time, difference1, difference2, difference3, difference4, difference5, difference6;
+		unsigned long current_time, difference1, difference2, difference3, difference4, difference5, difference6, difference7;
 		generic the_struct, *struct_pointer;
 		generic_for_array the_array_struct;
 		the_array_struct.erased = false;
@@ -149,7 +194,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 2000000; ++num)
 		{
 			the_struct.number = rand() % 1000000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -193,8 +238,17 @@ int main(int argc, char **argv)
 		}
 
 		difference6 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
 
-		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << endl;
+
+		for (unsigned int num = 0; num != 2000000; ++num)
+		{
+			the_struct.number = rand() % 1000000;
+			data_multiset.insert(the_struct);
+		}
+
+		difference7 = get_time_in_ms() - current_time;
+		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << "multiset: " << difference7 << endl << endl;
 
 		cout << "milliseconds to randomly erase 1 in every 5000 entries:" << endl;
 		one_sec_delay();
@@ -277,7 +331,24 @@ int main(int argc, char **argv)
 		difference5 = get_time_in_ms() - current_time;
 		current_time = get_time_in_ms();
 
-		for (deque<generic *>::iterator the_iterator = data_deque.begin(); the_iterator != data_deque.end();)
+ 		for (deque<generic *>::iterator the_iterator = data_deque.begin(); the_iterator != data_deque.end();)
+ 		{
+ 			if (rand() % 5000 != 0)
+ 			{
+ 				++the_iterator;
+ 			}
+ 			else
+ 			{
+ 				delete *the_iterator;
+ 				the_iterator = data_deque.erase(the_iterator);
+ 			}
+ 		}
+
+
+		difference6 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+
+		for (multiset<generic>::iterator the_iterator = data_multiset.begin(); the_iterator != data_multiset.end();)
 		{
 			if (rand() % 5000 != 0)
 			{
@@ -285,13 +356,15 @@ int main(int argc, char **argv)
 			}
 			else
 			{
-				delete *the_iterator;
-				the_iterator = data_deque.erase(the_iterator);
+				multiset<generic>::iterator iterator_copy = the_iterator; // Must use this approach to allow for pre-c++11 compiler usage
+				++the_iterator;
+				data_multiset.erase(iterator_copy);
 			}
 		}
 
-		difference6 = get_time_in_ms() - current_time;
-		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << endl;
+		difference7 = get_time_in_ms() - current_time;
+
+		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << "multiset: " << difference7  << endl << endl;
 
 		double total;
 		one_sec_delay();
@@ -309,7 +382,7 @@ int main(int argc, char **argv)
 		}
 
 		difference1 = get_time_in_ms() - current_time;
-		cout << "totaling vector after random erasures: " << total << endl;
+		cout << "totaling vector after random erasures: " << total << endl; // IMPORTANT NOTE - these cout's MUST be present or the compiler WILL (gcc does) optimize out ALL the loops containing 'total' because THEY DON'T DO ANYTHING (ie have any measurable side-effects) if total is not used for anything. Then your benchmarking becomes useless.
 		one_sec_delay();
 
 		current_time = get_time_in_ms();
@@ -385,10 +458,24 @@ int main(int argc, char **argv)
 		}
 
 		difference6 = get_time_in_ms() - current_time;
-		cout << "totaling deque after random erasures: " << total << endl << endl;
+		cout << "totaling deque after random erasures: " << total << endl;
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 100; ++counter)
+		{
+			for (multiset<generic>::iterator the_iterator = data_multiset.begin(); the_iterator != data_multiset.end(); ++the_iterator)
+			{
+				total += the_iterator->number;
+			}
+		}
+
+		difference7 = get_time_in_ms() - current_time;
+		cout << "totaling multiset after random erasures: " << total << endl << endl;
+		one_sec_delay();
 
 		cout << "milliseconds to iterate over all entries 100 times and add stored random number to total:" << endl;
-		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << endl;
+		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << "multiset: " << difference7  << endl << endl;
 		cout << "milliseconds to clear containers and deallocate all objects:" << endl;
 		
 		one_sec_delay();
@@ -428,11 +515,19 @@ int main(int argc, char **argv)
 		data_deque.clear();
 		difference6 = get_time_in_ms() - current_time;
 
-		cout << endl << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << endl;
-		
-		cout << "press enter to exit";
+		one_sec_delay();
+		current_time = get_time_in_ms();
+		data_multiset.clear();
+		difference7 = get_time_in_ms() - current_time;
 
-		cin.get();
+		cout << endl << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl  << "list: " << difference4 << endl  << "map: " << difference5 << endl << "deque: " << difference6 << endl << "multiset: " << difference7  << endl << endl;
+		
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 	}
 
@@ -442,18 +537,22 @@ int main(int argc, char **argv)
 	{
 		vector<generic_for_array> data_vector;
 		deque<generic_for_array> data_deque;
-		data_vector.reserve(500000);
-		colony<generic> data_colony(500000);
+		data_vector.reserve(65535);
+		colony<generic> data_colony(65535);
 
 		generic_for_array *data_array = new generic_for_array[5000000];
 
 
 		cout << "Real-world oo performance comparison between a std::vector with a boolean field, plf::colony and an array with a boolean field, using small structs." << endl;
-		cout << "press enter to continue" << endl << endl;
-		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
 
 		cout << "small struct tests begin:" << endl << endl;
-		cout << "milliseconds to add 5000000 generic structs:" << endl;
+		cout << "milliseconds to insert 5000000 generic structs:" << endl;
 		
 		one_sec_delay(); // to remove potential overhead from cout.
 
@@ -476,7 +575,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 5000000; ++num)
 		{
 			the_struct.number = rand() % 5000000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -635,9 +734,13 @@ int main(int argc, char **argv)
 
 		cout << "milliseconds to iterate over all entries 100 times and add to total:" << endl;
 		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << "array: " << difference3 << endl << "deque: " << difference4 << endl << endl;
-		cout << "press enter to exit";
 
-		cin.get();
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 
 		delete [] data_array;
@@ -645,17 +748,154 @@ int main(int argc, char **argv)
 
 
 
+	// 3rd real-world test - plf_colony speed against vector of pointers to another vector, with a generic struct:
+	{
+		vector<generic> data_vector;
+		data_vector.reserve(65535);
+		vector<generic *> pointer_vector;
+		pointer_vector.reserve(65535);
+		colony<generic> data_colony(65535);
 
-	cout << "RAW TESTS:\n=========\n\n";
+
+		cout << "Real-world oo performance comparison between a std::vector of pointers to a vector of actual data, versus plf::colony, using small structs." << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+		cout << "small struct tests begin:" << endl << endl;
+		cout << "milliseconds to insert 5000000 generic structs:" << endl;
+		
+		one_sec_delay(); // to remove potential overhead from cout.
+
+		unsigned long current_time, difference1, difference2;
+		generic the_struct;
+		current_time = get_time_in_ms();
+
+		for (unsigned int num = 0; num != 5000000; ++num)
+		{
+			the_struct.number = rand() % 5000000;
+			data_vector.push_back(the_struct);
+		}
+
+		for (unsigned int num = 0; num != 5000000; ++num)
+		{
+			pointer_vector.push_back(&(data_vector[num]));
+		}
+		
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+
+
+		for (unsigned int num = 0; num != 5000000; ++num)
+		{
+			the_struct.number = rand() % 5000000;
+			data_colony.insert(the_struct);
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+
+		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << endl;
+
+		cout << "milliseconds to randomly erase 1 in every 5000 entries:" << endl;
+		
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+
+		for (vector<generic *>::iterator the_iterator = pointer_vector.begin(); the_iterator != pointer_vector.end();)
+		{
+			if (rand() % 5000 != 0)
+			{
+				++the_iterator;
+			}
+			else
+			{
+				the_iterator = pointer_vector.erase(the_iterator);
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+
+		for (colony<generic>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end();)
+		{
+			if (rand() % 5000 != 0)
+			{
+				++the_iterator;
+			}
+			else
+			{
+				the_iterator = data_colony.erase(the_iterator);
+			}
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << endl;
+
+		
+
+		double total;
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 100; ++counter)
+		{
+			for (vector<generic *>::iterator the_iterator = pointer_vector.begin(); the_iterator != pointer_vector.end(); ++the_iterator)
+			{
+				total += (*the_iterator)->number;
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		cout << "totaling vector after random erasures: " << total << endl;
+		
+		one_sec_delay();
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 100; ++counter)
+		{
+			for (colony<generic>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)
+			{
+				total += the_iterator->number;
+			}
+		}
+		
+		difference2 = get_time_in_ms() - current_time;
+		cout << "totaling colony after random erasures: " << total << endl;
+		
+		cout << "milliseconds to iterate over all entries 100 times and add to total:" << endl;
+		cout << "vector: " << difference1 << endl << "colony: " << difference2 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+		cout << endl << endl << endl << endl << endl << endl << endl << endl;
+	}
+
+
+
+	cout << "COLONY TESTS: RAW SPEED\n=====================\n\n";
 
 
 	// 1st "raw" test - plf_colony speed against vector, array with boolean field, with unsigned ints:
 	{
 		vector<unsigned int> data_vector;
 		deque<unsigned int> data_deque;
-		data_vector.reserve(500000);
-		colony<unsigned int> data_colony(500000);
-
+		data_vector.reserve(65535);
+		colony<unsigned int> data_colony(65535);
+		
         struct s_data 
         {
         	unsigned int number;
@@ -665,13 +905,18 @@ int main(int argc, char **argv)
 		s_data *data_array = new s_data[5000000];
 
 	
-		cout << "Performance comparison between std::vector, plf::colony and an array, using unsigned ints." << endl;
+		cout << "Performance comparison between std::vector, plf::colony, std::deque and an array, using unsigned ints." << endl;
 		cout << "The array is included only to show raw speeds when there is no necessity for a container which can resize as needed to fit the data, but where objects can be 'erased' via a boolean flag." << endl << endl;
-		cout << "Press Enter to continue" << endl << endl;
-		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 	
 		cout << "Unsigned int tests begin." << endl << endl;
-		cout << "Milliseconds to add 50000000 unsigned ints:" << endl;
+		cout << "Milliseconds to insert 50000000 unsigned ints:" << endl;
 		
 		one_sec_delay(); // To remove potential overhead from cout.
 	
@@ -689,7 +934,7 @@ int main(int argc, char **argv)
 	
 		for (unsigned int num = 0; num != 5000000; ++num)
 		{
-			data_colony.add(rand() % 5000000);
+			data_colony.insert(rand() % 5000000);
 		}
 	
 		difference2 = get_time_in_ms() - current_time;
@@ -849,9 +1094,13 @@ int main(int argc, char **argv)
 
 		cout << "Milliseconds to iterate over all entries 100 times and add to total:" << endl;
 		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << "Array: " << difference3 << endl << "Deque: " << difference4 << endl << endl;
-		cout << "Press Enter to Exit";
 
-		cin.get();
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 
 		delete [] data_array;
@@ -864,18 +1113,23 @@ int main(int argc, char **argv)
 	{
 		vector<generic> data_vector;
 		deque<generic> data_deque;
-		data_vector.reserve(500000);
-		colony<generic> data_colony(500000);
+		data_vector.reserve(65535);
+		colony<generic> data_colony(65535);
 
 		generic_for_array *data_array = new generic_for_array[5000000];
 
 
-		cout << "Performance comparison between std::vector, plf::colony and an array using small structs." << endl;
-		cout << "Press Enter to continue" << endl << endl;
-		cin.get();
+		cout << "Performance comparison between std::vector, plf::colony, std::deque and an array using small structs." << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 
 		cout << "Small struct tests begin:" << endl << endl;
-		cout << "Milliseconds to add 5000000 generic structs:" << endl;
+		cout << "Milliseconds to insert 5000000 generic structs:" << endl;
 		
 		one_sec_delay(); // To remove potential overhead from cout.
 
@@ -896,7 +1150,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 5000000; ++num)
 		{
 			the_struct.number = rand() % 5000000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -931,6 +1185,7 @@ int main(int argc, char **argv)
 
 
 		current_time = get_time_in_ms();
+
 
 		for (vector<generic>::iterator the_iterator = data_vector.begin(); the_iterator != data_vector.end();)
 		{
@@ -1062,9 +1317,13 @@ int main(int argc, char **argv)
 
 		cout << "Milliseconds to iterate over all entries 100 times and add to total:" << endl;
 		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << "Array: " << difference3 << endl << "Deque: " << difference4 << endl << endl;
-		cout << "Press Enter to Exit";
 
-		cin.get();
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 
 		delete [] data_array;
@@ -1083,11 +1342,16 @@ int main(int argc, char **argv)
 
 
 		cout << "Performance comparison between std::vector, std::deque, plf::colony and an array using a small number of large structs." << endl;
-		cout << "Press Enter to continue" << endl << endl;
-		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 
 		cout << "Large struct tests begin:" << endl << endl;
-		cout << "Milliseconds to add 10000 large structs:" << endl;
+		cout << "Milliseconds to insert 10000 large structs:" << endl;
   
 		one_sec_delay(); // To remove potential overhead from cout.
 
@@ -1108,7 +1372,7 @@ int main(int argc, char **argv)
 		for (unsigned int num = 0; num != 10000; ++num)
 		{
 			the_struct.number = rand() % 10000;
-			data_colony.add(the_struct);
+			data_colony.insert(the_struct);
 		}
 
 		difference2 = get_time_in_ms() - current_time;
@@ -1142,6 +1406,7 @@ int main(int argc, char **argv)
 
 
 		current_time = get_time_in_ms();
+
 
 		for (vector<large_generic>::iterator the_iterator = data_vector.begin(); the_iterator != data_vector.end();)
 		{
@@ -1272,9 +1537,13 @@ int main(int argc, char **argv)
 		
 		cout << "Milliseconds to iterate over all entries 10000 times and add to total:" << endl;
 		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << "Array: " << difference3 << endl << "Deque: " << difference4 << endl << endl;
-		cout << "Press Enter to Exit";
 
-		cin.get();
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 		
 		delete [] data_array;
@@ -1282,24 +1551,412 @@ int main(int argc, char **argv)
 
 
 
+	cout << "COLONY TESTS: BEST/WORST-CASE SCENARIOS\n=============================\n\n";
 
+
+	// Worst case scenario for colony iteration, performance test using 1000000 small structs:
+	{
+		vector<generic> data_vector;
+		data_vector.reserve(50);
+		colony<generic> data_colony(50);
+
+		cout << "Realistic worst-case iteration performance comparison between std::vector, plf::colony" << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+
+		cout << "Small struct tests begin:" << endl << endl;
+		cout << "Milliseconds to insert 1000000 generic structs:" << endl;
+
+		one_sec_delay();
+
+		unsigned long current_time, difference1, difference2;
+		generic the_struct;
+		current_time = get_time_in_ms();
+
+		for (unsigned int num = 0; num != 1000000; ++num)
+		{
+			the_struct.number = rand() % 1000000;
+			data_vector.push_back(the_struct);
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+
+
+		for (unsigned int num = 0; num != 1000000; ++num)
+		{
+			the_struct.number = rand() % 1000000;
+			data_colony.insert(the_struct);
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		cout << "Milliseconds to randomly erase 49 in every 50 entries:" << endl;
+
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+		unsigned int counter = 0;
+
+		for (vector<generic>::reverse_iterator the_iterator = data_vector.rbegin(); the_iterator != data_vector.rend();)
+		{
+			++counter;
+			
+			if (counter == 50)
+			{
+				counter = 0;
+				++the_iterator;
+			}
+			else
+			{
+				the_iterator = vector<generic>::reverse_iterator( data_vector.erase(--(the_iterator.base())));
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+		counter = 0;
+
+		for (colony<generic>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end();)
+		{
+			++counter;
+			
+			if (counter == 50)
+			{
+				counter = 0;
+				++the_iterator;
+			}
+			else
+			{
+				the_iterator = data_colony.erase(the_iterator);
+			}
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		
+
+		double total;
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 10000; ++counter)
+		{
+			for (vector<generic>::iterator the_iterator = data_vector.begin(); the_iterator != data_vector.end(); ++the_iterator)
+			{
+				total += the_iterator->number;
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		cout << "Totaling vector after random erasures: " << total << endl;
+		
+		one_sec_delay();
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 10000; ++counter)
+		{
+			for (colony<generic>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)
+			{
+				total += the_iterator->number;
+			}
+		}
+		
+		difference2 = get_time_in_ms() - current_time;
+		cout << "Totaling colony after random erasures: " << total << endl;
+		
+		cout << "Milliseconds to iterate over all entries 10000 times and add to total:" << endl;
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+		cout << endl << endl << endl << endl << endl << endl << endl << endl;
+	}
+
+
+
+
+	// Absolute theoretical worst case scenario for colony iteration, performance test using 5000000 integers:
+	{
+		vector<int> data_vector;
+		data_vector.reserve(65535);
+		colony<int> data_colony(65535);
+
+		cout << "Absolute theoretical worst-case performance comparison between std::vector, plf::colony" << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+
+		cout << "Small struct tests begin:" << endl << endl;
+		cout << "Milliseconds to insert 5000000 integers:" << endl;
+
+		one_sec_delay();
+
+		unsigned long current_time, difference1, difference2;
+		current_time = get_time_in_ms();
+
+		for (unsigned int num = 0; num != 5000000; ++num)
+		{
+			data_vector.push_back(rand() % 1000000);
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+
+
+		for (unsigned int num = 0; num != 5000000; ++num)
+		{
+			data_colony.insert(rand() % 1000000);
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		cout << "Milliseconds to randomly erase 65534 in every 65535 entries:" << endl;
+
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+		unsigned int counter = 0;
+
+		for (vector<int>::reverse_iterator the_iterator = data_vector.rbegin(); the_iterator != data_vector.rend();)
+		{
+			++counter;
+			
+			if (counter == 65534)
+			{
+				counter = 0;
+				++the_iterator;
+			}
+			else
+			{
+				the_iterator = vector<int>::reverse_iterator( data_vector.erase(--(the_iterator.base())));
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+		counter = 0;
+
+		for (colony<int>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end();)
+		{
+			++counter;
+			
+			if (counter == 65534)
+			{
+				counter = 0;
+				++the_iterator;
+			}
+			else
+			{
+				the_iterator = data_colony.erase(the_iterator);
+			}
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		
+
+		double total;
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 1000000; ++counter)
+		{
+			for (vector<int>::iterator the_iterator = data_vector.begin(); the_iterator != data_vector.end(); ++the_iterator)
+			{
+				total += *the_iterator;
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		cout << "Totaling vector after random erasures: " << total << endl;
+		
+		one_sec_delay();
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 1000000; ++counter)
+		{
+			for (colony<int>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)
+			{
+				total += *the_iterator;
+			}
+		}
+		
+		difference2 = get_time_in_ms() - current_time;
+		cout << "Totaling colony after random erasures: " << total << endl;
+		
+		cout << "Milliseconds to iterate over all entries 1000000 times and add to total:" << endl;
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+		cout << endl << endl << endl << endl << endl << endl << endl << endl;
+	}
+
+
+
+
+	// Best-case scenario iteration test:
+	{
+		vector<generic> data_vector;
+		data_vector.reserve(50);
+		colony<generic> data_colony(50);
+
+		cout << "Best-case iteration performance comparison between std::vector, plf::colony" << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+
+		cout << "Small struct tests begin:" << endl << endl;
+		cout << "Milliseconds to insert 1000000 generic structs:" << endl;
+		
+		one_sec_delay(); // To remove potential overhead from cout.
+
+		unsigned long current_time, difference1, difference2;
+		generic the_struct;
+		current_time = get_time_in_ms();
+
+		for (unsigned int num = 0; num != 1000000; ++num)
+		{
+			the_struct.number = rand() % 1000000;
+			data_vector.push_back(the_struct);
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
+
+
+		for (unsigned int num = 0; num != 1000000; ++num)
+		{
+			the_struct.number = rand() % 5000000;
+			data_colony.insert(the_struct);
+		}
+
+		difference2 = get_time_in_ms() - current_time;
+
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+
+		double total;
+		one_sec_delay();
+
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 1000; ++counter)
+		{
+			for (vector<generic>::iterator the_iterator = data_vector.begin(); the_iterator != data_vector.end(); ++the_iterator)
+			{
+				total += the_iterator->number;
+			}
+		}
+
+		difference1 = get_time_in_ms() - current_time;
+		cout << "Totaling vector after random erasures: " << total << endl;
+		
+		one_sec_delay();
+
+		current_time = get_time_in_ms();
+		total = 0;
+
+		for (unsigned int counter = 0; counter != 1000; ++counter)
+		{
+			for (colony<generic>::iterator the_iterator = data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)
+			{
+				total += the_iterator->number;
+			}
+		}
+		
+		difference2 = get_time_in_ms() - current_time;
+		cout << "Totaling colony after random erasures: " << total << endl;
+		
+		cout << "Milliseconds to iterate over all entries 1000 times and add to total:" << endl;
+		cout << "Vector: " << difference1 << endl << "Colony: " << difference2 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
+		cout << endl << endl << endl << endl << endl << endl << endl << endl;
+	}
+
+
+
+
+
+
+
+	// STACK TESTS:
+	
+	cout << "STACK TESTS:\n===========\n\n";
+	
 	// 4th "raw" test - plf::stack vs vector, with unsigned ints:
 	{
 		vector<unsigned int> data_vector;
-		data_vector.reserve(500000);
-		stack<unsigned int> data_stack(500000);
+		data_vector.reserve(65535);
+		plf::stack<unsigned int> data_stack(65535);
+		std::stack<unsigned int> std_stack;
 
 
 		cout << "Performance comparison between std::vector, plf::stack using unsigned ints." << endl;
-		cout << "Press Enter to continue" << endl << endl;
-		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 
 		cout << "Unsigned int tests begin:" << endl << endl;
 		cout << "Milliseconds to push 10000000 unsigned ints:" << endl;
 		
 		one_sec_delay(); // To remove potential overhead from cout.
 
-		unsigned long current_time, difference1, difference2;
+		unsigned long current_time, difference1, difference2, difference3;
 		current_time = get_time_in_ms();
 
 		for (unsigned int num = 0; num != 10000000; ++num)
@@ -1317,8 +1974,16 @@ int main(int argc, char **argv)
 		}
 	
 		difference2 = get_time_in_ms() - current_time;
+		current_time = get_time_in_ms();
 
-		cout << "Vector: " << difference1 << endl << "Stack: " << difference2 << endl << endl;
+		for (unsigned int num = 0; num != 10000000; ++num)
+		{
+			std_stack.push(rand() % 10000000);
+		}
+	
+		difference3 = get_time_in_ms() - current_time;
+
+		cout << "Vector: " << difference1 << endl << "plf::stack: " << difference2 << endl << "std::stack: " << difference3 << endl << endl;
 		
 		one_sec_delay();
 		double total;
@@ -1343,18 +2008,40 @@ int main(int argc, char **argv)
 	
 		for (unsigned int num = 0; num != 10000000; ++num)
 		{
-			total += data_stack.back();
+			total += data_stack.top();
 			data_stack.pop();
 		}
 
 
 		difference2 = get_time_in_ms() - current_time;
- 		cout << "Totaling stack: " << total << endl << endl;
- 		cout << "Milliseconds to pop all elements and add to total:" << endl;
-		cout << "Vector: " << difference1 << endl << "Stack: " << difference2 << endl << endl;
-		cout << "Press Enter to Exit";
+ 		cout << "Totaling plf::stack: " << total << endl;
+		one_sec_delay();
 
-		cin.get();
+		current_time = get_time_in_ms();
+		total = 0;
+	
+		for (unsigned int num = 0; num != 10000000; ++num)
+		{
+			total += std_stack.top();
+			std_stack.pop();
+		}
+
+
+		difference3 = get_time_in_ms() - current_time;
+
+
+
+
+ 		cout << "Totaling std::stack: " << total << endl << endl;
+ 		cout << "Milliseconds to pop all elements and add to total:" << endl;
+		cout << "Vector: " << difference1 << endl << "plf::stack: " << difference2 << endl << "std::stack: " << difference3 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 	}
 
@@ -1364,20 +2051,26 @@ int main(int argc, char **argv)
 	// 5th "raw" test - plf::stack vs vector, with generic small structs:
 	{
  		vector<generic> data_vector;
- 		data_vector.reserve(500000);
- 		stack<generic> data_stack(500000);
+ 		data_vector.reserve(65535);
+ 		plf::stack<generic> data_stack(65535);
+ 		std::stack<generic> std_stack;
  
  
  		cout << "Performance comparison between std::vector, plf::stack using a generic struct." << endl;
- 		cout << "Press Enter to continue" << endl << endl;
- 		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
  
  		cout << "Small struct tests begin:" << endl << endl;
  		cout << "Milliseconds to push 5000000 generic structs:" << endl;
  		
  		one_sec_delay(); // To remove potential overhead from cout.
  
- 		unsigned long current_time, difference1, difference2;
+ 		unsigned long current_time, difference1, difference2, difference3;
  		current_time = get_time_in_ms();
  		generic the_struct;
  
@@ -1399,7 +2092,18 @@ int main(int argc, char **argv)
  	
  		difference2 = get_time_in_ms() - current_time;
  
- 		cout << "Vector: " << difference1 << endl << "Stack: " << difference2 << endl << endl;
+ 		current_time = get_time_in_ms();
+ 
+ 	
+ 		for (unsigned int num = 0; num != 5000000; ++num)
+ 		{
+ 			the_struct.number = rand() % 5000000;
+ 			std_stack.push(the_struct);
+ 		}
+ 	
+ 		difference3 = get_time_in_ms() - current_time;
+ 
+		cout << "Vector: " << difference1 << endl << "plf::stack: " << difference2 << endl << "std::stack: " << difference3 << endl << endl;
  		
  		one_sec_delay();
  		double total;
@@ -1425,19 +2129,40 @@ int main(int argc, char **argv)
  	
  		for (unsigned int num = 0; num != 5000000; ++num)
  		{
- 			the_struct = data_stack.back();
+ 			the_struct = data_stack.top();
  			total += the_struct.number;
  			data_stack.pop();
  		}
  
  	
  		difference2 = get_time_in_ms() - current_time;
- 		cout << "Totaling stack: " << total << endl << endl;
- 		cout << "Milliseconds to pop all elements and add to total:" << endl;
- 		cout << "Vector: " << difference1 << endl << "Stack: " << difference2 << endl << endl;
- 		cout << "Press Enter to continue";
+ 		cout << "Totaling plf::stack: " << total << endl;
+ 		one_sec_delay();
+ 
+ 		current_time = get_time_in_ms();
+ 		total = 0;
  	
- 		cin.get();
+ 		for (unsigned int num = 0; num != 5000000; ++num)
+ 		{
+ 			the_struct = std_stack.top();
+ 			total += the_struct.number;
+ 			std_stack.pop();
+ 		}
+ 
+ 	
+ 		difference3 = get_time_in_ms() - current_time;
+
+
+ 		cout << "Totaling std::stack: " << total << endl << endl;
+ 		cout << "Milliseconds to pop all elements and add to total:" << endl;
+		cout << "Vector: " << difference1 << endl << "plf::stack: " << difference2 << endl << "std::stack: " << difference3 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
 		cout << endl << endl << endl << endl << endl << endl << endl << endl;
 	}
 
@@ -1448,19 +2173,25 @@ int main(int argc, char **argv)
 	{
  		vector<large_generic> data_vector;
  		data_vector.reserve(500);
- 		stack<large_generic> data_stack(500);
+ 		plf::stack<large_generic> data_stack(500);
+ 		std::stack<large_generic> std_stack;
  
  
  		cout << "Performance comparison between std::vector, plf::stack using a large generic struct." << endl;
- 		cout << "Press Enter to continue" << endl << endl;
- 		cin.get();
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
+
  
  		cout << "Large struct tests begin:" << endl << endl;
  		cout << "Milliseconds to push 10000 large generic structs:" << endl;
  		
  		one_sec_delay(); // To remove potential overhead from cout.
  
- 		unsigned long current_time, difference1, difference2;
+ 		unsigned long current_time, difference1, difference2, difference3;
  		current_time = get_time_in_ms();
  		large_generic the_struct;
  
@@ -1482,7 +2213,18 @@ int main(int argc, char **argv)
  	
  		difference2 = get_time_in_ms() - current_time;
  
- 		cout << "Vector: " << difference1 << endl << "Stack: " << difference2 << endl << endl;
+ 		current_time = get_time_in_ms();
+ 
+ 	
+ 		for (unsigned int num = 0; num != 10000; ++num)
+ 		{
+ 			the_struct.number = rand() % 10000;
+ 			std_stack.push(the_struct);
+ 		}
+ 	
+ 		difference3 = get_time_in_ms() - current_time;
+ 
+		cout << "Vector: " << difference1 << endl << "plf::stack: " << difference2 << endl << "std::stack: " << difference3 << endl << endl;
  		
  		one_sec_delay();
  		double total;
@@ -1508,23 +2250,40 @@ int main(int argc, char **argv)
  	
  		for (unsigned int num = 0; num != 10000; ++num)
  		{
- 			the_struct = data_stack.back();
+ 			the_struct = data_stack.top();
  			total += the_struct.number;
  			data_stack.pop();
  		}
 
  	
  		difference2 = get_time_in_ms() - current_time;
- 		cout << "Totaling stack: " << total << endl << endl;
- 		cout << "Milliseconds to pop all elements and add to total:" << endl;
- 		cout << "Vector: " << difference1 << endl << "Stack: " << difference2 << endl << endl;
- 		cout << "Press Enter to continue";
+ 		cout << "Totaling plf::stack: " << total << endl;
+ 		one_sec_delay();
+ 
+ 		current_time = get_time_in_ms();
+ 		total = 0;
  	
- 		cin.get();
-		cout << endl << endl << endl << endl << endl << endl << endl << endl;
+ 		for (unsigned int num = 0; num != 10000; ++num)
+ 		{
+ 			the_struct = std_stack.top();
+ 			total += the_struct.number;
+ 			std_stack.pop();
+ 		}
+ 
+	
+ 		difference3 = get_time_in_ms() - current_time;
+
+
+ 		cout << "Totaling std::stack: " << total << endl << endl;
+ 		cout << "Milliseconds to pop all elements and add to total:" << endl;
+		cout << "Vector: " << difference1 << endl << "plf::stack: " << difference2 << endl << "std::stack: " << difference3 << endl << endl;
+
+		if (console_output)
+		{
+			cout << "Press enter to continue" << endl << endl;
+			cin.get();
+		}
 	}
-
-
 
 
 	return 0;

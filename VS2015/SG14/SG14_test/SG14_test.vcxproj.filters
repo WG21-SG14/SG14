@@ -2,11 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\..\SG14_test\fixed_point_test.cpp" />
-    <ClCompile Include="..\..\..\SG14_test\SG14_test.cpp" />
     <ClCompile Include="..\..\..\SG14_test\main.cpp" />
     <ClCompile Include="..\..\..\SG14_test\unstable_remove_test.cpp" />
     <ClCompile Include="..\..\..\SG14_test\uninitialized.cpp" />
     <ClCompile Include="..\..\..\SG14_test\plf_test_suite.cpp" />
+    <ClCompile Include="ring_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\SG14_test\SG14_test.h" />

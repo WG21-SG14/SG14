@@ -16,15 +16,16 @@
 
 <h2>Intro</h2>
 
-<p>plf::stack is used internally by plf::colony but can also be used
-separately. It is essentially a more efficient implementation of the STL's
-std::stack container (which typically uses std::vector internally), using the
-same memory strategy as <a href="plf_colony.htm#intro">plf::colony</a>.</p>
-
-<p>Again, like colonies, the larger the object being store in the colony is,
-the greater the speed advantage over std::stack. Typically push speed is much
-faster, pop speed about the same or worse for smaller, scalar types like
-int.</p>
+<p>plf::stack is used internally by <a href="colony.htm">plf::colony</a> but
+can also be used on it's own. It is, basically, a more efficient implementation
+of the STL's std::stack container, faster than all std:: containers in the
+context of a stack, though depending on the compiler it may sacrifice a small
+amount of pop speed for a much larger gain in push speed for small scalar
+types, versus std::vector. It uses the same <a
+href="size_doubling_memory_block_allocation.htm">size-doubling memory-block
+allocation model</a> as plf::colony, and like plf::colony it never invalidates
+references/pointers to non-popped elements, making it perfect for true
+object-oriented programming with containers of interrelated data structures.</p>
 
 <h2><a id="license"></a>License</h2>
 
@@ -43,33 +44,33 @@ restrictions:</p>
 
 <h2>Download</h2>
 
-<p>Download on the plf::colony page <a
-href="plf_colony.htm#download">here</a>.<br>
+<p>Download on the plf::colony page <a href="colony.htm#download">here</a>.<br>
 Both plf::stack and plf::colony are simple .h header files, to be included with
 a #include command. The package includes both plf::colony and plf::stack.</p>
 
 <h2>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 13-7-2015 v1.70</i></p>
+<p style="font-size: 75%"><i>Last updated 22-02-2016 v3.00</i></p>
 
 <p>This benchmark compares performance between std::vector and plf::stack. I'm
 using std::vector instead of std::stack, as while std::stack usually uses
 std::vector internally, sometimes it doesn't depending on the implementation,
 which would make the implementation slower than if it were vector internally.
 So to make things simpler and a more fair comparison, I'm using std::vector
-directly. The benchmarks are included in the demo.cpp in the download, anyone
-can run them.</p>
+directly. The benchmarks are included in the plf_demo.cpp in the download,
+anyone can run them.</p>
 
 <p>The test setup is an E8500 on an Intel motherboard, 8GB ram. Results are
 much the same on other Intel x64 platforms. Compilers are mingw TDM GCC 5.1
 (both 32-bit and 64-bit versions), MS VC++2010 and MS VC++2013. I've forgone
 clang as the results were much the same as GCC. Release compilation settings
-only, standard release-compile settings for MS compilers, -O2;-march=native for
-GCC.</p>
+only, settings for MS compilers are "/O2 /Oi /Ot /Oy /GL /GS- /GY- /arch:SSE2
+/MT", for GCC they are "-O2;-march=native;-std=c++11". <a
+href="http://www.libsdl.org">SDL</a> was used for more precise timing.</p>
 
 <p>There are three tests; one with a simple small struct consisting of 2
 doubles, 2 pointers and 2 integers, one with a larger struct containing several
-large arrays, and one with only unsigned ints ie. a scalar type. We'll start
+large arrays, and one with only unsigned ints ie. a primitive type. We'll start
 with the small structs. Numbers are milliseconds, lower is better.</p>
 
 <p></p>
@@ -97,27 +98,27 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>331</td>
-      <td>302</td>
-      <td>456</td>
-      <td>508</td>
+      <td>332</td>
+      <td>312</td>
+      <td>434</td>
+      <td>497</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>134</td>
-      <td>114</td>
-      <td>185</td>
       <td>149</td>
+      <td>117</td>
+      <td>153</td>
+      <td>140</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>2.5x</td>
+      <td>2.3x</td>
       <td>2.7x</td>
-      <td>2.5x</td>
-      <td>3.4x</td>
       <td>2.8x</td>
+      <td>3.6x</td>
+      <td>2.9x</td>
     </tr>
   </tbody>
 </table>
@@ -133,7 +134,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Back + Pop duration in ms</td>
+      <td>Top + Pop duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -143,26 +144,26 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     <tr>
       <td>std::vector</td>
       <td>45</td>
-      <td>38</td>
-      <td>52</td>
-      <td>42</td>
+      <td>39</td>
+      <td>30</td>
+      <td>43</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
+      <td>48</td>
+      <td>36</td>
+      <td>30</td>
       <td>46</td>
-      <td>38</td>
-      <td>53</td>
-      <td>44</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>0.98x</td>
+      <td>0.94x</td>
+      <td>1.08x</td>
       <td>1.0x</td>
-      <td>0.98x</td>
-      <td>0.96x</td>
-      <td>0.98x</td>
+      <td>0.94x</td>
+      <td>0.99x</td>
     </tr>
   </tbody>
 </table>
@@ -185,7 +186,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total push duration in ms</td>
+      <td>Push duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -194,17 +195,17 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>313</td>
-      <td>262</td>
-      <td>438</td>
-      <td>460</td>
+      <td>311</td>
+      <td>269</td>
+      <td>444</td>
+      <td>465</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>97</td>
-      <td>101</td>
-      <td>99</td>
+      <td>96</td>
+      <td>103</td>
+      <td>100</td>
       <td>104</td>
       <td></td>
     </tr>
@@ -212,9 +213,9 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>stack vs vector performance</td>
       <td>3.2x</td>
       <td>2.6x</td>
-      <td>4.4x</td>
-      <td>4.4x</td>
-      <td>3.7x</td>
+      <td>4.5x</td>
+      <td>4.5x</td>
+      <td>3.8x</td>
     </tr>
   </tbody>
 </table>
@@ -230,7 +231,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total back + pop duration in ms</td>
+      <td>Top + pop duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -266,7 +267,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
 
 <p></p>
 
-<h4>Unsigned int test (small scalar type)</h4>
+<h4>Small primitive type test</h4>
 
 <table style="width: 100%" border="1">
   <caption>Push 10000000 random unsigned ints</caption>
@@ -279,7 +280,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total push duration in ms</td>
+      <td>Push duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -288,27 +289,27 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
     </tr>
     <tr>
       <td>std::vector</td>
-      <td>188</td>
-      <td>163</td>
-      <td>263</td>
-      <td>233</td>
+      <td>179</td>
+      <td>177</td>
+      <td>286</td>
+      <td>229</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>136</td>
-      <td>135</td>
-      <td>228</td>
-      <td>160</td>
+      <td>138</td>
+      <td>117</td>
+      <td>220</td>
+      <td>161</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>1.4x</td>
-      <td>1.2x</td>
-      <td>1.2x</td>
+      <td>1.3x</td>
       <td>1.5x</td>
       <td>1.3x</td>
+      <td>1.4x</td>
+      <td>1.4x</td>
     </tr>
   </tbody>
 </table>
@@ -324,7 +325,7 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
   </colgroup>
   <tbody>
     <tr>
-      <td>Total back + pop duration in ms</td>
+      <td>Top + pop duration in ms</td>
       <td>GCC 5.1 x86</td>
       <td>GCC 5.1 x64</td>
       <td>MSVC 2010 x86</td>
@@ -335,41 +336,35 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>std::vector</td>
       <td>24</td>
       <td>9</td>
-      <td>10</td>
+      <td>17</td>
       <td>29</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
-      <td>25</td>
+      <td>24</td>
+      <td>13</td>
       <td>17</td>
-      <td>17</td>
-      <td>34</td>
+      <td>37</td>
       <td></td>
     </tr>
     <tr>
       <td>stack vs vector performance</td>
-      <td>0.96x</td>
-      <td>0.53x</td>
-      <td>0.59x</td>
-      <td>0.85x</td>
-      <td>0.73x</td>
+      <td>1.00x</td>
+      <td>0.69x</td>
+      <td>1.00x</td>
+      <td>0.78x</td>
+      <td>0.87x</td>
     </tr>
   </tbody>
 </table>
 
-<p></p>
-
 <h2>Function Descriptions and syntax</h2>
-
-<p>Functions and functionality mostly match the STL's std::stack, but push
-performance is typically twice as fast (pop is usually more-or-less the same).
-Only additional function is reinitialize.</p>
 
 <h3>Constructors</h3>
 <ul>
   <li><code>stack&lt;the_type&gt; a_stack</code> 
-    <p>Default constructor - group size is initially 8 <br>
+    <p>Default constructor - initial group size is 8.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack;</code>
     </p>
   </li>
@@ -381,30 +376,34 @@ Only additional function is reinitialize.</p>
     Example: <code style="color: brown">plf::stack&lt;int,
     tbb::allocator&lt;int&gt; &gt; int_stack;</code> </p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(initial_group_size)</code> 
-    <p>Directed constructor - this sets the initial first group size - for
-    example, to 50 (unlike a vector, these 50 elements are not constructed,
-    only the memory is allocated and the initial group-size set at 50 instead
-    of 8) - which may yield a minor performance advantage if you know roughly
-    how many elements are going to be stored in your stack in advance.<br>
+  <li><code>stack&lt;the_type&gt; a_stack(const size_type
+    initial_group_size)</code> 
+    <p>Directed constructor - this sets the initial group size - for example,
+    to 50 (unlike a vector, these 50 elements are not constructed, only the
+    memory is allocated and the initial group-size set at 50 instead of 8) -
+    which may yield a minor performance advantage if you know roughly how many
+    elements are going to be stored in your stack in advance. Minimum group
+    size is 3.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack(62);</code></p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(initial_group_size,
-    max_group_size)</code> 
+  <li><code>stack&lt;the_type&gt; a_stack(const size_type initial_group_size,
+    const size_type max_group_size)</code> 
     <p>Directed constructor - this sets the initial first group size like the
     above, and the maximum group size - this can be useful if you want to limit
-    memory usage.<br>
+    memory usage. Minimum initial group size is 3.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack(64,
     512);</code></p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(another_stack)</code> 
+  <li><code>stack&lt;the_type&gt; a_stack(const stack &amp;
+    another_stack)</code> 
     <p>Copy constructor - copies all contents from another_stack. Initial group
     size is the total size of another_stack. <br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack_2(int_stack_1);</code></p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(std::move(another_stack))</code> 
+  <li><code>stack&lt;the_type&gt; a_stack(stack &amp;&amp; another_stack)
+    <b>C++11 only</b></code> 
     <p>Move constructor - moves all contents from another_stack, does not alter
     any group sizes. Another_stack is now void of contents, can be safely
     destructed. <br>
@@ -413,26 +412,87 @@ Only additional function is reinitialize.</p>
   </li>
 </ul>
 
-<p>Other functions matching STL functionality: push, back, pop, size, empty,
-clear, =, ==, !=, move assignment.</p>
-
-<p>Other functions matching plf::colony functionality: reinitialize, emplace
-(does not return iterator, access via back() function, the same as push()).</p>
-
-<p>Other functions:<br>
-</p>
+<h3>Other functions</h3>
 <ul>
-  <li><code>push()</code> 
-    <p>Similar to plf::colony's empty add() function, this is semantically the
-    same as push(the_type()). For a scalar datatype it leaves it uninitialised,
-    for a type with a constructor it requires a default, parameterless
-    constructor. Useful for when you want to write an element directly within
-    the stack, without constructing one separately and copying it in. Unlike
-    plf:colony's add(), this does not return an iterator. Like push(the_type)
-    you must access the newly-created element via the back() command.</p>
+  <li><code>void push(const the_type &amp;element)</code> 
+    <p>Push an element to the stack.<br>
+    Example: <code style="color: brown">object_stack.push(object1);</code></p>
+  </li>
+  <li><code>void push(the_type &amp;&amp;element) <b>C++11 only</b></code> 
+    <p>Move an element to the stack.<br>
+    Example: <code
+    style="color: brown">object_stack.push(std::move(object1));</code></p>
+  </li>
+  <li><code>void emplace(Arguments ...parameters) <b>C++11 only</b></code> 
+    <p>Constructs an element directly on the stack using the the constructor
+    arguments specified.<br>
+    Example: <code style="color: brown">object_stack.emplace(10, 200,
+    "a");</code></p>
+  </li>
+  <li><code>void pop()</code> 
+    <p>Pop the last push()'d element off the stack.<br>
+    Example: <code style="color: brown">object_stack.pop();</code></p>
+  </li>
+  <li><code>the_type &amp; top()</code> 
+    <p>Return a reference to the last push()'d element on the stack.<br>
+    Example: <code style="color: brown">object2 = object_stack.top();</code></p>
+  </li>
+  <li><code>size_type size()</code> 
+    <p>Return the current number of elements stored on the stack.<br>
+    Example: <code style="color: brown">unsigned int j =
+    static_cast&lt;unsigned int&gt;(object_stack.size());</code></p>
+  </li>
+  <li><code>bool empty()</code> 
+    <p>Returns a boolean indicating whether the stack is currently empty of
+    elements.<br>
+    Example: <code style="color: brown">if (object_stack.empty())
+    return;</code></p>
+  </li>
+  <li><code>void clear()</code> 
+    <p>Empties the stack and removes all elements. Deallocates all groups and
+    creates a new starting group of the same size as the original starting
+    group (8, unless specified otherwise by the constructor or reinitialize
+    call).<br>
+    Example: <code style="color: brown">object_stack.clear();</code></p>
+  </li>
+  <li><code>void reinitialize(const size_type new_size)</code> 
+    <p>Clears the stack, creates a new starting group of the size specified.<br>
+    Example: <code
+    style="color: brown">object_stack.reinitialize(1000);</code></p>
+  </li>
+  <li><code>void reinitialize(const size_type new_size, const size_type
+    maximum_size)</code> 
+    <p>Clears the stack, creates a new starting group of the size specified,
+    with the maximum potential group size set to maximum_size.<br>
+    Example: <code style="color: brown">object_stack.reinitialize(1000,
+    100000);</code></p>
+  </li>
+  <li><code>stack &amp; operator = (const stack &amp;source)</code> 
+    <p>Copy the elements from another stack to this stack, clearing this stack
+    of existing elements first.<br>
+    Example: <code style="color: brown">object_stack = object_stack2;</code></p>
+  </li>
+  <li><code>stack &amp; operator = (const stack &amp;&amp;source) <b>C++11
+    only</b></code> 
+    <p>Move the elements from another stack to this stack, clearing this stack
+    of existing elements first. Source stack becomes invalid but can be safely
+    destructed without undefined behaviour.<br>
+    Example: <code style="color: brown">object_stack =
+    std::move(object_stack2);</code></p>
+  </li>
+  <li><code>bool operator == (const stack &amp;source)</code> 
+    <p>Compare contents of another stack to this stack. Returns a boolean as to
+    whether they are equal.<br>
+    Example: <code style="color: brown">if (object_stack == object_stack2)
+    return;</code></p>
+  </li>
+  <li><code>bool operator != (const stack &amp;source)</code> 
+    <p>Compare contents of another stack to this stack. Returns a boolean as to
+    whether they are not equal.<br>
+    Example: <code style="color: brown">if (object_stack != object_stack2)
+    return;</code></p>
   </li>
 </ul>
-<br>
 <br>
 
 
