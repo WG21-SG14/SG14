@@ -30,6 +30,9 @@ float hermite(float t, float p1, float p2, float n1, float n2)
 	return h1*p1 + h2*p2 + h3*n1 + h4*n2;
 }
 
+const long long entity_hermite::type = 3LL;
+
+
 class entity_hermite_impl : public entity_hermite
 {
 	float m_p1;

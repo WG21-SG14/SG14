@@ -19,10 +19,14 @@ using namespace std;
 extern float dummyOut[100];
 extern int dummyOutIndex;
 
+
 float lerp(float t, float s, float d)
 {
 	return t * (s - d) + d;
 }
+
+const long long entity_lerp_slow::type = 1LL;
+
 
 class entity_lerp_slow_impl : public entity_lerp_slow
 {
@@ -59,48 +63,46 @@ struct Pos
 	float y;
 };
 
-class entity_lerp_fast_impl : public entity_lerp_fast
+const long long entity_lerp_fast::type = 2LL;
+
+
+static std::vector<Pos> s_positions;
+
+const long long entity_lerp_fast_impl::type = 2;
+
+entity_lerp_fast_impl::entity_lerp_fast_impl(float s, float d)
 {
-	static vector<Pos> s_positions;
-public:
-	const static int type = 2;
+	s_positions.push_back({ s,d });
+}
 
-	entity_lerp_fast_impl(float s, float d)
-	{
-		s_positions.push_back({ s,d });
-	}
+ entity_lerp_fast_impl::~entity_lerp_fast_impl()
+{
+	s_positions.pop_back();
+}
 
-	virtual ~entity_lerp_fast_impl()
-	{
-		s_positions.pop_back();
-	}
+int  entity_lerp_fast_impl::GetType() const 
+{
+	return type;
+}
 
-	int GetType() const override
-	{
-		return type;
-	}
+void  entity_lerp_fast_impl::Update(float t) const 
+{
+	assert(0); // don't call. 
+}
 
-	void Update(float t) const override
+void  entity_lerp_fast_impl::UpdateAll(float t)
+{
+	for (auto& pos : s_positions)
 	{
-		assert(0); // don't call. 
-	}
-
-	static void UpdateAll(float t)
-	{
-		for (auto& pos : s_positions)
-		{
 #ifdef PRINT
-			cout << "fast_lerp ";
-			cout << lerp(t, pos.x, pos.y);
-			cout << endl;
+		cout << "fast_lerp ";
+		cout << lerp(t, pos.x, pos.y);
+		cout << endl;
 #endif
-			dummyOut[dummyOutIndex % ARRAY_SIZE(dummyOut)] = lerp(t, pos.x, pos.y);
-			dummyOutIndex++;
-		}
+		dummyOut[dummyOutIndex % ARRAY_SIZE(dummyOut)] = lerp(t, pos.x, pos.y);
+		dummyOutIndex++;
 	}
-};
-
-vector<Pos> entity_lerp_fast_impl::s_positions;
+}
 
 void entity_lerp_fast::UpdateAll(float t)
 {
