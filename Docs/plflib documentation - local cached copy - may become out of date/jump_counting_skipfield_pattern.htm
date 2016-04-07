@@ -5,7 +5,7 @@
   <meta name="description"
   content="PLF C++ Library">
   <meta name="keywords"
-  content="C++, C, PLF, colony, stack, STL, containers, optimize, performance, pointer, iterator, jump-counting, boolean, field">
+  content="C++, C, PLF, colony, stack, STL, containers, optimize, performance, pointer, index, iterator, jump-counting, boolean, field">
   <title>PLF C++ Library - The Jump-counting Skipfield Pattern</title>
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
@@ -23,7 +23,7 @@
 
 <h2>Introduction</h2>
 
-<p>In many areas of computer science, particularly game engines, there exist scenarios where boolean fields are used to to indicate items which are no longer active, as opposed instead to actually erasing and removing these elements, as erasure tends to come with one or more side-effects. Subsequently during iteration and processing this boolean field is checked in order to skip over or ignore the inactive elements. A simple example of this is having a raw array of data for individual objects in a video game, with an additional boolean field called 'active' on each object, and setting the 'active' flag to false when that object is removed from the game. Subsequent to this in terms of iteration, that object would be skipped during processing. The advantages of the technique are (a) with a primitive structure like an array, actual removal of an element from active memory may not be possible, (b) if a more complex structure like a vector is used, actually erasing elements typically causes enormous performance disadvantages, due to reallocation of subsequent elements in order to preserve element contiguousness, which (c) also invalidates pointers to data within the container in question. This last point is of most concern with highly modular or object-oriented code, of which games are largely comprised. To work around these problems the aforementioned active/inactive boolean erasure field is often implemented and pointer/iterator stability is preserved.</p>
+<p>In many areas of computer science, particularly game engines, there exist scenarios where boolean fields are used to to indicate items which are no longer active, as opposed instead to actually erasing and removing these elements, as erasure tends to come with one or more side-effects. Subsequently during iteration and processing this boolean field is checked in order to skip over or ignore the inactive elements. A simple example of this is having a raw array of data for individual objects in a video game, with an additional boolean field called 'active' on each object, and setting the 'active' flag to false when that object is removed from the game. Subsequent to this in terms of iteration, that object would be skipped during processing. The advantages of the technique are (a) with a primitive structure like an array, actual removal of an element from active memory may not be possible, (b) if a more complex structure like a vector is used, actually erasing elements typically causes enormous performance disadvantages, due to reallocation of subsequent elements in order to preserve element contiguousness, which (c) also invalidates pointers to data within the container in question. This last point is of most concern with highly modular or object-oriented code, of which games are largely comprised. To work around these problems the aforementioned active/inactive boolean skipfield is often implemented and pointer/iterator stability is preserved.</p>
 
 <p>This technique is worthwhile, simple, but inefficient for a container with large numbers of consecutive 'inactive' elements, as iteration over these requires checking the boolean fields once for each inactive element, with no ability to simply skip from one 'active' element to the next. A jump-counting skipfield negates the inefficiencies of this approach, without creating significant additional computational overhead. In short, it is a numeric sequence which indicates both when to skip over elements and how many elements to skip over, in any given sequence of data. It is most obviously useful in implementing a pointer-stable/iterator-stable data container, where it can indicate sequences of erased elements to skip over. It may possibly have other applications within computer science. But for the remainder of this document we will discuss the pattern in the context of implementation within a data container (for the purposes of simplicity).</p>
 
@@ -35,51 +35,60 @@
 
 <h3>Basic notation</h3>
 
-<p>The skipfield is always an array of an unsigned integer type. This integer must be sufficiently large to describe the number of elements that can be potentially stored within the memory block it is associated with. For example, a memory block large enough to store 65535 elements would require a skipfield made up of 16-bit unsigned integers. A memory block large enough to store 4294967295 elements would require a skipfield made up of 32-bit unsigned integers. By default all non-erased elements are notated with zero. As an example, if you have a set of ten elements in a memory block, the memory block's corresponding skipfield would look like this:</p>
+<p>The skipfield is always an array of an unsigned integer type. This integer must be sufficiently large to describe the number of elements that can be potentially stored within the memory block it is associated with. For example, a memory block large enough to store 65535 elements would require a skipfield made up of 16-bit unsigned integers. A memory block large enough to store 4294967295 elements would require a skipfield made up of 32-bit unsigned integers. By default all non-erased elements are notated with zero. As an example, if you have a set of ten non-erased elements in a memory block, the memory block's corresponding skipfield (S) would be:</p>
 
-<code>0 0 0 0 0 0 0 0 0 0</code>
+<code>S = (0 0 0 0 0 0 0 0 0 0)</code>
 
 
 <p>A non-zero value indicates erasure.<br>
 If a singular element is erased and has no consecutive erased elements it is notated with a 1:</p>
 
-<code>0 0 0 0 0 1 0 0 0 0</code>
+<code>S = (0 0 0 0 0 1 0 0 0 0)</code>
 
 
-<p>From this point on in the document we will refer to locations within the skipfield as 'nodes' and sequences of consecutively erased elements (as notated in the skipfield) as 'skip blocks'. The first node indicating a skip block (eg. the first '4' in the example below) is called the 'start node'. The last node in that skip block is called the 'end node' (eg. the last '4' in the example below). If two or more consecutive elements are erased, the start node is set to the number of elements which need to be skipped, as is the end node. Below we show a skipfield attached to a data container where the 3rd, 4th, 5th and 6th elements have been erased:</p>
+<p>From this point on in the document we will refer to locations within the skipfield as 'nodes' and sequences of consecutively erased elements (as notated in the skipfield) as 'skipblocks'. Below we show a skipfield attached to a data container where the 3rd, 4th, 5th and 6th elements have been erased. The first node indicating a skipblock (eg. the first '4' in the example below) is called the 'start node'. The last node in that skipblock is called the 'end node' (eg. the last '4' in the example below). If two or more consecutive elements are erased, the start node is set to the number of elements which need to be skipped, as is the end node.</p>
 
-<code>0 0 4 0 0 4 0 0 0 0</code>
+<code>S = (0 0 4 0 0 4 0 0 0 0)</code>
 
 
 
 <h3>Iteration</h3>
 
-<p>To iterate across a memory block utilising using a jump-counting skipfield, an iterator must keep track of both it's current element and the corresponding skipfield node. The node index will always correspond to the element index ie. element[5] is always associated with skipfield[5]. So technically we only need to keep track of the index number (n); however, for performance reasons, we might choose in actual code to keep a pointer to the element array (e) and a pointer to the skipfield (s) instead, depending on circumstance. If we use pointers, to iterate forwards across the elements in the memory block using the skipfield, for every +1 iteration we would:</p>
+<p>To iterate across a set of elements using a jump-counting skipfield to identify inactive and skippable elements, an iterator must keep track of both it's current element and the corresponding skipfield node. The node index will always correspond to the element index ie. element[5] is always associated with skipfield[5]. So technically we only need to keep track of the index number (i); however, for performance reasons, we might choose in actual code to keep a pointer to the element array (e) and a pointer to the skipfield (s) instead, depending on circumstance.</p>
+<p>If we use pointers, to iterate forwards by 1 across the elements in the memory block using the skipfield, we would:</p>
 <ol type='1'>
 <li>increment both the element pointer (e) and the skipfield pointer (s) by one, then</li>
-<li>add the value of the number pointed to by the skipfield pointer (v<sub>s</sub>) to both the element pointer and to the skipfield pointer itself.</li>
+<li>add the value of the number pointed to by the skipfield pointer (*s) to both the element pointer and to the skipfield pointer itself.</li>
 </ol>
 
 <p>ie.</p>
 <code>s = s + 1<br>
-e = e + 1 + V<sub>s</sub><br>
-s = s + V<sub>s</sub></code>
+e = e + 1 + *s<br>
+s = s + *s</code>
 
 <p>Or in C++:</p>
-<code>e += 1 + *(++s);<Br>
+<code>e += 1 + *(++s);<br>
 s += *s;</code>
 
-<p>Alternatively if we only keep track of the index number, we can just:
+<p>Alternatively if we only keep track of the index number, we can just:</p>
 <ol type='1'>
-<li>increment the index number (n) by one, then</li>
-<li>add the value of the number at skipfield index <i>n</i> to <i>n</i> itself.</li>
+<li>increment the index number (i) by one, then</li>
+<li>add the value of the number at skipfield (S) index i (S<sub>i</sub>) to i.</li>
 </ol>
 
-<p>From the rest of the document we will discuss the matter as if we have chosen the pointer approach. In either case the value of the number pointed to in the skipfield pointer is the number of elements to skip on that iteration ie. number of consecutive inactive elements. Some example pseudocode for a single +1 increment of an iterator using pointers:</p>
+<p>ie.</p>
+<code>i = i + 1<br>
+i = i + S<sub>i</sub><br>
+</code>
+
+<p>Or in C++:</p>
+<code>++i;<br>
+i += S[i];</code>
 
 
+<p>In either case the value of the number pointed to, by either a skipfield pointer or an index into the skipfield, is the number of elements to skip on that iteration ie. number of consecutive inactive elements. For the rest of the document we will discuss the matter in terms of the index approach, for simplicity's sake. Here's how iteration looks on the skipfield we demonstrated above:</p>
 
-<p>Here's how iteration looks on the skipfield we demonstrated above - we will ignore the element pointer in this example:</p>
+<p><i>(Notes: in all examples, </i>|<i> is the node indicated by the current index number. Index enumeration starts from 1, to make the examples more straightforward, rather than from 0, as it would be implemented in most languages. Lastly, we will skip the S = () array notation for all subsequent examples, for the purposes of visual clarity.)</i></p>
 
 
 <h5>Before incrementing:</h5>
@@ -89,39 +98,48 @@ s += *s;</code>
 |<br>
 0 0 4 0 0 4 0 0 0 0</code>
 
-<p>skipfield_pointer is at skipfield node 0.</p>
-<p>(where '|' is the node pointed to by the current skipfield pointer after operation)</p>
+<p>(i = 1)</p>
+
 
 
 
 <h5>Increment by 1:</h5>
+<p>i = i + 1<br>
+(i = 2, S<sub>i</sub> = 0)<br>
+i = i + S<sub>i</sub><br>
+(i = 2, S<sub>i</sub> = 0)</p>
 
+
+<h5>After incrementing:</h5>
 <code>
 &nbsp;&nbsp;|<br>
 0 0 4 0 0 4 0 0 0 0</code>
-<p>ie. skipfield_pointer = skipfield_pointer + 1<br>
-skipfield_pointer = skipfield_pointer + value_of_number_at(skipfield_pointer) (ie. 0)</p>
 
 
 
 
 <h5>Increment by 1 again:</h5>
+<p>i = i + 1<br>
+(i = 3, S<sub>i</sub> = 4)<br>
+i = i + S<sub>i</sub><br>
+(i = 7, S<sub>i</sub> = 0)</p>
 
+
+<h5>After incrementing again:</h5>
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<Br>
 0 0 4 0 0 4 0 0 0 0</code>
-<p>ie. skipfield_pointer = skipfield_pointer + 1<br>
-skipfield_pointer = skipfield_pointer + value_of_number_at(skipfield_pointer) (ie. 4)</p>
 
 
-
+<br>
+<br>
 <p>Obviously this also works in reverse iteration, in which case you:</p>
 <ol type='1'>
-<li>decrement both the element pointer and skipfield pointer by one, then</li>
-<li>subtract the value of the node pointed to by the skipfield pointer, from both the element pointer and the skipfield pointer.</li>
+<li>decrement the index (i) by one, then</li>
+<li>subtract the value of the skipfield at the index (S[n]) from the index</li>
 </ol>
 
-<p>And once again the second number subtracted is the number of elements skipped in that decrement. Here is the same skipfield pattern while decrementing:</p>
+<p>Once again, the second number subtracted is the number of elements skipped in that decrement. Here is an example using the same skipfield pattern as above:</p>
 
 
 
@@ -130,28 +148,34 @@ skipfield_pointer = skipfield_pointer + value_of_number_at(skipfield_pointer) (i
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 4 0 0 4 0 0 0 0</code>
-<p>ie. skipfield_pointer is at skipfield node 8</p>
+<p>(i = 8)</p>
 
 
-
-
+     
 <h5>Decrement by 1:</h5>
+<p>i = i - 1<br>
+(i = 7, S<sub>i</sub> = 0)<br>
+i = i - S<sub>i</sub><br>
+(i = 7, S<sub>i</sub> = 0)</p>
 
+
+<h5>After decrementing:</h5>
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 4 0 0 4 0 0 0 0</code>
-<p>ie. skipfield_pointer = skipfield_pointer - 1<br>
-skipfield_pointer = skipfield_pointer - value_of_number_at(skipfield_pointer) (ie. 0)</p>
-
-
 
 <h5>Decrement by 1 again:</h5>
+<p>i = i - 1<br>
+(i = 6, S<sub>i</sub> = 4)<br>
+i = i - S<sub>i</sub><br>
+(i = 2, S<sub>i</sub> = 0)</p>
+        
 
+
+<h5>After decrementing again:</h5>
 <code>
 &nbsp;&nbsp;|<br>
 0 0 4 0 0 4 0 0 0 0</code>
-<p>ie. skipfield_pointer = skipfield_pointer - 1<br>
-skipfield_pointer = skipfield_pointer - value_of_number_at(skipfield_pointer) (ie. 4)</p>
 
 
 
@@ -159,11 +183,12 @@ skipfield_pointer = skipfield_pointer - value_of_number_at(skipfield_pointer) (i
 <h3>Erasure</h3>
 
 <p>If an element is erased in a container utilising a jump-counting simple skipfield, we first check the nodes to the left and to the right of the skipfield node corresponding with the element being erased:</p>
+<p><i>(note: </i>*<i> indicates nodes whose values we are assessing)</i></p>
+
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* | *<br>
 0 0 0 0 0 0 0 0 0 0</code>
 
-<p>(where * indicates nodes whose values we are assessing)</p>
 
 <p>Now, there are four possibilities: either</p>
 <ol type='a'>
@@ -173,12 +198,13 @@ skipfield_pointer = skipfield_pointer - value_of_number_at(skipfield_pointer) (i
 <li>both left and right are non-zero.</li>
 </ol>
 
-<p>Let's examine how all four of those scenarios are treated:</p>
+<p>Let's examine how all four of those scenarios are treated.</p>
 
 
-<h4>Both left and right are zero</h4>
+<h4>Scenario 1: Both left and right are zero</h4>
 
 <p>We set the value of the current skipfield node to 1. This indicates a single element erasure with no consecutive erased elements. No further action is required.</p>
+<p><i>(note: </i>|<i> indicates the skipfield node corresponding to the container element we're erasing)</i></p>
 
 <h5>Before erasure:</h5>
 
@@ -186,6 +212,8 @@ skipfield_pointer = skipfield_pointer - value_of_number_at(skipfield_pointer) (i
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 0 0 0 0 0 0 0</code>
 
+<h5>Erasure:</h5>
+<p>S<sub>i</sub> = 1</p>
 
 <h5>After erasure:</h5>
 
@@ -195,104 +223,126 @@ skipfield_pointer = skipfield_pointer - value_of_number_at(skipfield_pointer) (i
 
 
 
-<h5>Only left is non-zero:</h5>
+<h5>Scenario 2: Only left is non-zero:</h5>
 
-<p>If only the number to the left is non-zero, we set the value of the current node to the number to the left, plus one. The current node is now the new "end node" for this skipfield block. We then subtract the number to the left from the current skipfield's index to find the start node, and set the start node to the current node's value. We do not change the value of the node immediately to the left (ie. the prior end node). Eg.:<br>
+<p>If only the left-hand node is non-zero, we set the value of the current node to the value of the left-hand node, plus one. The current node is now the new end node for the preceding skipblock. We then subtract the value of the left-hand node from the current node's index number to find the start node's index number, and set the start node's value to the current node's value. We do not change the value of the left-hand node (ie. the prior end node).<br>
 
 
 <h5>Before erasure:</h5>
-(where '|' indicates the node corresponding to the container element we're erasing)</p>
 
 <code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 3 0 3 0 0 0 0</code>
+
+<h5>Erasure:</h5>
+<p>S<sub>i</sub> = 1 + S<sub>i - 1</sub><br> 
+j = i - S<sub>i - 1</sub><Br>
+S<sub>j</sub> = S<sub>i</sub></p>
+
 
 
 <h5>After erasure:</h5>
 
 <code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 4 0 3 4 0 0 0</code>
-<p>ie. value_of(current node) = value_of(previous node) (ie. 3) + 1<br>
-value_of(current node - 3) = value_of(current node)</p>
 
 
 
-<h4>Only right is non-zero</h4>
+<h4>Scenario 3: Only right is non-zero</h4>
 
-<p>If only the number to the right is non-zero, we make the current skipfield node the start node of the subsequent skipfield block by making it equal to the number to the right, plus 1. Then we add the number to the right to the index of the current skipfield node to find the end node, and set the value of the end node to be the same as the start node. Eg.:</p>
+<p>If only the right-hand node is non-zero, we make the current node equal to the right-hand node, plus one, and it becomes the start node of the skipblock to the right. We then add the right-hand node value to the current node's index to find the end node, and set the value of the end node to the value of the current node.</p>
 
 <h5>Before erasure:</h5>
 
-<code>&nbsp;&nbsp;&nbsp;|<br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 2 2 0 0 0 0 0</code>
 
+<h5>Erasure:</h5>
+<p>S<sub>i</sub> = 1 + S<sub>i + 1</sub><br>
+j = i + S<sub>i + 1</sub><br>
+S<sub>j</sub> = S<sub>i</sub></p>
 
 
 <h5>After erasure:</h5>
 
-<code>&nbsp;&nbsp;&nbsp;|<br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 3 2 3 0 0 0 0 0</code>
-<p>ie. value_of(current node) = value_of(next node) (ie. 2) + 1<br>
-value_of(current node + 2) = value_of(current node)</p>
 
 
 
-<h4>Both left and right are non-zero</h4>
 
-<p>If both of the numbers to the right and left are non-zero, we subtract the number to the left from the current skipfield index to find the left-hand start node. We increment the value of that node by 1 plus the value of the number immediately to the right ie. the right-hand start node. We then add the right-hand start node's number to the current skipfield node's index to find the right-hand end node, and then set the right-hand end node's value to the same number as the left-hand start node. Eg.:</p>
+<h4>Scenario 4: Both left and right are non-zero</h4>
+
+<p>If both left-hand and right-hand nodes are non-zero, then the current node is in the middle of two separate skipblocks, one on the left and one on the right. We subtract the left-hand node's value from the current node's index number to find the left skipblock's start node index number. We increment the value of that start node by one plus the value of the current node's right-hand node. Then we add the right-hand node's value to the current node's index number to find the right skipblock's end node index number, and set that end node's value to the same value as the left skipblock's start node.</p>
 
 
 <h5>Before erasure:</h5>
 
-<code>&nbsp;&nbsp;&nbsp;|<br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 2 2 0 3 0 3 0 0 0 0</code>
+
+<h5>Erasure</h5>
+<p>j = i - S<sub>i - 1</sub><br>
+(j = 3 - 2)<br>
+<br>
+k = i + S<sub>i + 1</sub><br>
+(k = 3 + 3)<br>
+<br>
+S<sub>j</sub> = S<sub>j</sub> + 1 + S<sub>i + 1</sub><br>
+S<sub>k</sub> = S<sub>k</sub> + S<sub>j</sub></p>
 
 
 <h5>After erasure:</h5>
 
-<code>&nbsp;&nbsp;&nbsp;|<br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 6 2 0 3 0 6 0 0 0 0</code>
 
-<p>ie. start_node = current node - value_of(previous node)<br>
-end_node = current_node + value_of(next node)<br>
-value_of(start_node) = value_of(start_node) (ie. 2) + 1 + value_of(next node) (ie. 3)<br>
-value_of(end_node) = value_of(start_node)</p>
+<h3>Summary</h3>
 
-
-<p>So far, so simple. But this doesn't allow for reusing previously-erased elements, which is where the advanced jump-counting pattern comes in handy. However because it involves slightly fewer calculations than the advanced pattern, the simple pattern could be slightly faster in the use case where reusing memory space is either not useful or not possible.</p>
+<p>All of the simple pattern's principles are reasonably straightforward, but they do not allow for the reuse of previously-erased-element memory space, which is what the advanced pattern facilitates. However, because the simple pattern involves slightly fewer calculations than the advanced pattern, it could be faster in the use case where reuse of memory space is either not useful or not practicable.</p>
 
 
 
 
 <h2>The Advanced Jump-counting Pattern</h2>
 
+<h3>Basic notation</h3>
+<p>This does not differ from the simple pattern, save for the fact that the nodes between the start and end node in a skipblock cannot be zero and instead follow a sequential "plus one" pattern as the example below demonstrates:</p>
+<code>S = (0 0 4 2 3 4 0 0 0 0)</code>
+<p>The formation of this pattern takes place in the erasure section below, while it's purpose becomes apparent in the subsequent restoration or "reuse" section.</p>
+
+<h3>Iteration</h3>
+<p>This does not differ between the simple and advanced patterns, either for increments or decrements.</p>
 
 <h3>Erasure</h3>
 
-<p>The advanced pattern involves slightly more work than the simple pattern, but for the most part the calculations are the same as the simple variant. As in the simple pattern, if an erasure is made to the current element, we check the skipfield nodes to the left and to the right of the node corresponding to the element we want to erase:</p>
-<code>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* | *<br>
-0 0 0 0 0 0 0 0 0 0</code>
+<p>Erasure for the advanced pattern involves slightly more work than the simple pattern, but for the most part is similar. As in the simple pattern, if an erasure is made to the current element, we check the skipfield nodes to the left and to the right of the node corresponding to the element we want to erase.</p>
 
 
-<h4>Both left and right are zero</h4>
+<h4>Scenario 1: Both left and right are zero</h4>
 
 <p>As with the simple pattern, set the current node's value to 1.</p>
 
 
-<h4>Only left is non-zero</h4>
+<h4>Scenario 2: Only left is non-zero</h4>
 
-<p>If only the left side contains a non-zero number, the procedure is exactly the same as in the simple pattern. We set the value of the current node to the number to the left, plus one. Then we subtract the number to the left from the current node's index to find the start node and set the start node to the same value as the current node.</p>
+<p>If only the left-hand node has a non-zero value, the procedure is exactly the same as in the simple pattern. We set the value of the current node to the value of the left-hand node, plus one. We then subtract the value of the left-hand node from the current node's index number to find the skipblock's start node, then set the start node to the same value as the current node.</p>
 
 
-<h4>Only right is non-zero</h4>
+<h4>Scenario 3: Only right is non-zero</h4>
 
-<p>Here we make the current skipfield node the start node by making it equal to the number immediately to the right, plus one. So far this is the same as the simple pattern. Then we update the values of each subsequent node to the right of the current node, starting from the value of 2 and incrementing once each node, stopping when either a node with a zero value or the end of the skipfield is reached. Eg.:</p>
+<p>Here we make the current node equal to the right-hand node, plus one, and it becomes the start node of the skipblock to the right. So far this is the same as the simple pattern, but now instead of finding the end node and updating it, as we would in the simple pattern, we update the values of each subsequent node to the right of the current node, starting from a value of 2 and incrementing once each node, stopping when either a node with a zero value or the end of the skipfield is reached.</p>
 
 <h5>Before erasure:</h5>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 3 2 3 0 0 0 0</code>
+
+<h5>Erasure:</h5>
+<p>S<sub>i</sub> = 1 + S<sub>i + 1</sub><br>
+S<sub>i + 1</sub> = 2<br>
+S<sub>i + 2</sub> = 3<br>
+S<sub>i + 3</sub> = 4</p>
 
 
 <h5>After erasure:</h5>
@@ -301,18 +351,28 @@ value_of(end_node) = value_of(start_node)</p>
 &nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 4 2 3 4 0 0 0 0</code>
 
-<p>You can see that the pattern now essentially brings about an increment-by-one notation after the start node. The reason for this will become apparent later.</p>
+<p>You can see that this pattern brings about an increment-by-one notation after the start node. The reason for this will become apparent later.</p>
 
 
-<h4>Both left and right are non-zero</h4>
+<h4>Scenario 4: Both left and right are non-zero</h4>
 
-<p>Here we subtract the number immediately to the left of the current node from the current node's index to find the left-hand start node index. We increment the value of the left-hand start node by 1 plus the value of the number to the right of the current node ie. the right-hand start node. So far this is the same as the simple pattern. We now set the current node's value to the number immediately to the left of the current node, plus one. We continue to the right, setting the value of the each subsequent node to the previous node's value plus 1, stopping when either a node with a zero value or the end of the skipfield is reached. Eg.:</p>
+<p>Once again there are skipblocks to the left and right of the current node. We subtract the value of the left-hand node from the current node's index number to find the left skipblock's start node index number. We increment this start node by 1 plus the value of the current node's right-hand node. So far this is the same as the simple pattern, but instead updating the end node of the skipblock on the right, we now take the value of the left-hand node, store it (x) and increment it by one. Starting from the current node and continuing to the right, we set every node to x, incrementing x once per node, stopping when either a node with a value of zero or the end of the skipfield is reached.</p>
 
 
 <h5>Before erasure:</h5>
 
 <code>&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 2 2 0 3 2 3 0 0 0 0</code>
+
+
+<h5>Erasure:</h5>
+<p>j = i - S<sub>i - 1</sub><br>
+S<sub>j</sub> = S<sub>j</sub> + 1 + S<sub>i + 1</sub><br>
+x = 1 + S<sub>i - 1</sub><br>
+S<sub>i</sub> = x<br>
+S<sub>i + 1</sub> = x + 1<br>
+S<sub>i + 2</sub> = x + 2<br>
+S<sub>i + 3</sub> = x + 3</p>
 
 
 <h5>After erasure:</h5>
@@ -324,10 +384,9 @@ value_of(end_node) = value_of(start_node)</p>
 
 
 
-<h3>Restoration ie. the reuse of erased element locations</h3>
+<h3>Restoration ie. reuse of erased-element memory</h3>
 
-<p>If we want to insert into the container and at the same time reuse a previously-erased memory location, we need a mechanism for updating the skipfield to reflect this change to the active/inactive status of the container element while simultaeneously keeping the skipfield valid for usage during iteration. Consider the following example: if I want to reuse previously-erased element 4 in a given container, and to indicate this in the skipfield I naively set the element's coorresponding skipfield node to zero, what is going to happen? Let's see:</p>
-
+<p>If we want to insert into the container and reuse a memory location from an element that was previously erased/made inactive, we will need a mechanism for updating the skipfield to reflect this change to the active/inactive status of the container element while simultaneously keeping the skipfield valid for use during iteration. Consider the following example: if I want to reuse previously-erased element 4 in a given container, and to indicate this in the skipfield I naively set the element's corresponding skipfield node to zero, what is going to happen?</p>
 
 <h5>Before reuse of element slot:</h5>
 
@@ -335,7 +394,8 @@ value_of(end_node) = value_of(start_node)</p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 6 2 3 4 5 6 0 0 0 0</code>
 
-
+<h5>Incorrect reuse:</h5>
+<p>S<sub>i</sub> = 0</p>
 
 <h5>After reuse:</h5>
 
@@ -344,16 +404,24 @@ value_of(end_node) = value_of(start_node)</p>
 6 2 3 0 5 6 0 0 0 0</code>
 
 
-<p>With this result, if you subsequently iterated over the data from the start the 'reused' element slot will be skipped over. And if you started your iteration at at the restored element's location you would end up skipping over non-erased elements. Taking the above result as an example of the latter:</p>
+<p>With this result, if you subsequently iterated over the data from the beginning, the reused element location would be skipped over. And if you began your iteration from the reused element location, you would skip over non-erased elements. Taking the above result, here's an example of the latter:</p>
 
-<h5>Before iteration:</h5>
+<h5>Before increment:</h5>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<Br>
 6 2 3 0 5 6 0 0 0 0</code>
+<p>(i = 4)</p>
+
+<h5>Increment by 1:</h5>
+<p>i = i + 1<br>
+(i = 5)<br>
+i = i + S<sub>i</sub><br>
+(i = 10)</p>
 
 
-<h5>After increment by one:</h5>
+
+<h5>After increment:</h5>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<Br>
@@ -361,24 +429,25 @@ value_of(end_node) = value_of(start_node)</p>
 
 
 
-<p>Obviously this is incorrect. The correct solution is considerably more complex; to update the skipfield properly when restoring elements, we need to do the following. As when erasing, we need to check the values of the skipfield nodes to the left and right of the node corresponding to the erased element whose memory space we want to reuse. eg.:</p>
+<p>Obviously this is incorrect. A correct solution is more complex; to update the skipfield properly when restoring elements, we need to do the following:<br>
+As when erasing, we need to check the values of the skipfield nodes to the left and right of the skipfield node corresponding to the erased element whose memory space we want to reuse. For example:</p>
 
 <code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* | *<br>
 0 0 0 4 2 3 4 0 0 0</code>
 
 
-<p>Once again we have four possibilities: both left and right node values are zero, left is non-zero and right is zero, left is zero and right is non-zero, both left and right are non-zero. Here's how we deal with those scenarios in the context of reusing memory space:</p>
+<p>Once again we have four possibilities: either both left and right node values are zero, left is non-zero and right is zero, left is zero and right is non-zero, or both left and right are non-zero. Here's how we process those scenarios in the case of reuse:</p>
 
 
-<h4>Both left and right are zero</h4>
+<h4>Scenario 1: Both left and right are zero</h4>
 
 <p>We set the value of the current skipfield to zero. No further updates are necessary.</p>
 
 
 
-<h4>Only left is non-zero</h4>
+<h4>Scenario 2: Only left is non-zero</h4>
 
-<p>If only the left node is non-zero, this indicates the current node is the end node of a skip-block on the left. In this case we take the current node's value, subtract 1 from it, then subtract the resultant number from the current node's index to find the start node of the skip-block. We then set the start node's value to the same current-node-minus-one value. We can then set the current node's value to zero. Eg.:</p>
+<p>If only the left node is non-zero, this indicates the current node is the end node of a skipblock on the left. In this case we take the current node's value and store it (x), subtract 1 from x, then subtract x from the current node's index number to find the index of the skipblock's start node. We then set the start node's value to the same current-node-minus-one value. We can then set the current node's value to zero.</p>
 
 
 <h5>Before reuse:</h5>
@@ -386,6 +455,14 @@ value_of(end_node) = value_of(start_node)</p>
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 4 2 3 4 0 0 0</code>
+<p>(i = 7, S<sub>i</sub> = 4)</p>
+
+<h5>Reuse:</h5>
+
+<p>x = S<sub>i</sub> - 1<br>
+j = i - x<br>
+S<sub>j</sub> = x<br>
+S<sub>i</sub> = 0</p>
 
 
 <h5>After reuse:</h5>
@@ -394,21 +471,14 @@ value_of(end_node) = value_of(start_node)</p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 3 2 3 0 0 0 0</code>
 
-<p>ie. start_node = current node - (value_of(current node) (ie. 4) - 1)<br>
-value_of(start_node) = (value_of(current node) - 1)<br>
-value_of(current node) = 0</p>
 
 
-
-
-<p>Another example:</p>
-
-
-<h5>Before reuse:</h5>
+<h5>A different example - before reuse:</h5>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 2 2 0 0 0 0 0 0 0</code>
+<p>(i = 3, S<sub>i</sub> = 2)</p>
 
 
 <h5>After reuse:</h5>
@@ -416,16 +486,14 @@ value_of(current node) = 0</p>
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 1 0 0 0 0 0 0 0 0</code>
-<p>ie. start_node = current node - (2 - 1)<br>
-value_of(start_node) = 2 - 1<br>
-value_of(current node) = 0</p>
 
 
 
 
-<h4>Only right is non-zero</h4>
 
-<p>If only the right node is non-zero, this indicates the current node is the start node of a skip-block continuing to the right. If the value of the current node is two, we set the current node's value to zero and set the value of the node immediately to our right to 1. This is a special case. Eg.:</p>
+<h4>Scenario 3: Only right is non-zero</h4>
+
+<p>If only the right node is non-zero, this indicates the current node is the start node of a skipblock continuing to the right. If the value of the current node is two, we set the current node's value to zero and set the value of the right-hand node to 1. This is a special case. Example:</p>
 
 
 <h5>Before reuse:</h5>
@@ -433,6 +501,10 @@ value_of(current node) = 0</p>
 <code>
 &nbsp;&nbsp;|<br>
 0 2 2 0 0 0 0 0 0 0</code>
+
+<h5>Reuse:</h5>
+<p>S<sub>i</sub> = 0<br>
+S<sub>i + 1</sub> = 1</p>
 
 
 <h5>After reuse:</h5>
@@ -442,7 +514,7 @@ value_of(current node) = 0</p>
 0 0 1 0 0 0 0 0 0 0</code>
 
 
-<p>If the value of the current node is not 2, we set the value of the right-hand node to the value of the current node minus one and set the current node's value to zero. Then, starting from the node after the right-hand node, we update the values of all nodes, starting from the value 2 and incrementing once per node, until we reach either the end of the skipfield or a zero value. . Eg.:</p>
+<p>If the value of the current node is not 2, we set the value of the right-hand node to the value of the current node minus one and set the current node's value to zero. Then, starting from the node after the right-hand node, we update the values of all nodes, starting from the value 2 and incrementing once per node, until we reach either the end of the skipfield or a zero value. Example:</p>
 
 
 <h5>Before reuse:</h5>
@@ -450,6 +522,13 @@ value_of(current node) = 0</p>
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 0 0 0 4 2 3 4 0 0 0</code>
+
+<h5>Reuse:</h5>
+<p>S<sub>i + 1</sub> = S<sub>i</sub> + 1<br>
+S<sub>i</sub> = 0<br>
+S<sub>i + 2</sub> = 2<br>
+S<sub>i + 3</sub> = 3<br>
+</p>
 
 
 
@@ -461,83 +540,94 @@ value_of(current node) = 0</p>
 
 
 
-<h4>Both left and right are non-zero</h4>
+<h4>Scenario 4: Both left and right are non-zero</h4>
 
-<p>Here we combine the procedures for both the 'only left is non-zero' and 'only right is non-zero' scenarios. We take the current node's value, subtract 1 from it, subtract the resultant number (we'll call this "current node value minus one") from the current node's index to find the index of the start node of the skip-block, and store the current value of the start node, which we will now call the "original start node value". We then set the start node's value to our previously calculated "current node value minus one". The left-hand node is now the end node of the left-hand skip block, and is already at it's correct value (there is no need to update it). Eg.:</p>
+<p>In this scenario the current node is inside a skipblock but neither at the beginning nor the end. The end result of the operation will be to split the singular skipblock into two skipblocks. To do so we combine the behaviour for both the 'only left is non-zero' and 'only right is non-zero' scenarios. First we store the current node's value (x), subtract 1 from x, then subtract x from the current node's index number to find the index number of the start node of the skipblock. We then store the current value of the start node (y) and subsequently set it's value to x. The left-hand node is now the end node of the left-hand skipblock, and is already at it's correct value (ie. there is no need to update it).</p>
 
 
-<h5>Before:</h5>
+<h5>Before reuse:</h5>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 6 2 3 4 5 6 0 0 0 0</code>
 
-
-<h5>After:</h5>
+<h5>Reuse (first phase):</h5>
+<p> x = S<sub>i</sub> - 1<br>
+j = i - x<br>
+y = S<sub>j</sub><br>
+S<sub>j</sub> = x</p>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 3 2 3 4 5 6 0 0 0 0</code>
 
 
-<p>We now set the value of the right-hand node to the "original start node value" gathered earlier, minus the value of the current node. Then we set the current node to zero. The right-hand node is now the start node of a new right-hand skip block, thus we have split the original (singular) skip block into two. To continue from the example above, the result is:</p>
+<p>We now set the value of the right-hand node to y minus the value of the current node, and set the current node to zero.</p>
+
+<h5>Reuse (second phase):</h5>
+<p>S<sub>i + 1</sub> = y - S<sub>i</sub><br>
+S<sub>i</sub> = 0</p>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 3 2 3 0 2 6 0 0 0 0</code>
 
-<p>Now, starting from the node after the right-hand node, we update the values of each node, starting with a value of 2 and incrementing by 1 per node, until we either reach the end of the skipfield or a zero value. Obviously if the value of the node after the right-hand node is either zero or beyond the end of the skipfield, no update occurs. Continuing the example above, only a single update would take place, at this point. The end result follows:</p>
+<p>The right-hand node is now the start node of the new right-hand skipblock, thus we have split the original singular skipblock into two. Starting from the node after the right-hand node, we update the values of each node, starting from a value of 2 and incrementing by 1 per node, till we either reach the end of the skipfield or a zero value. Obviously if the value of the node after the right-hand node is either zero or beyond the end of the skipfield, no update occurs. For the example above, only a single update would take place at this point.</p>
+
+<h5>Reuse (third phase):</h5>
+<p>S<sub>i + 2</sub> = 2</p>
+
+<h5>After reuse:</h5>
 
 <code>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
 3 2 3 0 2 2 0 0 0 0</code>
 
-<p>Restoration of the erased node is complete and the skipfield can be iterated over correctly, both forward and in reverse iteration.</p>
+<p>Reuse of the erased node is complete and the skipfield can be iterated over correctly, both in forward and reverse directions.</p>
 
 
 
 <h2>Performance results</h2>
 
-<p>In C++ performance tests with the colony container, the performance overhead from using the above advanced pattern compared to using a simple boolean field, was close to zero. There was also negligible difference in terms of access and iteration over the container under scenarios with minimal erasures. Some compilers fared better with the boolean erasure field, most fared worse.</p>
-
-<p>However in scenarios with large amounts of consecutive erasures, using the advanced jump-counting pattern improved iteration performance by factor(s) of 10, consistently and across compilers. Below are the test results, using containers of 1000000 small structs, for the scenario where 49 out every 50 consecutive elements was erased, first using a simple boolean field to indicate erasure, then using a jump-counting advanced skipfield. The results were as follows (MSVC 2013, e8500 C2D processor):</p>
+<p>Performance comparisons were performed, across four C++ compilers: GCC 5 32-bit, GCC 5 64-bit, Microsoft Visual Studio 2010 (x86) and Microsoft Visual Studio 2013 (x64). A custom container (plf::colony) using a boolean skipfield to indicate erasure was compared against the same container using a advanced jump-counting skipfield to indicate erasure, and a std::vector. In tests where the number of erasures were low and generally non-consecutive, the performance differences between the jump-counting skipfield colony and the simple boolean skipfield colony were close to zero. Some compilers performed better with the boolean skipfield, most performed worse. But in scenarios with high amounts of consecutive erasures, the colonyt using the advanced jump-counting pattern improved iteration performance by factors of 10, consistently and across compilers. Below are the test results for one of these tests, utilising containers of 1000000 small structs, and erasing 49 out every 50 consecutive elements (Microsoft Visual Studio 2013, standard x64 release settings, e8500 C2D processor):</p>
 
 
 
-<h4>Duration to insert 1000000 small structs with an integer member, into container</h4>
+<h5>Duration to insert 1000000 small structs with an integer member, into container</h5>
 
 <p>
-Vector: 113ms<br>
-Colony with boolean erasure field: 39ms<br>
-Colony with jump-counting skipfield: 33ms</p>
+std::vector: 113ms<br>
+plf::colony (boolean skipfield): 39ms<br>
+plf::colony (jump-counting skipfield): 33ms</p>
 
 
 
-<h4>Duration to erase 49 out of every 50 consecutive elements, from container</h4>
-<p>(note: reverse-iteration was used for vector for the erasures - forward iteration and deletion took too long for the test to complete due to element reallocation. Both colony tests use forward iteration.)</p>
+<h5>Duration to erase 49 out of every 50 consecutive elements, from container</h5>
+<p><i>(note: reverse iteration was used for std::vector for the erasures in this test - forward iteration and erasure took too long for the test to complete due to subsequent element reallocation. Both plf::colony erasure tests use forward iteration.)</i></p>
 
-<p>Vector: 41359ms<br>
-Colony with boolean erasure field: 17ms<br>
-Colony with jump-counting skipfield: 20ms</p>
-
-
+std::vector: 41359ms<br>
+plf::colony (boolean skipfield): 17ms<br>
+plf::colony (jump-counting skipfield): 20ms</p>
 
 
-<h4>Duration to iterate over container data 10000 times and add value of integer member to total</h4>
 
-<p>Vector: 1002ms (1 second)<br>
-Colony with boolean field: 22355ms (22 seconds)<br>
-Colony with jump-counting skipfield: 1496ms (1.5 seconds)</p>
+<h5>Duration to iterate over container data 10000 times and add value of integer member to total</h5>
 
-<p><br>You can see from the iteration results that a skipfield using the advanced jump-counting pattern, while not achieving quite the same iteration performance as the vector (which reallocates data to achieve complete element contiguousness at the cost of pointer/iterator stability), also does not have the poor erasure performance associated with vector's data reallocation (mitigated in this case by using reverse iteration - in the general case forward iteration would be more common and the duration of vector's erasure result would be many factors-of-ten larger).</p>
+<p>std::vector: 1002ms (1 second)<br>
+plf::colony (boolean skipfield): 22355ms (22 seconds)<br>
+plf::colony (jump-counting skipfield): 1496ms (1.5 seconds)</p>
 
-<p>But more importantly it shows the dominance of the jump-counting skipfield pattern over a boolean erasure field implementation under worst-case testing, achieving approximately 15x the performance of the boolean erasure field. This is because in the scenario above the colony with the boolean erasure field has to do 49 value checks and if/then/else branches between every non-erased element, whereas in the jump-counting skipfield pattern implementation, there is only a single value check between non-erased elements and no branching.</p>
+<p><br>We can see from the results that a skipfield using the advanced jump-counting skipfield pattern, while not achieving the same iteration performance as std::vector (which reallocates data to achieve complete element contiguousness at the cost of pointer/iterator stability), also does not share the poor erasure performance associated with std::vector's data reallocation (mitigated in this case by using reverse iteration - in the general case forward iteration and the duration of erasure many factors-of-ten larger).</p>
 
-<p>As the ranges of consecutive erased elements increase, and as the ratio of erased elements to non-erased elements increases, so too does the performance advantage of the jump-counting skipfield over the boolean erasure field. For example, in the colony container, for a ratio of 65534 erased elements to every 1 non-erased element (the maximum ratio possible in colony architecture), a jump-counting skipfield implementation is approximately 6076x faster at iteration than using a boolean erasure field (results are dependent on the compiler and processor/OS).</p>
+<p>More importantly it shows the dominance of the jump-counting skipfield pattern over a boolean skipfield implementation under worst-case scenario testing, achieving approximately 1500% better performance. This is because in this scenario the plf::colony with the boolean skipfield has to do 49 value checks and if/else branches between each non-erased element, whereas with the jump-counting skipfield implementation there is only 1 value check between non-erased elements and no branching required.</p>
+
+<p>As numbers of consecutive erased elements increase, and as the ratio of erased elements to non-erased elements increases, so too does the iteration performance advantage of a jump-counting skipfield over a boolean skipfield. For the same test above but with a ratio of 65534 consecutive erased elements to every 1 non-erased element, a jump-counting skipfield implementation is approximately 607600% faster during iteration than it's boolean skipfield alternative (results vary dependent on the compiler and processor/OS).</p>
 
 
 <h2>Summary</h2>
-<p>In conclusion, given an appropriate application, using a jump-counting skipfield instead of a traditional boolean erasure field will reduce iteration times substantially and should be considered in the first instance of development where a boolean skipfield might typically be used. While the technique will work better in multiple-memory-block-based containers, where the block-size can be attenuated to allow for a smaller bitdepth in the skipfield nodes (for example, lowering maximum memory block size to 65535 elements enables the use of a 16-bit skipfield), it is still expected to have a strong performance impact in any scenarios where large amounts of consecutive 'inactive' container elements are expected. However in scenarios where element erasure is infrequent, a boolean field, using a lower-bit-depth, may have a better performance result. Additionally, in situations where iteration is infrequent, the overall performance benefit would be expected to be less. But for the vast majority of gaming applications, iteration over data is the most common per-frame activity, and hence, any increase in performance in that area will yield dividends.</p>
+<p>In conclusion, given an appropriate application, implementing a jump-counting skipfield instead of the traditional boolean skipfield will reduce iteration times when multiple consecutive erased elements are common, and should be considered in the first instance of development where a boolean skipfield might be used. While the pattern will work better in multiple-memory-block based containers, where the block-size can be attenuated to allow for a smaller bitdepth in the skipfield nodes (for example, lowering memory block size to 65535 elements enables the use of a 16-bit skipfield), it would still be expected to have a strong performance impact with larger memory fields requiring higher bitdepths, if multiple consecutive erased elements are common. In scenarios where element erasure is infrequent, a boolean field using a lower bit-depth may result in better performance. Additionally, in scenarios where iteration is infrequent, the overall performance benefit for the application would be expected to be less. However for scenarios where iteration over data is the most common activity, which includes vast majority of game applications, any increase in performance in the iteration domain will increase overall performance substantially, and a jump-counting skipfield may be worthwhile.</p>
+
+<p>The algorithm is principally serial and is unlikely to find significant application in massively-parallel architectures such as CUDA
 
 
 <p>Contact: <img src="footer.gif"><br>

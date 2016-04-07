@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
 #include "plf_colony.h"
@@ -22,7 +23,6 @@ void failpass(const char *test_type, bool condition)
 	std::cout << test_type << ": ";
 	
 	if (condition) 
-	
 	{ 
 		std::cout << "Pass" << std::endl;
 	} 
@@ -40,7 +40,13 @@ namespace sg14_test
 
 void plf_test_suite()
 {
-	srand(clock()); // Note: using random numbers to avoid CPU predictive
+	freopen("error.log","w", stderr);
+
+	{
+		time_t timer;
+		time(&timer);
+		srand((unsigned int)timer); // Note: using random numbers to avoid CPU prediction
+	}
 
 	using namespace std;
 	using namespace plf;
@@ -141,8 +147,6 @@ void plf_test_suite()
 
 		colony<int *>::reverse_iterator r_iterator2 = p_colony.next(r_iterator, 2);
 
-		cout << p_colony.distance(p_colony.rbegin(), r_iterator2) << endl;
-		
 		failpass("Reverse iterator next and distance test", p_colony.distance(p_colony.rbegin(), r_iterator2) == -52);
 		
 		numtotal = 0;
@@ -291,6 +295,37 @@ void plf_test_suite()
 		}
 		
 		failpass("Size after reinitialize + insert test", i_colony.size() == 30000);
+
+		unsigned short count2 = 0;
+		
+		do
+		{
+			for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
+			{
+				if (rand() % 5 == 0)
+				{
+					the_iterator = i_colony.erase(the_iterator);
+					++count2;
+				}
+				else
+				{
+					colony<int>::iterator temp_iterator = the_iterator;
+					++the_iterator;
+				}
+			}
+			
+		} while (count2 < 15000);
+		
+		failpass("Erase randomly till half-empty test", i_colony.size() == 30000u - count2);
+
+		for (unsigned int temp = 0; temp != count2; ++temp)
+		{
+			i_colony.insert(1);
+		}
+		
+		failpass("Size after reinsert test", i_colony.size() == 30000);
+
+
 
 
 		unsigned int sum = 0;
@@ -448,7 +483,6 @@ void plf_test_suite()
 		}
 		
 		failpass("Multiple sequential small insert/erase commands test", count == i_colony.size());
-		
 	}
 
 
@@ -513,6 +547,6 @@ void plf_test_suite()
 
 	title1("Test Suite PASS - Press ENTER to Exit");
 	cin.get();
+}
 
-	return 0;
 }

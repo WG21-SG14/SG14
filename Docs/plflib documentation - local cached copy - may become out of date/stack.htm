@@ -50,7 +50,7 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
 
 <h2>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 22-02-2016 v3.00</i></p>
+<p style="font-size: 75%"><i>Last updated 24-03-2016 v3.02</i></p>
 
 <p>This benchmark compares performance between std::vector and plf::stack. I'm
 using std::vector instead of std::stack, as while std::stack usually uses
@@ -105,6 +105,14 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td></td>
     </tr>
     <tr>
+      <td>std::stack</td>
+      <td>171</td>
+      <td>170</td>
+      <td>540</td>
+      <td>533</td>
+      <td></td>
+    </tr>
+    <tr>
       <td>plf::stack</td>
       <td>149</td>
       <td>117</td>
@@ -147,6 +155,14 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>39</td>
       <td>30</td>
       <td>43</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>std::stack</td>
+      <td>99</td>
+      <td>99</td>
+      <td>59</td>
+      <td>77</td>
       <td></td>
     </tr>
     <tr>
@@ -197,15 +213,23 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>std::vector</td>
       <td>311</td>
       <td>269</td>
-      <td>444</td>
+      <td>446</td>
       <td>465</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>std::stack</td>
+      <td>113</td>
+      <td>114</td>
+      <td>99</td>
+      <td>113</td>
       <td></td>
     </tr>
     <tr>
       <td>plf::stack</td>
       <td>96</td>
       <td>103</td>
-      <td>100</td>
+      <td>99</td>
       <td>104</td>
       <td></td>
     </tr>
@@ -244,6 +268,14 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>34</td>
       <td>34</td>
       <td>37</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>std::stack</td>
+      <td>104</td>
+      <td>87</td>
+      <td>33</td>
+      <td>36</td>
       <td></td>
     </tr>
     <tr>
@@ -296,6 +328,14 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td></td>
     </tr>
     <tr>
+      <td>std::stack</td>
+      <td>142</td>
+      <td>154</td>
+      <td>416</td>
+      <td>351</td>
+      <td></td>
+    </tr>
+    <tr>
       <td>plf::stack</td>
       <td>138</td>
       <td>117</td>
@@ -338,6 +378,14 @@ with the small structs. Numbers are milliseconds, lower is better.</p>
       <td>9</td>
       <td>17</td>
       <td>29</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>std::stack</td>
+      <td>33</td>
+      <td>26</td>
+      <td>87</td>
+      <td>81</td>
       <td></td>
     </tr>
     <tr>
