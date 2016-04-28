@@ -34,10 +34,9 @@ void failpass(const char *test_type, bool condition)
 	}
 }
 
-
 namespace sg14_test
 {
-
+	
 void plf_test_suite()
 {
 	freopen("error.log","w", stderr);

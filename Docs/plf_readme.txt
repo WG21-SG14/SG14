@@ -4,18 +4,19 @@ Full Documentation: www.plflib.org
 plf::colony
 ===========
 
-What is a colony? It's similar to a vector or a deque, but different. It is it's own abstract datatype, not fitting any of the existing categories exactly.
+A colony is a C++ template-based unordered data container which provides positive performance characteristics when:
 
-Vector and deque's reallocations equal iterator/pointer invalidation, which means inability for objects in vectors to reference each other. There are workarounds for this (in given situations - not all situations), but each of them is a hack around vector's limitations, which slows down program speed and development time.
+1. Insertions and erasures to the container are occuring in realtime ie. in performance-critical code, and/or
+2. Pointers and iterators which point to non-erased container elements must not be invalidated by insertion or erasure.
+
+Vector and deque's reallocations equal iterator/pointer invalidation, which means an inability for objects in vectors to directly reference each other via pointers. There are various workarounds for this.
 
 Compared to other STL container types, vectors have better cache coherency and hence better speed regardless of the situation (See Chandler Carruth's talk here: http://www.youtube.com/watch?v=fHNmRkzxHWs). But erasing from anywhere but the end of a vector is painfully slow, and adding/pushing/popping to/from a vector - for large objects - is not as fast we'd like.
 
-Colonies don't reallocate - they form chains of increasingly-large blocks of elements, resulting in a fast container which never invalidates pointers or iterators, generally has twice the add-speed of vectors, with erasing elements being factors-of-ten faster, and iteration speed similar to a vector for larger-than-scalar types.
+Colonies don't reallocate - they form chains of increasingly-large blocks of elements, resulting in a fast container which never invalidates pointers or iterators, generally has better insertion performance than vectors, with erasure generally being factors-of-ten faster.
 
-plf::stack, which plf::colony uses internally, is based on the same principle - pointers/references to non-erased elements never invalidate and it is overall faster than a std::stack.
-
-Run the plf_demo.cpp for an overview of performance characteristics.
+plf::stack, which plf::colony uses internally, is based on the same principle - pointers/references to non-erased elements never invalidate and it is overall faster than a std::stack or std::vector in the context of a stack.
 
 SEE WEBSITE FOR FULL DOCUMENTATION AND LICENSING.TXT FOR APPROPRIATE USAGE AND LEGALITIES.
 Contact me with bugs etc at: mattreecebentley@gmail.com
-plf::stack and plf::colony Copyright (c) 2015 Matt Bentley
+plf::stack and plf::colony Copyright (c) 2016 Matt Bentley

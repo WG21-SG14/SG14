@@ -35,15 +35,15 @@ namespace plf
 		
 		inline double get_elapsed_ms()
 		{
-			return static_cast<double>(get_elasped_ns()) / 1000000.0;
+			return static_cast<double>(get_elapsed_ns()) / 1000000.0;
 		}
 
 		inline double get_elapsed_us()
 		{
-			return static_cast<double>(get_elasped_ns()) / 1000.0;
+			return static_cast<double>(get_elapsed_ns()) / 1000.0;
 		}
 
-		double get_elasped_ns()
+		double get_elapsed_ns()
 		{
 			clock_get_time(system_clock, &time2);
 			return ((1000000000.0 * static_cast<double>(time2.tv_sec - time1.tv_sec)) + static_cast<double>(time2.tv_nsec - time1.tv_nsec));
@@ -76,7 +76,7 @@ namespace plf
 			return get_elapsed_ns() / 1000000.0;
 		}
 
-		inline double get_elapsed_ms()
+		inline double get_elapsed_us()
 		{
 			return get_elapsed_ns() / 1000.0;
 		}
