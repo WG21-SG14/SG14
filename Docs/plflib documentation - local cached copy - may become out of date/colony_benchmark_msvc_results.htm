@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+  <meta name="description" content="PLF C++ Library - plf::colony">
+  <meta name="keywords"
+  content="C++, C, vector, colony, plf::colony, speed, OO, containers, optimize, performance, pointer, iterator, invalidation, benchmarks, results, benchmark, vs, versus, std::list, std::map, std::multiset, std::vector, std::deque, deque, segmented_tree">
+  <title>PLF C++ Library - plf::colony</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<a href="index.htm">Home</a> 
+
+<h1>PLF C++ Library - plf::colony - MSVC benchmarks</h1>
+<p style="font-size: 75%"><i>Last updated 28-04-2016 v3.04</i></p>
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running Microsoft Visual Studio 2013 as compiler. Build settings are x64 release, "/O2 /Oi /Ot /Oy /GL". Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate.</p>
+
+<h3>Raw performance tests</h3>
+
+<h4>Insertion Performance</h4>
+
+<p><i>Note: because plf::colony is an unordered container and subsequently we are not concerned about insert order, push_front has been used with std::list instead of push_back, in order to provide a fair performance comparison.</i></p>
+
+<img alt="test result graph" src="tests/msvc/colony/raw/char_insertion.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/char_insertion_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/int_insertion.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/int_insertion_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/double_insertion.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/double_insertion_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/small_struct_insertion.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/small_struct_insertion_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/large_struct_insertion.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/large_struct_insertion_log.png"><br>
+
+<p>Overall, plf::colony dominates, with std::vector performing better for 8-bit types and std::map performing better for large structs.</p>
+
+
+<h4>Erase Performance</h4>
+
+<img alt="test result graph" src="tests/msvc/colony/raw/char_erase_25.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/char_erase_25_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/int_erase_25.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/int_erase_25_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/double_erase_25.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/double_erase_25_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/small_struct_erase_25.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/small_struct_erase_25_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/large_struct_erase_25.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/large_struct_erase_25_log.png"><br>
+
+<p>Across all types, plf::colony and std::list tie in first place for performance, however std::list displays some averse performance characteristics with large numbers of large structs.</p>
+
+
+<h4>Iteration Performance</h4>
+
+<img alt="test result graph" src="tests/msvc/colony/raw/char_iteration.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/char_iteration_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/int_iteration.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/int_iteration_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/double_iteration.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/double_iteration_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/small_struct_iteration.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/small_struct_iteration_log.png"><br>
+<img alt="test result graph" src="tests/msvc/colony/raw/large_struct_iteration.png">
+<img alt="test result graph" src="tests/msvc/colony/raw/large_struct_iteration_log.png"><br>
+
+<p>MSVC 2013's compiler optimisations are not as strong as GCC, so although it's std::vector performance is roughly equal to GCC, it outperforms the other candidates by a much more significant margin. Unlike GCC, MSVC's std::deque iteration performance is quite poor and lags behind. std::list performs well while it's data is small enough to fit entirely inside the cache (see GCC performance results for a more detailed analysis of this) but still outperforms plf::colony above this point for scalar types. For larger-than-scalar types, plf::colony outperforms it past the point of cache saturation, but suffers in terms of performance past ~65535 elements.</p>
+
+
+<h4>Conclusion</h4>
+<p>Although plf::colony's iteration performance is impaired in MSVC as compared to GCC, it's insertion and erasure performance are still very good. It is likely that specific compiler optimisations to code would be necessary in order for plf::colony to achieve the same or similar iteration performance under MSVC as it does in GCC. Asides from that, the main differences between GCC and MSVC performance are better std::list performance and significantly worse std::deque performance, particularly for small scalar type erasure.</p>
+
+
+<h3><a name="comparative_tests"></a>Comparative performance tests</h3>
+
+<p>Here we compare plf::colony against other contendors in the context where we require good performance while guarantee'ing pointer stability for outside elements referring to elements within the container, and where ordered insertion is unimportant. plf::colony and std::list need no modification to achieve these goals, the modifications to other containers used in this section are explained in thorough detail in the <a href="colony.htm#benchmarks">GCC benchmarks</a>.</p>
+
+<h4>Insertion</h4>
+
+<img alt="test result graph" src="tests/msvc/colony/comparitive/insertion.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/insertion_log.png">
+
+<p>plf::colony dominates the other contendors quite easily.</p>
+
+<h4>Erasure</h4>
+
+<h5>Erasing 25%</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/erase_25.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/erase_25_log.png">
+
+<h5>Erasing 50%</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/erase_50.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/erase_50_log.png">
+
+<h5>Erasing 75%</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/erase_75.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/erase_75_log.png">
+
+<p>Here the gap consistently widens between the candidates as erasure percentage increases, with deque_bool, plf::colony and std::list being very close to each other in 1st, 2nd and 3rd place respectively. pointer_deque and indexed_vector have terrible performance once the number of elements climbs above 200, 1 factor of ten above the other candidates at 1000 elements and almost 3 factors of ten above the other candidates at 100000 elements.</p>
+
+
+<h4>Iteration</h4>
+
+<h5>Prior to erasures</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_0.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_0_log.png">
+
+<p>Here std::list is more-or-less equal to indexed_vector for under 500 elements, then just as in the previous tests, once less of the data fits in the cache entirely it's performance diminishes rapidly. indexed_vector is in 1st place, plf::colony in 2nd.</p>
+
+<h5>After erasing 25% of all elements</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_25.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_25_log.png">
+
+<p>Results are much the same here with pointer_deque and deque_bool beginning to show worsening performance.</p>
+
+<h5>After erasing 50% of all elements</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_50.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_50_log.png">
+
+<p>At this point the poor iteration performance of deque_bool becomes much more apparent.</p>
+
+<h5>After erasing 75% of all elements</h5>
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_75.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/iteration_75_log.png">
+
+<p>At this point we can see that deque_bool overall performs worse than any other contendor. Other than that it is a continuation of previously established trends.</p>
+<p>Summary: The overall pattern shows that indexed_vector and plf::colony dominate performance with pointer_deque quite close behind, std::list performing typically and deque_bool being entirely inadequate.</p>
+
+
+<h4>Post-reinsertion iteration</h4>
+<p>At this point we take the containers after the last test, at 75% erasure, and re-insert 25% of the original number of elements, and subsequently test iteration performance to see how reinsertion affects each container.</p>
+
+<img alt="test result graph" src="tests/msvc/colony/comparitive/post_insertion_iteration.png">
+<img alt="test result graph" src="tests/msvc/colony/comparitive/post_insertion_iteration_log.png">
+
+<p>Results are much the same as the 50% post-erasure results.</p>
+
+
+
+<h4>Conclusion</h4>
+
+<p>While the deque_bool and std::list results stay much the same as the GCC findings, there is a greater gap between indexed_vector and plf::colony iteration performance due to somewhat worse optimisation of the colony code via the MSVC compiler. It is possible that the use of intrinsics for MSVC could bring the results more in line with GCC, perhaps not. pointer_deque suffers compared to GCC due to the less efficient std::deque implementation under MSVC. Ultimately the performance choice between indexed_vector and plf::colony comes down to the amount of iteration the program is performing versus the amount of erasure. However plf::colony also has the advantage of reusing erased element locations, which indexed_vector does not have.</p>
+
+<p>plf::colony:<br>
+<font style="color: green">Advantages: Fastest insertion speed for larger-than-scalar types, 1st placed shared with indexed_vector for scalar types. Shares 1st place erase speed with std::list. Iteration performance 2nd after indexed_vector. Either reuses erased element locations or releases memory to OS.</font><br>
+<font style="color: red">Disadvantages: Could be slower overall than indexed_vector for situations where memory expansion is not an issue, or where erasure and reinsertion are infrequent.</font>
+</p>
+<p>indexed_vector:<br>
+<font style="color: green">Advantages: Fastest iteration performance. 1st-equal with plf::colony for insertion performance. Probably best choice for situations where erasures are infrequent.</font><Br>
+<font style="color: red">Disadvantages: Approach requires any outside structures referring to it's elements to use indexes instead of pointers, which complicates implementation, as the structure must also know the container it is referring to. Container does not release erased element space to the OS or reuse the memory locations, meaning over time, additional insertions will increase memory usage and erasures will not shrink it.</font>
+</p>
+
+
+<p>Contact: <img alt="footer" src="footer.gif"><br>
+plf:: library and this page Copyright (c) 2015, Matthew Bentley</p>
+</body>
+</html>

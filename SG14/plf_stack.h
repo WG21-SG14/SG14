@@ -185,6 +185,7 @@ private:
 	{
 		assert(elements_per_group > 2);
 		assert(group_allocator_pair.max_elements_per_group <= std::numeric_limits<size_type>::max() / 2);
+		assert(elements_per_group <= group_allocator_pair.max_elements_per_group);
 
 		first_group = current_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, 0);
 
@@ -229,6 +230,11 @@ public:
 
 	inline void reinitialize(const size_type initial_allocation_amount)
 	{
+		if(initial_allocation_amount > group_allocator_pair.max_elements_per_group)
+		{
+			group_allocator_pair.max_elements_per_group = initial_allocation_amount;
+		}
+		
 		destroy_all_data();
 		initialize(initial_allocation_amount);
 	}

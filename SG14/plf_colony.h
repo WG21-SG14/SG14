@@ -313,36 +313,16 @@ public:
 		{
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 
-			#if defined (_MSC_VER) // this version faster in MSVC
-				element_pointer += 1 + *(++skipfield_pointer);
+			element_pointer += 1 + *(++skipfield_pointer);
+			skipfield_pointer += *skipfield_pointer;
 
-				if (element_pointer != group_pointer->last_endpoint) // ie. beyond end of available data
-				{
-					skipfield_pointer += *skipfield_pointer;
-				}
-				else if (group_pointer->next_group != NULL)
-				{
-					group_pointer = group_pointer->next_group;
-					skipfield_pointer = group_pointer->skipfield;
-					element_pointer = group_pointer->elements + *skipfield_pointer;
-					skipfield_pointer += *skipfield_pointer;
-				}
-			#else
-				element_pointer += 1 + *(++skipfield_pointer);
+			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
+			{
+				group_pointer = group_pointer->next_group;
+				skipfield_pointer = group_pointer->skipfield;
+				element_pointer = group_pointer->elements + *skipfield_pointer;
 				skipfield_pointer += *skipfield_pointer;
-
-				#if defined(__GNUC__) && defined(__x86_64__) // this version compiles to faster code under gcc x64
-					if (group_pointer->next_group != NULL && element_pointer == group_pointer->last_endpoint)
-				#else // standard version - performs better on most compilers
-					if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
-				#endif
-				{
-					group_pointer = group_pointer->next_group;
-					skipfield_pointer = group_pointer->skipfield;
-					element_pointer = group_pointer->elements + *skipfield_pointer;
-					skipfield_pointer += *skipfield_pointer;
-				}
-			#endif
+			}
 
 			return *this;
 		}
@@ -352,11 +332,7 @@ public:
 	private:
 		inline colony_iterator & check_end_of_group_and_progress() // used by erase
 		{
-			#if defined(__GNUC__) && defined(__x86_64__) // For some reason, this version compiles to faster code under gcc x64
-				if (group_pointer->next_group != NULL && element_pointer == group_pointer->last_endpoint)
-			#else // Standard version - performs better on most compilers
-				if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
-			#endif
+			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 			{
 				group_pointer = group_pointer->next_group;
 				skipfield_pointer = group_pointer->skipfield;
@@ -933,7 +909,7 @@ public:
 	{
 		switch(((!empty_indexes.empty()) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 		{
-			case 0:
+			case 0: // ie. empty_indexes is empty and end_iterator is not at end of current final group
 			{
 				const iterator return_iterator = end_iterator; /* Make copy for return before adjusting components */
 				PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), end_iterator.element_pointer, element);
@@ -945,7 +921,7 @@ public:
 				++total_number_of_elements;
 				return return_iterator; /* returns value before incrementation */
 			}
-			case 1:
+			case 1:  // ie. empty_indexes is empty and end_iterator is at end of current final group - ie. colony is full - create new group
 			{
 				end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 				const group_reference_type next_group = *(end_iterator.group_pointer->next_group);
@@ -990,7 +966,7 @@ public:
 				++total_number_of_elements;
 				return return_iterator; /* returns value before incrementation */
 			}
-			default:
+			default: // ie. empty_indexes is not empty, reuse previous-erased element locations
 			{
 				const iterator & new_index = empty_indexes.top();
 				PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_index.element_pointer, element);
@@ -1075,7 +1051,7 @@ public:
 		{
 			switch((!empty_indexes.empty() << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 			{
-				case 0: // ie. empty_indexes.empty() and end_iterator is not at end of current group
+				case 0: // ie. empty_indexes is empty and end_iterator is not at end of current final group
 				{
 					const iterator return_iterator = end_iterator; /* Make copy for return before adjusting components */
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), end_iterator.element_pointer, std::move(element));
@@ -1087,7 +1063,7 @@ public:
 					++total_number_of_elements;
 					return return_iterator; /* returns value before incrementation */
 				}
-				case 1: // ie. empty_indexes.empty() and end_iterator is at end of current group - create new group
+				case 1: // ie. empty_indexes is empty and end_iterator is at end of current final group - ie. colony is full - create new group
 				{
 					end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 					const group_reference_type next_group = *(end_iterator.group_pointer->next_group);
@@ -1132,7 +1108,7 @@ public:
 					++total_number_of_elements;
 					return return_iterator; /* returns value before incrementation */
 				}
-				default: // ie. !empty_indexes.empty()
+				default: // ie. empty_indexes is not empty, reuse previous-erased element locations
 				{
 					const iterator & new_index = empty_indexes.top();
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_index.element_pointer, std::move(element));
@@ -1705,7 +1681,12 @@ public:
 	void reinitialize(const unsigned short initial_allocation_amount)
 	{
 		assert(initial_allocation_amount > 2); 	// Otherwise, too much overhead for too small a group
-		assert(initial_allocation_amount <= group_allocator_pair.max_elements_per_group);
+		assert(initial_allocation_amount <= USHRT_MAX); // Only important if for some reason max_size / 2 < 65535
+
+		if(initial_allocation_amount > group_allocator_pair.max_elements_per_group)
+		{
+			group_allocator_pair.max_elements_per_group = initial_allocation_amount;
+		}
 
 		destroy_all_data();
 		total_number_of_elements = 0;
@@ -1718,7 +1699,7 @@ public:
 
 	inline void reinitialize(const unsigned short initial_allocation_amount, const unsigned short max_allocation_amount)
 	{
-		assert(max_allocation_amount <= UINT_MAX / 2); // Only important if for some reason max_size / 2 < 65535
+		assert(max_allocation_amount <= USHRT_MAX); // Only important if for some reason max_size / 2 < 65535
 
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
 		reinitialize(initial_allocation_amount);
@@ -1742,6 +1723,7 @@ public:
 		
 		total_number_of_elements = 0;
 		group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+
 		initialize(source.first_group->size);
 		empty_indexes.reinitialize((source.empty_indexes.first_group->end + 1) - source.empty_indexes.first_group->elements);
 
@@ -1828,6 +1810,9 @@ private:
 
 		assert(group_pointer != NULL); // covers uninitialised colony_iterator && empty group
 
+		assert (!(element_pointer == begin_iterator.element_pointer && distance < 0));
+		assert (!(element_pointer == end_iterator.element_pointer && distance > 0));
+		
 		// Now, run code based on the nature of the distance type - negative, positive or zero:
 		if (distance > 0) // ie. +=
 		{
@@ -2099,6 +2084,10 @@ private:
 		group_pointer_type &group_pointer = it.the_iterator.group_pointer;
 		element_pointer_type &element_pointer = it.the_iterator.element_pointer;
 		ushort_pointer_type &skipfield_pointer = it.the_iterator.skipfield_pointer;
+
+		assert (!(element_pointer == (begin_iterator.element_pointer - 1) && distance > 0));
+		assert (!(element_pointer == (end_iterator.element_pointer - 1) && distance < 0));
+
 
 		assert(group_pointer != NULL);
 		
