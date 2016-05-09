@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+  <meta name="description" content="PLF C++ Library - plf::stack">
+  <meta name="keywords"
+  content="C++, C, vector, stack, plf::stack, containers, optimize, performance, pointer, iterator, invalidation, benchmarks, results, benchmark, vs, versus, std::vector, std::deque, deque, std::stack, MSVC, visual studio, 2013">
+  <title>PLF C++ Library - plf::stack - MSVC 2013 Benchmark results</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<a href="index.htm">Home</a> 
+
+<h1>PLF C++ Library - plf::stack - MSVC 2013 Benchmark results</h1>
+
+<p style="font-size: 75%"><i>Last updated 29-04-2016 v3.04</i></p>
+
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running Microsoft Visual Studio 2013 as compiler. Build settings are x64 release, "/O2 /Oi /Ot /Oy /GL". Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate.</p>
+
+<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason (and for the sake of simplicity) only total time benchmarks are presented below, however the separate timings for MSVC are <a href="stack_all_msvc_results.htm">here</a>, for anyone interested.</p>
+
+<img alt="test result graph" src="tests/msvc/stack/char_total_time.png">
+<img alt="test result graph" src="tests/msvc/stack/char_total_time_log.png"><br>
+<img alt="test result graph" src="tests/msvc/stack/int_total_time.png">
+<img alt="test result graph" src="tests/msvc/stack/int_total_time_log.png"><br>
+<img alt="test result graph" src="tests/msvc/stack/double_total_time.png">
+<img alt="test result graph" src="tests/msvc/stack/double_total_time_log.png"><br>
+<img alt="test result graph" src="tests/msvc/stack/small_struct_total_time.png">
+<img alt="test result graph" src="tests/msvc/stack/small_struct_total_time_log.png"><br>
+<img alt="test result graph" src="tests/msvc/stack/large_struct_total_time.png">
+<img alt="test result graph" src="tests/msvc/stack/large_struct_total_time_log.png"><br>
+
+<h4>Conclusion</h4>
+
+<p>Simply put, plf::stack out-performs both std::stack (std::deque) and std::vector under MSVC 2013, and we can see that the larger the stored type is, the greater the performance advantage is. As described in the GCC results, plf::stack also has a secondary advantage over std::vector in that pointers to it's elements (as obtained via back() after a push() operation) will not invalidate on subsequent pushes. std::vector will invalidate pointers to stack elements upon subsequent pushes, std::stack will not if it is wrapping a std::deque (which it appears to be in this case). std::stack in the above tests only pulls ahead of std::vector for large structs, and never pulls ahead of plf::stack. The overall recommendation is to use plf::stack in all areas.</p>
+
+<p>plf::stack:<br>
+<font style="color: green">Advantages: Fastest performance. Performance advantage increases with size of stored element. Pointers to stored elements never invalidate.</font><br>
+<font style="color: red">Disadvantages: None.</font>
+</p>
+<p>std::stack (wrapping std::deque):<br>
+<font style="color: green">Advantages: Faster than std::vector for large structs. Pointers to stored elements never invalidate.</font><br>
+<font style="color: red">Disadvantages: Lowest overall performance. std::stack is not guaranteed to be wrapping a std::deque depending on the implementation, and std::deque implementation structure is also compiler-dependent, so the above advantages will not apply generically.</font>
+</p>
+<p>std::vector:<br>
+<font style="color: green">Advantages: Implementation is better defined than std::deque, so results may be more realiable across-compilers.</font><Br>
+<font style="color: red">Disadvantages: Slower than plf::colony. Invalidates pointers to stored elements on subsequent pushes.</font>
+</p>
+
+<p>Contact: <img src="footer.gif"><br>
+plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
+</body>
+</html>

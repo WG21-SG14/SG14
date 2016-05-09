@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="PLF C++ Library">
+  <meta name="keywords"
+  content="C++, C, PLF, colony, stack, STL, containers, optimize, performance, pointer, iterator, pattern, stability, group, memory, block">
+  <title>PLF C++ Library - The Chained-group allocation pattern</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<a href="index.htm">Home</a> 
+
+<h1>The Chained-group allocation pattern</h1>
+
+<p>By Matthew Bentley 7/05/2016</p>
+
+<h2>Abstract</h2>
+
+<p>This document describes a pattern of memory expansion for data containers,
+namely doubly-linked chains of increasingly-large memory blocks with metadata
+attached to them, each of which doubles the number of elements capable of being
+stored within the container prior to it's instantiation (ie. a growth factor of
+2).</p>
+
+<h2>Description</h2>
+
+<p>This is a simple technique for allocating memory in a situation where the
+amount of memory needed is not known in advance, for example, for a
+dynamically-expanding data container such as a dynamic array or C++ vector. We
+can define a 'group' in this context as a struct containing both a memory block
+for storage as well as metadata necessary for utilizing the memory block. The
+metadata we store is both pointers to previous and next groups, and any other
+data necessary for the groups to be utilized by the container's iterators. This
+could include the number of elements able to be stored in the group, the number
+of elements currently stored in the group, the end element of the group,
+skipfields, and so on.</p>
+
+<p>As mentioned above, the memory blocks in this pattern have a growth factor
+of 2, though this could be adjusted to preference. I will now illustrate this.
+To start with, you allocate a small block of memory of fixed size. As an
+example, let's hypothesize a C++ vector of 32-bit integers, using this memory
+pattern. We initialize the vector, and it creates a memory block large enough
+to hold 8 integers as it's initial memory block:</p>
+<code>Memory block 1: 0 0 0 0 0 0 0 0</code> 
+
+<p>Once that block is full (ie. the container has had enough objects inserted
+into it to fill up the available space), we allocate another memory block large
+enough to double the number of objects that can be held within the container.
+Continuing the vector example above, let's say we've now filled the initial 8
+spaces available:</p>
+<code>Memory block 1: 1 5 6 2 7 1 5 2</code> 
+
+<p>and now wish to add another number to the vector. At this point we must
+double the space available, which means we need to adding another memory block
+large enough to hold 8 integers:</p>
+<code>Memory block 1: 1 5 6 2 7 1 5 2<br>
+Memory block 2: 0 0 0 0 0 0 0 0</code> 
+
+<p>and insert into it:</p>
+<code>Memory block 1: 1 5 6 2 7 1 0 2<br>
+Memory block 2: 4 0 0 0 0 0 0 0</code> 
+
+<p>Now we simply continue this pattern every time we run out of space.
+Continuing the vector example above, the next allocated memory block would be
+large enough to hold 16 integers:</p>
+<code>Memory block 1: 1 5 6 2 7 1 5 2<br>
+Memory block 2: 4 3 1 3 4 1 6 4<br>
+Memory block 3: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0</code> 
+
+<p>and the next memory block after that would be large enough to hold 32
+integers, etcetera.</p>
+
+<h2>Advantages</h2>
+
+<p>The most significant advantage of having a chain of separate memory blocks,
+over the reallocation of all elements to a single memory block (as is favoured
+by std::vector and many others), is the stability of pointers/iterators, which
+is unaffected by element insertion. No matter how many elements get added to a
+container using this pattern, adding elements never triggers pointer/iterator
+invalidation - which can be of great use for both modular and object-oriented
+programming architectures, as it decreases busywork/workarounds in terms of
+avoiding invalidation, and thus decreases development time.</p>
+
+<p>By keeping metadata for each memory block attached to the memory block (in a
+'group') rather than in some central repository of the container's, we reduce
+computational complexity if we decide to remove one of those memory blocks from
+the chain. In the case of a centralised repository and raw memory blocks, we
+would have to implement some sort of extensible container to keep track of the
+metadata and allow it to expand on-the-fly - a vector, list or deque of some
+description. By attaching the metadata to the memory block, we negate the need
+to have two separate storage/expansion mechanisms. In some cases, this will
+lead to performance gains, especially when new memory blocks are being
+created/erased in realtime.</p>
+
+<p>Adding elements to a container using this chained-group pattern is typically
+much faster than adding to a container using a single memory block and
+reallocation due to the fact that no data needs to be reallocated upon
+expansion of the container. Freeing up unused memory also becomes a
+possibility, because when memory blocks become empty due to erasures, one can
+destruct the group and link the previous group and subsequent group to each
+other, thus removing the group from the chain as you would in a linked-list. In
+the case of a stack, you might remove trailing blocks from the chain once all
+their elements have been popped. </p>
+
+<h2>Disadvantages</h2>
+
+<p>In terms of iteration over all container elements, an entirely-contiguous
+single memory block would result in a lower iteration duration compared to a
+chained list of gruops, due to the reduced complexity during this operation.
+For a chained-group pattern, a check for end-of-block is required for each +1
+forward-iteration through the elements, just as a check for beginning-of-block
+is required for each -1 reverse-iteration. This proves to be less-detrimental
+than might be expected in actual benchmarks, due to CPU branch-prediction which
+only fails in the least-common case of end-block/beginning-block, but it still
+reduces iteration performance by comparison.</p>
+
+<p>Utilizing a growth factor of 2 for the memory blocks aids in reducing this
+performance loss as the end-block/beginning-block cases become
+statistically-smaller. As mentioned earlier, the multiple-memory block approach
+allows a container to remove groups containing memory blocks which have become
+empty due to erasures, without affecting pointer stability for other non-erased
+memory blocks. But having a memory block expand too much could lead to
+situations where you have a very large memory block with only one or two
+non-erased elements, so it may be necessary to limit the maximum size of memory
+blocks in these scenarios.</p>
+<br>
+
+
+<p>Contact: <img src="footer.gif"><br>
+plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
+</body>
+</html>

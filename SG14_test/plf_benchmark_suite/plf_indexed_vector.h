@@ -31,6 +31,11 @@ public:
 		return elements[*location];
 	}
 	
+	inline element_type & set(const iterator &location)
+	{
+		return elements[*location];
+	}
+	
 	inline void push_back(const element_type &element)
 	{
 		elements.push_back(element);
@@ -90,7 +95,28 @@ public:
 		element_indexes.clear();
 		current_back_index = 0;
 	}
-	
+
+
+	inline void remove_if()
+	{
+		iterator result = begin(), it = begin(), last = end();
+		
+		while (it != last)
+		{
+			if (!(set(it).erased))
+			{
+				*result = *it;
+				++result;
+			}
+
+			++it;
+		}
+		
+		for (it = result; it != last; ++it)
+		{
+			element_indexes.pop_back();
+		}
+	}
 };
 
 
