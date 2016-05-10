@@ -723,6 +723,22 @@ public:
 
 
 
+	size_type capacity() const PLF_STACK_NOEXCEPT
+	{
+		size_type total_size = total_number_of_elements + static_cast<size_type>((end_element + 1) - current_element);
+		
+		group_pointer_type temp_group = current_group->next_group;
+		
+		while (temp_group != NULL)
+		{
+			total_size += static_cast<size_type>((temp_group->end + 1) - temp_group->elements);
+		}
+
+		return total_size;
+	}
+
+
+
 	inline void clear()
 	{
 		reinitialize(min_elements_per_group); // ie. Reverts to original size
@@ -774,11 +790,32 @@ public:
 
 
 
-
 	inline bool operator != (const stack &rh) const PLF_STACK_NOEXCEPT
 	{
 		return !(*this == rh);
 	}
+
+
+
+	// Remove trailing stack groups (not removed in general 'pop' usage for performance reasons)
+	void shrink_to_fit()
+	{
+		group_pointer_type temp_group = current_group->next_group;
+		
+		if (current_group->next_group != NULL)
+		{
+			group_pointer_type temp_group = current_group->next_group;
+			current_group->next_group = NULL; // Close off chain from trailing groups
+
+			do
+			{
+				const group_pointer_type previous_group = temp_group;
+				temp_group = temp_group->next_group;
+				PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
+				PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
+			} while (temp_group != NULL);
+		}
+	}	
 
 
 }; // stack

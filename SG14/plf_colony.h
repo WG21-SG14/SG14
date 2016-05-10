@@ -1314,19 +1314,7 @@ private:
 		typename iterator_stack_type::ebco_pair &stack_group_allocator = empty_indexes.group_allocator_pair;
 
 		// Remove trailing stack groups (not removed in general 'pop' usage in plf::stack for performance reasons)
-		if (empty_indexes.current_group->next_group != NULL)
-		{
-			stack_group_pointer temp_group = empty_indexes.current_group->next_group;
-			empty_indexes.current_group->next_group = NULL; // Close off chain from trailing groups
-
-			do
-			{
-				const stack_group_pointer previous_group = temp_group;
-				temp_group = temp_group->next_group;
-				PLF_COLONY_DESTROY(stack_group_allocator_type, stack_group_allocator, previous_group);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, stack_group_allocator, previous_group, 1);
-			} while (temp_group != NULL);
-		}
+		empty_indexes.shrink_to_fit();
 
 		// Determine what the size of empty_indexes should be, based on the size of the first colony group:
 		const size_type temp_size = (min_elements_per_group < 8) ? min_elements_per_group : (min_elements_per_group >> 7) + 8;
@@ -1784,6 +1772,13 @@ public:
 
 
 
+	inline size_type capacity()
+	{
+		return (first_group == NULL) ? 0 : total_number_of_elements + static_cast<size_type>(empty_indexes.size()) + static_cast<size_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer);
+	}
+
+
+
 	void reinitialize(const unsigned short initial_allocation_amount)
 	{
 		assert(initial_allocation_amount > 2); 	// Otherwise, too much overhead for too small a group
@@ -1899,6 +1894,41 @@ public:
 		return !(*this == rh);
 	}
 
+
+
+	void shrink_to_fit()
+	{
+		if (first_group == NULL || total_number_of_elements == 0)
+		{
+			return;
+		}
+
+		min_elements_per_group = (total_number_of_elements < 65535 && total_number_of_elements > min_elements_per_group) ? total_number_of_elements : min_elements_per_group;
+
+		colony source(min_elements_per_group, group_allocator_pair.max_elements_per_group);
+
+		// Copy data from source:
+		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+			source.insert(std::move(begin_iterator), std::move(end_iterator));
+			
+			end_iterator = std::move(source.end_iterator);
+			begin_iterator = std::move(source.begin_iterator);
+			first_group = std::move(source.first_group);
+		#else
+			source.insert(begin_iterator, end_iterator);
+			
+			destroy_all_data();
+	
+			end_iterator = source.end_iterator;
+			begin_iterator = source.begin_iterator;
+			first_group = source.first_group;
+		#endif
+
+		empty_indexes.clear();
+
+		source.first_group = NULL;
+		source.total_number_of_elements = 0; // Nullifying the other data members is unnecessary - technically all can be removed except first_group 	
+	}	
 
 
 

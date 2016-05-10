@@ -163,6 +163,14 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
     Example: <code style="color: brown">unsigned int j =
     static_cast&lt;unsigned int&gt;(object_stack.size());</code></p>
   </li>
+  <li><code>size_type capacity()</code> 
+    <p>Returns total number of elements currently able to be stored in container without expansion.<br>
+    Example: <code style="color: brown">std::cout &lt;&lt; i_stack.capacity() &lt;&lt; std::endl;</code></p>
+  </li>
+  <li><code>void shrink_to_fit()</code> 
+    <p>Removes any trailing groups within the container substructure, which may be present in the scenario of many pushes followed by many pops. Unlike a regular shrink_to_fit, does not shrink capacity to exactly the size needed to contain the currently-stored elements.<br>
+    Example: <code style="color: brown">i_stack.shrink_to_fit();</code></p>
+  </li>
   <li><code>bool empty()</code> 
     <p>Returns a boolean indicating whether the stack is currently empty of
     elements.<br>
