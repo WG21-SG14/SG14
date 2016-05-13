@@ -126,50 +126,49 @@ private:
 		const element_pointer_type	end; // End is the actual end element of the group, not one-past the end element as it is in colony
 
 
+		group() PLF_STACK_NOEXCEPT:
+			elements(NULL),
+			next_group(NULL),
+			previous_group(NULL),
+			end(NULL)
+		{}
+
+
 		#ifdef PLF_STACK_VARIADICS_SUPPORT
-			group(const size_type elements_per_group, group_pointer_type const previous = NULL) PLF_STACK_NOEXCEPT:
-				elements(PLF_STACK_ALLOCATE_INITIALIZATION(element_allocator_type, elements_per_group, (previous == NULL) ? 0 : previous->elements)),
-				next_group(NULL),
-				previous_group(previous),
-				end(elements + elements_per_group - 1)
-			{}
-
-
-			~group() PLF_STACK_NOEXCEPT
-			{
-				PLF_STACK_DEALLOCATE(element_allocator_type, (*this), elements, (end - elements) + 1); // Size is calculated from end and elements pointers now
-			}
-
-
-		#else
-			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++0x and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor:
 			group(const size_type elements_per_group, group_pointer_type const previous = NULL):
 				elements(PLF_STACK_ALLOCATE_INITIALIZATION(element_allocator_type, elements_per_group, (previous == NULL) ? 0 : previous->elements)),
-				next_group(reinterpret_cast<group_pointer_type>(elements)), // for unique destructor condition
+				next_group(NULL),
 				previous_group(previous),
 				end(elements + elements_per_group - 1)
 			{}
+			
+		#else 
+			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++0x and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor.
+			group(const size_type elements_per_group, group_pointer_type const previous = NULL):
+				elements(NULL),
+				next_group(reinterpret_cast<group_pointer_type>(elements_per_group)),
+				previous_group(previous),
+				end(NULL)
+			{}
+			
 
-
-			// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++0x for reasons stated above.
+			// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++0x for reasons stated above:
 			group(const group &source) PLF_STACK_NOEXCEPT:
 				element_allocator_type(source),
-				elements(source.elements),
+				elements(PLF_STACK_ALLOCATE_INITIALIZATION(element_allocator_type, reinterpret_cast<size_type>(source.next_group), (source.previous_group == NULL) ? 0 : source.previous_group->elements)),
 				next_group(NULL),
 				previous_group(source.previous_group),
-				end(source.end)
-			{}
-
-
-			~group() PLF_STACK_NOEXCEPT
+				end(elements + reinterpret_cast<size_type>(source.next_group) - 1)
 			{
-				if (next_group != reinterpret_cast<group_pointer_type>(elements)) // Necessary to avoid deallocation for pseudoconstructor above
-				{
-					PLF_STACK_DEALLOCATE(element_allocator_type, (*this), elements, (end - elements) + 1);
-				}
 			}
 		#endif
 
+
+		~group() PLF_STACK_NOEXCEPT
+		{
+			// Null check not necessary (for empty group and copied group as above) as delete will ignore. 
+			PLF_STACK_DEALLOCATE(element_allocator_type, (*this), elements, (end - elements) + 1); // Size is calculated from end and elements
+		}
 	};
 
 
@@ -185,6 +184,25 @@ private:
 
 	
 	template <class colony_type, class colony_allocator> friend class colony;
+
+
+	inline void initialize()
+	{
+		first_group = current_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, 0); 
+		
+		try
+		{
+			PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group());
+		}
+		catch (...)
+		{
+			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
+			current_group = NULL;
+			first_group = NULL;
+			throw;
+		}
+	}
+
 	
 public:
 
@@ -200,6 +218,8 @@ public:
 	{
 		assert(min_elements_per_group > 2);
 		assert(min_elements_per_group <= group_allocator_pair.max_elements_per_group);
+		
+		initialize();
 	}
 
 
@@ -216,71 +236,9 @@ public:
 	{
 		assert(min_elements_per_group > 2);
 		assert(min_elements_per_group <= group_allocator_pair.max_elements_per_group);
-		assert(group_allocator_pair.max_elements_per_group <= std::numeric_limits<size_type>::max() / 2);
-	}
+		assert(group_allocator_pair.max_elements_per_group <= std::numeric_limits<size_type>::max() / 2); // Must be half of what the allocator can allocate, otherwise could result in overflow, because at the point where we might allocate a max group of that size, the previous groups may have a a total size equal to it
 
-
-
-	inline void reinitialize(const size_type initial_allocation_amount)
-	{
-		assert(initial_allocation_amount > 2);
-		assert(initial_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
-
-		if(initial_allocation_amount > group_allocator_pair.max_elements_per_group)
-		{
-			group_allocator_pair.max_elements_per_group = initial_allocation_amount;
-		}
-		
-		destroy_all_data();
-		current_group = NULL;
-		current_element = NULL;
-		start_element = NULL;
-		end_element = NULL;
-		total_number_of_elements = 0;
-		min_elements_per_group = initial_allocation_amount;
-	}
-
-
-
-	inline void reinitialize(const size_type initial_allocation_amount, const size_type max_allocation_amount)
-	{
-		assert(max_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
-
-		group_allocator_pair.max_elements_per_group = max_allocation_amount;
-		reinitialize(initial_allocation_amount);
-	}
-
-
-
-	void reserve(const size_type initial_allocation_amount)
-	{
-		assert(initial_allocation_amount > 2);
-		assert(initial_allocation_amount <= group_allocator_pair.max_elements_per_group);
-		
-		if (total_number_of_elements == 0)
-		{
-			min_elements_per_group = initial_allocation_amount;
-		}
-		else if (initial_allocation_amount < min_elements_per_group)
-		{
-			return;
-		}
-		else
-		{
-			min_elements_per_group = initial_allocation_amount;
-
-			stack new_stack(*this);
-			destroy_all_data();
-
-			current_group = new_stack.current_group;
-			first_group = new_stack.first_group;
-			current_element = new_stack.current_element;
-			start_element = new_stack.start_element;
-			end_element = new_stack.end_element;
-			
-			new_stack.first_group = NULL;
-			new_stack.total_number_of_elements = 0;
-		}
+		initialize();
 	}
 
 
@@ -335,6 +293,7 @@ public:
 		catch (...)
 		{
 			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, first_group, 1);
+			first_group = current_group = NULL;
 			throw;
 		}
 
@@ -425,108 +384,13 @@ public:
 
 	void push(const element_type &the_element)
 	{
-		if(current_element != end_element) // ie. Not at end of current memory block and not an empty stack
+		switch ((current_element == NULL) + (current_element == end_element))
 		{
-			try
-			{
-				PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, the_element);
-			}
-			catch (...)
-			{
-				--current_element;
-				throw;
-			}
-
-			++total_number_of_elements;
-		}
-		else if (current_group != NULL) // ie. this isn't an empty stack
-		{
-			if (current_group->next_group == NULL)
-			{
-				current_group->next_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group); 
-				
-				try
-				{ 
-					#ifdef PLF_STACK_VARIADICS_SUPPORT
-						PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, (total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group);
-					#else
-						PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group((total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group));
-					#endif
-				} 
-				catch (...) 
-				{ 
-					PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
-					current_group->next_group = NULL; 
-					throw; 
-				}
-			}
-			
-			current_group = current_group->next_group; 
-			start_element = current_element = current_group->elements;
-			
-			try
-			{
-				PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
-			}
-			catch (...)
-			{
-				current_group = current_group->previous_group;
-				start_element = current_group->elements;
-				current_element = current_group->end;
-				throw;
-			}
-
-			end_element = current_group->end;
-			++total_number_of_elements; 
-		}
-		else // ie. stack is currently empty
-		{
-			current_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, NULL); 
-
-			try
-			{ 
-				#ifdef PLF_STACK_VARIADICS_SUPPORT
-					PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, min_elements_per_group, current_group);
-				#else
-					PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group(min_elements_per_group, current_group));
-				#endif
-			} 
-			catch (...) 
-			{ 
-				PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
-				current_group = NULL;
-				throw;
-			}
-
-			first_group = current_group;
-			start_element = current_element = current_group->elements;
-			end_element = current_group->end;
-			
-			try
-			{
-				PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
-			}
-			catch (...)
-			{
-				--current_element;
-				throw;
-			}
-
-			++total_number_of_elements; 
-		}
-	}
-
-
-
-	#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
-		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy.
-		void push(const element_type &&the_element)
-		{
-			if(current_element != end_element) // ie. Not at end of current memory block and not an empty stack
+			case 0:
 			{
 				try
 				{
-					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::move(the_element));
+					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, the_element);
 				}
 				catch (...)
 				{
@@ -535,8 +399,10 @@ public:
 				}
 	
 				++total_number_of_elements;
+				
+				return;
 			}
-			else if (current_group != NULL) // ie. this isn't an empty stack
+			case 1:
 			{
 				if (current_group->next_group == NULL)
 				{
@@ -563,7 +429,7 @@ public:
 				
 				try
 				{
-					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
 				}
 				catch (...)
 				{
@@ -575,11 +441,10 @@ public:
 	
 				end_element = current_group->end;
 				++total_number_of_elements; 
-			}
-			else // ie. stack is currently empty
+				return;
+			}	
+			case 2:
 			{
-				current_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, NULL); 
-	
 				try
 				{ 
 					#ifdef PLF_STACK_VARIADICS_SUPPORT
@@ -595,13 +460,12 @@ public:
 					throw;
 				}
 	
-				first_group = current_group;
 				start_element = current_element = current_group->elements;
 				end_element = current_group->end;
 				
 				try
 				{
-					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
 				}
 				catch (...)
 				{
@@ -610,6 +474,109 @@ public:
 				}
 	
 				++total_number_of_elements; 
+				return;
+			}
+		}
+	}
+
+
+
+	#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
+		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy.
+		void push(const element_type &&the_element)
+		{
+			switch ((current_element == NULL) + (current_element == end_element))
+			{
+				case 0:
+				{
+					try
+					{
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::move(the_element));
+					}
+					catch (...)
+					{
+						--current_element;
+						throw;
+					}
+		
+					++total_number_of_elements;
+					
+					return;
+				}
+				case 1:
+				{
+					if (current_group->next_group == NULL)
+					{
+						current_group->next_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group); 
+						
+						try
+						{ 
+							#ifdef PLF_STACK_VARIADICS_SUPPORT
+								PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, (total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group);
+							#else
+								PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group((total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group));
+							#endif
+						} 
+						catch (...) 
+						{ 
+							PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
+							current_group->next_group = NULL; 
+							throw; 
+						}
+					}
+					
+					current_group = current_group->next_group; 
+					start_element = current_element = current_group->elements;
+					
+					try
+					{
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+					}
+					catch (...)
+					{
+						current_group = current_group->previous_group;
+						start_element = current_group->elements;
+						current_element = current_group->end;
+						throw;
+					}
+		
+					end_element = current_group->end;
+					++total_number_of_elements; 
+					return;
+				}	
+				case 2:
+				{
+					try
+					{ 
+						#ifdef PLF_STACK_VARIADICS_SUPPORT
+							PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, min_elements_per_group, current_group);
+						#else
+							PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group(min_elements_per_group, current_group));
+						#endif
+					} 
+					catch (...) 
+					{ 
+						PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
+						current_group = NULL;
+						throw;
+					}
+		
+					start_element = current_element = current_group->elements;
+					end_element = current_group->end;
+					
+					try
+					{
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+					}
+					catch (...)
+					{
+						--current_element;
+						throw;
+					}
+		
+					++total_number_of_elements; 
+					return;
+				}
 			}
 		}
 
@@ -726,7 +693,6 @@ public:
 	size_type capacity() const PLF_STACK_NOEXCEPT
 	{
 		size_type total_size = total_number_of_elements + static_cast<size_type>((end_element + 1) - current_element);
-		
 		group_pointer_type temp_group = current_group->next_group;
 		
 		while (temp_group != NULL)
@@ -735,6 +701,40 @@ public:
 		}
 
 		return total_size;
+	}
+
+
+
+	void reinitialize(const size_type initial_allocation_amount)
+	{
+		assert(initial_allocation_amount > 2);
+		assert(initial_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
+
+		destroy_all_data();
+
+		min_elements_per_group = initial_allocation_amount;
+
+		if(min_elements_per_group > group_allocator_pair.max_elements_per_group)
+		{
+			group_allocator_pair.max_elements_per_group = min_elements_per_group;
+		}
+
+		initialize();
+		
+		current_element = NULL;
+		start_element = NULL;
+		end_element = NULL;
+		total_number_of_elements = 0;
+	}
+
+
+
+	inline void reinitialize(const size_type initial_allocation_amount, const size_type max_allocation_amount)
+	{
+		assert(max_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
+
+		group_allocator_pair.max_elements_per_group = max_allocation_amount;
+		reinitialize(initial_allocation_amount);
 	}
 
 
@@ -800,22 +800,76 @@ public:
 	// Remove trailing stack groups (not removed in general 'pop' usage for performance reasons)
 	void shrink_to_fit()
 	{
-		group_pointer_type temp_group = current_group->next_group;
-		
-		if (current_group->next_group != NULL)
-		{
-			group_pointer_type temp_group = current_group->next_group;
-			current_group->next_group = NULL; // Close off chain from trailing groups
+		group_pointer_type temp_group = current_group->next_group, temp_group2;
+		current_group->next_group = NULL; // Set to NULL regardless of whether it is already NULL (avoids branching). Cuts off rest of groups from this group.
 
-			do
-			{
-				const group_pointer_type previous_group = temp_group;
-				temp_group = temp_group->next_group;
-				PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
-				PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
-			} while (temp_group != NULL);
-		}
+		while (temp_group != NULL)
+		{
+			temp_group2 = temp_group;
+			temp_group = temp_group->next_group;
+			PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, temp_group2);
+			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, temp_group2, 1);
+		} 
 	}	
+
+
+
+	void reserve(size_type initial_allocation_amount)
+	{
+		assert(initial_allocation_amount > 2);
+
+		if (initial_allocation_amount > group_allocator_pair.max_elements_per_group)
+		{
+			initial_allocation_amount = group_allocator_pair.max_elements_per_group;
+		}
+		
+		if (total_number_of_elements == 0)
+		{
+			min_elements_per_group = initial_allocation_amount;
+			
+			if (first_group->elements == NULL) // If this is a newly-created stack, no pushes yet
+			{
+				try
+				{ 
+					#ifdef PLF_STACK_VARIADICS_SUPPORT
+						PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, min_elements_per_group, current_group);
+					#else
+						PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group(min_elements_per_group, current_group));
+					#endif
+				} 
+				catch (...) 
+				{ 
+					PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
+					current_group = NULL;
+					throw;
+				}
+	
+				start_element = current_element = current_group->elements;
+				end_element = current_group->end;
+			}
+		}
+		else if (initial_allocation_amount < min_elements_per_group)
+		{
+			return;
+		}
+		else
+		{
+			min_elements_per_group = initial_allocation_amount;
+
+			stack new_stack(*this);
+			destroy_all_data();
+
+			current_group = new_stack.current_group;
+			first_group = new_stack.first_group;
+			current_element = new_stack.current_element;
+			start_element = new_stack.start_element;
+			end_element = new_stack.end_element;
+			total_number_of_elements = new_stack.total_number_of_elements;
+
+			new_stack.first_group = NULL;
+			new_stack.total_number_of_elements = 0;
+		}
+	}
 
 
 }; // stack

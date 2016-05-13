@@ -134,7 +134,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_10-05-2016.zip">here</a> (32kb).<br>
+<p>Download <a href="plf_colony_13-05-2016.zip">here</a> (32kb).<br>
 <br>
 The colony library is a simple .h header file, to be included with a #include
 command. The package includes the plf::stack .h file, which is used internally
@@ -144,7 +144,7 @@ suite</a> (36kb), which includes plf::nanotimer.</p>
 
 <h3>Version history</h3>
 <ul>
-<li>2016-05-10: v3.07 - Both stack and colony no longer preallocate upon construction, only upon first insertion. Minor assert bugfix in colony. shrink_to_fit() and capacity() functions added to both classes.</li>
+<li>2016-05-12: v3.10 - Both stack and colony no longer preallocate upon construction, only upon first insertion. Minor assert bugfix in colony. shrink_to_fit(), reserve() and capacity() functions added to both classes. Some code cleanup, corrections for C++03 and minor optimizations.</li>
   <li>2016-04-28: v3.05 - Removal of compiler-specific iteration code,
     resulting in 8% speedup for larger-than-scalar type iteration, 6% slowdown
     for scalar-type iteration, under GCC x64. MSVC unaffected by change.
@@ -907,7 +907,7 @@ functions which follow standard std:: library rules. Example of usage:</p>
 <code style="color: brown">for (plf::colony&lt;int&gt;::iterator the_iterator =
 data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
 {<br>
-   total += *the_iterator;<br>
+&nbsp;&nbsp;&nbsp;total += *the_iterator;<br>
 }</code> 
 
 <h3>Basic functions</h3>
@@ -928,8 +928,8 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     iterator to location of inserted element. Example:</p>
     <p><code style="color: brown">struct just_struct<br>
     {<br>
-      unsigned int number;<br>
-      std::string string1;<br>
+    &nbsp;&nbsp;unsigned int number;<br>
+    &nbsp;&nbsp;std::string string1;<br>
     };<br>
     <br>
     just_struct X;<br>
@@ -955,9 +955,9 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     <p><code style="color: brown">class simple_class<br>
     {<br>
     private:<br>
-     int number;<br>
+    &nbsp;int number;<br>
     public:<br>
-     simple_class(int a_number): number (a_number) {};<br>
+    &nbsp;simple_class(int a_number): number (a_number) {};<br>
     };<br>
     <br>
     plf::colony&lt;simple_class&gt; simple_classes;<br>
@@ -998,7 +998,7 @@ data_colony.begin(); the_iterator != data_colony.end(); ++the_iterator)<br>
     Example: <code style="color: brown">std::cout &lt;&lt; i_colony.capacity() &lt;&lt; std::endl;</code></p>
   </li>
   <li><code>void shrink_to_fit()</code> 
-    <p>Reduces amount of memory used by container to exactly the amount necessary to store the currently stored elements, and no more. Invalidates all pointers, iterators and references elements within the container.<br>
+    <p>Reduces amount of memory used by container to exactly the amount necessary to store the currently stored elements, and no more. Invalidates all pointers, iterators and references to elements within the container.<br>
     Example: <code style="color: brown">i_colony.shrink_to_fit();</code></p>
   </li>
   <li><code>void clear()</code> 

@@ -1,9 +1,59 @@
 #include <iostream>
 #include <algorithm>
-#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
 #include "plf_colony.h"
+
+
+#if defined(_MSC_VER)
+	#define PLF_FORCE_INLINE __forceinline
+
+	#if _MSC_VER < 1600
+		#define PLF_NOEXCEPT throw()
+	#elif _MSC_VER == 1600
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT throw()
+	#elif _MSC_VER == 1700
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT throw()
+	#elif _MSC_VER == 1800
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_VARIADICS_SUPPORT
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT throw()
+	#elif _MSC_VER >= 1900
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_VARIADICS_SUPPORT
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT noexcept
+	#endif
+#elif defined(__cplusplus) && __cplusplus >= 201103L
+	#define PLF_FORCE_INLINE // note: GCC creates faster code without forcing inline
+
+	#if defined(__GNUC__) && !defined(__clang__) // If compiler is GCC/G++
+		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_TYPE_TRAITS_SUPPORT
+		#endif
+	#else // Assume type traits support for non-GCC compilers
+		#define PLF_TYPE_TRAITS_SUPPORT
+	#endif
+
+	#define PLF_ALLOCATOR_TRAITS_SUPPORT
+	#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
+	#define PLF_MOVE_SEMANTICS_SUPPORT
+	#define PLF_NOEXCEPT noexcept
+#else
+	#define PLF_FORCE_INLINE
+	#define PLF_NOEXCEPT throw()
+#endif
+
+
+
+
 
 
 void title1(const char *title_text)
@@ -34,12 +84,12 @@ void failpass(const char *test_type, bool condition)
 	}
 }
 
+
 namespace sg14_test
 {
 	
 void plf_test_suite()
 {
-	freopen("error.log","w", stderr);
 
 	{
 		time_t timer;
@@ -195,7 +245,12 @@ void plf_test_suite()
 
 		failpass("Partial erase iteration test", total == 200);
 		failpass("Post-erase size test", p_colony.size() == 200);
-
+		
+		const unsigned int temp_capacity = static_cast<unsigned int>(p_colony.capacity());
+		p_colony.shrink_to_fit();
+		failpass("Shrink_to_fit test", p_colony.capacity() < temp_capacity);
+		failpass("Shrink_to_fit test 2", p_colony.capacity() == 200);
+		
 		total = 0;
 
 		for(colony<int *>::reverse_iterator the_iterator = p_colony.rbegin(); the_iterator != p_colony.rend(); ++the_iterator)
@@ -454,6 +509,11 @@ void plf_test_suite()
 		
 		i_colony.reinitialize(3);
 
+		const unsigned int temp_capacity2 = static_cast<unsigned int>(i_colony.capacity());
+		i_colony.reserve(1000);
+		failpass("Colony reserve test", temp_capacity2 != i_colony.capacity());
+		failpass("Colony reserve test2", i_colony.capacity() == 1000);
+
 		unsigned int count = 0;
 
 		for (unsigned int loop1 = 0; loop1 != 50000; ++loop1)
@@ -498,15 +558,23 @@ void plf_test_suite()
 		
 		failpass("Multipush test", i_stack.size() == 250000);
 		
-		stack<unsigned int> i_stack2 = i_stack;
+		stack<unsigned int> i_stack2;
+		i_stack2 = i_stack;
+
 		stack<unsigned int> i_stack3(i_stack);
 
-        #ifdef PLF_MOVE_SEMANTICS_SUPPORT
+		failpass("Copy constructor test", i_stack3.size() == 250000);
+
+		i_stack3.reserve(400000);
+
+		failpass("Reserve test", i_stack3.size() == 250000);
+
+
+		#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 			stack<unsigned int> i_stack4 = std::move(i_stack3);
 		#endif
 
 		failpass("Copy test", i_stack2.size() == 250000);
-		failpass("Copy constructor test", i_stack3.size() == 250000);
 
 		failpass("Equality operator test", i_stack == i_stack2);
 
@@ -517,7 +585,9 @@ void plf_test_suite()
     	#endif
 
 		unsigned int total = 0;
-		
+
+		const unsigned int temp_capacity = static_cast<unsigned int>(i_stack.capacity());
+
 		for (unsigned int temp = 0; temp != 200000; ++temp)
 		{
 			total += i_stack.top();
@@ -526,6 +596,11 @@ void plf_test_suite()
 
 		failpass("Multipop test", i_stack.size() == 50000);
 		failpass("top() test", total == 2000000);
+
+		i_stack.shrink_to_fit();
+
+		failpass("shrink_to_fit() test", temp_capacity != i_stack.capacity());
+
 
 		do
 		{
@@ -546,6 +621,8 @@ void plf_test_suite()
 
 	title1("Test Suite PASS - Press ENTER to Exit");
 	cin.get();
+
+	return 0;
 }
 
 }
