@@ -10,7 +10,7 @@
 </head>
 
 <body>
-<a href="index.htm">Home</a> 
+<a href="index.htm">Home</a>
 
 <h1>PLF C++ Library - plf::stack</h1>
 
@@ -18,14 +18,10 @@
 
 <p>plf::stack is used internally by <a href="colony.htm">plf::colony</a> but
 can also be used on it's own. It is, basically, a more efficient implementation
-of the STL's std::stack container, faster than all std:: containers in the
-context of a stack, though depending on the compiler it may sacrifice a small
-amount of pop speed for a much larger gain in push speed for small scalar
-types, versus std::vector. It uses the same <a
-href="size_doubling_memory_block_allocation.htm">size-doubling memory-block
-allocation model</a> as plf::colony, and like plf::colony it never invalidates
-references/pointers to non-popped elements, making it perfect for true
-object-oriented programming with containers of interrelated data structures.</p>
+of the STL's std::stack functionality, faster than all std:: containers in the
+context of a stack. It uses the same <a
+href="chained_group_allocation_pattern.htm">chained-group memory allocation pattern</a> as plf::colony, and like plf::colony it never invalidates
+references/pointers to non-popped elements, making it better for programming with containers of interrelated data structures.</p>
 
 <h2><a id="license"></a>License</h2>
 
@@ -51,10 +47,9 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
 <h2>Benchmarks</h2>
 <p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
 
-<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1 x64 as compiler. Results are
-much the same on other platforms, although obviously each compiler's standard library implementation will have performance differences. Build settings are "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate. Reserve testing does not make significant sense for an extensible container, as the entire benefit of such is that we can adapt to situations where we do not know the total number of elements in advance.</p>
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1 x64 as compiler. Build settings are "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft Visual Studio 2013 can be found <a href="stack_msvc_results.htm">here</a>. Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate. Reserve testing does not make significant sense for an extensible container, as the entire benefit of such is that we can adapt to situations where we do not know the total number of elements in advance.</p>
 
-<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason (and for the sake of simplicity) only total time benchmarks are presented below, however the separate timings are <a href="stack_all_results.htm">here</a>, for anyone interested.</p>
+<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason (and for the sake of simplicity) only total time benchmarks are presented below, however the separate timings are <a href="stack_all_gcc_results.htm">here</a>, for anyone interested.</p>
 
 <img alt="test result graph" src="tests/gcc/stack/char_total_time.png">
 <img alt="test result graph" src="tests/gcc/stack/char_total_time_log.png"><br>
@@ -168,6 +163,14 @@ much the same on other platforms, although obviously each compiler's standard li
     Example: <code style="color: brown">unsigned int j =
     static_cast&lt;unsigned int&gt;(object_stack.size());</code></p>
   </li>
+  <li><code>size_type capacity()</code> 
+    <p>Returns total number of elements currently able to be stored in container without expansion.<br>
+    Example: <code style="color: brown">std::cout &lt;&lt; i_stack.capacity() &lt;&lt; std::endl;</code></p>
+  </li>
+  <li><code>void shrink_to_fit()</code> 
+    <p>Removes any trailing groups within the container substructure, which may be present in the scenario of many pushes followed by many pops. Unlike a regular shrink_to_fit, does not shrink capacity to exactly the size needed to contain the currently-stored elements.<br>
+    Example: <code style="color: brown">i_stack.shrink_to_fit();</code></p>
+  </li>
   <li><code>bool empty()</code> 
     <p>Returns a boolean indicating whether the stack is currently empty of
     elements.<br>
@@ -223,6 +226,6 @@ much the same on other platforms, although obviously each compiler's standard li
 
 
 <p>Contact: <img src="footer.gif"><br>
-plf:: library and this site Copyright (c) 2015, Matthew Bentley</p>
+plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
 </body>
 </html>

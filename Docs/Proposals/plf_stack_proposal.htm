@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>Replacing the std::stack container adaptor with the plf::stack container class</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+</HEAD>
+<BODY>
+LEWG, SG14: 
+<BR>10-05-2016
+<BR>Matt Bentley <br>mattreecebentley@gmail.com
+<H1>Replacing the std::stack container adaptor with a stack container based on the plf::stack container class implementation</H1>
+
+
+<H2>I. Introduction</H2>
+
+<p>This document proposes replacing the current std::stack container adaptor with a higher-performance implementation of a stack, namely the implementation used in plf::stack, to achieve greater stack performance and performance-similarity across compilers and platforms.</p>
+
+<H2>II. Motivation and Scope</H2>
+
+<p>Stacks, as one of the simplest of abstract data types, should have adequate and, ideally, predictable performance across implementations. With the current standard, the default adapted container used by the std::stack container adaptor is highly variable, and will perform poorly where the adapted container has low performance (eg. MSVC 2013 uses a low-performance std::deque implementation by default). This results in an unreliable solution across compilers when performance is a consideration.</p>
+<p>plf::stack is a different way of implementing a stack which has better performance characteristics than current standard library container implementations in a stack context, including std::vector and std::deque, and across compilers (tested under GCC 4.3-5.1 and MSVC 2010-2013). In addition it does not invalidate references to pushed elements (as obtained by the top() function) upon subsequent pushes, unlike std::vector, making it more suitable for some use-cases.</p>
+<p>A full overview of benefits, including graphs of comparative performance versus std::stack and std::vector under GCC and MSVC 2013 can be found at the following link: <a href="http://www.plflib.org/stack.htm">http://www.plflib.org/stack.htm</a> or below in the references.</p>
+
+<H2>III. Impact On the Standard</H2>
+<p>No changes are necessary to the standard's interface for stack, only the underlying architecture. Specifically it would need to change std::stack from a container adaptor to an actual container. The underlying architecture would take the form of a chained-group memory allocation structure as described on the following page: <a href="http://www.plflib.org/chained_group_allocation_pattern.htm">http://www.plflib.org/chained_group_allocation_pattern.htm</a> .</p>
+
+<h2>IV. Design Decisions</h2>
+<p>The proposed internal structure as indicated above has a higher performance in a stack context due to the reduced complexity compared to a std::deque implementation (typically a vector of memory blocks as opposed to a linked chain), and the removal of the necessity for reallocation of data as is required in a std::vector once insertion breaches current capacity. Because a stack does not require the ordered insertion, ordered erasure and other operations of a deque or vector, it also does not require the complexity and overhead of these.</p>
+
+<h2>V. Technical Specifications</h2>
+<p>The class is made up of a linked chain of groups, structs containing a memory block and metadata, with a growth pattern to be determined by the implementor (however, 2x is recommended). The metadata within the groups - 'elements' (pointer to the memory block), previous_group (pointer or NULL), next_group (pointer or NULL), and 'end' (pointer to last element in memory block) - aid respectively in the identification of when when a pop reaches the start of the memory block, iterating backwards to the previous group, iterating forwards to the next group, and identifying when a push reaches the capacity of any given memory block.</p>
+<p>When capacity of the current memory block is reached, a new group is created and linked to via the next_group pointer. The plf::stack implementation does not release memory blocks to the OS when the beginning of a group is reached via pop() and navigation to a previous group completed (this is deferred to the 'shrink_to_fit' function), but the code to do so can be put in the pop() function, with a minor performance cost.</p>
+<p>A download of the full plf::stack implementation can be found here <a href="https://github.com/WG21-SG14/SG14/blob/master/SG14/plf_stack.h">https://github.com/WG21-SG14/SG14/blob/master/SG14/plf_stack.h</a></p>
+
+
+<h2>VI. Acknowledgements</h2>
+<p>Thanks to Jonathan Blow for advice, Mike Acton for influence.</p>
+
+<h2>VII. References</h2>
+
+<h3>Benchmarks</h3>
+<p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
+
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1 x64 as compiler. Build settings are "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft Visual Studio 2013 x64 follow separately, with "/O2 /Oi /Ot /Oy /GL" release settings. Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate. Reserve testing does not make significant sense for an extensible container, as the entire benefit of such is that we can adapt to situations where we do not know the total number of elements in advance.</p>
+
+<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason (and for the sake of simplicity) only total time benchmarks are presented below, however the separate timings are <a href="http://www.plflib.org/stack_all_gcc_results.htm">here for GCC</a> and <a href="http://www.plflib.org/stack_all_msvc_results.htm">here for MSVC</a>, for anyone interested.</p>
+
+<h4>Total Time - GCC 5.1 x64</h4>
+
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/char_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/char_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/int_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/int_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/double_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/double_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/small_struct_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/small_struct_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/large_struct_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/large_struct_total_time_log.png"><br>
+
+<h4>Total Time - MSVC 2013 x64</h4>
+
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/char_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/char_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/int_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/int_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/double_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/double_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/small_struct_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/small_struct_total_time_log.png"><br>
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/large_struct_total_time.png">
+<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/large_struct_total_time_log.png"><br>
+
+
+</BODY></HTML>

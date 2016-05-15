@@ -114,12 +114,35 @@ public:
 		return static_cast<unsigned int>(elements.size());
 	}
 	
+	
 	inline void clear()
 	{
 		elements.clear();
 		element_pointers.clear();
 	}
 	
+	
+	inline void remove_if()
+	{
+		iterator result = begin(), it = begin(), last = end();
+		
+		while (it != last)
+		{
+			if (!((*it)->erased))
+			{
+				*result = *it;
+				++result;
+			}
+
+			++it;
+		}
+		
+		for (it = result; it != last; ++it)
+		{
+			element_pointers.pop_back();
+		}
+	}
+
 };
 
 }

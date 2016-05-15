@@ -4,10 +4,10 @@ Full Documentation: www.plflib.org
 plf::colony
 ===========
 
-A colony is a C++ template-based unordered data container which provides positive performance characteristics when:
+A colony is a C++ template-based unordered data container which provides better performance than any std:: library container when:
 
 1. Insertions and erasures to the container are occuring in realtime ie. in performance-critical code, and/or
-2. Pointers and iterators which point to non-erased container elements must not be invalidated by insertion or erasure.
+2. Pointers and iterators which point to non-erased container elements must not be invalided by insertion or erasure.
 
 Vector and deque's reallocations equal iterator/pointer invalidation, which means an inability for objects in vectors to directly reference each other via pointers. There are various workarounds for this.
 
