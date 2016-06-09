@@ -113,19 +113,14 @@ inline PLF_FORCE_INLINE void container_reserve(std::vector<container_contents> &
 template<class container_contents>
 inline PLF_FORCE_INLINE void container_reserve(plf::stack<container_contents> &container, unsigned int amount)
 {
-	container.reinitialize(amount);
+	container.reserve(amount);
 }
 
 
 template<class container_contents>
 inline PLF_FORCE_INLINE void container_reserve(plf::colony<container_contents> &container, unsigned int amount)
 {
-	if (amount > 65535)
-	{
-		amount = 65535;
-	}
-	
-	container.reinitialize(amount);
+	container.reserve(amount);
 }
 
 
@@ -196,6 +191,7 @@ inline PLF_FORCE_INLINE void container_erase(container_type &container, typename
 {
 	the_iterator = container.erase(the_iterator);
 }
+
 
 
 template <class container_contents>
