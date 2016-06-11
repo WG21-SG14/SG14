@@ -4,14 +4,14 @@
 
 // ~Nanosecond-precision cross-platform (linux/bsd/mac/windows, C++03/C++11) simple timer class:
 
-namespace plf
-{
-
 // Mac OSX implementation:
-#ifdef __MACH__
+#if defined(__MACH__)
 	#include <mach/clock.h>
 	#include <mach/mach.h>
 	
+	namespace plf
+	{
+
 	class nanotimer
 	{
 	private:
@@ -49,15 +49,17 @@ namespace plf
 			return ((1000000000.0 * static_cast<double>(time2.tv_sec - time1.tv_sec)) + static_cast<double>(time2.tv_nsec - time1.tv_nsec));
 		}
 	};
-#endif
 
 
 
 
 // Linux/BSD implementation:
-#if (defined(linux) || defined(__linux__) || defined(__linux)) || (defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__))
+#elif (defined(linux) || defined(__linux__) || defined(__linux)) || (defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__))
 	#include <time.h>
 	#include <sys/time.h>	
+
+	namespace plf
+	{
 
 	class nanotimer
 	{
@@ -87,15 +89,17 @@ namespace plf
 			return ((1000000000.0 * static_cast<double>(time2.tv_sec - time1.tv_sec)) + static_cast<double>(time2.tv_nsec - time1.tv_nsec));
 		}
 	};
-#endif
 
 
 
 
 // Windows implementation:
-#ifdef _WIN32
+#elif defined(_WIN32)
 	#include <windows.h>
 	
+	namespace plf
+	{
+
 	class nanotimer
 	{
 	private:
@@ -135,7 +139,7 @@ namespace plf
 
 
 
-inline void nanosecond_delay(double delay_ns)
+void nanosecond_delay(double delay_ns)
 {
 	nanotimer timer;
 	timer.start();
