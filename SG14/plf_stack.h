@@ -130,7 +130,7 @@ private:
 		typedef typename std::allocator_traits<group_allocator_type>::pointer		group_pointer_type;
 		typedef typename std::allocator_traits<element_allocator_type>::pointer 	element_pointer_type;
 	#else
-		typedef typename element_allocator_type::template rebind_alloc<group>	group_allocator_type;
+		typedef typename element_allocator_type::template rebind<group>::other	group_allocator_type;
 		typedef typename group_allocator_type::pointer							group_pointer_type;
 		typedef typename element_allocator_type::pointer						element_pointer_type;
 	#endif
@@ -601,7 +601,11 @@ public:
 		}
 		
 		// ie. if total_number_of_elements != 0 after decrement, or we were not already at the start of a non-first group
-		if (total_number_of_elements-- != 1 && current_element-- == start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves current_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
+		if (total_number_of_elements-- == 1 || current_element != start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves current_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
+		{
+			--current_element;
+		}
+		else
 		{ // ie. is start element, but not first group in stack (if it were, totalsize would be 0 after decrement)
 			current_group = current_group->previous_group;
 			start_element = current_group->elements;

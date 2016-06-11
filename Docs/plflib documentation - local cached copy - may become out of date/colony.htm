@@ -15,7 +15,7 @@
 <h1>PLF C++ Library - plf::colony</h1>
 <ul>
   <li><a href="#intro">Intro</a></li>
-  <li><a href="#details">Details</a></li>
+  <li><a href="#details">Implementation</a></li>
   <li><a href="#license">License</a></li>
   <li><a href="#download">Download</a></li>
   <li><a href="#functions">Function Descriptions and Syntax</a></li>
@@ -25,7 +25,7 @@
   <li><a href="#contact">Contact</a></li>
 </ul>
 
-<h2><a id="intro"></a>Intro</h2>
+<h2><a id="intro"></a>Introduction</h2>
 
 <p>A colony is a C++ template-based unordered data container which provides
 better performance than any std:: library container when:</p>
@@ -65,7 +65,37 @@ from erased element locations on the fly. As it was initially developed
 predominantly for game development, colony favours small and large struct/class
 performance over scalar-type (float, int, etc) performance.</p>
 
-<h2><a id="details"></a>Details</h2>
+<h2><a id="motivation"></a>Motivation</h2>
+<p>When working on video game engines we are predominantly dealing with collections of data where:<Br>
+(<i>Note: These requirements match other areas of software development as well, but to simplify discussion I will focus on video game development</i>)</p>
+<ol type="a">
+<li>Elements within data collections refer to elements within other data collections (through a variety of methods - indices, pointers, etc). An example is a game entity referring to both a texture object and collision blocks, as well as sound data. These references must stay valid throughout the course of the game/level. For this reason, any container (or use of a container) which causes pointer or index invalidation can create difficulties or necessitate workarounds.</li>
+<li>Order is unimportant for the most part. The majority of data collections are simply iterated over, transformed, referred to and utilized with         no regard to order.</li>
+<li>Storage of small-to-medium-sized classes and structs is the norm. Work with collections of small scalar types like int, double is far less common. Sometimes data can be stored in a SoA (Struct of Arrays) configuration, but these cases are somewhat less common.</li>
+<li>Erasing or otherwise removing or deactivating objects occurs frequently in-game and in realtime (though often erasures will be implemented to occur at the end of a frame due to multithreading concerns). An example could be destroying a wall, or a game enemy. For this reason methods of erasure which create strong performance penalties are avoided.</li>
+<li>Creating new objects and adding them into the gameworld on-the-fly is also common - for example, a tree which drops leaves every so often, or a quadtree.</li>
+<li>We don't always know in advance how many elements there will be in a container at the beginning of development, or even at the beginning of a level during playback - an example of this being a MMORPG (massively multiplayer online role-playing game). In a MMORPG the number of game entities fluctuates based on how many players are playing, though there may be maximum capacity limits. Genericized game engines in particular have to adapt to considerably different user requirements and scopes. For this reason extensible containers which can expand and contract in realtime are usually necessary.</li>
+<li>Depending on the complexity and scope of any given game, we can be dealing with anywhere between 10 and 100000 objects in a given area. We are not typically dealing with the types of capacities necessitated by large-scale mathematical or statistical applications.</li>
+<li>For performance reasons, memory storage which is more-or-less contiguous is preferred. Lists, vectors of pointers to dynamically-allocated objects, and maps as implemented in the standard library are unusable.</li>
+</ol>
+<br>
+<p>To meet these requirements, game developers tend to either (a) develop their own custom containers for given scenario or (b) develop workarounds for the failings of standard containers. These workarounds are many and varied, but the most common are probably:
+<ol>
+<li>Inserting all data at the beginning of a level then never adding to the data, whilst using a boolean flag (or similar) to indicate the inactivity of an object (as opposed to actually erasing from the vector). When erasing, one simply adjusts the boolean flag, and when iterating, items with the adjusted boolean flag are skipped.</li>
+<li>Utilizing a vector of data with a secondary vector of indexes. When erasing, the erasure occurs on the vector of indexes, not the vector of data, and when iterating, one iterates over the vector of indexes, then accessing the data from the vector of data via the index.</li>
+</ol>
+<br>
+<p>The first technique has the advantage of fast erasure and simplicity of use, but is comparablty slow to iterate over and never frees memory to the OS. The second technique still has somewhat slow erasure but fast iteration, and also never frees memory to the OS. The first technique disallows insertion on the fly, as this invalidates pointer references. The second can maintain external references upon subsequent insertions, but only if the external object referencing the data knows both the container and the index, which complicates implementation. In addition, insertions will be slow due to the vector's need to reallocate once reaching capacity.</p>
+
+<p>Colony is an attempt to bring a better and more generic solution to this area of work. It has the advantage of fast iteration while maintaining the same extremely fast erasure speed of the boolean technique described above, and without causing pointer/iterator invalidation upon either erasure or insertion. It's insertion speed is also faster than a vector's. Memory from erased elements is either reused by subsequent insertions or released to the OS on-the-fly. It achieves these ends by via a number of new approaches: a <a
+href="http://www.mediafire.com/download/qpy18jp4jbli7jc/the_jump_counting_skipfield_pattern.pdf">jump-counting
+skipfield</a> (instead of a boolean field), a <a
+href="chained_group_allocation_pattern.htm">linked chain</a> of increasingly-large memory blocks (instead of a singular memory block or vector of blocks), and a <a href="stack.htm">custom stack</a> (plf::stack) for memory location reuse.</p>
+
+<p>More data on the performance characteristics of the colony versus other containers and workarounds can be found in the <a
+href="#benchmarks">benchmarks section</a>, but read further below to get a grasp of the mechanics of this container.</p>
+
+<h2><a id="details"></a>Implementation</h2>
 
 <p>plf::colony uses a <a
 href="chained_group_allocation_pattern.htm">chained-group memory allocation
@@ -135,7 +165,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_09-06-2016.zip">here</a> (28kb zip file) or
+<p>Download <a href="plf_colony_11-06-2016.zip">here</a> (28kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -708,7 +738,7 @@ with 100000 elements may only average 10 runs. This tends to give adequate
 results without overly lengthening test times. I have not included results
 involving 'reserve()' functions as the differences to overall insertion
 performance were not adequate. The source code can be found in the <a
-href="#downloads">downloads</a> section above.</p>
+href="#download">downloads</a> section above.</p>
 
 <h4>Overall tests design</h4>
 
@@ -1493,15 +1523,14 @@ programming.</font> </p>
     trigger an out-of-bounds memory exception. These are the only two areas
     where exceptions can occur.</p>
     <p>Similarly with plf::stack, top() and pop() operations are assert-checked against stack emptiness in debug mode, but performing these functions on an empty stack in release mode results in undefined behaviour.</p>
-    The reason why operator = (for both colony and stack) only have a basic
+    The reason why operator = (for both colony and stack) only has a basic
     guarantee is they do not utilize the copy-swap idiom, as the copy-swap
     idiom significantly increases the chance of any exception occuring - this
     is because the most common way an exception tends to occur during a copy
     operation is due to a lack of memory space, and the copy-swap idiom doubles
     the memory requirement for a copy operation by constructing the copy before
-    destructing the original data. This is doubly innappropriate in game development, which colony has been initially for, where memory constraints are often critical and the runtime lag from memory spikes can cause detrimental game performance. So in the case of colony and plf::stack, if a non-memory-allocation-based
-    exception occurs during copy, the = operators will have already destructed
-    their data and cannot roll back - so both have a basic guarantee, not a
+    destructing the original data. This is doubly innappropriate in game development, which colony has been initially for, where memory constraints are often critical and the runtime lag from memory spikes can cause detrimental game performance. So in the case of colony and plf::stack, if a non-memory-allocation-based exception occurs during copy, the = operators will have already destructed
+    their data, so the containers will be empty and cannot roll back - hence they have a basic guarantee, not a
     strong guarantee.</p>
   </li>
 </ol>
@@ -1511,7 +1540,8 @@ programming.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-05-31: v3.18 - Corrections to colony and stack C++11 typedefs. Some code
+  <li>2016-06-11: v3.19 - Minor bugfix to plf::stack.</li>
+  <li>2016-06-9: v3.18 - Corrections to colony and stack C++11 typedefs. Some code
     tidyup. Minor code corrections. Simplified reserve() and shrink_to_fit() functions. Added trim_trailing_groups() function to stack. Minor performance improvements.</li>
   <li>2016-05-31: v3.16 - Corrections to colony and stack reserve(). Some code
     tidyup. Correction to test suite.</li>
