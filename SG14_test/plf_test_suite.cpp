@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
 #include "plf_colony.h"
@@ -90,7 +91,6 @@ namespace sg14_test
 	
 void plf_test_suite()
 {
-
 	{
 		time_t timer;
 		time(&timer);
@@ -159,9 +159,14 @@ void plf_test_suite()
 		
 		colony<int *>::iterator next_iterator = p_colony.next(p_colony.begin(), 5);
 		colony<int *>::const_iterator prev_iterator = p_colony.prev(p_colony.cend(), 300);
+		colony<int *>::iterator prev_iterator2 = p_colony.prev(p_colony.end(), 300);
 		
 		failpass("Iterator next test", p_colony.distance(p_colony.begin(), next_iterator) == 5);
 		failpass("Const iterator prev test", p_colony.distance(p_colony.cend(), prev_iterator) == -300);
+        #if defined(__cplusplus) && __cplusplus >= 201402L
+            failpass("Iterator/Const iterator equality operator test", prev_iterator == prev_iterator2);
+        #endif
+        
 		
 		colony<int *> p_colony2 = p_colony;
 		colony<int *> p_colony3(p_colony);
@@ -226,14 +231,14 @@ void plf_test_suite()
 		numtotal = 0;
 		total = 0;
 
-		for(colony<int *>::const_reverse_iterator the_iterator = --colony<int *>::const_reverse_iterator(p_colony.crend()); the_iterator != --colony<int *>::const_reverse_iterator(p_colony.crbegin()); --the_iterator)
+		for(colony<int *>::const_reverse_iterator the_iterator = --colony<int *>::const_reverse_iterator(p_colony.crend()); the_iterator != colony<int *>::const_reverse_iterator(p_colony.crbegin()); --the_iterator)
 		{
 			++total;
 			numtotal += **the_iterator;
 		}
 
-		failpass("Const_reverse_iterator -- test", total == 400);
-		failpass("Const_reverse_iterator -- access test", numtotal == 6000);
+		failpass("Const_reverse_iterator -- test", total == 399);
+		failpass("Const_reverse_iterator -- access test", numtotal == 5980);
 
 		total = 0;
 		
@@ -287,6 +292,25 @@ void plf_test_suite()
 		}
 
 		failpass("Negative multiple iteration test", total == 200);
+		
+		#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+			p_colony2 = std::move(p_colony);
+			failpass("Move test", p_colony2.size() == 400);
+		#else
+			p_colony2 = p_colony;
+		#endif
+
+		p_colony3 = p_colony2;
+		
+		failpass("Copy test 2", p_colony3.size() == 400);
+		
+		p_colony2.insert(&ten);
+
+		p_colony2.swap(p_colony3);
+		
+		failpass("Swap test", p_colony2.size() == p_colony3.size() - 1);
+		failpass("max_size() test", p_colony2.max_size() > p_colony2.size());
+		
 	}
 
 	
@@ -499,12 +523,21 @@ void plf_test_suite()
 		
 		failpass("Non-beginning increment + erase test", i_colony.size() == 300000);
 		
+
+		colony<int>::iterator temp_iterator = i_colony.begin();
+		i_colony.advance(temp_iterator, 500);
+		
+		unsigned int return_code = i_colony.erase(&(*temp_iterator));
+		
+		failpass("Pointer-based erase test", return_code == 0 && i_colony.size() == 299999);
+
+
 		for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 		{
 			the_iterator = i_colony.erase(the_iterator);
 		}
 		
-		failpass("Final erase test", i_colony.empty());
+		failpass("Total erase test", i_colony.empty());
 		
 		
 		i_colony.reinitialize(3);
@@ -572,17 +605,21 @@ void plf_test_suite()
 
 		#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 			stack<unsigned int> i_stack4 = std::move(i_stack3);
-		#endif
+			failpass("Move equality operator test", i_stack2 == i_stack4);
+            i_stack3 = std::move(i_stack4);
+		#else
+			failpass("Equality operator test", i_stack2 == i_stack3);
+    	#endif
 
 		failpass("Copy test", i_stack2.size() == 250000);
-
-		failpass("Equality operator test", i_stack == i_stack2);
-
-	    #ifdef PLF_MOVE_SEMANTICS_SUPPORT
-			failpass("Move equality operator test 2", i_stack2 == i_stack4);
-		#else
-			failpass("Equality operator test 2", i_stack2 == i_stack3);
-    	#endif
+		failpass("Equality operator test 2", i_stack == i_stack2);
+        
+        i_stack2.push(5);
+        i_stack2.swap(i_stack3);
+        
+		failpass("Swap test", i_stack2.size() == i_stack3.size() - 1);
+		failpass("max_size() test", i_stack2.max_size() > i_stack2.size());
+        
 
 		unsigned int total = 0;
 
@@ -616,7 +653,28 @@ void plf_test_suite()
 		
 		failpass("Randomly pop/push till empty test", i_stack.size() == 0);
 	}
+	{
+		title1("Stack Special Case Tests");
 
+		stack<unsigned int> i_stack(50, 100);
+		
+		for (unsigned int temp = 0; temp != 256; ++temp)
+		{
+			i_stack.push(10);
+		}
+		
+		stack<unsigned int> i_stack_copy(i_stack);
+		
+		int temp2 = 0;
+		
+		for (unsigned int temp = 0; temp != 256; ++temp)
+		{
+			temp2 += i_stack_copy.top();
+			i_stack_copy.pop();
+		}
+		
+		failpass("Stack copy special case test", temp2 == 2560);
+	}
 	}
 
 	title1("Test Suite PASS - Press ENTER to Exit");

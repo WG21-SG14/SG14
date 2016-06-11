@@ -1,8 +1,4 @@
-#include <iostream>
-#include <cstdio>
-#include <stack>
-
-#include "plf_bench.h"
+#include "../../plf_bench.h"
 
 
 int main(int argc, char **argv)

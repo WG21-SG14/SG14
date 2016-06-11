@@ -10,18 +10,21 @@
 </head>
 
 <body>
-<a href="index.htm">Home</a>
+<a href="index.htm">Home</a> 
 
 <h1>PLF C++ Library - plf::stack</h1>
 
 <h2>Intro</h2>
 
-<p>plf::stack is used internally by <a href="colony.htm">plf::colony</a> but
-can also be used on it's own. It is, basically, a more efficient implementation
-of the STL's std::stack functionality, faster than all std:: containers in the
-context of a stack. It uses the same <a
-href="chained_group_allocation_pattern.htm">chained-group memory allocation pattern</a> as plf::colony, and like plf::colony it never invalidates
-references/pointers to non-popped elements, making it better for programming with containers of interrelated data structures.</p>
+<p>plf::stack is a container that gives the programmer the functionality of a
+FILO (first-in, last-out) stack. It is used internally by <a
+href="colony.htm">plf::colony</a> but can also be used on it's own. It is a
+more <a href="#benchmarks">efficient</a> replacement for std::stack, and is
+faster than all std:: containers in the context of a stack. It uses the same <a
+href="chained_group_allocation_pattern.htm">chained-group memory allocation
+pattern</a> as plf::colony, and like plf::colony it never invalidates
+references/pointers to non-popped elements, making it potentially better for
+programming with containers of interrelated data structures.</p>
 
 <h2><a id="license"></a>License</h2>
 
@@ -40,100 +43,167 @@ restrictions:</p>
 
 <h2>Download</h2>
 
-<p>Download on the plf::colony page <a href="colony.htm#download">here</a>.<br>
+<p>Download on the plf::colony page <a href="colony.htm#download">here</a> or
+view the <a
+href="https://github.com/mattreecebentley/plf_colony">repository</a>.<br>
 Both plf::stack and plf::colony are simple .h header files, to be included with
-a #include command. The package includes both plf::colony and plf::stack.</p>
-
-<h2>Benchmarks</h2>
-<p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
-
-<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1 x64 as compiler. Build settings are "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft Visual Studio 2013 can be found <a href="stack_msvc_results.htm">here</a>. Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate. Reserve testing does not make significant sense for an extensible container, as the entire benefit of such is that we can adapt to situations where we do not know the total number of elements in advance.</p>
-
-<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason (and for the sake of simplicity) only total time benchmarks are presented below, however the separate timings are <a href="stack_all_gcc_results.htm">here</a>, for anyone interested.</p>
-
-<img alt="test result graph" src="tests/gcc/stack/char_total_time.png">
-<img alt="test result graph" src="tests/gcc/stack/char_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/int_total_time.png">
-<img alt="test result graph" src="tests/gcc/stack/int_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/double_total_time.png">
-<img alt="test result graph" src="tests/gcc/stack/double_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/small_struct_total_time.png">
-<img alt="test result graph" src="tests/gcc/stack/small_struct_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/large_struct_total_time.png">
-<img alt="test result graph" src="tests/gcc/stack/large_struct_total_time_log.png"><br>
-
-<h4>Conclusion</h4>
-
-<p>Simply put, plf::stack out-performs both std::stack (std::deque) and std::vector, and we can see that the larger the stored type is, the greater the performance advantage is. For scalar types std::stack (std::deque) out-performs plf::colony when the number of elements is low (under 100 for double, under 1000 for char). But in all other areas plf::stack dominates, and has a secondary advantage over std::vector in that pointers to it's elements (as obtained via back() after a push() operation) will not invalidate on subsequent pushes. std::vector will invalidate pointers to stack elements upon subsequent pushes, std::stack will not if it is wrapping a std::deque. The overall recommendation is to use plf::stack in all areas.</p>
-
-<p>plf::stack:<br>
-<font style="color: green">Advantages: Fastest general performance. Performance advantage increases with size of stored element. Pointers to stored elements never invalidate.</font><br>
-<font style="color: red">Disadvantages: None.</font>
-</p>
-<p>std::stack (wrapping std::deque):<br>
-<font style="color: green">Advantages: Fastest performance for scalar types when number of elements is between roughly 20 and 100-1000 (this last depends on size of type - 64-bit types will be closer to 100, 8-bit closer to 1000). Pointers to stored elements never invalidate.</font><br>
-<font style="color: red">Disadvantages: Lower performance with larger-than-scalar types (structs and classes) and in all other areas. std::stack is not guaranteed to be wrapping a std::deque depending on the implementation, and std::deque implementation structure is also compiler-dependent, so the above advantages will not apply generically.</font>
-</p>
-<p>std::vector:<br>
-<font style="color: green">Advantages: None.</font><Br>
-<font style="color: red">Disadvantages: Slower than other methods. Invalidates pointers to stored elements on subsequent pushes.</font>
-</p>
-
+a #include command. The download package includes both plf::colony and
+plf::stack.</p>
 
 <h2>Function Descriptions and syntax</h2>
 
-<h3>Constructors</h3>
+<p>plf::stack meets the requirements of the C++ <a
+href="http://en.cppreference.com/w/cpp/concept/Container">Container</a> and <a
+href="http://en.cppreference.com/w/cpp/concept/AllocatorAwareContainer">AllocatorAwareContainer</a>
+concepts.</p>
+
+<p>For the most part the syntax and semantics of plf::stack functions are the
+same as std::stack. However there are a few key differences, such as the
+meaning of using a number in the constructor. Formal description is as
+follows:</p>
+<code>template &lt;class T, class Allocator = std::allocator &lt;T&gt; &gt;
+class stack</code> 
+
+<p><code><b>T</b></code> - the element type. T must meet the requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
+and <a
+href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.<br>
+<code><b>Allocator</b></code> - an allocator that is used to acquire memory to
+store the elements. The type must meet the requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator</a>. The
+behavior is undefined if <code>Allocator::value_type</code> is not the same as
+T.</p>
+
+<h4>Basic example of usage</h4>
+
+<div
+style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
+<pre style="margin: 0; line-height: 125%"><code><span style="color: #557799">#include &lt;iostream&gt;</span>
+<span style="color: #557799">#include "plf_stack.h"</span>
+
+<span style="color: #333399; font-weight: bold">int</span> <span style="color: #0066BB; font-weight: bold">main</span>(<span style="color: #333399; font-weight: bold">int</span> argc, <span style="color: #333399; font-weight: bold">char</span> <span style="color: #333333">**</span>argv)
+{
+  plf<span style="color: #333333">::</span>stack<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span> i_stack;
+
+  <span style="color: #888888">// Insert 100 ints:</span>
+  <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> i <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; i <span style="color: #333333">!=</span> <span style="color: #0000DD; font-weight: bold">100</span>; <span style="color: #333333">++</span>i)
+  {
+    i_stack.push(i);
+  }
+
+  <span style="color: #888888">// Total the ints:</span>
+  <span style="color: #333399; font-weight: bold">int</span> total <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>;
+
+  <span style="color: #008800; font-weight: bold">while</span> (<span style="color: #333333">!</span>i_stack.empty())
+  {
+    total <span style="color: #333333">+=</span> i_stack.top();
+    i_stack.pop();
+  }
+
+  std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">"Total: "</span> <span style="color: #333333">&lt;&lt;</span> total <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+  std<span style="color: #333333">::</span>cin.get();
+  <span style="color: #008800; font-weight: bold">return</span> <span style="color: #0000DD; font-weight: bold">0</span>;
+} </code></pre>
+</div>
+
+<h4>Member types</h4>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <td><b>Member type</b></td>
+      <td><b>Definition</b></td>
+    </tr>
+    <tr>
+      <td>value_type</td>
+      <td>T</td>
+    </tr>
+    <tr>
+      <td>allocator_type</td>
+      <td>Allocator</td>
+    </tr>
+    <tr>
+      <td>size_type</td>
+      <td>Allocator::size_type (pre-c++11)<br>
+        std::allocator_traits&lt;Allocator&gt;::size_type (post-c++11)</td>
+    </tr>
+    <tr>
+      <td>reference</td>
+      <td>Allocator::reference (pre-c++11)<br>
+        value_type &amp; (post-c++11)</td>
+    </tr>
+    <tr>
+      <td>const_reference</td>
+      <td>Allocator::const_reference (pre-c++11)<br>
+        const value_type &amp; (post-c++11)</td>
+    </tr>
+    <tr>
+      <td>pointer</td>
+      <td>Allocator::pointer (pre-c++11)<br>
+        value_type &amp; (post-c++11)</td>
+    </tr>
+    <tr>
+      <td>const_pointer</td>
+      <td>Allocator::const_pointer (pre-c++11)<br>
+        std::allocator_traits&lt;Allocator&gt;::const_pointer (post-c++11)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Constructor usage examples</h3>
 <ul>
-  <li><code>stack&lt;the_type&gt; a_stack</code> 
-    <p>Default constructor - initial group size is 8.<br>
+  <li><code>stack&lt;T&gt; a_stack</code> 
+    <p>Default constructor - default minimum group size is 8, default maximum
+    group size is <code>std::numeric_limits<size_type>::max() / 2</code>.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack;</code>
     </p>
   </li>
-  <li><code>stack&lt;the_type, custom_allocator&lt;the_type&gt; &gt;
-    a_stack</code> 
-    <p>Default constructor, but using a custom allocator eg. something other
-    than std::allocator. Custom allocators can also be used with all the
-    definitions below, of course. <br>
+  <li><code>stack&lt;T, custom_allocator&lt;T&gt; &gt; a_stack</code> 
+    <p>Using a custom allocator. Custom allocators can also be used with all
+    the definitions below, of course.<br>
     Example: <code style="color: brown">plf::stack&lt;int,
     tbb::allocator&lt;int&gt; &gt; int_stack;</code> </p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(const size_type
-    initial_group_size)</code> 
-    <p>Directed constructor - this sets the initial group size - for example,
-    to 50 (unlike a vector, these 50 elements are not constructed, only the
-    memory is allocated and the initial group-size set at 50 instead of 8) -
-    which may yield a minor performance advantage if you know roughly how many
-    elements are going to be stored in your stack in advance. Minimum group
-    size is 3.<br>
+  <li><code>stack&lt;T&gt; a_stack(const size_type min_group_size)</code>
+    <p>This sets the minimum group size - for example, to 50 (unlike a vector,
+    these 50 elements are not constructed at this point). This may yield a
+    minor performance advantage if you know roughly how many elements are going
+    to be stored in your stack in advance. Minimum group size may not be lower
+    than 3.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack(62);</code></p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(const size_type initial_group_size,
-    const size_type max_group_size)</code> 
-    <p>Directed constructor - this sets the initial first group size like the
-    above, and the maximum group size - this can be useful if you want to limit
-    memory usage. Minimum initial group size is 3.<br>
+  <li><code>stack&lt;T&gt; a_stack(const size_type min_group_size, const
+    size_type max_group_size)</code> 
+    <p>This sets the minimum group size as above, as well as the maximum group
+    size - this can be useful if you want to limit memory usage. Minimum group
+    size may not be lower than 3. Maximum group size may not be larger than
+    <code>std::numeric_limits<size_type>::max() / 2</code>.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack(64,
     512);</code></p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(const stack &amp;
-    another_stack)</code> 
-    <p>Copy constructor - copies all contents from another_stack. Initial group
-    size is the total size of another_stack. <br>
+  <li><code>stack&lt;T&gt; a_stack(const stack &amp; another_stack)</code> 
+    <p>Copy constructor - copies all contents from another_stack. New minimum
+    group size is the total size of <code>another_stack</code>, unless
+    <code>another_stack</code>'s minimum group size is larger than it's total
+    size, in which case the new minimum group size is the source's minimum
+    group size. If source's total size is larger than it's maximum group size,
+    the new minimum group size is the same as the source's maximum group
+    size.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack_2(int_stack_1);</code></p>
   </li>
-  <li><code>stack&lt;the_type&gt; a_stack(stack &amp;&amp; another_stack)
-    <b>C++11 only</b></code> 
+  <li><code>stack&lt;T&gt; a_stack(stack &amp;&amp; another_stack) <b>C++11
+    only</b></code> 
     <p>Move constructor - moves all contents from another_stack, does not alter
-    any group sizes. Another_stack is now void of contents, can be safely
+    any group sizes. Another_stack is now void of contents and can be safely
     destructed. <br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack_2(std::move(int_stack_1));</code></p>
   </li>
 </ul>
 
-<h3>Other functions</h3>
+<h3>Member functions</h3>
 <ul>
   <li><code>void push(const the_type &amp;element)</code> 
     <p>Push an element to the stack.<br>
@@ -151,11 +221,11 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
     "a");</code></p>
   </li>
   <li><code>void pop()</code> 
-    <p>Pop the last push()'d element off the stack.<br>
+    <p>Pop the last push()'d element off the stack. In debug mode will test for stack emptiness prior to operation via an assert. Calling pop() on an empty stack in non-debug mode results in undefined behaviour.<br>
     Example: <code style="color: brown">object_stack.pop();</code></p>
   </li>
   <li><code>the_type &amp; top()</code> 
-    <p>Return a reference to the last push()'d element on the stack.<br>
+    <p>Return a reference to the last push()'d element on the stack. In debug mode will test for stack emptiness prior to operation via an assert. Calling top() on an empty stack in non-debug mode results in undefined behaviour.<br>
     Example: <code style="color: brown">object2 = object_stack.top();</code></p>
   </li>
   <li><code>size_type size()</code> 
@@ -163,15 +233,40 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
     Example: <code style="color: brown">unsigned int j =
     static_cast&lt;unsigned int&gt;(object_stack.size());</code></p>
   </li>
-  <li><code>size_type capacity()</code> 
-    <p>Returns total number of elements currently able to be stored in container without expansion.<br>
-    Example: <code style="color: brown">std::cout &lt;&lt; i_stack.capacity() &lt;&lt; std::endl;</code></p>
+  <li><code>size_type max_size()</code> 
+    <p>Returns the maximum number of elements that the allocator can store in
+    the container. This is an approximation as it does attempt to measure the
+    memory overhead of the container's internal memory structures. It is not
+    possible to measure the latter because a copy operation may change the
+    number of groups utilized for the same amount of elements, if the maximum
+    or minimum group sizes are different in the source container.<br>
+    Example: <code style="color: brown">std::cout &lt;&lt; i_stack.max_size()
+    &lt;&lt; std::endl;</code></p>
   </li>
-  <li><code>void shrink_to_fit()</code> 
-    <p>Removes any trailing groups within the container substructure, which may be present in the scenario of many pushes followed by many pops. Unlike a regular shrink_to_fit, does not shrink capacity to exactly the size needed to contain the currently-stored elements.<br>
+  <li><code>size_type capacity()</code> 
+    <p>Returns total number of elements currently able to be stored in
+    container without expansion.<br>
+    Example: <code style="color: brown">std::cout &lt;&lt; i_stack.capacity()
+    &lt;&lt; std::endl;</code></p>
+  </li>
+  <li><code>void reserve(size_type reserve_amount)</code>
+    <p>Preallocates memory space sufficient to store the number of elements
+    indicated by <code>reserve_amount</code>. Will not change minimum and maximum group
+    sizes. The reserve_amount is limited to the maximum group size of the stack and will be truncated if necessary. By default the maximum group size is the maximum number allowed by <code>size_type</code>.<br>
+    Example: <code style="color: brown">i_stack.reserve(15);</code></p>
+  </li>
+  <li><code>void shrink_to_fit()</code>
+    <p>Reduces container capacity to the amount necessary to store all currently stored elements. If the total number of elements is larger than the maximum group size, the resultant capacity will be equal to <code>((total_elements / max_group_size) + 1) * max_group_size</code>. Invalidates all pointers, iterators and references to elements within the container.<br>
     Example: <code style="color: brown">i_stack.shrink_to_fit();</code></p>
   </li>
-  <li><code>bool empty()</code> 
+  <li><code>void trim_trailing_groups()</code>
+    <p>Removes any trailing groups within the container substructure, which may
+    be present in the scenario of many pushes followed by many pops. Unlike a
+    regular shrink_to_fit, does not shrink capacity to the size needed
+    to contain the currently-stored elements, simply frees up unused groups. Runtime cost is significantly lower than shrink_to_fit, but may not free as much memory.<br>
+    Example: <code style="color: brown">i_stack.shrink_to_fit();</code></p>
+  </li>
+  <li><code>bool empty()</code>
     <p>Returns a boolean indicating whether the stack is currently empty of
     elements.<br>
     Example: <code style="color: brown">if (object_stack.empty())
@@ -184,44 +279,135 @@ a #include command. The package includes both plf::colony and plf::stack.</p>
     call).<br>
     Example: <code style="color: brown">object_stack.clear();</code></p>
   </li>
-  <li><code>void reinitialize(const size_type new_size)</code> 
+  <li><code>void reinitialize(const size_type min_group_size)</code> 
     <p>Clears the stack, creates a new starting group of the size specified.<br>
     Example: <code
     style="color: brown">object_stack.reinitialize(1000);</code></p>
   </li>
-  <li><code>void reinitialize(const size_type new_size, const size_type
-    maximum_size)</code> 
+  <li><code>void reinitialize(const size_type min_group_size, const size_type
+    max_group_size)</code> 
     <p>Clears the stack, creates a new starting group of the size specified,
     with the maximum potential group size set to maximum_size.<br>
     Example: <code style="color: brown">object_stack.reinitialize(1000,
     100000);</code></p>
   </li>
+  <li><code>void swap(stack &amp;source)</code> 
+    <p>Swaps the stack's contents with that of <code>source</code>.<br>
+    Example: <code
+    style="color: brown">object_stack.swap(other_stack);</code></p>
+  </li>
+  <li><code>friend void swap(stack &amp;A, stack &amp;B)</code> 
+    <p>External friend function, swaps the stack A's contents with that of
+    stack B (assumes both stacks have same element type).<br>
+    Example: <code style="color: brown">swap(object_stack,
+    other_stack);</code></p>
+  </li>
   <li><code>stack &amp; operator = (const stack &amp;source)</code> 
-    <p>Copy the elements from another stack to this stack, clearing this stack
+    <p>Copy the elements from source stack to this stack, clearing this stack
     of existing elements first.<br>
     Example: <code style="color: brown">object_stack = object_stack2;</code></p>
   </li>
   <li><code>stack &amp; operator = (const stack &amp;&amp;source) <b>C++11
     only</b></code> 
-    <p>Move the elements from another stack to this stack, clearing this stack
+    <p>Move the elements from source stack to this stack, clearing this stack
     of existing elements first. Source stack becomes invalid but can be safely
     destructed without undefined behaviour.<br>
     Example: <code style="color: brown">object_stack =
     std::move(object_stack2);</code></p>
   </li>
   <li><code>bool operator == (const stack &amp;source)</code> 
-    <p>Compare contents of another stack to this stack. Returns a boolean as to
-    whether they are equal.<br>
+    <p>Compare contents of another stack to this stack. Returns a boolean to
+    indicate whether they are equal.<br>
     Example: <code style="color: brown">if (object_stack == object_stack2)
     return;</code></p>
   </li>
   <li><code>bool operator != (const stack &amp;source)</code> 
-    <p>Compare contents of another stack to this stack. Returns a boolean as to
-    whether they are not equal.<br>
+    <p>Compare contents of another stack to this stack. Returns a boolean to
+    indicate whether they are not equal.<br>
     Example: <code style="color: brown">if (object_stack != object_stack2)
     return;</code></p>
   </li>
 </ul>
+
+<h2><a id="benchmarks"></a>Benchmarks</h2>
+
+<p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
+
+<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1
+x64 as compiler. Build settings are
+"-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft
+Visual Studio 2013 can be found <a href="stack_msvc_results.htm">here</a>.
+Tests are based on a sliding scale of number of runs vs number of elements, so
+a test with only 10 elements in a container may average 100000 runs, whereas a
+test with 100000 elements may only average 10 runs. This tends to give adequate
+results without overly lengthening test times. I have not included results
+involving 'reserve()' functions as the differences to overall insertion
+performance were not adequate. Reserve testing does not make significant sense
+for an extensible container, as the entire benefit of such is that we can adapt
+to situations where we do not know the total number of elements in advance.</p>
+
+<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b)
+a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct
+containing two pointers and four scalar types, and (e) a large struct
+containing 2 pointers, 4 scalar types, a large array of ints and a small array
+of chars. In order to better facilitate accurate time-keeping for short tests,
+both container construction and destruction times are included in the tests.
+The sequence is as follows: construction, push N elements, read (back) + pop
+all elements, destruction. Because unlike a regular container, a stack must be
+pushed for every pop, and popped for every read, it makes little sense to
+analyse these aspects of use separately, as what is most important is the
+overall time taken. For that reason (and for the sake of simplicity) only total
+time benchmarks are presented below, however the separate timings are <a
+href="stack_all_gcc_results.htm">here</a>, for anyone interested.</p>
+<img alt="test result graph" src="tests/gcc/stack/char_total_time.png"> <img
+alt="test result graph" src="tests/gcc/stack/char_total_time_log.png"><br>
+<img alt="test result graph" src="tests/gcc/stack/int_total_time.png"> <img
+alt="test result graph" src="tests/gcc/stack/int_total_time_log.png"><br>
+<img alt="test result graph" src="tests/gcc/stack/double_total_time.png"> <img
+alt="test result graph" src="tests/gcc/stack/double_total_time_log.png"><br>
+<img alt="test result graph" src="tests/gcc/stack/small_struct_total_time.png">
+<img alt="test result graph"
+src="tests/gcc/stack/small_struct_total_time_log.png"><br>
+<img alt="test result graph" src="tests/gcc/stack/large_struct_total_time.png">
+<img alt="test result graph"
+src="tests/gcc/stack/large_struct_total_time_log.png"><br>
+
+
+<h4>Conclusion</h4>
+
+<p>Simply put, plf::stack out-performs both std::stack (std::deque) and
+std::vector, and we can see that the larger the stored type is, the greater the
+performance advantage is. For scalar types std::stack (std::deque) out-performs
+plf::colony when the number of elements is low (under 100 for double, under
+1000 for char). But in all other areas plf::stack dominates, and has a
+secondary advantage over std::vector in that pointers to it's elements (as
+obtained via back() after a push() operation) will not invalidate on subsequent
+pushes. std::vector will invalidate pointers to stack elements upon subsequent
+pushes, std::stack will not if it is wrapping a std::deque. The overall
+recommendation is to use plf::stack in all areas.</p>
+
+<p>plf::stack:<br>
+<font style="color: green">Advantages: Fastest general performance. Performance
+advantage increases with size of stored element. Pointers to stored elements
+never invalidate.</font><br>
+<font style="color: red">Disadvantages: None.</font> </p>
+
+<p>std::stack (wrapping std::deque):<br>
+<font style="color: green">Advantages: Fastest performance for scalar types
+when number of elements is between roughly 20 and 100-1000 (this last depends
+on size of type - 64-bit types will be closer to 100, 8-bit closer to 1000).
+Pointers to stored elements never invalidate.</font><br>
+<font style="color: red">Disadvantages: Lower performance with
+larger-than-scalar types (structs and classes) and in all other areas.
+std::stack is not guaranteed to be wrapping a std::deque depending on the
+implementation, and std::deque implementation structure is also
+compiler-dependent, so the above advantages will not apply generically.</font>
+</p>
+
+<p>std::vector:<br>
+<font style="color: green">Advantages: None.</font><br>
+<font style="color: red">Disadvantages: Slower than other methods. Invalidates
+pointers to stored elements on subsequent pushes.</font> </p>
 <br>
 
 

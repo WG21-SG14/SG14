@@ -1,26 +1,29 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD><TITLE>Replacing the std::stack container adaptor with the plf::stack container class</TITLE>
+<HTML><HEAD><TITLE>Introduction of std::segmented_stack to the standard and replacement of std::stack adaptor's default container</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=windows-1252">
 </HEAD>
 <BODY>
-LEWG, SG14: 
-<BR>10-05-2016
-<BR>Matt Bentley <br>mattreecebentley@gmail.com
-<H1>Replacing the std::stack container adaptor with a stack container based on the plf::stack container class implementation</H1>
+LEWG, SG14:<br>
+Document number:<br>
+Date: 	2016-06-10<br>
+Project: 	Introduction of std::segmented_stack to the standard and replacement of the std::stack adaptor's default container<br>
+Reply-to: 	Matthew Bentley <mattreecebentley@gmail.com><br>
+
+<H1>Introduction of std::segmented_stack to the standard and replacement of the std::stack adaptor's default container</H1>
 
 
 <H2>I. Introduction</H2>
 
-<p>This document proposes replacing the current std::stack container adaptor with a higher-performance implementation of a stack, namely the implementation used in plf::stack, to achieve greater stack performance and performance-similarity across compilers and platforms.</p>
+<p>This document proposes replacing std::stack's default adapted container with a higher-performance implementation of a stack, namely the implementation used in plf::stack, to achieve greater stack performance and performance-similarity across compilers and platforms. This implementation can be named std::segmented_stack in the standard. Alternatively, if it is deemed worthwhile, the std::stack container adaptor could be replaced by an actual container whose implementation is the same as plf::stack. There has been some suggestion that the latter would break ABI compatibility and is therefore less desirable.</p>
 
 <H2>II. Motivation and Scope</H2>
 
-<p>Stacks, as one of the simplest of abstract data types, should have adequate and, ideally, predictable performance across implementations. With the current standard, the default adapted container used by the std::stack container adaptor is highly variable, and will perform poorly where the adapted container has low performance (eg. MSVC 2013 uses a low-performance std::deque implementation by default). This results in an unreliable solution across compilers when performance is a consideration.</p>
-<p>plf::stack is a different way of implementing a stack which has better performance characteristics than current standard library container implementations in a stack context, including std::vector and std::deque, and across compilers (tested under GCC 4.3-5.1 and MSVC 2010-2013). In addition it does not invalidate references to pushed elements (as obtained by the top() function) upon subsequent pushes, unlike std::vector, making it more suitable for some use-cases.</p>
-<p>A full overview of benefits, including graphs of comparative performance versus std::stack and std::vector under GCC and MSVC 2013 can be found at the following link: <a href="http://www.plflib.org/stack.htm">http://www.plflib.org/stack.htm</a> or below in the references.</p>
+<p>Stacks, as one of the simplest of abstract data types, should have adequate and, ideally, predictable performance across implementations. With the current standard, the performance of the default adapted container used by the std::stack container adaptor is highly variable, and will perform poorly where the adapted container has low performance (eg. MSVC 2013 uses a low-performance std::deque implementation by default). This results in an unreliable solution across compilers when performance is a consideration.</p>
+<p>plf::stack is a different way of implementing a stack which has better performance characteristics than current standard library container implementations in a stack context, including std::vector and std::deque, and across compilers (tested under GCC 4.3-5.1 and MSVC 2010-2013). In addition it does not invalidate references to pushed elements (as obtained by the top() function) upon subsequent pushes, unlike std::vector, making it more suitable for some use-cases. It is my viewpoint that this should be introduced to the standard as std::segmented_stack and that the container should become the default adapted container for std::stack.</p>
+<p>A full overview of benefits, including graphs of comparative performance versus std::stack and std::vector under GCC and MSVC 2013 can be found at <a href="http://www.plflib.org/stack.htm">this page</a> or below in the references.</p>
 
 <H2>III. Impact On the Standard</H2>
-<p>No changes are necessary to the standard's interface for stack, only the underlying architecture. Specifically it would need to change std::stack from a container adaptor to an actual container. The underlying architecture would take the form of a chained-group memory allocation structure as described on the following page: <a href="http://www.plflib.org/chained_group_allocation_pattern.htm">http://www.plflib.org/chained_group_allocation_pattern.htm</a> .</p>
+<p>No changes are necessary to the standard's interface for std::stack except to change the default adapted container to std::segmented_stack. The underlying architecture would take the form of a chained-group memory allocation structure as described on <a href="http://www.plflib.org/chained_group_allocation_pattern.htm">this page</a>.</p>
 
 <h2>IV. Design Decisions</h2>
 <p>The proposed internal structure as indicated above has a higher performance in a stack context due to the reduced complexity compared to a std::deque implementation (typically a vector of memory blocks as opposed to a linked chain), and the removal of the necessity for reallocation of data as is required in a std::vector once insertion breaches current capacity. Because a stack does not require the ordered insertion, ordered erasure and other operations of a deque or vector, it also does not require the complexity and overhead of these.</p>
