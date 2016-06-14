@@ -19,7 +19,7 @@
 <p>plf::stack is a container that gives the programmer the functionality of a
 FILO (first-in, last-out) stack. It is used internally by <a
 href="colony.htm">plf::colony</a> but can also be used on it's own. It is a
-more <a href="#benchmarks">efficient</a> replacement for std::stack, and is
+more <a href="#benchmarks">efficient</a> drop-in replacement for std::stack, and 
 faster than all std:: containers in the context of a stack. It uses the same <a
 href="chained_group_allocation_pattern.htm">chained-group memory allocation
 pattern</a> as plf::colony, and like plf::colony it never invalidates
@@ -273,23 +273,20 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     return;</code></p>
   </li>
   <li><code>void clear()</code> 
-    <p>Empties the stack and removes all elements. Deallocates all groups and
-    creates a new starting group of the same size as the original starting
-    group (8, unless specified otherwise by the constructor or reinitialize
-    call).<br>
+    <p>Empties the stack and removes all elements and groups.<br>
     Example: <code style="color: brown">object_stack.clear();</code></p>
   </li>
-  <li><code>void reinitialize(const size_type min_group_size)</code> 
-    <p>Clears the stack, creates a new starting group of the size specified.<br>
-    Example: <code
-    style="color: brown">object_stack.reinitialize(1000);</code></p>
+  <li><code>void change_group_sizes(const size_type min_group_size, const size_type max_group_size)</code> 
+    <p>Changes the minimum and maximum internal group sizes, in terms of number of elements stored per group. If the stack is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
+    Example: <code style="color: brown">object_stack.change_group_sizes(1000, 10000);</code></p>
   </li>
-  <li><code>void reinitialize(const size_type min_group_size, const size_type
-    max_group_size)</code> 
-    <p>Clears the stack, creates a new starting group of the size specified,
-    with the maximum potential group size set to maximum_size.<br>
-    Example: <code style="color: brown">object_stack.reinitialize(1000,
-    100000);</code></p>
+  <li><code>void change_minimum_group_size(const size_type min_group_size)</code> 
+    <p>Changes the minimum internal group size only, in terms of minimum number of elements stored per group. If the stack is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
+    Example: <code style="color: brown">object_stack.change_minimum_group_size(100);</code></p>
+  </li>
+  <li><code>void change_maximum_group_size(const size_type min_group_size)</code> 
+    <p>Changes the maximum internal group size only, in terms of maximum number of elements stored per group. If the stack is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
+    Example: <code style="color: brown">object_stack.change_maximum_group_size(1000);</code></p>
   </li>
   <li><code>void swap(stack &amp;source)</code> 
     <p>Swaps the stack's contents with that of <code>source</code>.<br>

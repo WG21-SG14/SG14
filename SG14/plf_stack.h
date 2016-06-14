@@ -180,7 +180,7 @@ private:
 
 
 	group_pointer_type		current_group, first_group;
-	element_pointer_type		current_element, start_element, end_element;
+	element_pointer_type	current_element, start_element, end_element;
 	size_type				total_number_of_elements, min_elements_per_group;
 	struct ebco_pair : group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 	{
@@ -476,7 +476,7 @@ public:
 				}
 				catch (...)
 				{
-					--current_element;
+					clear();
 					throw;
 				}
 
@@ -560,7 +560,7 @@ public:
 					}
 					catch (...)
 					{
-						--current_element;
+						clear();
 						throw;
 					}
 		
@@ -696,23 +696,39 @@ public:
 
 
 
-	inline void reinitialize(const size_type min_allocation_amount) PLF_STACK_NOEXCEPT
+	inline void change_minimum_group_size(const size_type min_allocation_amount)
 	{
-		assert(min_allocation_amount > 2 && min_allocation_amount <= group_allocator_pair.max_elements_per_group);
-		assert(min_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
-
-		min_elements_per_group = min_allocation_amount;
-		clear();
+		change_group_sizes(min_allocation_amount, group_allocator_pair.max_elements_per_group);
 	}
+	
+	
 
-
-
-	inline void reinitialize(const size_type min_allocation_amount, const size_type max_allocation_amount) PLF_STACK_NOEXCEPT
+	inline void change_maximum_group_size(const size_type max_allocation_amount)
 	{
+		change_group_sizes(min_elements_per_group, max_allocation_amount);
+	}
+	
+	
+
+	void change_group_sizes(const size_type min_allocation_amount, const size_type max_allocation_amount)
+	{
+		assert(min_allocation_amount > 2);
+		assert(min_allocation_amount <= max_allocation_amount);
 		assert(max_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
 
+		min_elements_per_group = min_allocation_amount;
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
-		reinitialize(min_allocation_amount);
+
+		if (first_group != NULL)
+		{
+			stack temp(*this);
+
+			#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
+				*this = std::move(temp); // Avoid generating 2nd temporary
+			#else
+				this->swap(temp);
+			#endif
+		}
 	}
 
 
@@ -721,7 +737,6 @@ public:
 	{
 		destroy_all_data();
 		total_number_of_elements = 0;
-		
 		current_element = NULL;
 		start_element = NULL;
 		end_element = NULL;
@@ -809,7 +824,7 @@ public:
 			return;
 		}
 
-		const unsigned short original_min_elements = min_elements_per_group;
+		const size_type original_min_elements = min_elements_per_group;
 		min_elements_per_group = (total_number_of_elements < group_allocator_pair.max_elements_per_group) ? static_cast<unsigned short>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
 		min_elements_per_group = (min_elements_per_group < 3) ? 3 : min_elements_per_group;
 
