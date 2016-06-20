@@ -1,5 +1,7 @@
+#include <vector>
 #include <iostream>
 #include <algorithm>
+#include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
 #include "plf_colony.h"
@@ -24,21 +26,27 @@
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
 		#define PLF_NOEXCEPT throw()
+		#define PLF_INITIALIZER_LIST_SUPPORT
 	#elif _MSC_VER >= 1900
 		#define PLF_TYPE_TRAITS_SUPPORT
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
 		#define PLF_NOEXCEPT noexcept
+		#define PLF_INITIALIZER_LIST_SUPPORT
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 	#define PLF_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
-	#if defined(__GNUC__) && !defined(__clang__) // If compiler is GCC/G++
-		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
+		#if __GNUC__ == 4 && __GNUC_MINOR__ >= 4 // 4.3 and below do not support initializer lists
+			#define PLF_INITIALIZER_LIST_SUPPORT
+		#elif __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_INITIALIZER_LIST_SUPPORT
 			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
-	#else // Assume type traits support for non-GCC compilers
+	#else // Assume type traits and initializer support for non-GCC compilers
+		#define PLF_INITIALIZER_LIST_SUPPORT
 		#define PLF_TYPE_TRAITS_SUPPORT
 	#endif
 
@@ -90,7 +98,6 @@ namespace sg14_test
 	
 void plf_test_suite()
 {
-
 	{
 		time_t timer;
 		time(&timer);
@@ -159,9 +166,14 @@ void plf_test_suite()
 		
 		colony<int *>::iterator next_iterator = p_colony.next(p_colony.begin(), 5);
 		colony<int *>::const_iterator prev_iterator = p_colony.prev(p_colony.cend(), 300);
+		colony<int *>::iterator prev_iterator2 = p_colony.prev(p_colony.end(), 300);
 		
 		failpass("Iterator next test", p_colony.distance(p_colony.begin(), next_iterator) == 5);
 		failpass("Const iterator prev test", p_colony.distance(p_colony.cend(), prev_iterator) == -300);
+        #if defined(__cplusplus) && __cplusplus >= 201402L
+            failpass("Iterator/Const iterator equality operator test", prev_iterator == prev_iterator2);
+        #endif
+        
 		
 		colony<int *> p_colony2 = p_colony;
 		colony<int *> p_colony3(p_colony);
@@ -226,14 +238,14 @@ void plf_test_suite()
 		numtotal = 0;
 		total = 0;
 
-		for(colony<int *>::const_reverse_iterator the_iterator = --colony<int *>::const_reverse_iterator(p_colony.crend()); the_iterator != --colony<int *>::const_reverse_iterator(p_colony.crbegin()); --the_iterator)
+		for(colony<int *>::const_reverse_iterator the_iterator = --colony<int *>::const_reverse_iterator(p_colony.crend()); the_iterator != colony<int *>::const_reverse_iterator(p_colony.crbegin()); --the_iterator)
 		{
 			++total;
 			numtotal += **the_iterator;
 		}
 
-		failpass("Const_reverse_iterator -- test", total == 400);
-		failpass("Const_reverse_iterator -- access test", numtotal == 6000);
+		failpass("Const_reverse_iterator -- test", total == 399);
+		failpass("Const_reverse_iterator -- access test", numtotal == 5980);
 
 		total = 0;
 		
@@ -287,6 +299,25 @@ void plf_test_suite()
 		}
 
 		failpass("Negative multiple iteration test", total == 200);
+		
+		#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+			p_colony2 = std::move(p_colony);
+			failpass("Move test", p_colony2.size() == 400);
+		#else
+			p_colony2 = p_colony;
+		#endif
+
+		p_colony3 = p_colony2;
+		
+		failpass("Copy test 2", p_colony3.size() == 400);
+		
+		p_colony2.insert(&ten);
+
+		p_colony2.swap(p_colony3);
+		
+		failpass("Swap test", p_colony2.size() == p_colony3.size() - 1);
+		failpass("max_size() test", p_colony2.max_size() > p_colony2.size());
+		
 	}
 
 	
@@ -341,7 +372,8 @@ void plf_test_suite()
 		failpass("Erase randomly till-empty test", i_colony.size() == 0);
 
 
-		i_colony.reinitialize(10000);
+		i_colony.clear();
+        i_colony.change_minimum_group_size(10000);
 		
 		for (unsigned int temp = 0; temp != 30000; ++temp)
 		{
@@ -499,15 +531,25 @@ void plf_test_suite()
 		
 		failpass("Non-beginning increment + erase test", i_colony.size() == 300000);
 		
+
+		colony<int>::iterator temp_iterator = i_colony.begin();
+		i_colony.advance(temp_iterator, 500);
+		
+		unsigned int return_code = i_colony.erase(&(*temp_iterator));
+		
+		failpass("Pointer-based erase test", return_code == 0 && i_colony.size() == 299999);
+
+
 		for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 		{
 			the_iterator = i_colony.erase(the_iterator);
 		}
 		
-		failpass("Final erase test", i_colony.empty());
+		failpass("Total erase test", i_colony.empty());
 		
 		
-		i_colony.reinitialize(3);
+		i_colony.clear();
+        i_colony.change_minimum_group_size(3);
 
 		const unsigned int temp_capacity2 = static_cast<unsigned int>(i_colony.capacity());
 		i_colony.reserve(1000);
@@ -544,7 +586,35 @@ void plf_test_suite()
 		failpass("Multiple sequential small insert/erase commands test", count == i_colony.size());
 	}
 
-
+	{
+		title1("Different insertion-style tests");
+		
+		#ifdef PLF_INITIALIZER_LIST_SUPPORT
+			colony<int> i_colony = {1, 2, 3};
+		#else
+			colony<int> i_colony(3, 1);
+		#endif
+		
+		failpass("Initializer-list constructor test", i_colony.size() == 3);
+		
+		colony<int> i_colony2(i_colony.begin(), i_colony.end());
+		
+		failpass("Range-based constructor test", i_colony2.size() == 3);
+		
+		colony<int> i_colony3(5000, 2, 100, 1000);
+		
+		failpass("Fill construction test", i_colony3.size() == 5000);
+		
+		i_colony2.insert(500000, 5);
+		
+		failpass("Fill insertion test", i_colony2.size() == 500003);
+		
+		std::vector<int> some_ints(500, 2);
+		
+		i_colony2.insert(some_ints.begin(), some_ints.end());
+		
+		failpass("Fill insertion test", i_colony2.size() == 500503);
+	}
 
 	{
 		title1("Stack Tests");
@@ -572,17 +642,21 @@ void plf_test_suite()
 
 		#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 			stack<unsigned int> i_stack4 = std::move(i_stack3);
-		#endif
+			failpass("Move equality operator test", i_stack2 == i_stack4);
+            i_stack3 = std::move(i_stack4);
+		#else
+			failpass("Equality operator test", i_stack2 == i_stack3);
+    	#endif
 
 		failpass("Copy test", i_stack2.size() == 250000);
-
-		failpass("Equality operator test", i_stack == i_stack2);
-
-	    #ifdef PLF_MOVE_SEMANTICS_SUPPORT
-			failpass("Move equality operator test 2", i_stack2 == i_stack4);
-		#else
-			failpass("Equality operator test 2", i_stack2 == i_stack3);
-    	#endif
+		failpass("Equality operator test 2", i_stack == i_stack2);
+        
+        i_stack2.push(5);
+        i_stack2.swap(i_stack3);
+        
+		failpass("Swap test", i_stack2.size() == i_stack3.size() - 1);
+		failpass("max_size() test", i_stack2.max_size() > i_stack2.size());
+        
 
 		unsigned int total = 0;
 
@@ -616,7 +690,28 @@ void plf_test_suite()
 		
 		failpass("Randomly pop/push till empty test", i_stack.size() == 0);
 	}
+	{
+		title1("Stack Special Case Tests");
 
+		stack<unsigned int> i_stack(50, 100);
+		
+		for (unsigned int temp = 0; temp != 256; ++temp)
+		{
+			i_stack.push(10);
+		}
+		
+		stack<unsigned int> i_stack_copy(i_stack);
+		
+		int temp2 = 0;
+		
+		for (unsigned int temp = 0; temp != 256; ++temp)
+		{
+			temp2 += i_stack_copy.top();
+			i_stack_copy.pop();
+		}
+		
+		failpass("Stack copy special case test", temp2 == 2560);
+	}
 	}
 
 	title1("Test Suite PASS - Press ENTER to Exit");
