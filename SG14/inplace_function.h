@@ -36,7 +36,7 @@ public:
 		set(c);
 	}
 
-	// Moves the target of  an implace function, storing the callable within the internal buffer
+	// Moves the target of an implace function, storing the callable within the internal buffer
 	// If the callable is larger than the internal buffer, a compile-time error is issued
 	// May throw any exception encountered by the constructor when moving the target object
 	template<typename CallableT>
@@ -56,8 +56,8 @@ public:
 	// May throw any exception encountered by the constructor when moving the target object
 	inplace_function(inplace_function&& other)
 	{
-    // TODO CC does this actually make sense?
-    move(std::move(other));
+		// TODO CC does this actually make sense?
+		move(std::move(other));
 	}
 
 	// Allows for copying from inplace_function object of the same type, but with a smaller buffer
@@ -73,7 +73,7 @@ public:
 	// May throw any exception encountered by the constructor when moving the target object
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
 	template<size_t OtherCapacity>
-  inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
+	inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
 		move(other);
 	}
@@ -111,7 +111,7 @@ public:
 	// If the move constructor of target object throws, this is left in uninitialized state
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
 	template<size_t OtherCapacity>
-  inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
+	inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
 		clear();
 		move(other);
@@ -124,14 +124,14 @@ public:
 	inplace_function& operator=(const Callable& target)
 	{
 		clear();
-    set(target);
+		set(target);
 		return *this;
 	}
 
 	// Assign a new target by way of moving
 	// If the move constructor of target object throws, this is left in uninitialized state
 	template<typename Callable>
-  inplace_function& operator=(Callable&& target)
+	inplace_function& operator=(Callable&& target)
 	{
 		clear();
 		set(std::move(target));
@@ -246,7 +246,7 @@ private:
 	// enable_if makes sure this is excluded for function references and pointers.
 	template<typename FunctorArgT>
 	typename std::enable_if<!std::is_pointer<FunctorArgT>::value && !std::is_function<FunctorArgT>::value>::type
-  set(const FunctorArgT& ftor)
+	set(const FunctorArgT& ftor)
 	{
 		using FunctorT = typename std::remove_reference<FunctorArgT>::type;
 		static_assert(sizeof(FunctorT) <= CapacityT, "Functor too big to fit in the buffer");
@@ -283,7 +283,7 @@ private:
 	}
 
 	template <typename FunctorT>
-  static RetT invoke(ArgsT... args, const void* dataPtr)
+	static RetT invoke(ArgsT... args, const void* dataPtr)
 	{
 		FunctorT* functor = (FunctorT*)const_cast<void*>(dataPtr);
 		return (*functor)(std::forward<ArgsT>(args)...);

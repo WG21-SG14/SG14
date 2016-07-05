@@ -7,8 +7,8 @@ namespace sg14_test
 	void dynamic_ring_test();
 	void unstable_remove_test();
 	void uninitialized();
-  void plf_test_suite();
-  void inplace_function_test();
+	void plf_test_suite();
+	void inplace_function_test();
 }
 
 #endif
