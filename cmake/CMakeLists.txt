@@ -16,6 +16,7 @@ set(SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/SG14_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/plf_test_suite.cpp
+    ${SG14_TEST_SOURCE_DIRECTORY}/inplace_function_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized.cpp)
 
 add_executable(sg14 ${SOURCE_FILES})

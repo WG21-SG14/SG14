@@ -53,8 +53,8 @@ public:
 	// May throw any exception encountered by the constructor when moving the target object
 	inplace_function(inplace_function&& other)
 	{
-		// TODO CC This might not compile yet or work properly!
-		move(other);	
+    // TODO CC does this actually make sense?
+    move(std::move(other));
 	}
 
 	// Allows for copying from inplace_function object of the same type, but with a smaller buffer
@@ -70,7 +70,7 @@ public:
 	// May throw any exception encountered by the constructor when moving the target object
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
 	template<size_t OtherCapacity>
-	inplace_function(inplace_function<R(Args...), OtherCapacity>&& other)
+  inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
 		move(other);
 	}
@@ -108,7 +108,7 @@ public:
 	// If the move constructor of target object throws, this is left in uninitialized state
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
 	template<size_t OtherCapacity>
-	inplace_function& operator=(inplace_function<R(Args...), OtherCapacity>&& other)
+  inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
 		clear();
 		move(other);
@@ -121,14 +121,14 @@ public:
 	inplace_function& operator=(const Callable& target)
 	{
 		clear();
-		set(c);
+    set(target);
 		return *this;
 	}
 
 	// Assign a new target by way of moving
 	// If the move constructor of target object throws, this is left in uninitialized state
 	template<typename Callable>
-	inplace_function& operator=(Callable&& target);
+  inplace_function& operator=(Callable&& target)
 	{
 		clear();
 		set(std::move(target));
@@ -280,7 +280,7 @@ private:
 	}
 
 	template <typename FunctorT>
-	static RetT invoke(ArgsT..., const void* dataPtr)
+  static RetT invoke(ArgsT... args, const void* dataPtr)
 	{
 		FunctorT* functor = (FunctorT*)const_cast<void*>(dataPtr);
 		return (*functor)(std::forward<ArgsT>(args)...);
@@ -310,57 +310,3 @@ private:
 		}
 	}
 };
-
-#include <iostream>
-
-struct Functor
-{
-	Functor() {}
-	Functor(const Functor&) { std::cout << "copy" << std::endl; }
-	Functor(Functor&&) { std::cout << "move" << std::endl; }
-	void operator()()
-	{
-		std::cout << "functor" << std::endl;
-	}
-};
-
-void Foo()
-{
-	std::cout << "foo" << std::endl;
-}
-
-template <typename T>
-void SomeTest()
-{
-	T func = [] { std::cout << "lambda" << std::endl; };
-	func();
-	std::cout << "func = &Foo" << std::endl;
-	func = &Foo;
-	func();
-	std::cout << "T func2 = Functor()" << std::endl;
-	T func2 = Functor();
-	std::cout << "func.swap(func2)" << std::endl;
-
-	// with inplace_function, this cannot simply swap pointers
-	func.swap(func2);
-}
-
-int main()
-{
-	inplace_function<void()> func = [] { std::cout << "lambda" << std::endl; };
-	func();
-	func = &Foo;
-	func();
-	inplace_function<void()> func2 = Functor();
-	func.swap(func2);
-
-	std::cout << "\nSomeTest<std::function<void()>>" << std::endl;
-	SomeTest<std::function<void()>>();
-
-	std::cout << "\nSomeTest<inplace_function<void()>>" << std::endl;
-	SomeTest<inplace_function<void()>>();
-
-	int i;
-	std::cin >> i;
-    return 0;
-}
