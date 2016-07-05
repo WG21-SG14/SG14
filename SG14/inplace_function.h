@@ -1,6 +1,9 @@
 #include <type_traits>
 #include <functional>
 
+namespace stdext
+{
+
 constexpr size_t InplaceFunctionDefaultCapacity = 32;
 constexpr size_t InplaceFunctionDefaultAlignment = 16;
 
@@ -243,7 +246,7 @@ private:
 	// enable_if makes sure this is excluded for function references and pointers.
 	template<typename FunctorArgT>
 	typename std::enable_if<!std::is_pointer<FunctorArgT>::value && !std::is_function<FunctorArgT>::value>::type
-		set(const FunctorArgT& ftor)
+  set(const FunctorArgT& ftor)
 	{
 		using FunctorT = typename std::remove_reference<FunctorArgT>::type;
 		static_assert(sizeof(FunctorT) <= CapacityT, "Functor too big to fit in the buffer");
@@ -310,3 +313,5 @@ private:
 		}
 	}
 };
+
+}

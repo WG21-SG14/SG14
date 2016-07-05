@@ -43,18 +43,18 @@ namespace sg14_test
 
 void inplace_function_test()
 {
-       inplace_function<void()> func = [] { std::cout << "lambda" << std::endl; };
+       stdext::inplace_function<void()> func = [] { std::cout << "lambda" << std::endl; };
        func();
        func = &Foo;
        func();
-       inplace_function<void()> func2 = Functor();
+       stdext::inplace_function<void()> func2 = Functor();
        func.swap(func2);
 
        std::cout << "\nSomeTest<std::function<void()>>" << std::endl;
        SomeTest<std::function<void()>>();
 
        std::cout << "\nSomeTest<inplace_function<void()>>" << std::endl;
-       SomeTest<inplace_function<void()>>();
+       SomeTest<stdext::inplace_function<void()>>();
 }
 
 }
