@@ -717,7 +717,7 @@ void plf_test_suite()
 	title1("Test Suite PASS - Press ENTER to Exit");
 	cin.get();
 
-	return 0;
+  return;
 }
 
 }
