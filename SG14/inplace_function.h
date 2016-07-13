@@ -56,7 +56,6 @@ public:
 	// May throw any exception encountered by the constructor when moving the target object
 	inplace_function(inplace_function&& other)
 	{
-		// TODO CC does this actually make sense?
 		move(std::move(other));
 	}
 
