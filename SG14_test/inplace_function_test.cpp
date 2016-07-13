@@ -53,5 +53,7 @@ namespace sg14_test
 
 		std::cout << "\nSomeTest<inplace_function<void()>>" << std::endl;
 		SomeTest<stdext::inplace_function<void()>>();
+
+		std::cout << std::boolalpha << "\nSomeTest " << (func == nullptr) << std::endl;
 	}
 }

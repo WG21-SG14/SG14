@@ -15,6 +15,7 @@ class inplace_function<RetT(ArgsT...), CapacityT, AlignmentT>
 {
 public:
 	// TODO static_assert for misalignment
+	// TODO create free operator overloads, to handle switched arguments
 
 	// Creates and empty inplace_function
 	inplace_function() : m_InvokeFctPtr(&DefaultFunction), m_ManagerFctPtr(nullptr)
@@ -135,6 +136,20 @@ public:
 		clear();
 		set(std::move(target));
 		return *this;
+	}
+
+	// Compares this inplace function with a null pointer
+	// Empty functions compare equal, non-empty functions compare unequal
+	bool operator ==(std::nullptr_t)
+	{
+		return !operator bool();
+	}
+
+	// Compares this inplace function with a null pointer
+	// Empty functions compare equal, non-empty functions compare unequal
+	bool operator !=(std::nullptr_t)
+	{
+		return operator bool();
 	}
 
 	// Converts to 'true' if assigned
