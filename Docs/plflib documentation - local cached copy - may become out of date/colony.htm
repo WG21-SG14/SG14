@@ -164,7 +164,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_14-06-2016.zip">here</a> (28kb zip file) or
+<p>Download <a href="plf_colony_19-07-2016.zip">here</a> (30kb zip file) or
 view the <a href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
 The colony library is a simple .h header file, to be included with a #include
@@ -172,7 +172,7 @@ command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_30-05-2016.zip">plf benchmark suite</a> (37kb zip
+href="plf_benchmark_suite_19-07-2016.zip">plf benchmark suite</a> (37kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -185,24 +185,25 @@ href="http://en.cppreference.com/w/cpp/concept/ReversibleContainer">ReversibleCo
 concepts.</p>
 
 <p>For the most part the syntax and semantics of colony functions are very
-similar to all std:: c++ libraries. However there are a few key differences,
-such as the meaning of using a number in the constructor. Formal description is
+similar to all std:: c++ libraries. Formal description is
 as follows:</p>
-<code>template &lt;class T, class Allocator = std::allocator &lt;T&gt; &gt;
+<code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename Skipfield_Type = unsigned short&gt;
 class colony</code> 
 
-<p><code><b>T</b></code> - the element type. T must meet the requirements of <a
+<p><code><b>T</b></code> - the element type. In general T must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
 href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
 and <a
-href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.<br>
+href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>. However, if only move-insert and/or emplace are utilized to insert elements into the colony, T is only required to meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br><br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator</a>. The
 behavior is undefined if <code>Allocator::value_type</code> is not the same as
-T.</p>
+T.<br>
+<br>
+<code><b>Skipfield_Type</b></code> - an unsigned integer type. This type is used to create the skipfield and the maximum size of element memory blocks is constrained by it's bit-depth due to the nature of a jump-counting skipfield. For example, <code>unsigned short</code> on most platforms is 16-bit and therefore constrains the size of individual memory blocks to a maximum of 65535 elements. <code>unsigned short</code> has been found to be the optimal type for performance based on benchmarking. However there may be some memory-constrained situations where element block allocations of more than 255 elements at a time would not be desirable. In these situations, <code>unsigned char</code> may be used for the skipfield instead, resulting in some additional memory usage saving for the skipfield itself. It is unlikely for there to be any circumstances which benefit from a skipfield bit-depth greater than <code>unsigned short</code>. If <code>Skipfield_Type</code> is not an unsigned integer type, behaviour is undefined.
+</p>
 
 <h4>Basic example of usage</h4>
-<code><!-- HTML generated using hilite.me --></code> 
 
 <div
 style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
@@ -240,7 +241,6 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 </div>
 
 <h4>Example demonstrating pointer stability</h4>
-<code><!-- HTML generated using hilite.me --></code> 
 
 <div
 style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
@@ -388,15 +388,15 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 
 <h3>Constructors</h3>
 <table border="1">
-<tr><td>default</td><td><code>explicit colony()</code></td></tr>
-<tr><td>fill</td><td><code>explicit colony(const size_type n, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)<br>
-explicit colony(const size_type n, const value_type &amp;element, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)
+<tr><td>default</td><td><code>explicit colony(const allocator_type &alloc = allocator_type())</code></td></tr>
+<tr><td>fill</td><td><code>explicit colony(const size_type n, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())<br>
+explicit colony(const size_type n, const value_type &amp;element, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())
 </code></td></tr>
-<tr><td>range</td><td><code>template&lt;typename InputIterator&gt; colony(const InputIterator &amp;first, const InputIterator &amp;last, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)<br>
+<tr><td>range</td><td><code>template&lt;typename InputIterator&gt; colony(const InputIterator &amp;first, const InputIterator &amp;last, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())<br>
 </code></td></tr>
-<tr><td>copy</td><td><code>colony (const colony &amp;source)</code></td></tr>
+<tr><td>copy</td><td><code>colony(const colony &amp;source)</code></td></tr>
 <tr><td>move</td><td><code>colony(colony &amp;&amp;source) noexcept <font size="2">(C++11 and upwards)</font></code></td></tr>
-<tr><td>initializer list</td><td><code>colony(const std::initializer_list&lt;value_type&gt; &element_list, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)
+<tr><td>initializer list</td><td><code>colony(const std::initializer_list&lt;value_type&gt; &element_list, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())
 </code></td></tr>
 </table>
 
@@ -406,14 +406,18 @@ explicit colony(const size_type n, const value_type &amp;element, const unsigned
   <li><code>colony&lt;T&gt; a_colony</code> 
     <p>Default constructor - default minimum group size is 8, default maximum
     group size is USHRT_MAX (typically 65535). You cannot set the group sizes from the constructor in this scenario, but you can call the change_group_sizes() member function after construction has occurred.<br>
-    Example: <code style="color: brown">plf::colony&lt;int&gt;
-    int_colony;</code> </p>
+    Example: <code style="color: brown">plf::colony&lt;int&gt; int_colony;</code> </p>
   </li>
-  <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony</code> 
+  <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony(const allocator_type &alloc = allocator_type())</code> 
     <p>Default constructor, but using a custom memory allocator eg. something
     other than std::allocator.<br>
     Example: <code style="color: brown">plf::colony&lt;int,
-    tbb::allocator&lt;int&gt; &gt; int_colony;</code> </p>
+    tbb::allocator&lt;int&gt; &gt; int_colony;</code><br>
+    Example2:<br>
+	<code style="color: brown">// Using an instance of an allocator as well as it's type<br>
+	tbb::allocator&lt;int&gt; alloc_instance;<br>
+	plf::colony&lt;int, tbb::allocator&lt;int&gt; &gt; int_colony(alloc_instance);</code>
+	</p>
   </li>
   <li><code>colony&lt;T&gt; colony(const size_type n, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)</code> 
     <p>Fill constructor with value_type unspecified, so the value_type's default constructor is used. <code>n</code> specifies the number of elements to create upon construction. If <code>n</code> is larger than <code>min_group_size</code>, the size of the groups created will either be <code>n</code> and <code>max_group_size</code>, depending on which is smaller. <code>min_group_size</code> (ie. the smallest possible number of elements which can be stored in a colony group) can be defined, as can the <code>max_group_size</code>.
@@ -426,22 +430,21 @@ Setting the group sizes can be a performance advantage if you know in advance ro
   </li>
   <li><code>colony&lt;T&gt; colony(const std::initializer_list&lt;value_type&gt; &element_list, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)</code> 
     <p>Using an initialiser list to insert into the colony upon construction.<br>
-    Example: <code style="color: brown">std::initializer_list&lt;int&gt; &el = {3, 5, 2, 1000};
+    Example: <code style="color: brown">std::initializer_list&lt;int&gt; &el = {3, 5, 2, 1000};<br>
 	plf::colony&lt;int&gt; int_colony(el, 64, 512);</code></p>
   </li>
   <li><code>colony&lt;T&gt; a_colony(const colony &amp;source)</code> 
     <p>Copy all contents from source colony, removes any
     empty (erased) element locations in the process. Size of groups created is either the total size of
     the source colony, or the maximum group size of the source colony, whichever is the smaller. <br>
-    Example: <code style="color: brown">plf::colony&lt;int&gt;
-    int_colony_2(int_colony_1);</code></p>
+    Example: <code style="color: brown">plf::colony&lt;int&gt; int_colony_2(int_colony_1);</code></p>
   </li>
   <li><code>colony&lt;T&gt; a_colony(colony &amp;&amp;source)</code> 
     <p>Move all contents from source colony, does not
     remove any erased element locations or alter any of the source group sizes. Source colony is now
     void of contents and can be safely destructed. <br>
     Example: <code style="color: brown">
-    plf::colony&lt;int&gt; int_colony_1(50, 5, 512, 512); // Create colony with min and max group sizes set at 512 elements. Fill with 50 instances of int = 5.
+    plf::colony&lt;int&gt; int_colony_1(50, 5, 512, 512); // Create colony with min and max group sizes set at 512 elements. Fill with 50 instances of int = 5.<br>
 	plf::colony&lt;int&gt; int_colony_2(std::move(int_colony_1)); // Move all data to int_colony_2. All of the above characteristics are now applied to int_colony2.</code></p>
   </li>
 </ul>
@@ -470,7 +473,7 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
 O(1) depending on the underlying state of the colony, averaging in at O(log n).
 As such they were not includable in the iterator functions (as per C++
 standards). These have been transplanted to colony's advance(), next(), prev()
-and distance() functions. Greater-than/lesser-than operator usage indicates
+and distance() member functions. Greater-than/lesser-than operator usage indicates
 whether an iterator is higher/lower in position compared to another iterator in
 the same colony (ie. closer to the end/beginning of the colony).</p>
 
@@ -703,6 +706,10 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     per standard STL guidelines).</p>
   </li>
 </ul>
+
+
+<!-- <h3>Non-member functions</h3> -->
+
 <ul>
   <li><code>template &lt;iterator_type&gt; void advance(iterator_type iterator,
     distance_type distance)</code> 
@@ -1449,14 +1456,7 @@ programming.</font> </p>
         was. Insertion is essentially random unless no erasures have been made
         prior, or an equal number of erasures and insertions have been made
         prio.</li>
-      <li><code>plf::colony&lt;int&gt; a_colony(500);</code> does not mean the
-        same thing as <code>std::vector&lt;int&gt; a_vector(500);</code>. A
-        vector inserts 500 elements using the type's default constructor when
-        "(500)" is specified, for colony this does not allocate any memory, it
-        just specifies the minimum number of elements per memory block (default
-        minimum is 8).<br>
-        It can be combined with a maximum-block-size specifier as per the faq
-        entry below.</li>
+      <li>For architectural reasons, reserve can only reserve up to 65535 elements. A fill-constructor can however create as many elements as possible.</li>
       <li>Once an element has been erased, any iterator or pointer pointing to
         that element is no longer valid. This is the same as vector and other
         std:: container rules, but not the same as an array. In the case of
@@ -1472,11 +1472,12 @@ programming.</font> </p>
     erased/inserted in realtime, you might want to experiment with limiting the
     size of your internal memory groups in the constructor. The form of this is
     as follows:<br>
-    <code>plf::vector&lt;object&gt; a_vector(500, 5000);</code><br>
+    <code>plf::vector&lt;object&gt; a_vector;<br>
+	a_vector.change_group_sizes(500, 5000);</code><br>
     where the first number is the minimum size of the internal memory groups
     and the second is the maximum size. Note these can be the same size,
     resulting in an unchanging group size for the lifetime of the colony
-    (unless reinitialize or operator = is called).<br>
+    (unless <code>change_group_sizes</code> is called again or operator = is called).<br>
     One reason to do this is that it is slightly slower to pop an element
     location off the internal memory position recycling stack, than it is to
     insert a new element to the end of the colony (the default behaviour when
@@ -1489,6 +1490,7 @@ programming.</font> </p>
     iteration performance will suffer. In that scenario you may want to run a
     benchmark limiting the minimum/maximum sizes of the groups, and tune it
     until you find optimal usage.</p>
+    <p>Please note that the the fill, range and initializer-list constructors can also take group size parameters, making it possible to construct filled colonies using custom group sizes.</p>
   </li>
   <li><h4>What is colony's Abstract Data Type (ADT)?</h4>
     <p>While I am happy to be proven wrong I suspect colony is it's own
@@ -1520,9 +1522,8 @@ programming.</font> </p>
     that any skipfield used not utilize branching code - as a common boolean
     skipfield does - because of the performance detriment caused by this, it is
     possible there could be a computer architecture where the cost of branching
-    is much lower. And for the stack I am using <a
-    href="stack.htm">plf::stack</a> because according to benchmarks it is more
-    efficient than the std:: alternatives. But again, if a more efficient
+    is much lower. The main necessity is that the skipfield enables O(1) ++ and -- operations (otherwise iterators cannot be valid within the standard). 	For the stack I am using <a href="stack.htm">plf::stack</a> because according to benchmarks it is more
+    efficient than the current standard library alternatives. But again, if a more efficient
     alternative were found it could be used instead.</p>
     <p>If we look at a deque, the only aspect out of those three that it
     shares, is (1) - utilizing a multiple-memory-block allocation pattern.
@@ -1536,14 +1537,14 @@ programming.</font> </p>
   </li>
   <li><h4>Exception Guarantees?</h4>
     <p>For both colony and stack all operations which allocate memory have strong exception guarantees
-    and will roll back if an exception occurs<!-- , except for operator = which has
-    a basic exception guarantee (see below) -->. For colony, iterators are bounded by
+    and will roll back if an exception occurs, except for operator = which has
+    a basic exception guarantee (see below). For colony, iterators are bounded by
     asserts in debug mode, but unbounded in release mode, so it is possible for
     an incorrect use of an iterator (iterating past end(), for example) to
     trigger an out-of-bounds memory exception. These are the only two areas
     where exceptions can occur.</p>
     <p>Similarly with plf::stack, top() and pop() operations are assert-checked against stack emptiness in debug mode, but performing these functions on an empty stack in release mode results in undefined behaviour.</p>
-    <!-- <p>The reason why operator = (for both colony and stack) only has a basic
+    <p>The reason why operator = (for both colony and stack) only has a basic
     guarantee is they do not utilize the copy-swap idiom, as the copy-swap
     idiom significantly increases the chance of any exception occuring - this
     is because the most common way an exception tends to occur during a copy
@@ -1551,7 +1552,10 @@ programming.</font> </p>
     the memory requirement for a copy operation by constructing the copy before
     destructing the original data. This is doubly innappropriate in game development, which colony has been initially for, where memory constraints are often critical and the runtime lag from memory spikes can cause detrimental game performance. So in the case of colony and plf::stack, if a non-memory-allocation-based exception occurs during copy, the = operators will have already destructed
     their data, so the containers will be empty and cannot roll back - hence they have a basic guarantee, not a
-    strong guarantee.</p> -->
+    strong guarantee.</p>
+  </li>
+  <li><h4>Iterators not following rule of zero?</h4>
+    <p>It was found under GCC that the high-modification scenario benchmarks suffered a 11% overall performance loss when iterator copy and move constructors/operators where not explicitly defined, possibly because GCC did not know to vectorise the operations without explicit code or because it implemented copy/swap idiom instead of copying directly. No performance gain was found under any tests when removing the copy and move constructors/operators.</p>
   </li>
 </ol>
 <br>
@@ -1560,6 +1564,13 @@ programming.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-07-19: v3.5 - Colony now accepts a template parameter for the skipfield type. This enables the use of, for example, unsigned char as the skipfield type. The bitdepth of the unsigned integer also defines the default maximum size of colony groups. The benchmark suite has been updated with memory measurements for the general_use tests. General_use tests changed to percentage-based tests. Internal erased location stack now stores only element pointers, not full iterators. Resultant code is faster and consumes less memory. Slight improvement for fill-insert. Sanity-checks for range-insert and initializer-list-insert implemented. Minor fix to C++03 support in benchmark suite.</li>
+  <li>2016-07-4: v3.35 - Another compliance fix for benchmark suite in clang, courtesy of Arthur O'Dwyer.</li>
+  <li>2016-07-3: v3.34 - Minor warning removal for test suite. Performance improvement for colony edge-case scenario where a single element is inserted and then erased repeatedly, and where the insertion point happens to be at the end of a memory block.</li>
+  <li>2016-07-1: v3.33 - Empty destructors/constructors removed in iterators. Small compliancy fixes in both colony and benchmark suite. Thanks to Arthur O'Dwyer for this update.</li>
+  <li>2016-06-25: v3.31 - Colony iterators no longer inherit from std::iterator and implement the required typedefs themselves. Code tidyup and minor changes. Default of 1 implemented for prev/next.</li>
+  <li>2016-06-17: v3.30 - Correction to colony range constructor. Corrections to advance() asserts.</li>
+  <li>2016-06-15: v3.29 - Support for stateful allocators added, to both colony and stack. More generic solution applied for preventing calls for fill-insert to be matched by range insert template.</li>
   <li>2016-06-14: v3.25 - Edge-case corrections to colony's clear(), range-insert and fill-insert functions. Minor performance improvement in erase edge-case. Removed older (colony-specific) range insert. Simplified constructors.</li>
   <li>2016-06-12: v3.22 - Range, fill and initializer-list based insert()'s and constructors now implemented in colony. Bugfix for Microsoft compilers. Warnings fix for clang. Reinitialize functions removed, replaced with change_group_sizes(), change_minimum_group_size() and change_maximum_group_size().</li>
   <li>2016-06-11: v3.19 - Minor bugfix to plf::stack.</li>
@@ -1568,8 +1579,7 @@ programming.</font> </p>
   <li>2016-05-31: v3.16 - Corrections to colony and stack reserve(). Some code
     tidyup. Correction to test suite.</li>
   <li>2016-05-30: v3.15 - Colony and stack are now compliant with C++11 and
-    C++14 <a
-    href="http://en.cppreference.com/w/cpp/concept/Container">container</a>
+    C++14 <a href="http://en.cppreference.com/w/cpp/concept/Container">container</a>
     concepts. Vectorized some erasure and insertion operations resulting in
     better overall performance in some scenarios. Corrected edge case in
     reverse iteration operator ++. All iterators now bounded by asserts in

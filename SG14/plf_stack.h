@@ -189,20 +189,21 @@ private:
 	}						group_allocator_pair;
 
 
-	template <class colony_type, class colony_allocator> friend class colony;
+	template <class colony_type, class colony_allocator, typename colony_skipfield_type> friend class colony;
 
 
 
 public:
 
-	explicit stack(const size_type initial_allocation_amount = 8):
+	explicit stack(const element_allocator_type &alloc = element_allocator_type()):
+		element_allocator_type(alloc),
 		current_group(NULL),
 		first_group(NULL),
 		current_element(NULL),
 		start_element(NULL),
 		end_element(NULL),
 		total_number_of_elements(0),
-		min_elements_per_group(initial_allocation_amount),
+		min_elements_per_group(8),
 		group_allocator_pair(std::numeric_limits<size_type>::max() / 2)
 	{
 		assert(min_elements_per_group > 2);
@@ -211,14 +212,15 @@ public:
 
 
 
-	explicit stack(const size_type initial_allocation_amount, const size_type max_allocation_amount):
+	explicit stack(const size_type min_allocation_amount, const size_type max_allocation_amount = (std::numeric_limits<size_type>::max() / 2), const element_allocator_type &alloc = element_allocator_type()):
+		element_allocator_type(alloc),
 		current_group(NULL),
 		first_group(NULL),
 		current_element(NULL),
 		start_element(NULL),
 		end_element(NULL),
 		total_number_of_elements(0),
-		min_elements_per_group(initial_allocation_amount),
+		min_elements_per_group(min_allocation_amount),
 		group_allocator_pair(max_allocation_amount)
 	{
 		assert(min_elements_per_group > 2);
@@ -489,7 +491,7 @@ public:
 
 
 	#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
-		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy.
+		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy. Also more C++03 compatible
 		void push(const element_type &&the_element)
 		{
 			switch ((current_element == NULL) + (current_element == end_element))
@@ -676,6 +678,22 @@ public:
 	inline size_type max_size() const PLF_STACK_NOEXCEPT
 	{
 		return element_allocator_type::max_size();
+	}
+
+
+
+	unsigned int approximate_memory_use() const PLF_STACK_NOEXCEPT
+	{
+		unsigned int memory_use = 0;
+		group_pointer_type temp_group = first_group;
+
+		while (temp_group != NULL)
+		{
+			memory_use += static_cast<unsigned int>((((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group));
+			temp_group = temp_group->next_group;
+		}
+
+		return memory_use;
 	}
 
 

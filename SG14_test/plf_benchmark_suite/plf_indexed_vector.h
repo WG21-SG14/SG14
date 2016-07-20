@@ -15,12 +15,14 @@ template <class element_type, class allocator_type = std::allocator<element_type
 class indexed_vector
 {
 private:	
+	typedef std::vector<unsigned int, typename allocator_type::template rebind<unsigned int>::other> index_vector;
+
 	std::vector<element_type, allocator_type> elements;
-	std::vector<unsigned int, allocator_type> element_indexes;
+	index_vector element_indexes;
 	unsigned int current_back_index;
 	
 public:
-	typedef typename std::vector<unsigned int, allocator_type>::iterator iterator;
+	typedef typename index_vector::iterator iterator;
 	
 	indexed_vector(): current_back_index(0) {};
 	indexed_vector(const indexed_vector &source): elements(source.elements), element_indexes(source.element_indexes), current_back_index(source.current_back_index) {};
@@ -89,6 +91,19 @@ public:
 		return static_cast<unsigned int>(element_indexes.size());
 	}
 	
+	inline unsigned int capacity() const
+	{
+		return static_cast<unsigned int>(elements.capacity());
+	}
+	
+	inline unsigned int approximate_memory_use() const
+	{
+		return static_cast<unsigned int>(
+			(elements.capacity() * sizeof(element_type)) + 
+			(element_indexes.capacity() * sizeof(unsigned int)) + 
+			sizeof(indexed_vector<element_type, allocator_type>));
+	}
+
 	inline void clear()
 	{
 		elements.clear();

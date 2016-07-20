@@ -1,5 +1,5 @@
-#ifndef PLF_booled_deque_H
-#define PLF_booled_deque_H
+#ifndef PLF_BOOLED_DEQUE_H
+#define PLF_BOOLED_DEQUE_H
 
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -14,34 +14,29 @@ template <class element_type, class allocator_type = std::allocator<element_type
 class booled_deque
 {
 private:	
+	typedef std::deque<bool, typename allocator_type::template rebind<bool>::other> skipfield_deque;
+
 	std::deque<element_type, allocator_type> elements;
-	std::deque<bool, allocator_type> skipfield;
+	skipfield_deque skipfield;
 	
 public:
 	class iterator
 	{
 	private:
 		typename std::deque<element_type, allocator_type>::iterator element_iterator;
-		typename std::deque<bool, allocator_type>::iterator skipfield_iterator;
-		std::deque<bool, allocator_type> *skipfield;
+		typename skipfield_deque::iterator skipfield_iterator;
+		skipfield_deque *skipfield;
 		
 		friend class booled_deque;
 	public:
 		iterator() {};
-		
+		~iterator() {};
+	
 		iterator(const iterator &source):
 			element_iterator(source.element_iterator),
 			skipfield_iterator(source.skipfield_iterator),
 			skipfield(source.skipfield)
 		{};
-		
-		iterator(const iterator &&source):
-			element_iterator(source.element_iterator),
-			skipfield_iterator(source.skipfield_iterator),
-			skipfield(source.skipfield)
-		{};
-		
-		~iterator() {};
 		
 		inline iterator & operator = (const iterator &source)
 		{
@@ -51,14 +46,22 @@ public:
 			return *this;
 		}
 		
-		inline iterator & operator = (const iterator &&source)
-		{
-			element_iterator = source.element_iterator;
-			skipfield_iterator = source.skipfield_iterator;
-			skipfield = source.skipfield;
-			return *this;
-		}
-		
+		#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+			iterator(const iterator &&source):
+				element_iterator(source.element_iterator),
+				skipfield_iterator(source.skipfield_iterator),
+				skipfield(source.skipfield)
+			{};
+
+			inline iterator & operator = (const iterator &&source)
+			{
+				element_iterator = source.element_iterator;
+				skipfield_iterator = source.skipfield_iterator;
+				skipfield = source.skipfield;
+				return *this;
+			}
+		#endif
+				
 		inline iterator & operator ++ ()
 		{
 			do
@@ -239,6 +242,21 @@ public:
 		return total_size;
 	}
 	
+	inline unsigned int capacity() const
+	{
+		return static_cast<unsigned int>(
+		((((elements.size() * sizeof(element_type)) / 512) + 1) * 512) / sizeof(element_type)
+		); // this approximation based on GCC (libstdc++) deque implementation only
+	}
+	
+	inline unsigned int approximate_memory_use() const
+	{
+		return static_cast<unsigned int>(
+			((((elements.size() * sizeof(element_type)) / 512) + 1) * 512) + 
+			((((skipfield.size() * sizeof(element_type *)) / 512) + 1) * 512) + 
+			sizeof(*this)); // this approximation based on GCC (libstdc++) deque implementation only
+	}
+
 	inline void clear()
 	{
 		elements.clear();
@@ -257,4 +275,4 @@ public:
 
 }
 
-#endif // PLF_booled_deque_H
+#endif // PLF_BOOLED_DEQUE_H

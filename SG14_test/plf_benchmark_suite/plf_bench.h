@@ -117,12 +117,12 @@ inline PLF_FORCE_INLINE void container_reserve(plf::stack<container_contents> &c
 }
 
 
-template<class container_contents>
-inline PLF_FORCE_INLINE void container_reserve(plf::colony<container_contents> &container, unsigned int amount)
-{
-	container.reserve(amount);
-}
-
+//template<class container_contents>
+//inline PLF_FORCE_INLINE void container_reserve(plf::colony<container_contents> &container, unsigned int amount)
+//{
+//	container.reserve(amount);
+//}
+//
 
 
 
@@ -171,8 +171,23 @@ inline PLF_FORCE_INLINE void container_insert(std::stack<container_contents> &co
 }
 
 
+
 template <class container_contents>
-inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents> &container)
+inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned char> &container)
+{
+	container.insert(container_contents(rand() % 255));
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned short> &container)
+{
+	container.insert(container_contents(rand() % 255));
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned int> &container)
 {
 	container.insert(container_contents(rand() % 255));
 }
@@ -191,6 +206,17 @@ inline PLF_FORCE_INLINE void container_erase(container_type &container, typename
 {
 	the_iterator = container.erase(the_iterator);
 }
+
+
+// This was used to check the pointer-erase colony functionality - not used normally:
+
+//template <class container_contents>
+//inline PLF_FORCE_INLINE void container_erase(plf::colony<container_contents> &container, typename plf::colony<container_contents>::iterator &the_iterator)
+//{
+//	the_iterator = container.erase(&(*the_iterator));
+//}
+//
+//
 
 
 
@@ -266,6 +292,55 @@ inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<smal
 
 template <template <typename,typename> class container_type>
 inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<large_struct, std::allocator<large_struct>> &the_container, const typename container_type<large_struct, std::allocator<large_struct>>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->number);
+}
+
+
+template <template <typename,typename, typename> class container_type, typename container_contents, typename allocator_type, typename skipfield_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<container_contents, allocator_type, skipfield_type> &the_container, const typename container_type<container_contents, allocator_type, skipfield_type>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(*the_iterator);
+}
+
+
+template <template <typename,typename, typename> class container_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<small_struct, std::allocator<small_struct>, unsigned short> &the_container, const typename container_type<small_struct, std::allocator<small_struct>, unsigned short>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->number);
+}
+
+
+template <template <typename,typename, typename> class container_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<large_struct, std::allocator<large_struct>, unsigned short> &the_container, const typename container_type<large_struct, std::allocator<large_struct>, unsigned short>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->number);
+}
+
+
+template <template <typename,typename, typename> class container_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<small_struct, std::allocator<small_struct>, unsigned char> &the_container, const typename container_type<small_struct, std::allocator<small_struct>, unsigned char>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->number);
+}
+
+
+template <template <typename,typename, typename> class container_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<large_struct, std::allocator<large_struct>, unsigned char> &the_container, const typename container_type<large_struct, std::allocator<large_struct>, unsigned char>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->number);
+}
+
+
+template <template <typename,typename, typename> class container_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<small_struct, std::allocator<small_struct>, unsigned int> &the_container, const typename container_type<small_struct, std::allocator<small_struct>, unsigned int>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->number);
+}
+
+
+template <template <typename,typename, typename> class container_type>
+inline PLF_FORCE_INLINE unsigned int container_iterate(const container_type<large_struct, std::allocator<large_struct>, unsigned int> &the_container, const typename container_type<large_struct, std::allocator<large_struct>, unsigned int>::iterator &the_iterator)
 {
 	return static_cast<unsigned int>(the_iterator->number);
 }
@@ -478,10 +553,28 @@ inline PLF_FORCE_INLINE void container_back_pop(std::vector<large_struct> &conta
 }
 
 
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_change_group_size(plf::stack<container_contents> &container, const unsigned int min_group_size, const unsigned int max_group_size)
+{
+	container.change_group_sizes(min_group_size, max_group_size);
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_change_group_size(std::stack<container_contents> &container, const unsigned int min_group_size, const unsigned int max_group_size)
+{
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_change_group_size(std::vector<container_contents> &container, const unsigned int min_group_size, const unsigned int max_group_size)
+{
+}
+
 
 
 template<class container_type>
-inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elements, const unsigned int number_of_runs, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elements, const unsigned int number_of_runs, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
 {
 	double push_time = 0, pop_back_time = 0, total = 0;
 	plf::nanotimer timer, timer2;
@@ -494,6 +587,8 @@ inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elemen
 		timer.start();
 	
 		container_type container;
+
+		container_change_group_size(container, min_group_size, max_group_size);
 		
 		if (reserve)
 		{
@@ -1054,6 +1149,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 	assert (number_of_elements > 1);
 
 	double total = 0;
+	unsigned int end_approximate_memory_use;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1086,9 +1182,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 				}
 			}
 
-			if (chance_of_change < 1)
+			if (chance_of_change < 1.0)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions != static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
+				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
 				{
 					container_insert(container);
 				}
@@ -1101,9 +1197,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 				}
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
-	std::cerr << "Dump total and time: " << total << full_time.get_elapsed_us() << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
 	full_time.start();
 
@@ -1136,9 +1234,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 				}
 			}
 
-			if (chance_of_change < 1)
+			if (chance_of_change < 1.0)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions != static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
+				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
 				{
 					container_insert(container);
 				}
@@ -1151,17 +1249,19 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 				}
 			}
 		}
+
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
 	const double total_time = full_time.get_elapsed_us();
 
 	if (output_csv)
 	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs));
+		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
 	}
 	else
 	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us" << std::endl;
+		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
 	}
 	
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
@@ -1188,6 +1288,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100));
 
 	double total = 0;
+	unsigned int end_approximate_memory_use;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1225,9 +1326,12 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 				container_insert(container);
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
-	std::cerr << "Dump total and time: " << total << full_time.get_elapsed_us() << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+	 
 	 
 	full_time.start();
 
@@ -1265,17 +1369,19 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 				container_insert(container);
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
 	const double total_time = full_time.get_elapsed_us();
 
 	if (output_csv)
 	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs));
+		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
 	}
 	else
 	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us" << std::endl;
+		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
 	}
 	
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
@@ -1300,6 +1406,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 	assert (number_of_elements > 1);
 
 	double total = 0;
+	unsigned int end_approximate_memory_use;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1334,9 +1441,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 			container.remove_if();
 
-			if (chance_of_change < 1)
+			if (chance_of_change < 1.0)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions != static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
+				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
 				{
 					container_insert(container);
 				}
@@ -1349,9 +1456,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
-	std::cerr << "Dump total and time: " << total << full_time.get_elapsed_us() << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
 	full_time.start();
 
@@ -1386,9 +1495,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 			container.remove_if();
 
-			if (chance_of_change < 1)
+			if (chance_of_change < 1.0)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions != static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
+				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
 				{
 					container_insert(container);
 				}
@@ -1401,17 +1510,19 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
 	const double total_time = full_time.get_elapsed_us();
 
 	if (output_csv)
 	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs));
+		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
 	}
 	else
 	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us" << std::endl;
+		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
 	}
 	
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
@@ -1438,6 +1549,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100));
 
 	double total = 0;
+	unsigned int end_approximate_memory_use;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1477,9 +1589,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 				container_insert(container);
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
-	std::cerr << "Dump total and time: " << total << full_time.get_elapsed_us() << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
 	full_time.start();
 
@@ -1519,17 +1633,19 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 				container_insert(container);
 			}
 		}
+		
+		end_approximate_memory_use = container.approximate_memory_use();
 	}
 
 	const double total_time = full_time.get_elapsed_us();
 
 	if (output_csv)
 	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs));
+		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
 	}
 	else
 	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us" << std::endl;
+		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
 	}
 	
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
@@ -2249,7 +2365,7 @@ inline PLF_FORCE_INLINE void benchmark_erasure_range_reinsertion(const unsigned 
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
 {
 	if (output_csv)
 	{
@@ -2263,7 +2379,7 @@ inline PLF_FORCE_INLINE void benchmark_range_stack(const unsigned int min_number
 			std::cout << number_of_elements;
 		}
 		
-		benchmark_stack<container_type>(number_of_elements, 100000000 / number_of_elements, output_csv, reserve);
+		benchmark_stack<container_type>(number_of_elements, 100000000 / number_of_elements, output_csv, reserve, min_group_size, max_group_size);
 	}
 	
 	if (output_csv)
@@ -2285,7 +2401,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use(const unsigned int min_
 		
 		if (output_csv)
 		{
-			std::cout << "Number of elements, Total time" << std::endl;
+			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
 		}
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
@@ -2316,7 +2432,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage(const unsign
 		
 		if (output_csv)
 		{
-			std::cout << "Number of elements, Total time" << std::endl;
+			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
 		}
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
@@ -2347,7 +2463,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigne
 		
 		if (output_csv)
 		{
-			std::cout << "Number of elements, Total time" << std::endl;
+			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
 		}
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
@@ -2378,7 +2494,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_percentage(co
 		
 		if (output_csv)
 		{
-			std::cout << "Number of elements, Total time" << std::endl;
+			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
 		}
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
