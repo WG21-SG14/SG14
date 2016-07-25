@@ -1,5 +1,5 @@
-#ifndef PLF_POINTER_deque_H
-#define PLF_POINTER_deque_H
+#ifndef PLF_POINTER_DEQUE_H
+#define PLF_POINTER_DEQUE_H
 
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -15,11 +15,13 @@ template <class element_type, class allocator_type = std::allocator<element_type
 class pointer_deque
 {
 private:	
+	typedef std::deque<element_type *, typename allocator_type::template rebind<element_type *>::other> element_pointer_deque;
+
 	std::deque<element_type, allocator_type> elements;
-	std::deque<element_type *, allocator_type> element_pointers;
+	element_pointer_deque element_pointers;
 	
 public:
-	typedef typename std::deque<element_type *, allocator_type>::iterator iterator;
+	typedef typename element_pointer_deque::iterator iterator;
 	
 	pointer_deque() {};
 	pointer_deque(const pointer_deque &source): elements(source.elements) { copy_fix(source); };
@@ -115,6 +117,15 @@ public:
 	}
 	
 	
+	inline unsigned int approximate_memory_use() const
+	{
+		return static_cast<unsigned int>(
+			(elements.size() * sizeof(element_type)) + 
+			(element_pointers.size() * sizeof(element_type *)) + 
+			sizeof(*this));
+	}
+	
+	
 	inline void clear()
 	{
 		elements.clear();
@@ -147,4 +158,4 @@ public:
 
 }
 
-#endif // PLF_POINTER_deque_H
+#endif // PLF_POINTER_DEQUE_H
