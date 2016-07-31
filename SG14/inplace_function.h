@@ -25,7 +25,7 @@ public:
 	// Destroys the inplace_function. If the stored callable is valid, it is destroyed also
 	~inplace_function()
 	{
-		clear();
+		this->clear();
 	}
 
 	// Creates an implace function, copying the target of other within the internal buffer
@@ -34,7 +34,7 @@ public:
 	template<typename CallableT>
 	inplace_function(const CallableT& c)
 	{
-		set(c);
+		this->set(c);
 	}
 
 	// Moves the target of an implace function, storing the callable within the internal buffer
@@ -43,21 +43,21 @@ public:
 	template<typename CallableT>
 	inplace_function(CallableT&& c)
 	{
-		set(std::move(c));
+		this->set(std::move(c));
 	}
 
 	// Copy construct an implace_function, storing a copy of other’s target internally
 	// May throw any exception encountered by the constructor when copying the target object
 	inplace_function(const inplace_function& other)
 	{
-		copy(other);
+		this->copy(other);
 	}
 
 	// Move construct an implace_function, moving the other’s target to this inplace_function’s internal buffer
 	// May throw any exception encountered by the constructor when moving the target object
 	inplace_function(inplace_function&& other)
 	{
-		move(std::move(other));
+		this->move(std::move(other));
 	}
 
 	// Allows for copying from inplace_function object of the same type, but with a smaller buffer
@@ -66,7 +66,7 @@ public:
 	template<size_t OtherCapacityT>
 	inplace_function(const inplace_function<RetT(ArgsT...), OtherCapacityT>& other)
 	{
-		copy(other);
+		this->copy(other);
 	}
 
 	// Allows for moving an inplace_function object of the same type, but with a smaller buffer
@@ -75,15 +75,15 @@ public:
 	template<size_t OtherCapacity>
 	inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
-		move(other);
+		this->move(other);
 	}
 
 	// Assigns a copy of other’s target
 	// May throw any exception encountered by the assignment operator when copying the target object
 	inplace_function& operator=(const inplace_function& other)
 	{
-		clear();
-		copy(other);
+		this->clear();
+		this->copy(other);
 		return *this;
 	}
 
@@ -91,8 +91,8 @@ public:
 	// May throw any exception encountered by the assignment operator when moving the target object
 	inplace_function& operator=(inplace_function&& other)
 	{
-		clear();
-		move(other);
+		this->clear();
+		this->move(other);
 		return *this;
 	}
 
@@ -102,8 +102,8 @@ public:
 	template<size_t OtherCapacityT>
 	inplace_function& operator=(const inplace_function<RetT(ArgsT...), OtherCapacityT>& other)
 	{
-		clear();
-		copy(other);
+		this->clear();
+		this->copy(other);
 		return *this;
 	}
 
@@ -113,8 +113,8 @@ public:
 	template<size_t OtherCapacity>
 	inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
-		clear();
-		move(other);
+		this->clear();
+		this->move(other);
 		return *this;
 	}
 
@@ -123,8 +123,8 @@ public:
 	template<typename Callable>
 	inplace_function& operator=(const Callable& target)
 	{
-		clear();
-		set(target);
+		this->clear();
+		this->set(target);
 		return *this;
 	}
 
@@ -133,8 +133,8 @@ public:
 	template<typename Callable>
 	inplace_function& operator=(Callable&& target)
 	{
-		clear();
-		set(std::move(target));
+		this->clear();
+		this->set(std::move(target));
 		return *this;
 	}
 
@@ -169,9 +169,9 @@ public:
 	void swap(inplace_function& other)
 	{
 		BufferType tempData;
-		move(m_Data, tempData);
+		this->move(m_Data, tempData);
 		other.move(other.m_Data, m_Data);
-		move(tempData, other.m_Data);
+		this->move(tempData, other.m_Data);
 		std::swap(m_InvokeFctPtr, other.m_InvokeFctPtr);
 		std::swap(m_ManagerFctPtr, other.m_ManagerFctPtr);
 	}
