@@ -492,7 +492,7 @@ public:
 
 	#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy. Also more C++03 compatible
-		void push(const element_type &&the_element)
+		void push(element_type &&the_element)
 		{
 			switch ((current_element == NULL) + (current_element == end_element))
 			{
@@ -682,22 +682,6 @@ public:
 
 
 
-	unsigned int approximate_memory_use() const PLF_STACK_NOEXCEPT
-	{
-		unsigned int memory_use = 0;
-		group_pointer_type temp_group = first_group;
-
-		while (temp_group != NULL)
-		{
-			memory_use += static_cast<unsigned int>((((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group));
-			temp_group = temp_group->next_group;
-		}
-
-		return memory_use;
-	}
-
-
-
 	size_type capacity() const PLF_STACK_NOEXCEPT
 	{
 		size_type total_size = 0;
@@ -710,6 +694,22 @@ public:
 		}
 
 		return total_size;
+	}
+
+
+
+	size_type approximate_memory_use() const PLF_STACK_NOEXCEPT
+	{
+		size_type memory_use = sizeof(*this);
+		group_pointer_type temp_group = first_group;
+
+		while (temp_group != NULL)
+		{
+			memory_use += static_cast<size_type>((((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group));
+			temp_group = temp_group->next_group;
+		}
+
+		return memory_use;
 	}
 
 

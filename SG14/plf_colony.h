@@ -1280,7 +1280,7 @@ public:
 	#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		// Note: the reason for code duplication from non-move insert, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy. Also, C++03 compliance...
 
-		iterator insert(const element_type &&element)
+		iterator insert(element_type &&element)
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
@@ -2148,25 +2148,18 @@ public:
 			}
 			default: // this is a non-first group and the final group in the chain: the group is completely empty of elements, so delete the group, then set previous group's next-group to NULL:
 			{
+				the_group.previous_group->next_group = NULL;
+				end_iterator.group_pointer = the_group.previous_group; // end iterator only needs to be changed if this is the final group in the chain
+				end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
+				end_iterator.skipfield_pointer = reinterpret_cast<ushort_pointer_type>(end_iterator.element_pointer) + end_iterator.group_pointer->size;
+
 				if (!erased_locations.empty())
 				{
-					the_group.previous_group->next_group = NULL;
-					end_iterator.group_pointer = the_group.previous_group; // end iterator only needs to be changed if this is the final group in the chain
-					end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
-					end_iterator.skipfield_pointer = reinterpret_cast<ushort_pointer_type>(end_iterator.element_pointer) + end_iterator.group_pointer->size;
-
 					consolidate_erased_locations(the_group_pointer);
+				}
 
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
-				}
-				else // This scenario prevents end groups being created and erased repeatedly when new elements are introduced then erased repeatedly
-				{ // In this case because there are no erased locations in the erased_locations stack, only the first element of this group can have been used so far. This simplifies the required steps
-					the_group.number_of_elements = 0;
-					end_iterator.element_pointer = the_group.last_endpoint = the_group.elements;
-					end_iterator.skipfield_pointer = the_group.skipfield;
-					*end_iterator.skipfield_pointer = 0;
-				}
+				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
+				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
 				return end_iterator;
 			}
@@ -2237,21 +2230,20 @@ public:
 
 	inline size_type capacity() const PLF_COLONY_NOEXCEPT
 	{
-		return (first_group == NULL) ? 0 : (total_number_of_elements + static_cast<size_type>(erased_locations.size()) + static_cast<size_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer));
+		return (first_group == NULL) ? 0 : (total_number_of_elements + static_cast<size_type>(erased_locations.size()) + 
+			static_cast<size_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer));
 	}
 
 
 
-	inline unsigned int approximate_memory_use() const
+	size_type approximate_memory_use() const
 	{
-		return static_cast<unsigned int>(
+		return static_cast<size_type>(
 			sizeof(*this) + // sizeof colony basic structure
-			(erased_locations.approximate_memory_use()) +  // sizeof erased_locations stack (stack structure included in colony basic structure)
+			(erased_locations.approximate_memory_use() - sizeof(erased_locations)) +  // sizeof erased_locations stack (stack structure sizeof included in colony basic structure sizeof so negated from result)
 			(capacity() * (sizeof(value_type) + sizeof(skipfield_type))) + // sizeof current colony data capacity + skipfields
-			((end_iterator.group_pointer == NULL) ? 0 : ((end_iterator.group_pointer->group_number + 1) * (sizeof(group) + sizeof(skipfield_type))))); 
-			// if colony not empty, add the memory usage of the group structures themselves, adding the extra skipfield entry
+			((end_iterator.group_pointer == NULL) ? 0 : ((end_iterator.group_pointer->group_number + 1) * (sizeof(group) + sizeof(skipfield_type))))); // if colony not empty, add the memory usage of the group structures themselves, adding the extra skipfield entry
 	}
-
 
 
 	inline void change_minimum_group_size(const skipfield_type min_allocation_amount)
@@ -2268,7 +2260,7 @@ public:
 	
 	
 
-	inline void change_group_sizes(const skipfield_type min_allocation_amount, const skipfield_type max_allocation_amount)
+	void change_group_sizes(const skipfield_type min_allocation_amount, const skipfield_type max_allocation_amount)
 	{
 		assert(min_allocation_amount > 2); // Otherwise, too much overhead for too small a group
 		assert(min_allocation_amount <= max_allocation_amount);
