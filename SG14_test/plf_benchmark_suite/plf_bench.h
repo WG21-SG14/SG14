@@ -172,6 +172,7 @@ inline PLF_FORCE_INLINE void container_insert(std::stack<container_contents> &co
 
 
 
+
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned char> &container)
 {
@@ -191,6 +192,14 @@ inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, st
 {
 	container.insert(container_contents(rand() % 255));
 }
+
+
+// The following is only present to cater for older versions of colony for comparison testing
+//template <class container_contents>
+//inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents> &container)
+//{
+//	container.insert(container_contents(rand() % 255));
+//}
 
 
 
@@ -903,6 +912,44 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 
 
 
+template <class container_class>
+inline PLF_FORCE_INLINE void container_remove_if(container_class &container)
+{
+	typename container_class::iterator result = container.begin(), it = container.begin(), last = container.end();
+	
+	while (it != last)
+	{
+		if (!(it->erased))
+		{
+			*result = *it;
+			++result;
+		}
+
+		++it;
+	}
+	
+	for (it = result; it != last; ++it)
+	{
+		container.pop_back();
+	}
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_remove_if(plf::pointer_deque<container_contents> &container)
+{
+	container.remove_if();
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_remove_if(plf::indexed_vector<container_contents> &container)
+{
+	container.remove_if();
+}
+
+
+
 template <class container_type>
 inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
@@ -974,7 +1021,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 			}
 		}
 		
-		container.remove_if();
+		container_remove_if(container);
 
 		erase_time += erase_timer.get_elapsed_us();
 		total_size += container.size();
@@ -1044,7 +1091,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 			}
 		}
 
-		container.remove_if();
+		container_remove_if(container);
 
 		erase_time += erase_timer.get_elapsed_us();
 		
@@ -1125,7 +1172,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 			}
 		}
 
-		container.remove_if();
+		container_remove_if(container);
 	}
 
 
@@ -1144,7 +1191,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double chance_of_change, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int number_of_modifications, const bool output_csv = false, const bool reserve = false)
 {
 	assert (number_of_elements > 1);
 
@@ -1171,7 +1218,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((rand() % static_cast<unsigned int>(chance_of_change * static_cast<double>(number_of_elements))) == 0)
+				if ((rand() % static_cast<unsigned int>(number_of_elements)) < number_of_modifications)
 				{
 					container_erase(container, current_element);
 				}
@@ -1182,19 +1229,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 				}
 			}
 
-			if (chance_of_change < 1.0)
+			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
-				{
-					container_insert(container);
-				}
-			}
-			else
-			{
-				if (rand() % static_cast<unsigned int>(chance_of_change) == 0 || container.size() == 0)
-				{
-					container_insert(container);
-				}
+				container_insert(container);
 			}
 		}
 		
@@ -1223,7 +1260,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((rand() % static_cast<unsigned int>(chance_of_change * static_cast<double>(number_of_elements))) == 0)
+				if ((rand() % static_cast<unsigned int>(number_of_elements)) < number_of_modifications)
 				{
 					container_erase(container, current_element);
 				}
@@ -1234,19 +1271,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 				}
 			}
 
-			if (chance_of_change < 1.0)
+			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
-				{
-					container_insert(container);
-				}
-			}
-			else
-			{
-				if (rand() % static_cast<unsigned int>(chance_of_change) == 0 || container.size() == 0)
-				{
-					container_insert(container);
-				}
+				container_insert(container);
 			}
 		}
 
@@ -1285,8 +1312,8 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 {
 	assert (number_of_elements > 1);
 
-	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100));
-
+	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0));
+	
 	double total = 0;
 	unsigned int end_approximate_memory_use;
 	plf::nanotimer full_time;
@@ -1401,7 +1428,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double chance_of_change, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int number_of_modifications, const bool output_csv = false, const bool reserve = false)
 {
 	assert (number_of_elements > 1);
 
@@ -1428,7 +1455,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((rand() % static_cast<unsigned int>(chance_of_change * static_cast<double>(number_of_elements))) == 0)
+				if ((rand() % static_cast<unsigned int>(number_of_elements)) < number_of_modifications)
 				{
 					container_erase(container, current_element);
 				}
@@ -1439,21 +1466,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 
-			container.remove_if();
+			container_remove_if(container);
 
-			if (chance_of_change < 1.0)
+			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
-				{
-					container_insert(container);
-				}
-			}
-			else
-			{
-				if (rand() % static_cast<unsigned int>(chance_of_change) == 0 || container.size() == 0)
-				{
-					container_insert(container);
-				}
+				container_insert(container);
 			}
 		}
 		
@@ -1482,7 +1499,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((rand() % static_cast<unsigned int>(chance_of_change * static_cast<double>(number_of_elements))) == 0)
+				if ((rand() % static_cast<unsigned int>(number_of_elements)) < number_of_modifications)
 				{
 					container_erase(container, current_element);
 				}
@@ -1493,21 +1510,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 
-			container.remove_if();
+			container_remove_if(container);
 
-			if (chance_of_change < 1.0)
+			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
-				for (unsigned int number_of_insertions = 0; number_of_insertions < static_cast<unsigned int>(1.0 / chance_of_change); ++number_of_insertions)
-				{
-					container_insert(container);
-				}
-			}
-			else
-			{
-				if (rand() % static_cast<unsigned int>(chance_of_change) == 0 || container.size() == 0)
-				{
-					container_insert(container);
-				}
+				container_insert(container);
 			}
 		}
 		
@@ -1546,8 +1553,8 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 {
 	assert (number_of_elements > 1);
 
-	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100));
-
+	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0));
+	
 	double total = 0;
 	unsigned int end_approximate_memory_use;
 	plf::nanotimer full_time;
@@ -1582,7 +1589,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 				}
 			}
 
-			container.remove_if();
+			container_remove_if(container);
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
 			{
@@ -1626,7 +1633,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 				}
 			}
 
-			container.remove_if();
+			container_remove_if(container);
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
 			{
@@ -1976,7 +1983,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 			}
 		}
 
-		container.remove_if();
+		container_remove_if(container);
 
 		erase_time += erase_timer.get_elapsed_us();
 		
@@ -2048,7 +2055,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 		}
 
 
-		container.remove_if();
+		container_remove_if(container);
 
 		erase_time += erase_timer.get_elapsed_us();
 		
@@ -2124,7 +2131,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 				}
 			}
 
-			container.remove_if();
+			container_remove_if(container);
 		}
 	}
 
@@ -2393,11 +2400,11 @@ inline PLF_FORCE_INLINE void benchmark_range_stack(const unsigned int min_number
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_chance_of_change, const double max_chance_of_change, const double chance_of_change_addition_amount, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
 {
-	for (double chance_of_change = initial_chance_of_change; chance_of_change <= max_chance_of_change; chance_of_change += chance_of_change_addition_amount)
+	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
-		std::cout << "Chance of modification during 1 frame: 1 in " << chance_of_change << std::endl << std::endl;
+		std::cout << "Number of modifications during 1 frame: " << number_of_modifications << std::endl << std::endl;
 		
 		if (output_csv)
 		{
@@ -2411,7 +2418,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use(const unsigned int min_
 				std::cout << number_of_elements;
 			}
 			
-			benchmark_general_use<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, chance_of_change, output_csv, reserve);
+			benchmark_general_use<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, number_of_modifications, output_csv, reserve);
 		}
 		
 		if (output_csv)
@@ -2455,11 +2462,11 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage(const unsign
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_chance_of_change, const double max_chance_of_change, const double chance_of_change_addition_amount, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
 {
-	for (double chance_of_change = initial_chance_of_change; chance_of_change <= max_chance_of_change; chance_of_change += chance_of_change_addition_amount)
+	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
-		std::cout << "Chance of modification during 1 frame: 1 in " << chance_of_change << std::endl << std::endl;
+		std::cout << "Number of modifications during 1 frame: " << number_of_modifications << std::endl << std::endl;
 		
 		if (output_csv)
 		{
@@ -2473,7 +2480,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigne
 				std::cout << number_of_elements;
 			}
 			
-			benchmark_general_use_remove_if<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, chance_of_change, output_csv, reserve);
+			benchmark_general_use_remove_if<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, number_of_modifications, output_csv, reserve);
 		}
 		
 		if (output_csv)
@@ -2482,6 +2489,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigne
 		}
 	}
 }
+
 
 
 

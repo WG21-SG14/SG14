@@ -1,6 +1,8 @@
 #ifndef PLF_POINTER_DEQUE_H
 #define PLF_POINTER_DEQUE_H
 
+#include <cstring> // for size_t
+
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -105,21 +107,21 @@ public:
 #endif	
 
 
-	inline unsigned int size() const
+	inline size_t size() const
 	{
-		return static_cast<unsigned int>(element_pointers.size());
+		return static_cast<size_t>(element_pointers.size());
 	}
 
 
-	inline unsigned int capacity() const
+	inline size_t capacity() const
 	{
-		return static_cast<unsigned int>(elements.size());
+		return static_cast<size_t>(elements.size());
 	}
 	
 	
-	inline unsigned int approximate_memory_use() const
+	inline size_t approximate_memory_use() const
 	{
-		return static_cast<unsigned int>(
+		return static_cast<size_t>(
 			(elements.size() * sizeof(element_type)) + 
 			(element_pointers.size() * sizeof(element_type *)) + 
 			sizeof(*this));

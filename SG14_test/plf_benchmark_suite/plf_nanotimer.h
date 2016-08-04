@@ -95,6 +95,10 @@
 
 // Windows implementation:
 #elif defined(_WIN32)
+	#if defined(_MSC_VER) && !defined(NOMINMAX)
+		#define NOMINMAX // Otherwise MS compilers act like idiots when using std::numeric_limits<>::max() and including windows.h
+	#endif
+	
 	#include <windows.h>
 	
 	namespace plf
@@ -135,10 +139,11 @@
 		}
 	};
 #endif
+// Else: failure warning - your OS is not supported
 
 
 
-
+#if defined(__MACH__) || (defined(linux) || defined(__linux__) || defined(__linux)) || (defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)) || defined(_WIN32)
 void nanosecond_delay(double delay_ns)
 {
 	nanotimer timer;
@@ -163,5 +168,6 @@ inline void millisecond_delay(double delay_ms)
 
 
 } // namespace
+#endif
 
 #endif // PLF_NANOTIMER

@@ -59,7 +59,7 @@ broad cross-compiler support.</p>
 <p>It can be reasonably compared to a "bag" or "bucket-array" styled structure,
 where each element location can be emptied and skipped over. Unlike a bucket
 array it does not use keys, iterates faster due to the use of a <a
-href="http://www.mediafire.com/download/qpy18jp4jbli7jc/the_jump_counting_skipfield_pattern.pdf">jump-counting
+href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
 skipfield</a> instead of a boolean field, and frees or recycles unused memory
 from erased element locations on the fly. As it was initially developed
 predominantly for game development, colony favours small and large struct/class
@@ -88,7 +88,7 @@ performance over scalar-type (float, int, etc) performance.</p>
 <p>The first technique has the advantage of fast erasure and simplicity of use, but is comparablty slow to iterate over and never frees memory to the OS. The second technique still has somewhat slow erasure but fast iteration, and also never frees memory to the OS. The first technique disallows insertion on the fly, as this invalidates pointer references. The second can maintain external references upon subsequent insertions, but only if the external object referencing the data knows both the container and the index, which complicates implementation. In addition, insertions will be slow due to the vector's need to reallocate once reaching capacity.</p>
 
 <p>Colony is an attempt to bring a better and more generic solution to this area of work. It has the advantage of fast iteration while maintaining the same extremely fast erasure speed of the boolean technique described above, and without causing pointer/iterator invalidation upon either erasure or insertion. It's insertion speed is also faster than a vector's. Memory from erased elements is either reused by subsequent insertions or released to the OS on-the-fly. It achieves these ends by via a number of new approaches: a <a
-href="http://www.mediafire.com/download/qpy18jp4jbli7jc/the_jump_counting_skipfield_pattern.pdf">jump-counting
+href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
 skipfield</a> (instead of a boolean field), a <a href="chained_group_allocation_pattern.htm">linked chain</a> of increasingly-large memory blocks (instead of a singular memory block or vector of blocks), and a <a href="stack.htm">custom stack</a> (plf::stack) for memory location reuse.</p>
 
 <p>More data on the performance characteristics of the colony versus other containers and workarounds can be found in the <a
@@ -164,7 +164,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_19-07-2016.zip">here</a> (30kb zip file) or
+<p>Download <a href="plf_colony_04-08-2016.zip">here</a> (30kb zip file) or
 view the <a href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
 The colony library is a simple .h header file, to be included with a #include
@@ -172,7 +172,7 @@ command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_19-07-2016.zip">plf benchmark suite</a> (37kb zip
+href="plf_benchmark_suite_04-08-2016.zip">plf benchmark suite</a> (37kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -753,7 +753,7 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
 
 <h2><a id="benchmarks"></a>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 06-05-2016 v3.04</i></p>
+<p style="font-size: 75%"><i>Last updated 26-07-2016 v3.50</i></p>
 
 <p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1
 x64 as compiler. Build settings are
@@ -1516,7 +1516,7 @@ programming.</font> </p>
     pattern</a> because it appears to have better performance than the
     alternatives, arguably though this could be any multiple-memory-block
     allocation strategy. For the skipfield I utilize the <a
-    href="http://www.mediafire.com/download/qpy18jp4jbli7jc/the_jump_counting_skipfield_pattern.pdf">jump-counting
+    href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
     skipfield</a> but if a more efficient skipfield implementation were
     available for a given platform, that could be used. While it is preferable
     that any skipfield used not utilize branching code - as a common boolean
@@ -1564,7 +1564,8 @@ programming.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-07-19: v3.5 - Colony now accepts a template parameter for the skipfield type. This enables the use of, for example, unsigned char as the skipfield type. The bitdepth of the unsigned integer also defines the default maximum size of colony groups. The benchmark suite has been updated with memory measurements for the general_use tests. General_use tests changed to percentage-based tests. Internal erased location stack now stores only element pointers, not full iterators. Resultant code is faster and consumes less memory. Slight improvement for fill-insert. Sanity-checks for range-insert and initializer-list-insert implemented. Minor fix to C++03 support in benchmark suite.</li>
+  <li>2016-08-04: v3.51 - Correction to move-insert courtesy of Peet Nick. Removal of end-block edge-case scenario code, as it was found to be of such low statistical significance as to be useless. The fix increased memory use in the scenario of the edge case which might be it's own problem in most scenarios. To get around the edge case, if it occurs in a given context, an allocator approach would be most appropriate. Update to benchmark suite.</li>
+  <li>2016-07-19: v3.5 - Colony now accepts a template parameter for the skipfield type. This enables the use of, for example, unsigned char as the skipfield type. The bitdepth of the unsigned integer also defines the default maximum size of colony groups. The benchmark suite has been updated with memory measurements for the general_use tests. General_use tests changed to percentage-based tests. Internal erased location stack now stores only element pointers, not full iterators. Storing just the pointer and having to reconstruct the iterator slows down reinsertion after an erase, but speeds up the erase itself and results in an overall performance improvement, as well as less memory consumption. Slight improvement for fill-insert. Sanity-checks for range-insert and initializer-list-insert implemented. Minor fix to C++03 support in benchmark suite.</li>
   <li>2016-07-4: v3.35 - Another compliance fix for benchmark suite in clang, courtesy of Arthur O'Dwyer.</li>
   <li>2016-07-3: v3.34 - Minor warning removal for test suite. Performance improvement for colony edge-case scenario where a single element is inserted and then erased repeatedly, and where the insertion point happens to be at the end of a memory block.</li>
   <li>2016-07-1: v3.33 - Empty destructors/constructors removed in iterators. Small compliancy fixes in both colony and benchmark suite. Thanks to Arthur O'Dwyer for this update.</li>
@@ -1615,7 +1616,7 @@ programming.</font> </p>
     to fix issue when plf_stack.h is also used within project separately from
     plf_colony.h. </li>
   <li>2016-02-23: v3.01 - Colony now uses a <a
-    href="http://www.mediafire.com/download/qpy18jp4jbli7jc/the_jump_counting_skipfield_pattern.pdf">jump-counting
+    href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
     skipfield</a> instead of a boolean field, which mitigates worst-case
     scenario performance by factors of ten. Iterators now bidirectional (but
     include &gt; &lt; &gt;= and &lt;= operators) instead of random-access, and

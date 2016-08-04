@@ -1,6 +1,9 @@
 #ifndef PLF_INDEXED_VECTOR_H
 #define PLF_INDEXED_VECTOR_H
 
+#include <cstring> // for size_t
+
+
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -86,22 +89,22 @@ public:
 #endif
 
 	
-	inline unsigned int size() const
+	inline size_t size() const
 	{
-		return static_cast<unsigned int>(element_indexes.size());
+		return static_cast<size_t>(element_indexes.size());
 	}
 	
-	inline unsigned int capacity() const
+	inline size_t capacity() const
 	{
-		return static_cast<unsigned int>(elements.capacity());
+		return static_cast<size_t>(elements.capacity());
 	}
 	
-	inline unsigned int approximate_memory_use() const
+	inline size_t approximate_memory_use() const
 	{
-		return static_cast<unsigned int>(
+		return static_cast<size_t>(
 			(elements.capacity() * sizeof(element_type)) + 
 			(element_indexes.capacity() * sizeof(unsigned int)) + 
-			sizeof(indexed_vector<element_type, allocator_type>));
+			sizeof(*this));
 	}
 
 	inline void clear()

@@ -1,6 +1,8 @@
 #ifndef PLF_BOOLED_DEQUE_H
 #define PLF_BOOLED_DEQUE_H
 
+#include <cstring> // for size_t
+
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -113,7 +115,7 @@ public:
 private:
 
 	iterator begin_iterator, end_iterator;
-	unsigned int total_size;
+	size_t total_size;
 
 public:
 	booled_deque(): total_size(0)
@@ -237,21 +239,21 @@ public:
 	}
 #endif
 	
-	inline unsigned int size() const
+	inline size_t size() const
 	{
 		return total_size;
 	}
 	
-	inline unsigned int capacity() const
+	inline size_t capacity() const
 	{
-		return static_cast<unsigned int>(
+		return static_cast<size_t>(
 		((((elements.size() * sizeof(element_type)) / 512) + 1) * 512) / sizeof(element_type)
 		); // this approximation based on GCC (libstdc++) deque implementation only
 	}
 	
-	inline unsigned int approximate_memory_use() const
+	inline size_t approximate_memory_use() const
 	{
-		return static_cast<unsigned int>(
+		return static_cast<size_t>(
 			((((elements.size() * sizeof(element_type)) / 512) + 1) * 512) + 
 			((((skipfield.size() * sizeof(element_type *)) / 512) + 1) * 512) + 
 			sizeof(*this)); // this approximation based on GCC (libstdc++) deque implementation only
