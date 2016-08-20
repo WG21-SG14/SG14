@@ -32,8 +32,8 @@ better performance than any std:: library container when:</p>
 <ol type="a">
   <li>Insertions and erasures to the container are occuring frequently in
     realtime ie. in performance-critical code, <i><b>and/or</b></i> </li>
-  <li>Pointers or iterators which point to non-erased container elements must
-    not be invalidated by insertion or erasure.</li>
+  <li>Pointers which point to non-erased container elements must not be
+    invalidated by insertion or erasure.</li>
 </ol>
 
 <p>While the benchmarks in the section below are a better area to get a feel
@@ -66,33 +66,100 @@ predominantly for game development, colony favours small and large struct/class
 performance over scalar-type (float, int, etc) performance.</p>
 
 <h2><a id="motivation"></a>Motivation</h2>
-<p>When working on video game engines we are predominantly dealing with collections of data where:<Br>
-(<i>Note: These requirements match other areas of software development as well, but to simplify discussion I will focus on video game development</i>)</p>
+
+<p>When working on video game engines we are predominantly dealing with
+collections of data where:<br>
+(<i>Note: These requirements match other areas of software development as well,
+but to simplify discussion I will focus on video game development</i>)</p>
 <ol type="a">
-<li>Elements within data collections refer to elements within other data collections (through a variety of methods - indices, pointers, etc). An example is a game entity referring to both a texture object and collision blocks, as well as sound data. These references must stay valid throughout the course of the game/level. For this reason, any container (or use of a container) which causes pointer or index invalidation can create difficulties or necessitate workarounds.</li>
-<li>Order is unimportant for the most part. The majority of data collections are simply iterated over, transformed, referred to and utilized with         no regard to order.</li>
-<li>Storage of small-to-medium-sized classes and structs is the norm. Work with collections of small scalar types like int, double is far less common. Sometimes data can be stored in a SoA (Struct of Arrays) configuration, but these cases are somewhat less common.</li>
-<li>Erasing or otherwise removing or deactivating objects occurs frequently in-game and in realtime (though often erasures will be implemented to occur at the end of a frame due to multithreading concerns). An example could be destroying a wall, or a game enemy. For this reason methods of erasure which create strong performance penalties are avoided.</li>
-<li>Creating new objects and adding them into the gameworld on-the-fly is also common - for example, a tree which drops leaves every so often, or a quadtree.</li>
-<li>We don't always know in advance how many elements there will be in a container at the beginning of development, or even at the beginning of a level during playback - an example of this being a MMORPG (massively multiplayer online role-playing game). In a MMORPG the number of game entities fluctuates based on how many players are playing, though there may be maximum capacity limits. Genericized game engines in particular have to adapt to considerably different user requirements and scopes. For this reason extensible containers which can expand and contract in realtime are usually necessary.</li>
-<li>Depending on the complexity and scope of any given game, we can be dealing with anywhere between 10 and 100000 objects in a given area. We are not typically dealing with the types of capacities necessitated by large-scale mathematical or statistical applications.</li>
-<li>For performance reasons, memory storage which is more-or-less contiguous is preferred. Lists, vectors of pointers to dynamically-allocated objects, and maps as implemented in the standard library are unusable.</li>
+  <li>Elements within data collections refer to elements within other data
+    collections (through a variety of methods - indices, pointers, etc). An
+    example is a game entity referring to both a texture object and collision
+    blocks, as well as sound data. These references must stay valid throughout
+    the course of the game/level. For this reason, any container (or use of a
+    container) which causes pointer or index invalidation can create
+    difficulties or necessitate workarounds.</li>
+  <li>Order is unimportant for the most part. The majority of data collections
+    are simply iterated over, transformed, referred to and utilized with no
+    regard to order.</li>
+  <li>Storage of small-to-medium-sized classes and structs is the norm. Work
+    with collections of small scalar types like int, double is far less common.
+    Sometimes data can be stored in a SoA (Struct of Arrays) configuration, but
+    these cases are somewhat less common.</li>
+  <li>Erasing or otherwise removing or deactivating objects occurs frequently
+    in-game and in realtime (though often erasures will be implemented to occur
+    at the end of a frame due to multithreading concerns). An example could be
+    destroying a wall, or a game enemy. For this reason methods of erasure
+    which create strong performance penalties are avoided.</li>
+  <li>Creating new objects and adding them into the gameworld on-the-fly is
+    also common - for example, a tree which drops leaves every so often, or a
+    quadtree.</li>
+  <li>We don't always know in advance how many elements there will be in a
+    container at the beginning of development, or even at the beginning of a
+    level during playback - an example of this being a MMORPG (massively
+    multiplayer online role-playing game). In a MMORPG the number of game
+    entities fluctuates based on how many players are playing, though there may
+    be maximum capacity limits. Genericized game engines in particular have to
+    adapt to considerably different user requirements and scopes. For this
+    reason extensible containers which can expand and contract in realtime are
+    usually necessary.</li>
+  <li>Depending on the complexity and scope of any given game, we can be
+    dealing with anywhere between 10 and 100000 objects in a given area. We are
+    not typically dealing with the types of capacities necessitated by
+    large-scale mathematical or statistical applications.</li>
+  <li>For performance reasons, memory storage which is more-or-less contiguous
+    is preferred. Lists, vectors of pointers to dynamically-allocated objects,
+    and maps as implemented in the standard library are unusable.</li>
 </ol>
 <br>
-<p>To meet these requirements, game developers tend to either (a) develop their own custom containers for given scenario or (b) develop workarounds for the failings of standard containers. These workarounds are many and varied, but the most common are probably:</p>
+
+
+<p>To meet these requirements, game developers tend to either (a) develop their
+own custom containers for given scenario or (b) develop workarounds for the
+failings of standard containers. These workarounds are many and varied, but the
+most common are probably:</p>
 <ol>
-<li>Inserting all data at the beginning of a level then never adding to the data, whilst using a boolean flag (or similar) to indicate the inactivity of an object (as opposed to actually erasing from the vector). When erasing, one simply adjusts the boolean flag, and when iterating, items with the adjusted boolean flag are skipped.</li>
-<li>Utilizing a vector of data with a secondary vector of indexes. When erasing, the erasure occurs on the vector of indexes, not the vector of data, and when iterating, one iterates over the vector of indexes, then accessing the data from the vector of data via the index.</li>
+  <li>Inserting all data at the beginning of a level then never adding to the
+    data, whilst using a boolean flag (or similar) to indicate the inactivity
+    of an object (as opposed to actually erasing from the vector). When
+    erasing, one simply adjusts the boolean flag, and when iterating, items
+    with the adjusted boolean flag are skipped.</li>
+  <li>Utilizing a vector of data with a secondary vector of indexes. When
+    erasing, the erasure occurs on the vector of indexes, not the vector of
+    data, and when iterating, one iterates over the vector of indexes, then
+    accessing the data from the vector of data via the index.</li>
 </ol>
 <br>
-<p>The first technique has the advantage of fast erasure and simplicity of use, but is comparablty slow to iterate over and never frees memory to the OS. The second technique still has somewhat slow erasure but fast iteration, and also never frees memory to the OS. The first technique disallows insertion on the fly, as this invalidates pointer references. The second can maintain external references upon subsequent insertions, but only if the external object referencing the data knows both the container and the index, which complicates implementation. In addition, insertions will be slow due to the vector's need to reallocate once reaching capacity.</p>
 
-<p>Colony is an attempt to bring a better and more generic solution to this area of work. It has the advantage of fast iteration while maintaining the same extremely fast erasure speed of the boolean technique described above, and without causing pointer/iterator invalidation upon either erasure or insertion. It's insertion speed is also faster than a vector's. Memory from erased elements is either reused by subsequent insertions or released to the OS on-the-fly. It achieves these ends by via a number of new approaches: a <a
+
+<p>The first technique has the advantage of fast erasure and simplicity of use,
+but is comparablty slow to iterate over and never frees memory to the OS. The
+second technique still has somewhat slow erasure but fast iteration, and also
+never frees memory to the OS. The first technique disallows insertion on the
+fly, as this invalidates pointer references. The second can maintain external
+references upon subsequent insertions, but only if the external object
+referencing the data knows both the container and the index, which complicates
+implementation. In addition, insertions will be slow due to the vector's need
+to reallocate once reaching capacity.</p>
+
+<p>Colony is an attempt to bring a better and more generic solution to this
+area of work. It has the advantage of fast iteration while maintaining the same
+extremely fast erasure speed of the boolean technique described above, and
+without causing pointer invalidation upon either erasure or insertion. It's
+insertion speed is also faster than a vector's. Memory from erased elements is
+either reused by subsequent insertions or released to the OS on-the-fly. It
+achieves these ends by via a number of new approaches: a <a
 href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
-skipfield</a> (instead of a boolean field), a <a href="chained_group_allocation_pattern.htm">linked chain</a> of increasingly-large memory blocks (instead of a singular memory block or vector of blocks), and a <a href="stack.htm">custom stack</a> (plf::stack) for memory location reuse.</p>
+skipfield</a> (instead of a boolean field), a <a
+href="chained_group_allocation_pattern.htm">linked chain</a> of
+increasingly-large memory blocks (instead of a singular memory block or vector
+of blocks), and a <a href="stack.htm">custom stack</a> (plf::stack) for memory
+location reuse.</p>
 
-<p>More data on the performance characteristics of the colony versus other containers and workarounds can be found in the <a
-href="#benchmarks">benchmarks section</a>, but read further below to get a grasp of the mechanics of this container.</p>
+<p>More data on the performance characteristics of the colony versus other
+containers and workarounds can be found in the <a href="#benchmarks">benchmarks
+section</a>, but read further below to get a grasp of the mechanics of this
+container.</p>
 
 <h2><a id="details"></a>Implementation</h2>
 
@@ -164,15 +231,16 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_04-08-2016.zip">here</a> (30kb zip file) or
-view the <a href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
+<p>Download <a href="plf_colony_20-08-2016.zip">here</a> (30kb zip file) or
+view the <a
+href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
 The colony library is a simple .h header file, to be included with a #include
 command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_04-08-2016.zip">plf benchmark suite</a> (37kb zip
+href="plf_benchmark_suite_20-08-2016.zip">plf benchmark suite</a> (37kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -185,23 +253,40 @@ href="http://en.cppreference.com/w/cpp/concept/ReversibleContainer">ReversibleCo
 concepts.</p>
 
 <p>For the most part the syntax and semantics of colony functions are very
-similar to all std:: c++ libraries. Formal description is
-as follows:</p>
-<code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename Skipfield_Type = unsigned short&gt;
-class colony</code> 
+similar to all std:: c++ libraries. Formal description is as follows:</p>
+<code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename
+Skipfield_Type = unsigned short&gt; class colony</code> 
 
-<p><code><b>T</b></code> - the element type. In general T must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
+<p><code><b>T</b></code> - the element type. In general T must meet the
+requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
 href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
 and <a
-href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>. However, if only move-insert and/or emplace are utilized to insert elements into the colony, T is only required to meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br><br>
+href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.
+However, if only move-insert and/or emplace are utilized to insert elements
+into the colony, T is only required to meet the requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
+<br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator</a>. The
 behavior is undefined if <code>Allocator::value_type</code> is not the same as
 T.<br>
 <br>
-<code><b>Skipfield_Type</b></code> - an unsigned integer type. This type is used to create the skipfield and the maximum size of element memory blocks is constrained by it's bit-depth due to the nature of a jump-counting skipfield. For example, <code>unsigned short</code> on most platforms is 16-bit and therefore constrains the size of individual memory blocks to a maximum of 65535 elements. <code>unsigned short</code> has been found to be the optimal type for performance based on benchmarking. However there may be some memory-constrained situations where element block allocations of more than 255 elements at a time would not be desirable. In these situations, <code>unsigned char</code> may be used for the skipfield instead, resulting in some additional memory usage saving for the skipfield itself. It is unlikely for there to be any circumstances which benefit from a skipfield bit-depth greater than <code>unsigned short</code>. If <code>Skipfield_Type</code> is not an unsigned integer type, behaviour is undefined.
-</p>
+<code><b>Skipfield_Type</b></code> - an unsigned integer type. This type is
+used to create the skipfield and the maximum size of element memory blocks is
+constrained by it's bit-depth due to the nature of a jump-counting skipfield.
+For example, <code>unsigned short</code> on most platforms is 16-bit and
+therefore constrains the size of individual memory blocks to a maximum of 65535
+elements. <code>unsigned short</code> has been found to be the optimal type for
+performance based on benchmarking. However there may be some memory-constrained
+situations where element block allocations of more than 255 elements at a time
+would not be desirable. In these situations, <code>unsigned char</code> may be
+used for the skipfield instead, resulting in some additional memory usage
+saving for the skipfield itself. It is unlikely for there to be any
+circumstances which benefit from a skipfield bit-depth greater than
+<code>unsigned short</code>. If <code>Skipfield_Type</code> is not an unsigned
+integer type, behaviour is undefined. </p>
 
 <h4>Basic example of usage</h4>
 
@@ -315,7 +400,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     </tr>
     <tr>
       <td>insert, emplace</td>
-      <td>Never</td>
+      <td>If an iterator is == end() it may be invalidated by a subsequent insert/emplace in some cases.</td>
     </tr>
   </tbody>
 </table>
@@ -339,13 +424,14 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     <tr>
       <td><code>size_type</code></td>
       <td><code>Allocator::size_type (pre-c++11)<br>
-        std::allocator_traits&lt;Allocator&gt;::size_type (post-c++11)</code></td>
+        std::allocator_traits&lt;Allocator&gt;::size_type
+      (post-c++11)</code></td>
     </tr>
     <tr>
       <td><code>difference_type</code></td>
       <td><code>Allocator::difference_type (pre-c++11)<br>
         std::allocator_traits&lt;Allocator&gt;::difference_type
-      (post-c++11)</code></td>
+        (post-c++11)</code></td>
     </tr>
     <tr>
       <td><code>reference</code></td>
@@ -365,7 +451,8 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     <tr>
       <td><code>const_pointer</code></td>
       <td><code>Allocator::const_pointer (pre-c++11)<br>
-        std::allocator_traits&lt;Allocator&gt;::const_pointer (post-c++11)</code></td>
+        std::allocator_traits&lt;Allocator&gt;::const_pointer
+        (post-c++11)</code></td>
     </tr>
     <tr>
       <td><code>iterator</code></td>
@@ -387,65 +474,119 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 </table>
 
 <h3>Constructors</h3>
+
 <table border="1">
-<tr><td>default</td><td><code>explicit colony(const allocator_type &alloc = allocator_type())</code></td></tr>
-<tr><td>fill</td><td><code>explicit colony(const size_type n, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())<br>
-explicit colony(const size_type n, const value_type &amp;element, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())
-</code></td></tr>
-<tr><td>range</td><td><code>template&lt;typename InputIterator&gt; colony(const InputIterator &amp;first, const InputIterator &amp;last, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())<br>
-</code></td></tr>
-<tr><td>copy</td><td><code>colony(const colony &amp;source)</code></td></tr>
-<tr><td>move</td><td><code>colony(colony &amp;&amp;source) noexcept <font size="2">(C++11 and upwards)</font></code></td></tr>
-<tr><td>initializer list</td><td><code>colony(const std::initializer_list&lt;value_type&gt; &element_list, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX, const allocator_type &alloc = allocator_type())
-</code></td></tr>
+  <tbody>
+    <tr>
+      <td>default</td>
+      <td><code>explicit colony(const allocator_type &amp;alloc =
+        allocator_type())</code></td>
+    </tr>
+    <tr>
+      <td>fill</td>
+      <td><code>explicit colony(const size_type n, const unsigned short
+        min_group_size = 8, const unsigned short max_group_size = USHRT_MAX,
+        const allocator_type &amp;alloc = allocator_type())<br>
+        explicit colony(const size_type n, const value_type &amp;element, const
+        unsigned short min_group_size = 8, const unsigned short max_group_size
+        = USHRT_MAX, const allocator_type &amp;alloc = allocator_type())
+      </code></td>
+    </tr>
+    <tr>
+      <td>range</td>
+      <td><code>template&lt;typename InputIterator&gt; colony(const
+        InputIterator &amp;first, const InputIterator &amp;last, const unsigned
+        short min_group_size = 8, const unsigned short max_group_size =
+        USHRT_MAX, const allocator_type &amp;alloc = allocator_type())<br>
+        </code></td>
+    </tr>
+    <tr>
+      <td>copy</td>
+      <td><code>colony(const colony &amp;source)</code></td>
+    </tr>
+    <tr>
+      <td>move</td>
+      <td><code>colony(colony &amp;&amp;source) noexcept <font size="2">(C++11
+        and upwards)</font></code></td>
+    </tr>
+    <tr>
+      <td>initializer list</td>
+      <td><code>colony(const std::initializer_list&lt;value_type&gt;
+        &amp;element_list, const unsigned short min_group_size = 8, const
+        unsigned short max_group_size = USHRT_MAX, const allocator_type
+        &amp;alloc = allocator_type()) </code></td>
+    </tr>
+  </tbody>
 </table>
 
 <h4>Some constructor usage examples</h4>
-
 <ul>
   <li><code>colony&lt;T&gt; a_colony</code> 
     <p>Default constructor - default minimum group size is 8, default maximum
-    group size is USHRT_MAX (typically 65535). You cannot set the group sizes from the constructor in this scenario, but you can call the change_group_sizes() member function after construction has occurred.<br>
-    Example: <code style="color: brown">plf::colony&lt;int&gt; int_colony;</code> </p>
+    group size is USHRT_MAX (typically 65535). You cannot set the group sizes
+    from the constructor in this scenario, but you can call the
+    change_group_sizes() member function after construction has occurred.<br>
+    Example: <code style="color: brown">plf::colony&lt;int&gt;
+    int_colony;</code> </p>
   </li>
-  <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony(const allocator_type &alloc = allocator_type())</code> 
+  <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony(const
+    allocator_type &amp;alloc = allocator_type())</code> 
     <p>Default constructor, but using a custom memory allocator eg. something
     other than std::allocator.<br>
     Example: <code style="color: brown">plf::colony&lt;int,
     tbb::allocator&lt;int&gt; &gt; int_colony;</code><br>
     Example2:<br>
-	<code style="color: brown">// Using an instance of an allocator as well as it's type<br>
-	tbb::allocator&lt;int&gt; alloc_instance;<br>
-	plf::colony&lt;int, tbb::allocator&lt;int&gt; &gt; int_colony(alloc_instance);</code>
-	</p>
+    <code style="color: brown">// Using an instance of an allocator as well as
+    it's type<br>
+    tbb::allocator&lt;int&gt; alloc_instance;<br>
+    plf::colony&lt;int, tbb::allocator&lt;int&gt; &gt;
+    int_colony(alloc_instance);</code> </p>
   </li>
-  <li><code>colony&lt;T&gt; colony(const size_type n, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)</code> 
-    <p>Fill constructor with value_type unspecified, so the value_type's default constructor is used. <code>n</code> specifies the number of elements to create upon construction. If <code>n</code> is larger than <code>min_group_size</code>, the size of the groups created will either be <code>n</code> and <code>max_group_size</code>, depending on which is smaller. <code>min_group_size</code> (ie. the smallest possible number of elements which can be stored in a colony group) can be defined, as can the <code>max_group_size</code>.
-Setting the group sizes can be a performance advantage if you know in advance roughly how many
-    objects are likely to be stored in your colony long-term - or at least the rough
-    scale of storage. If that case, using this can stop many small initial
-    groups being allocated. <br>
+  <li><code>colony&lt;T&gt; colony(const size_type n, const unsigned short
+    min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)</code> 
+    <p>Fill constructor with value_type unspecified, so the value_type's
+    default constructor is used. <code>n</code> specifies the number of
+    elements to create upon construction. If <code>n</code> is larger than
+    <code>min_group_size</code>, the size of the groups created will either be
+    <code>n</code> and <code>max_group_size</code>, depending on which is
+    smaller. <code>min_group_size</code> (ie. the smallest possible number of
+    elements which can be stored in a colony group) can be defined, as can the
+    <code>max_group_size</code>. Setting the group sizes can be a performance
+    advantage if you know in advance roughly how many objects are likely to be
+    stored in your colony long-term - or at least the rough scale of storage.
+    If that case, using this can stop many small initial groups being
+    allocated. <br>
     Example: <code style="color: brown">plf::colony&lt;int&gt;
     int_colony(62);</code></p>
   </li>
-  <li><code>colony&lt;T&gt; colony(const std::initializer_list&lt;value_type&gt; &element_list, const unsigned short min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)</code> 
-    <p>Using an initialiser list to insert into the colony upon construction.<br>
-    Example: <code style="color: brown">std::initializer_list&lt;int&gt; &el = {3, 5, 2, 1000};<br>
-	plf::colony&lt;int&gt; int_colony(el, 64, 512);</code></p>
+  <li><code>colony&lt;T&gt; colony(const
+    std::initializer_list&lt;value_type&gt; &amp;element_list, const unsigned
+    short min_group_size = 8, const unsigned short max_group_size =
+    USHRT_MAX)</code> 
+    <p>Using an initialiser list to insert into the colony upon
+    construction.<br>
+    Example: <code style="color: brown">std::initializer_list&lt;int&gt;
+    &amp;el = {3, 5, 2, 1000};<br>
+    plf::colony&lt;int&gt; int_colony(el, 64, 512);</code></p>
   </li>
   <li><code>colony&lt;T&gt; a_colony(const colony &amp;source)</code> 
-    <p>Copy all contents from source colony, removes any
-    empty (erased) element locations in the process. Size of groups created is either the total size of
-    the source colony, or the maximum group size of the source colony, whichever is the smaller. <br>
-    Example: <code style="color: brown">plf::colony&lt;int&gt; int_colony_2(int_colony_1);</code></p>
+    <p>Copy all contents from source colony, removes any empty (erased) element
+    locations in the process. Size of groups created is either the total size
+    of the source colony, or the maximum group size of the source colony,
+    whichever is the smaller. <br>
+    Example: <code style="color: brown">plf::colony&lt;int&gt;
+    int_colony_2(int_colony_1);</code></p>
   </li>
   <li><code>colony&lt;T&gt; a_colony(colony &amp;&amp;source)</code> 
-    <p>Move all contents from source colony, does not
-    remove any erased element locations or alter any of the source group sizes. Source colony is now
-    void of contents and can be safely destructed. <br>
-    Example: <code style="color: brown">
-    plf::colony&lt;int&gt; int_colony_1(50, 5, 512, 512); // Create colony with min and max group sizes set at 512 elements. Fill with 50 instances of int = 5.<br>
-	plf::colony&lt;int&gt; int_colony_2(std::move(int_colony_1)); // Move all data to int_colony_2. All of the above characteristics are now applied to int_colony2.</code></p>
+    <p>Move all contents from source colony, does not remove any erased element
+    locations or alter any of the source group sizes. Source colony is now void
+    of contents and can be safely destructed. <br>
+    Example: <code style="color: brown">plf::colony&lt;int&gt; int_colony_1(50,
+    5, 512, 512); // Create colony with min and max group sizes set at 512
+    elements. Fill with 50 instances of int = 5.<br>
+    plf::colony&lt;int&gt; int_colony_2(std::move(int_colony_1)); // Move all
+    data to int_colony_2. All of the above characteristics are now applied to
+    int_colony2.</code></p>
   </li>
 </ul>
 
@@ -473,18 +614,41 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
 O(1) depending on the underlying state of the colony, averaging in at O(log n).
 As such they were not includable in the iterator functions (as per C++
 standards). These have been transplanted to colony's advance(), next(), prev()
-and distance() member functions. Greater-than/lesser-than operator usage indicates
-whether an iterator is higher/lower in position compared to another iterator in
-the same colony (ie. closer to the end/beginning of the colony).</p>
+and distance() member functions. Greater-than/lesser-than operator usage
+indicates whether an iterator is higher/lower in position compared to another
+iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
 
 <h3>Member functions</h3>
+
 <h4>Insert</h4>
+
 <table border="1">
-<tr><td>single element</td><td><code>iterator insert (const value_type &amp;val)</code></td></tr>
-<tr><td>fill</td><td><code>iterator insert (const size_type n, const value_type &amp;val)</code></td></tr>
-<tr><td>range</td><td><code>template &lt;class InputIterator&gt; iterator insert (const InputIterator &amp;first, const InputIterator &amp;last)</code></td></tr>
-<tr><td>move</td><td><code>iterator insert (value_type&amp;&amp; val) <font size="2">(C++11 and upwards)</font></code></td></tr>
-<tr><td>initializer list</td><td><code>iterator insert (const std::initializer_list&lt;value_type&gt; &il)</code></td></tr>
+  <tbody>
+    <tr>
+      <td>single element</td>
+      <td><code>iterator insert (const value_type &amp;val)</code></td>
+    </tr>
+    <tr>
+      <td>fill</td>
+      <td><code>iterator insert (const size_type n, const value_type
+        &amp;val)</code></td>
+    </tr>
+    <tr>
+      <td>range</td>
+      <td><code>template &lt;class InputIterator&gt; iterator insert (const
+        InputIterator &amp;first, const InputIterator &amp;last)</code></td>
+    </tr>
+    <tr>
+      <td>move</td>
+      <td><code>iterator insert (value_type&amp;&amp; val) <font
+        size="2">(C++11 and upwards)</font></code></td>
+    </tr>
+    <tr>
+      <td>initializer list</td>
+      <td><code>iterator insert (const std::initializer_list&lt;value_type&gt;
+        &amp;il)</code></td>
+    </tr>
+  </tbody>
 </table>
 <ul>
   <li><code>iterator insert(const value_type &amp;element)</code> 
@@ -494,18 +658,25 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     iterator to location of inserted element. Example:</p>
     <code style="color: brown">plf::colony&lt;unsigned int&gt; i_colony;<br>
     i_colony.insert(23);</code> </li>
-  <li><code>iterator insert (const size_type n, const value_type &amp;val)</code> 
-    <p>Inserts <code>n</code> copies of <code>val</code> into the colony. Will insert the element into a previously erased element
-    slot if one exists, otherwise will insert to back of colony. Returns
-    iterator to location of first inserted element. Example:</p>
+  <li><code>iterator insert (const size_type n, const value_type
+    &amp;val)</code> 
+    <p>Inserts <code>n</code> copies of <code>val</code> into the colony. Will
+    insert the element into a previously erased element slot if one exists,
+    otherwise will insert to back of colony. Returns iterator to location of
+    first inserted element. Example:</p>
     <code style="color: brown">plf::colony&lt;unsigned int&gt; i_colony;<br>
     i_colony.insert(10, 3);</code> </li>
-  <li><code>template &lt;class InputIterator&gt; iterator insert (const InputIterator &first, const InputIterator &last)</code> 
-    <p>Inserts a series of <code>value_type</code> elements from an external source into a colony holding the same <code>value_type</code> (eg. int,
-    float, a particular class, etcetera). Stops inserting once it reaches <code>last</code>. Example:</p>
-    <code style="color: brown">// Insert all contents of colony2 into colony1:<br>
+  <li><code>template &lt;class InputIterator&gt; iterator insert (const
+    InputIterator &amp;first, const InputIterator &amp;last)</code> 
+    <p>Inserts a series of <code>value_type</code> elements from an external
+    source into a colony holding the same <code>value_type</code> (eg. int,
+    float, a particular class, etcetera). Stops inserting once it reaches
+    <code>last</code>. Example:</p>
+    <code style="color: brown">// Insert all contents of colony2 into
+    colony1:<br>
     colony1.insert(colony2.begin(), colony2.end());</code> </li>
-  <li><code>iterator insert(value_type &amp;&amp;element) <b>C++11 and upwards</b></code> 
+  <li><code>iterator insert(value_type &amp;&amp;element) <b>C++11 and
+    upwards</b></code> 
     <p>Moves the element supplied to the colony, using the object's
     move-constructor. Will insert the element in a previously erased element
     slot if one exists, otherwise will insert to back of colony. Returns
@@ -515,22 +686,38 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     plf::colony&lt;std::string&gt; data_colony;<br>
     data_colony.insert(std::move(string1));</code></p>
   </li>
-  <li><code>iterator insert (const std::initializer_list&lt;value_type&gt; &il)</code> 
+  <li><code>iterator insert (const std::initializer_list&lt;value_type&gt;
+    &amp;il)</code> 
     <p>Moves the element supplied to the colony, using the object's
     move-constructor. Will insert the element in a previously erased element
     slot if one exists, otherwise will insert to back of colony. Returns
     iterator to location of inserted element. Example:</p>
-    <p><code style="color: brown">std::initializer_list&lt;int&gt; some_ints = {4, 3, 2, 5};<br>
+    <p><code style="color: brown">std::initializer_list&lt;int&gt; some_ints =
+    {4, 3, 2, 5};<br>
     <br>
     plf::colony&lt;int&gt; i_colony;<br>
     i_colony.insert(some_ints);</code></p>
   </li>
 </ul>
+
 <h4>Erase</h4>
+
 <table border="1">
-<tr><td>single element via iterator</td><td><code>iterator erase(const iterator &amp;it)</code></td></tr>
-<tr><td>single element via pointer</td><td><code>int erase(const value_type *p)</code></td></tr>
-<tr><td>range</td><td><code>void erase(const iterator &amp;first, const iterator &amp;last)</code></td></tr>
+  <tbody>
+    <tr>
+      <td>single element via iterator</td>
+      <td><code>iterator erase(const iterator &amp;it)</code></td>
+    </tr>
+    <tr>
+      <td>single element via pointer</td>
+      <td><code>int erase(const value_type *p)</code></td>
+    </tr>
+    <tr>
+      <td>range</td>
+      <td><code>void erase(const iterator &amp;first, const iterator
+        &amp;last)</code></td>
+    </tr>
+  </tbody>
 </table>
 <ul>
   <li><code>iterator erase(const iterator &amp;it)</code> 
@@ -555,9 +742,10 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     slower on average than iterator-based erasure as a lookup has to be
     performed to find the colony element's group - but still faster than all
     std:: container erasure times except std::list, which it is roughly equal
-    to. Returns non-zero if element pointer was not found in any colony group, otherwise returns zero on success.
-    Attempting to erase a previously-erased element results in undefined
-    behaviour (this is checked for via an assert in debug mode). Example:</p>
+    to. Returns non-zero if element pointer was not found in any colony group,
+    otherwise returns zero on success. Attempting to erase a previously-erased
+    element results in undefined behaviour (this is checked for via an assert
+    in debug mode). Example:</p>
     <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
     plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
     a_struct struct_instance;<br>
@@ -566,7 +754,9 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     int success = data_colony.erase(struct_pointer);<br>
     if (success) std::cout &lt;&lt; "Erasure successful" &lt;&lt;
     std::endl;</code> </p>
-  <li><code>void erase(const iterator &amp;first, const iterator &amp;last)</code> 
+  </li>
+  <li><code>void erase(const iterator &amp;first, const iterator
+    &amp;last)</code> 
     <p>Erases all contents of a given colony from <code>first</code> to the
     element before the <code>last</code> iterator. Example:</p>
     <code style="color: brown">plf::colony&lt;int&gt; iterator1 =
@@ -575,11 +765,12 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     plf::colony&lt;int&gt; iterator2 = colony1.begin();<br>
     colony1.advance(iterator2, 20);<br>
     colony1.erase(iterator1, iterator2);</code> </li>
-  </li>
 </ul>
+
 <h4>Other functions</h4>
 <ul>
-  <li><code>iterator emplace(Arguments ...parameters) <b>C++11 and upwards</b></code> 
+  <li><code>iterator emplace(Arguments ...parameters) <b>C++11 and
+    upwards</b></code> 
     <p>Constructs new element directly within colony. Will insert the element
     in a previously erased element slot if one exists, otherwise will insert to
     back of colony. Returns iterator to location of inserted element.
@@ -588,9 +779,9 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     <p><code style="color: brown">class simple_class<br>
     {<br>
     private:<br>
-    &nbsp;int number;<br>
+     int number;<br>
     public:<br>
-    &nbsp;simple_class(int a_number): number (a_number) {};<br>
+     simple_class(int a_number): number (a_number) {};<br>
     };<br>
     <br>
     plf::colony&lt;simple_class&gt; simple_classes;<br>
@@ -623,32 +814,53 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     Example: <code style="color: brown">std::cout &lt;&lt; i_colony.capacity()
     &lt;&lt; std::endl;</code></p>
   </li>
-  <li><code>void shrink_to_fit()</code>
-    <p>Reduces container capacity to the amount necessary to store all currently stored elements. If the total number of elements is larger than the maximum group size, the resultant capacity will be equal to <code>((total_elements / max_group_size) + 1) * max_group_size</code> (rounding down at division). Invalidates all pointers, iterators and references to elements within the container.<br>
+  <li><code>void shrink_to_fit()</code> 
+    <p>Reduces container capacity to the amount necessary to store all
+    currently stored elements. If the total number of elements is larger than
+    the maximum group size, the resultant capacity will be equal to
+    <code>((total_elements / max_group_size) + 1) * max_group_size</code>
+    (rounding down at division). Invalidates all pointers, iterators and
+    references to elements within the container.<br>
     Example: <code style="color: brown">i_colony.shrink_to_fit();</code></p>
   </li>
-  <li><code>void reserve(unsigned short reserve_amount)</code>
+  <li><code>void reserve(unsigned short reserve_amount)</code> 
     <p>Preallocates memory space sufficient to store the number of elements
     indicated by <code>reserve_amount</code>. The maximum size for this number
-    is limited to the maximum group size of the colony and will be truncated if necessary. The default maximum group size is 65535 on
-    the majority of platforms.<br>
+    is limited to the maximum group size of the colony and will be truncated if
+    necessary. The default maximum group size is 65535 on the majority of
+    platforms.<br>
     Example: <code style="color: brown">i_colony.reserve(15);</code></p>
   </li>
   <li><code>void clear()</code> 
     <p>Empties the colony and removes all elements and groups.<br>
     Example: <code style="color: brown">object_colony.clear();</code></p>
   </li>
-  <li><code>void change_group_sizes(const unsigned short min_group_size, const unsigned short max_group_size)</code> 
-    <p>Changes the minimum and maximum internal group sizes, in terms of number of elements stored per group. If the colony is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
-    Example: <code style="color: brown">object_colony.change_group_sizes(1000, 10000);</code></p>
+  <li><code>void change_group_sizes(const unsigned short min_group_size, const
+    unsigned short max_group_size)</code> 
+    <p>Changes the minimum and maximum internal group sizes, in terms of number
+    of elements stored per group. If the colony is not empty, all elements will
+    be moved into new groups and all pointers/iterators/references
+    invalidated.<br>
+    Example: <code style="color: brown">object_colony.change_group_sizes(1000,
+    10000);</code></p>
   </li>
-  <li><code>void change_minimum_group_size(const unsigned short min_group_size)</code> 
-    <p>Changes the minimum internal group size only, in terms of minimum number of elements stored per group. If the colony is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
-    Example: <code style="color: brown">object_colony.change_minimum_group_size(100);</code></p>
+  <li><code>void change_minimum_group_size(const unsigned short
+    min_group_size)</code> 
+    <p>Changes the minimum internal group size only, in terms of minimum number
+    of elements stored per group. If the colony is not empty, all elements will
+    be moved into new groups and all pointers/iterators/references
+    invalidated.<br>
+    Example: <code
+    style="color: brown">object_colony.change_minimum_group_size(100);</code></p>
   </li>
-  <li><code>void change_maximum_group_size(const unsigned short min_group_size)</code> 
-    <p>Changes the maximum internal group size only, in terms of maximum number of elements stored per group. If the colony is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
-    Example: <code style="color: brown">object_colony.change_maximum_group_size(1000);</code></p>
+  <li><code>void change_maximum_group_size(const unsigned short
+    min_group_size)</code> 
+    <p>Changes the maximum internal group size only, in terms of maximum number
+    of elements stored per group. If the colony is not empty, all elements will
+    be moved into new groups and all pointers/iterators/references
+    invalidated.<br>
+    Example: <code
+    style="color: brown">object_colony.change_maximum_group_size(1000);</code></p>
   </li>
   <li><code>void swap(colony &amp;source)</code> 
     <p>Swaps the colony's contents with that of <code>source</code>.<br>
@@ -706,10 +918,7 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     per standard STL guidelines).</p>
   </li>
 </ul>
-
-
 <!-- <h3>Non-member functions</h3> -->
-
 <ul>
   <li><code>template &lt;iterator_type&gt; void advance(iterator_type iterator,
     distance_type distance)</code> 
@@ -732,7 +941,7 @@ the same colony (ie. closer to the end/beginning of the colony).</p>
     i_colony.next(i_colony.begin(), 20);</code></p>
   </li>
   <li><code>template &lt;iterator_type&gt; iterator_type prev(const
-    iterator_type &amp;iterator, distance_type distance)</code>
+    iterator_type &amp;iterator, distance_type distance)</code> 
     <p>Creates a copy of the iterator supplied, then decrements/increments this
     iterator by the positive or negative amount indicated by
     <i>distance</i>.<br>
@@ -966,19 +1175,18 @@ it's iteration performance being entirely dependent on fitting all data in the
 CPU cache. The other two containers which may approach usability via
 modification are std::deque and std::vector.</p>
 
-<p>Because std::deque does not invalidate pointers upon insertion at the back
-or front of the container (iterators however may be invalidated according to
-the C++ standard), we don't have to worry about pointers being invalidated
-during non-ordered insertion, meaning we can use a specific modification which
-I'lll call a pointer-to-deque deque, or pointer_deque for short. In this
-scenario we take our deque of elements, and construct a secondary deque
-containing pointers to each element in the first deque. When we erase, we only
-erase from the pointer deque, and when we iterate, we iterate over the pointer
-deque and access only those elements pointed to by the pointer deque. In doing
-so we reduce erase times for larger-than-scalar types, as it is computationally
-cheaper to reallocate pointers than larger structs. We also avoid reallocation
-during erasure for the element deque, meaning pointers and references to
-elements within the deque stay valid.</p>
+<p>Because std::deque does not invalidate pointers upon insertion to the back
+or front of the container, we don't have to worry about pointers being
+invalidated during non-ordered insertion, meaning we can use a specific
+modification which I'lll call a pointer-to-deque deque, or pointer_deque for
+short. In this scenario we take our deque of elements, and construct a
+secondary deque containing pointers to each element in the first deque. When we
+erase, we only erase from the pointer deque, and when we iterate, we iterate
+over the pointer deque and access only those elements pointed to by the pointer
+deque. In doing so we reduce erase times for larger-than-scalar types, as it is
+computationally cheaper to reallocate pointers than larger structs. We also
+avoid reallocation during erasure for the element deque, meaning pointers and
+references to elements within the deque stay valid.</p>
 
 <p>We cannot employ the same tactic with std::vector because of the
 reallocation during insertion regardless of insertion position. What we can do
@@ -1184,10 +1392,10 @@ overall dominates performance.</p>
 ie. if the container in question is the only container being iterated over by
 your program, then provided that your amount of data is small and will fit
 entirely within the CPU cache, std::list is probably the best solution where we
-(a) need adequate performance and (b) cannot have pointer/iterator invalidation
-and (c) don't require ordered insertion. However this is a very small, unlikely
-and specialised scenario - in the bulk of scenarios std::list should not be
-used where pointer stability is required.</p>
+(a) need adequate performance and (b) cannot have pointer invalidation and (c)
+don't require ordered insertion. However this is a very small, unlikely and
+specialised scenario - in the bulk of scenarios std::list should not be used
+where pointer stability is required.</p>
 
 <p>Using a bool or similar type to indicate erasure in a container (as
 represented in this case by deque_bool) is always a poor choice by comparison
@@ -1305,11 +1513,11 @@ programming.</font> </p>
         ie. in performance-critical code.</li>
     </ol>
     <p>Under these circumstances a colony will generally out-perform other
-    std:: containers. In addition, because it never invalidates pointer or
-    iterator references to container elements (except when the element being
-    referred to has been previously erased) it can make many programming tasks
-    involving inter-relating structures in an object-oriented or modular
-    environment much faster, and can be considered in those circumstances.</p>
+    std:: containers. In addition, because it never invalidates pointer
+    references to container elements (except when the element being pointed to
+    has been previously erased) it can make many programming tasks involving
+    inter-relating structures in an object-oriented or modular environment much
+    faster, and can be considered in those circumstances.</p>
   </li>
   <li><h4>What are some examples of situations where a colony might improve
     performance?</h4>
@@ -1393,9 +1601,10 @@ programming.</font> </p>
     simultaneously, but the invalidation caused by insertion/push_back and
     erasure means those operations cannot occur at the same time as anything
     else.</p>
-    <p>Colony on the other hand does not invalidate pointers/iterators to
-    non-erased elements during insertion and erasure, resulting in the
-    following matrix:</p>
+    <p>Colony on the other hand does not (mostly) invalidate pointers/iterators
+    to elements during insertion and erasure (iterators == end() may be
+    invalidated by subsequent insertions, and iterators to elements which are erased will become
+    invalid), resulting in the following matrix:</p>
 
     <table border="1" cellspacing="3">
       <tbody>
@@ -1410,7 +1619,7 @@ programming.</font> </p>
           <td>Insertion</td>
           <td>No</td>
           <td>No</td>
-          <td>No</td>
+          <td>Mostly</td>
           <td>Yes</td>
         </tr>
         <tr>
@@ -1422,7 +1631,7 @@ programming.</font> </p>
         </tr>
         <tr>
           <td>Iteration</td>
-          <td>No</td>
+          <td>Mostly</td>
           <td>No</td>
           <td>Yes</td>
           <td>Yes</td>
@@ -1456,7 +1665,9 @@ programming.</font> </p>
         was. Insertion is essentially random unless no erasures have been made
         prior, or an equal number of erasures and insertions have been made
         prio.</li>
-      <li>For architectural reasons, reserve can only reserve up to 65535 elements. A fill-constructor can however create as many elements as possible.</li>
+      <li>For architectural reasons, reserve can only reserve up to 65535
+        elements. A fill-constructor can however create as many elements as
+        possible.</li>
       <li>Once an element has been erased, any iterator or pointer pointing to
         that element is no longer valid. This is the same as vector and other
         std:: container rules, but not the same as an array. In the case of
@@ -1473,11 +1684,12 @@ programming.</font> </p>
     size of your internal memory groups in the constructor. The form of this is
     as follows:<br>
     <code>plf::vector&lt;object&gt; a_vector;<br>
-	a_vector.change_group_sizes(500, 5000);</code><br>
+    a_vector.change_group_sizes(500, 5000);</code><br>
     where the first number is the minimum size of the internal memory groups
     and the second is the maximum size. Note these can be the same size,
     resulting in an unchanging group size for the lifetime of the colony
-    (unless <code>change_group_sizes</code> is called again or operator = is called).<br>
+    (unless <code>change_group_sizes</code> is called again or operator = is
+    called).<br>
     One reason to do this is that it is slightly slower to pop an element
     location off the internal memory position recycling stack, than it is to
     insert a new element to the end of the colony (the default behaviour when
@@ -1490,7 +1702,9 @@ programming.</font> </p>
     iteration performance will suffer. In that scenario you may want to run a
     benchmark limiting the minimum/maximum sizes of the groups, and tune it
     until you find optimal usage.</p>
-    <p>Please note that the the fill, range and initializer-list constructors can also take group size parameters, making it possible to construct filled colonies using custom group sizes.</p>
+    <p>Please note that the the fill, range and initializer-list constructors
+    can also take group size parameters, making it possible to construct filled
+    colonies using custom group sizes.</p>
   </li>
   <li><h4>What is colony's Abstract Data Type (ADT)?</h4>
     <p>While I am happy to be proven wrong I suspect colony is it's own
@@ -1522,9 +1736,12 @@ programming.</font> </p>
     that any skipfield used not utilize branching code - as a common boolean
     skipfield does - because of the performance detriment caused by this, it is
     possible there could be a computer architecture where the cost of branching
-    is much lower. The main necessity is that the skipfield enables O(1) ++ and -- operations (otherwise iterators cannot be valid within the standard). 	For the stack I am using <a href="stack.htm">plf::stack</a> because according to benchmarks it is more
-    efficient than the current standard library alternatives. But again, if a more efficient
-    alternative were found it could be used instead.</p>
+    is much lower. The main necessity is that the skipfield enables O(1) ++ and
+    -- operations (otherwise iterators cannot be valid within the standard).
+    For the stack I am using <a href="stack.htm">plf::stack</a> because
+    according to benchmarks it is more efficient than the current standard
+    library alternatives. But again, if a more efficient alternative were found
+    it could be used instead.</p>
     <p>If we look at a deque, the only aspect out of those three that it
     shares, is (1) - utilizing a multiple-memory-block allocation pattern.
     Which isn't a strong association. If we look at a multiset, an unordered
@@ -1536,26 +1753,39 @@ programming.</font> </p>
     data type.</p>
   </li>
   <li><h4>Exception Guarantees?</h4>
-    <p>For both colony and stack all operations which allocate memory have strong exception guarantees
-    and will roll back if an exception occurs, except for operator = which has
-    a basic exception guarantee (see below). For colony, iterators are bounded by
-    asserts in debug mode, but unbounded in release mode, so it is possible for
-    an incorrect use of an iterator (iterating past end(), for example) to
-    trigger an out-of-bounds memory exception. These are the only two areas
-    where exceptions can occur.</p>
-    <p>Similarly with plf::stack, top() and pop() operations are assert-checked against stack emptiness in debug mode, but performing these functions on an empty stack in release mode results in undefined behaviour.</p>
+    <p>For both colony and stack all operations which allocate memory have
+    strong exception guarantees and will roll back if an exception occurs,
+    except for operator = which has a basic exception guarantee (see below).
+    For colony, iterators are bounded by asserts in debug mode, but unbounded
+    in release mode, so it is possible for an incorrect use of an iterator
+    (iterating past end(), for example) to trigger an out-of-bounds memory
+    exception. These are the only two areas where exceptions can occur.</p>
+    <p>Similarly with plf::stack, top() and pop() operations are assert-checked
+    against stack emptiness in debug mode, but performing these functions on an
+    empty stack in release mode results in undefined behaviour.</p>
     <p>The reason why operator = (for both colony and stack) only has a basic
     guarantee is they do not utilize the copy-swap idiom, as the copy-swap
     idiom significantly increases the chance of any exception occuring - this
     is because the most common way an exception tends to occur during a copy
     operation is due to a lack of memory space, and the copy-swap idiom doubles
     the memory requirement for a copy operation by constructing the copy before
-    destructing the original data. This is doubly innappropriate in game development, which colony has been initially for, where memory constraints are often critical and the runtime lag from memory spikes can cause detrimental game performance. So in the case of colony and plf::stack, if a non-memory-allocation-based exception occurs during copy, the = operators will have already destructed
-    their data, so the containers will be empty and cannot roll back - hence they have a basic guarantee, not a
-    strong guarantee.</p>
+    destructing the original data. This is doubly innappropriate in game
+    development, which colony has been initially for, where memory constraints
+    are often critical and the runtime lag from memory spikes can cause
+    detrimental game performance. So in the case of colony and plf::stack, if a
+    non-memory-allocation-based exception occurs during copy, the = operators
+    will have already destructed their data, so the containers will be empty
+    and cannot roll back - hence they have a basic guarantee, not a strong
+    guarantee.</p>
   </li>
   <li><h4>Iterators not following rule of zero?</h4>
-    <p>It was found under GCC that the high-modification scenario benchmarks suffered a 11% overall performance loss when iterator copy and move constructors/operators where not explicitly defined, possibly because GCC did not know to vectorise the operations without explicit code or because it implemented copy/swap idiom instead of copying directly. No performance gain was found under any tests when removing the copy and move constructors/operators.</p>
+    <p>It was found under GCC that the high-modification scenario benchmarks
+    suffered a 11% overall performance loss when iterator copy and move
+    constructors/operators where not explicitly defined, possibly because GCC
+    did not know to vectorise the operations without explicit code or because
+    it implemented copy/swap idiom instead of copying directly. No performance
+    gain was found under any tests when removing the copy and move
+    constructors/operators.</p>
   </li>
 </ol>
 <br>
@@ -1564,23 +1794,62 @@ programming.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-08-04: v3.51 - Correction to move-insert courtesy of Peet Nick. Removal of end-block edge-case scenario code, as it was found to be of such low statistical significance as to be useless. The fix increased memory use in the scenario of the edge case which might be it's own problem in most scenarios. To get around the edge case, if it occurs in a given context, an allocator approach would be most appropriate. Update to benchmark suite.</li>
-  <li>2016-07-19: v3.5 - Colony now accepts a template parameter for the skipfield type. This enables the use of, for example, unsigned char as the skipfield type. The bitdepth of the unsigned integer also defines the default maximum size of colony groups. The benchmark suite has been updated with memory measurements for the general_use tests. General_use tests changed to percentage-based tests. Internal erased location stack now stores only element pointers, not full iterators. Storing just the pointer and having to reconstruct the iterator slows down reinsertion after an erase, but speeds up the erase itself and results in an overall performance improvement, as well as less memory consumption. Slight improvement for fill-insert. Sanity-checks for range-insert and initializer-list-insert implemented. Minor fix to C++03 support in benchmark suite.</li>
-  <li>2016-07-4: v3.35 - Another compliance fix for benchmark suite in clang, courtesy of Arthur O'Dwyer.</li>
-  <li>2016-07-3: v3.34 - Minor warning removal for test suite. Performance improvement for colony edge-case scenario where a single element is inserted and then erased repeatedly, and where the insertion point happens to be at the end of a memory block.</li>
-  <li>2016-07-1: v3.33 - Empty destructors/constructors removed in iterators. Small compliancy fixes in both colony and benchmark suite. Thanks to Arthur O'Dwyer for this update.</li>
-  <li>2016-06-25: v3.31 - Colony iterators no longer inherit from std::iterator and implement the required typedefs themselves. Code tidyup and minor changes. Default of 1 implemented for prev/next.</li>
-  <li>2016-06-17: v3.30 - Correction to colony range constructor. Corrections to advance() asserts.</li>
-  <li>2016-06-15: v3.29 - Support for stateful allocators added, to both colony and stack. More generic solution applied for preventing calls for fill-insert to be matched by range insert template.</li>
-  <li>2016-06-14: v3.25 - Edge-case corrections to colony's clear(), range-insert and fill-insert functions. Minor performance improvement in erase edge-case. Removed older (colony-specific) range insert. Simplified constructors.</li>
-  <li>2016-06-12: v3.22 - Range, fill and initializer-list based insert()'s and constructors now implemented in colony. Bugfix for Microsoft compilers. Warnings fix for clang. Reinitialize functions removed, replaced with change_group_sizes(), change_minimum_group_size() and change_maximum_group_size().</li>
+  <li>2016-08-09: v3.55 - Updates to benchmark suite - now uses a faster xorshift-type rand generator and a fast_mod function, test differences between containers more obvious now. Memory approximation also now outside of main loops, test cases updated for general_use test. Entirely new test-case function. Minor performance enhancements to insert/erase/operator++ for colony + code tidy-up. Minor warning removal for test suite.</li>
+  <li>2016-08-04: v3.51 - Correction to move-insert courtesy of Peet Nick.
+    Removal of end-block edge-case scenario code, as it was found to be of such
+    low statistical significance as to be useless. The fix increased memory use
+    in the scenario of the edge case which might be it's own problem in most
+    scenarios. To get around the edge case, if it occurs in a given context, an
+    allocator approach would be most appropriate. Update to benchmark
+  suite.</li>
+  <li>2016-07-19: v3.5 - Colony now accepts a template parameter for the
+    skipfield type. This enables the use of, for example, unsigned char as the
+    skipfield type. The bitdepth of the unsigned integer also defines the
+    default maximum size of colony groups. The benchmark suite has been updated
+    with memory measurements for the general_use tests. General_use tests
+    changed to percentage-based tests. Internal erased location stack now
+    stores only element pointers, not full iterators. Storing just the pointer
+    and having to reconstruct the iterator slows down reinsertion after an
+    erase, but speeds up the erase itself and results in an overall performance
+    improvement, as well as less memory consumption. Slight improvement for
+    fill-insert. Sanity-checks for range-insert and initializer-list-insert
+    implemented. Minor fix to C++03 support in benchmark suite.</li>
+  <li>2016-07-4: v3.35 - Another compliance fix for benchmark suite in clang,
+    courtesy of Arthur O'Dwyer.</li>
+  <li>2016-07-3: v3.34 - Minor warning removal for test suite. Performance
+    improvement for colony edge-case scenario where a single element is
+    inserted and then erased repeatedly, and where the insertion point happens
+    to be at the end of a memory block.</li>
+  <li>2016-07-1: v3.33 - Empty destructors/constructors removed in iterators.
+    Small compliancy fixes in both colony and benchmark suite. Thanks to Arthur
+    O'Dwyer for this update.</li>
+  <li>2016-06-25: v3.31 - Colony iterators no longer inherit from std::iterator
+    and implement the required typedefs themselves. Code tidyup and minor
+    changes. Default of 1 implemented for prev/next.</li>
+  <li>2016-06-17: v3.30 - Correction to colony range constructor. Corrections
+    to advance() asserts.</li>
+  <li>2016-06-15: v3.29 - Support for stateful allocators added, to both colony
+    and stack. More generic solution applied for preventing calls for
+    fill-insert to be matched by range insert template.</li>
+  <li>2016-06-14: v3.25 - Edge-case corrections to colony's clear(),
+    range-insert and fill-insert functions. Minor performance improvement in
+    erase edge-case. Removed older (colony-specific) range insert. Simplified
+    constructors.</li>
+  <li>2016-06-12: v3.22 - Range, fill and initializer-list based insert()'s and
+    constructors now implemented in colony. Bugfix for Microsoft compilers.
+    Warnings fix for clang. Reinitialize functions removed, replaced with
+    change_group_sizes(), change_minimum_group_size() and
+    change_maximum_group_size().</li>
   <li>2016-06-11: v3.19 - Minor bugfix to plf::stack.</li>
-  <li>2016-06-9: v3.18 - Corrections to colony and stack C++11 typedefs. Some code
-    tidyup. Minor code corrections. Simplified reserve() and shrink_to_fit() functions. Added trim_trailing_groups() function to stack. Minor performance improvements.</li>
+  <li>2016-06-9: v3.18 - Corrections to colony and stack C++11 typedefs. Some
+    code tidyup. Minor code corrections. Simplified reserve() and
+    shrink_to_fit() functions. Added trim_trailing_groups() function to stack.
+    Minor performance improvements.</li>
   <li>2016-05-31: v3.16 - Corrections to colony and stack reserve(). Some code
     tidyup. Correction to test suite.</li>
   <li>2016-05-30: v3.15 - Colony and stack are now compliant with C++11 and
-    C++14 <a href="http://en.cppreference.com/w/cpp/concept/Container">container</a>
+    C++14 <a
+    href="http://en.cppreference.com/w/cpp/concept/Container">container</a>
     concepts. Vectorized some erasure and insertion operations resulting in
     better overall performance in some scenarios. Corrected edge case in
     reverse iteration operator ++. All iterators now bounded by asserts in
@@ -1659,8 +1928,8 @@ programming.</font> </p>
     non-position-based insert via unordered_map/unordered_set). Added postfix
     iterator increment and decrement. Zero-argument ".add()" and ".push()"
     function overloads removed (same thing achievable with
-    "colony.insert(value_type());" and "stack.push(value_type());". Many bugfixes
-    and general code cleanup.</li>
+    "colony.insert(value_type());" and "stack.push(value_type());". Many
+    bugfixes and general code cleanup.</li>
   <li>2015-9-15: v1.79 - Empty base class allocator optimisations and smaller
     optimisation.</li>
   <li>2015-9-1: v1.77 - Some small bugfixes.</li>

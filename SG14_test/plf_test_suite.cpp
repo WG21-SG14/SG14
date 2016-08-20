@@ -166,11 +166,11 @@ void plf_test_suite()
 		
 		colony<int *>::iterator next_iterator = p_colony.next(p_colony.begin(), 5);
 		colony<int *>::const_iterator prev_iterator = p_colony.prev(p_colony.cend(), 300);
-		colony<int *>::iterator prev_iterator2 = p_colony.prev(p_colony.end(), 300);
 		
 		failpass("Iterator next test", p_colony.distance(p_colony.begin(), next_iterator) == 5);
 		failpass("Const iterator prev test", p_colony.distance(p_colony.cend(), prev_iterator) == -300);
         #if defined(__cplusplus) && __cplusplus >= 201402L
+			colony<int *>::iterator prev_iterator2 = p_colony.prev(p_colony.end(), 300);
             failpass("Iterator/Const iterator equality operator test", prev_iterator == prev_iterator2);
         #endif
         

@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 	benchmark_range_stack< std::vector<unsigned char> >(10, 1000000, 1.1, true);
 	
 	// with .reserve():
-	benchmark_range_stack< std::vector<unsigned char> >(10, 1000000, 1.1, true, true);
+//	benchmark_range_stack< std::vector<unsigned char> >(10, 1000000, 1.1, true, true);
 
 	return 0;
 }

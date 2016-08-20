@@ -115,16 +115,19 @@ public:
 
 	inline size_t capacity() const
 	{
-		return static_cast<size_t>(elements.size());
+		return static_cast<size_t>(
+		((((elements.size() * sizeof(element_type)) / 512) + 1) * 512) / sizeof(element_type)
+		); // this approximation based on GCC (libstdc++) deque implementation only
 	}
 	
 	
 	inline size_t approximate_memory_use() const
 	{
 		return static_cast<size_t>(
-			(elements.size() * sizeof(element_type)) + 
-			(element_pointers.size() * sizeof(element_type *)) + 
-			sizeof(*this));
+			64 + // node map
+			((((elements.size() * sizeof(element_type)) / 512) + 1) * 512) + 
+			((((element_pointers.size() * sizeof(element_type *)) / 512) + 1) * 512) + 
+			sizeof(*this)); // this approximation based on GCC (libstdc++) deque implementation only
 	}
 	
 	
