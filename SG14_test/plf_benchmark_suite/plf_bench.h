@@ -9,6 +9,7 @@
 #include <deque>
 #include <stack>
 #include <cstdio> // freopen, sprintf
+#include <limits> // std::numeric_limits
 
 #include "plf_colony.h"
 #include "plf_nanotimer.h"
@@ -120,7 +121,7 @@ struct large_struct_bool
 // MATH FUNCTIONS:
 
 // Fast xorshift+128 random number generator function (original: https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/)
-unsigned int xor128_rand()
+unsigned int xor_rand()
 {
 	static unsigned int x = 123456789;
 	static unsigned int y = 362436069;
@@ -148,7 +149,7 @@ inline unsigned int fast_mod(const unsigned int input, const unsigned int ceilin
 
 inline unsigned int rand_within(const unsigned int range)
 {
-	return fast_mod(xor128_rand(), range);
+	return fast_mod(xor_rand(), range);
 }
 
 
@@ -190,42 +191,42 @@ inline PLF_FORCE_INLINE void container_reserve(plf::colony<container_contents> &
 template <template <typename,typename> class container_type, typename container_contents, typename allocator_type>
 inline PLF_FORCE_INLINE void container_insert(container_type<container_contents, allocator_type> &container)
 {
-	container.push_back(container_contents(xor128_rand() & 255)); // using bitwise AND as a faster replacement for modulo, as this is a power of 2 number - 1
+	container.push_back(container_contents(xor_rand() & 255)); // using bitwise AND as a faster replacement for modulo, as this is a power of 2 number - 1
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(std::list<container_contents> &container)
 {
-	container.push_front(container_contents(xor128_rand() & 255));
+	container.push_front(container_contents(xor_rand() & 255));
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(std::map<unsigned int, container_contents> &container)
 {
-	container.insert(std::make_pair(static_cast<unsigned int>(container.size()), container_contents(xor128_rand() & 255)));
+	container.insert(std::make_pair(static_cast<unsigned int>(container.size()), container_contents(xor_rand() & 255)));
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(std::multiset<container_contents> &container)
 {
-	container.insert(container_contents(xor128_rand() & 255));
+	container.insert(container_contents(xor_rand() & 255));
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(plf::stack<container_contents> &container)
 {
-	container.push(container_contents(xor128_rand() & 255));
+	container.push(container_contents(xor_rand() & 255));
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(std::stack<container_contents> &container)
 {
-	container.push(container_contents(xor128_rand() & 255));
+	container.push(container_contents(xor_rand() & 255));
 }
 
 
@@ -234,21 +235,21 @@ inline PLF_FORCE_INLINE void container_insert(std::stack<container_contents> &co
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned char> &container)
 {
-	container.insert(container_contents(xor128_rand() & 255));
+	container.insert(container_contents(xor_rand() & 255));
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned short> &container)
 {
-	container.insert(container_contents(xor128_rand() & 255));
+	container.insert(container_contents(xor_rand() & 255));
 }
 
 
 template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, std::allocator<container_contents>, unsigned int> &container)
 {
-	container.insert(container_contents(xor128_rand() & 255));
+	container.insert(container_contents(xor_rand() & 255));
 }
 
 
@@ -256,7 +257,7 @@ inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents, st
 //template <class container_contents>
 //inline PLF_FORCE_INLINE void container_insert(plf::colony<container_contents> &container)
 //{
-//	container.insert(container_contents(xor128_rand() & 255));
+//	container.insert(container_contents(xor_rand() & 255));
 //}
 
 
@@ -769,8 +770,9 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (number_of_elements > 1);
 
-	const unsigned int erasure_limit = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<float>(erasure_percentage) / 100.0f));
+	const unsigned int erasure_limit = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
 	unsigned int number_of_erasures;
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
 	double insert_time = 0, erase_time = 0, total_size = 0;
 	plf::nanotimer insert_timer, erase_timer;
 
@@ -802,7 +804,7 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -821,7 +823,7 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -870,7 +872,7 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -889,7 +891,7 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -948,7 +950,7 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -967,7 +969,7 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 			{
 				for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 				{
-					if (rand_within(100) < erasure_percentage)
+					if ((xor_rand() & 127) < erasure_percent_expanded)
 					{
 						container_erase(container, current_element);
 
@@ -1041,7 +1043,8 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 	assert (number_of_elements > 1);
 
 
-	const unsigned int erasure_limit = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<float>(erasure_percentage) / 100.0f));
+	const unsigned int erasure_limit = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
 	unsigned int number_of_erasures;
 	double insert_time = 0, erase_time = 0, total_size = 0;
 	plf::nanotimer insert_timer, erase_timer;
@@ -1074,7 +1077,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -1093,7 +1096,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -1144,7 +1147,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -1163,7 +1166,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -1224,7 +1227,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -1243,7 +1246,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 			{
 				for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 				{
-					if (rand_within(100) < erasure_percentage)
+					if ((xor_rand() & 127) < erasure_percent_expanded)
 					{
 						container_erase(container, current_element);
 
@@ -1394,7 +1397,8 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 {
 	assert (number_of_elements > 1);
 
-	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0));
+	const unsigned int total_number_of_insertions = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
 	
 	double total = 0;
 	unsigned int end_approximate_memory_use = 0;
@@ -1419,7 +1423,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 				}
@@ -1463,7 +1467,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 				}
@@ -1509,13 +1513,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 
 // new type for more realistic test:
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (number_of_elements > 1);
 
 	double total = 0;
-	unsigned int end_approximate_memory_use = 0;
-	const unsigned int comparison_percentage = static_cast<unsigned int>(erasure_percentage * 167772.16), dump_run_end = (number_of_runs / 10) + 1;
+	unsigned int end_approximate_memory_use = 0, num_erasures;
+	const unsigned int comparison_percentage = static_cast<unsigned int>((erasure_percentage * 167772.16) + 0.5), dump_run_end = (number_of_runs / 10) + 1;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1523,11 +1527,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 	{
 		container_type container;
 
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
-
+ 		if (reserve)
+ 		{
+ 			container_reserve(container, number_of_elements);
+ 		}
+ 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
 			container_insert(container);
@@ -1535,12 +1539,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
-		
+			num_erasures = 0;
+			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor128_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) < comparison_percentage)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1548,12 +1554,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 				}
 			}
 
-			for (unsigned int counter = 0; counter != number_of_elements; ++counter)
+			for (unsigned int counter = 0; counter != num_erasures; ++counter)
 			{
-				if ((xor128_rand() & 16777215) < comparison_percentage)
-				{
-					container_insert(container);
-				}
+				container_insert(container);
 			}
 		}
 
@@ -1570,10 +1573,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 	{
 		container_type container;
 
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
+ 		if (reserve)
+ 		{
+ 			container_reserve(container, number_of_elements);
+ 		}
 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1582,11 +1585,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor128_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) < comparison_percentage)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1594,12 +1600,9 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 				}
 			}
 
-			for (unsigned int counter = 0; counter != number_of_elements; ++counter)
+			for (unsigned int counter = 0; counter != num_erasures; ++counter)
 			{
-				if ((xor128_rand() & 16777215) < comparison_percentage)
-				{
-					container_insert(container);
-				}
+				container_insert(container);
 			}
 		}
 	}
@@ -1614,12 +1617,12 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage2(const unsigned in
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (number_of_elements > 1);
 
 	double total = 0;
-	unsigned int end_approximate_memory_use = 0;
+	unsigned int end_approximate_memory_use = 0, num_erasures;
 	const unsigned int comparison_percentage = static_cast<unsigned int>(erasure_percentage * 167772.16), dump_run_end = (number_of_runs / 10) + 1;
 	plf::nanotimer full_time;
 	full_time.start();
@@ -1628,10 +1631,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const u
 	{
 		container_type container;
 
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
+ 		if (reserve)
+ 		{
+ 			container_reserve(container, number_of_elements);
+ 		}
 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1640,11 +1643,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const u
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor128_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) < comparison_percentage)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1652,14 +1658,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const u
 				}
 			}
 
-			container_remove_if(container);
-
-			for (unsigned int counter = 0; counter != number_of_elements; ++counter)
+			if (num_erasures != 0)
 			{
-				if ((xor128_rand() & 16777215) < comparison_percentage)
-				{
-					container_insert(container);
-				}
+				container_remove_if(container);
+			}
+
+			for (unsigned int counter = 0; counter != num_erasures; ++counter)
+			{
+				container_insert(container);
 			}
 		}
 
@@ -1676,10 +1682,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const u
 	{
 		container_type container;
 
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
+ 		if (reserve)
+ 		{
+ 			container_reserve(container, number_of_elements);
+ 		}
 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1688,11 +1694,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const u
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor128_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) < comparison_percentage)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1700,14 +1709,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage2(const u
 				}
 			}
 
-			container_remove_if(container);
-
-			for (unsigned int counter = 0; counter != number_of_elements; ++counter)
+			if (num_erasures != 0)
 			{
-				if ((xor128_rand() & 16777215) < comparison_percentage)
-				{
-					container_insert(container);
-				}
+				container_remove_if(container);
+			}
+
+			for (unsigned int counter = 0; counter != num_erasures; ++counter)
+			{
+				container_insert(container);
 			}
 		}
 	}
@@ -1726,7 +1735,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 	assert (number_of_elements > 1);
 
 	double total = 0;
-	unsigned int end_approximate_memory_use = 0;
+	unsigned int end_approximate_memory_use = 0, num_erasures;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1746,11 +1755,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
 				if (rand_within(number_of_elements) < number_of_modifications)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1758,7 +1770,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 
-			container_remove_if(container);
+			if (num_erasures != 0)
+			{
+				container_remove_if(container);
+			}
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
@@ -1791,11 +1806,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
 				if (rand_within(number_of_elements) < number_of_modifications)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1803,7 +1821,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 
-			container_remove_if(container);
+			if (num_erasures != 0)
+			{
+				container_remove_if(container);
+			}
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
@@ -1844,10 +1865,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 {
 	assert (number_of_elements > 1);
 
-	const unsigned int total_number_of_insertions = static_cast<unsigned int>(static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0));
+	const unsigned int total_number_of_insertions = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
 	
 	double total = 0;
-	unsigned int end_approximate_memory_use = 0;
+	unsigned int end_approximate_memory_use = 0, num_erasures;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1867,11 +1889,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1879,7 +1904,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 				}
 			}
 
-			container_remove_if(container);
+			if (num_erasures != 0)
+			{
+				container_remove_if(container);
+			}
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
 			{
@@ -1912,11 +1940,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
+			num_erasures = 0;
+
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
+					++num_erasures;
 				}
 				else
 				{
@@ -1924,7 +1955,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 				}
 			}
 
-			container_remove_if(container);
+			if (num_erasures != 0)
+			{
+				container_remove_if(container);
+			}
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
 			{
@@ -1967,7 +2001,8 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 	assert (number_of_elements > 1);
 
 
-	const unsigned int erasure_limit = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<float>(erasure_percentage) / 100.0f));
+	const unsigned int erasure_limit = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
 	unsigned int number_of_erasures;
 	double insert_time = 0, erase_time = 0, total_size = 0;
 	plf::nanotimer insert_timer, erase_timer;
@@ -2000,7 +2035,7 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -2019,7 +2054,7 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -2069,7 +2104,7 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -2088,7 +2123,7 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -2143,7 +2178,7 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -2162,7 +2197,7 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 			{
 				for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 				{
-					if (rand_within(100) < erasure_percentage)
+					if ((xor_rand() & 127) < erasure_percent_expanded)
 					{
 						container_erase(container, current_element);
 
@@ -2208,7 +2243,9 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 	assert (number_of_elements > 1);
 
 
-	const unsigned int erasure_limit = static_cast<unsigned int>(static_cast<float>(number_of_elements) * (static_cast<float>(erasure_percentage) / 100.0f));
+	const unsigned int erasure_limit = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
+
 	unsigned int number_of_erasures;
 	double insert_time = 0, erase_time = 0, total_size = 0;
 	plf::nanotimer insert_timer, erase_timer;
@@ -2241,7 +2278,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -2260,7 +2297,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -2312,7 +2349,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if (rand_within(100) < erasure_percentage)
+			if ((xor_rand() & 127) < erasure_percent_expanded)
 			{
 				container_erase(container, current_element);
 
@@ -2331,7 +2368,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 		{
 			for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -2389,7 +2426,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(100) < erasure_percentage)
+				if ((xor_rand() & 127) < erasure_percent_expanded)
 				{
 					container_erase(container, current_element);
 
@@ -2408,7 +2445,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 			{
 				for (typename container_type::iterator current_element = --(container.end()); current_element != container.begin(); --current_element)
 				{
-					if (rand_within(100) < erasure_percentage)
+					if ((xor_rand() & 127) < erasure_percent_expanded)
 					{
 						container_erase(container, current_element);
 
@@ -2751,7 +2788,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage(const unsign
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage2(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2769,7 +2806,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage2(const unsig
 				std::cout << number_of_elements;
 			}
 			
-			benchmark_general_use_percentage2<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage, output_csv, reserve);
+			benchmark_general_use_small_percentage<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage, output_csv, reserve);
 		}
 		
 		if (output_csv)
@@ -2782,7 +2819,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage2(const unsig
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_percentage2(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2800,7 +2837,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_percentage2(c
 				std::cout << number_of_elements;
 			}
 			
-			benchmark_general_use_remove_if_percentage2<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage, output_csv, reserve);
+			benchmark_general_use_remove_if_small_percentage<container_type>(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage, output_csv, reserve);
 		}
 		
 		if (output_csv)

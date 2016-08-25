@@ -345,31 +345,21 @@ public:
 
 
 
-	private:
-		inline PLF_COLONY_FORCE_INLINE void check_for_end_of_group_and_progress() // used by erase and operator ++
-		{
-			if (element_pointer >= group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
-			{
-				group_pointer = group_pointer->next_group;
-				skipfield_pointer = group_pointer->skipfield;
-				element_pointer = group_pointer->elements + *skipfield_pointer;
-				skipfield_pointer += *skipfield_pointer;
-			}
-		}
-
-
-
-	public:
-	
-		inline PLF_COLONY_FORCE_INLINE colony_iterator & operator ++ ()
+		inline colony_iterator & operator ++ ()
 		{
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
-
-			element_pointer += 1 + *(++skipfield_pointer);
+			
+			++skipfield_pointer;
+			element_pointer += 1 + *skipfield_pointer;
 			skipfield_pointer += *skipfield_pointer;
 			
-			check_for_end_of_group_and_progress();
+			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
+			{
+				group_pointer = group_pointer->next_group;
+				element_pointer = group_pointer->elements + *(group_pointer->skipfield);
+				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
+			}
 
 			return *this;
 		}
@@ -385,6 +375,21 @@ public:
 
 
 
+	private:
+		inline void check_for_end_of_group_and_progress() // used by erase and operator ++
+		{
+			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
+			{
+				group_pointer = group_pointer->next_group;
+				element_pointer = group_pointer->elements + *(group_pointer->skipfield);
+				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
+			}
+		}
+
+
+
+	public:
+	
 		colony_iterator & operator -- ()
 		{
 			assert(group_pointer != NULL);
@@ -392,7 +397,8 @@ public:
 
 			if (element_pointer != group_pointer->elements) // ie. not already at beginning of group 
 			{
-				element_pointer -= 1 + *(--skipfield_pointer);
+				--skipfield_pointer;
+				element_pointer -= 1 + *skipfield_pointer;
 				skipfield_pointer -= *skipfield_pointer;
 
 				if (element_pointer != group_pointer->elements - 1) // ie. iterator was not already at beginning of colony (with some previous consecutive deleted elements), and skipfield does not takes us into the previous group)
@@ -587,7 +593,8 @@ public:
 
 			if (element_pointer != group_pointer->elements) // ie. not already at beginning of group
 			{
-				element_pointer -= 1 + *(--skipfield_pointer);
+				--skipfield_pointer;
+				element_pointer -= 1 + *skipfield_pointer;
 				skipfield_pointer -= *skipfield_pointer;
 
 				if (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)) // ie. iterator is not now at rend()
@@ -1001,7 +1008,8 @@ private:
 			{
 				PLF_COLONY_DESTROY(element_allocator_type, (*this), element_pointer);
 
-				element_pointer += 1 + *(++skipfield_pointer);
+				++skipfield_pointer;
+				element_pointer += 1 + *skipfield_pointer;
 				skipfield_pointer += *skipfield_pointer;
 
 				if (element_pointer == end_pointer) // ie. beyond end of available data
@@ -1018,9 +1026,8 @@ private:
 					}
 
 					end_pointer = group_pointer->last_endpoint;
-					skipfield_pointer = group_pointer->skipfield;
-					element_pointer = group_pointer->elements + *skipfield_pointer;
-					skipfield_pointer += *skipfield_pointer;
+					element_pointer = group_pointer->elements + *(group_pointer->skipfield);
+					skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
 				}
 			}
 		}
@@ -1120,15 +1127,15 @@ public:
 					{
 						end_iterator.group_pointer = end_iterator.group_pointer->previous_group;
 						end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
-						end_iterator.skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(end_iterator.element_pointer) + end_iterator.group_pointer->size;
+						end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
 						PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group, 1);
 						end_iterator.group_pointer->next_group = NULL;
 						throw;
 					}
 
 					++end_iterator.skipfield_pointer;
-					++(next_group.last_endpoint);
-					++(next_group.number_of_elements);
+					++next_group.last_endpoint;
+					++next_group.number_of_elements;
 					++total_number_of_elements;
 					return return_iterator; /* returns value before incrementation */
 				}
@@ -1169,7 +1176,7 @@ public:
 					{
 						case 1: // previous erased consecutive elements, none following
 						{
-							*(new_location.skipfield_pointer - (*(new_location.skipfield_pointer) - 1)) = *(new_location.skipfield_pointer) - 1;
+							*(new_location.skipfield_pointer - (*new_location.skipfield_pointer - 1)) = *new_location.skipfield_pointer - 1;
 							break;
 						}
 						case 2: // No previous consecutive erased points, at least one following ie. this was the prime erasure point
@@ -1182,10 +1189,8 @@ public:
 							skipfield_type vectorize = --update_count / 4;
 							update_count -= vectorize * 4;
 	
-							while (vectorize != 0)
+							while (vectorize-- != 0)
 							{
-								--vectorize;
-	
 								*(following + 1) = update_value;
 								*(following + 2) = update_value + 1;
 								*(following + 3) = update_value + 2;
@@ -1217,10 +1222,8 @@ public:
 							skipfield_type vectorize = --update_count / 4;
 							update_count -= vectorize * 4;
 	
-							while (vectorize != 0)
+							while (vectorize-- != 0)
 							{
-								--vectorize;
-	
 								*(following + 1) = update_value;
 								*(following + 2) = update_value + 1;
 								*(following + 3) = update_value + 2;
@@ -1284,8 +1287,8 @@ public:
 	
 						++end_iterator.element_pointer; /* not postfix incrementing prev statement as necessitates a slower try-catch block to reverse increment if necessary */
 						++end_iterator.skipfield_pointer;
-						++(end_iterator.group_pointer->last_endpoint);
-						++(end_iterator.group_pointer->number_of_elements);
+						++end_iterator.group_pointer->last_endpoint;
+						++end_iterator.group_pointer->number_of_elements;
 						++total_number_of_elements;
 						return return_iterator; /* returns value before incrementation */
 					}
@@ -1322,15 +1325,15 @@ public:
 						{
 							end_iterator.group_pointer = end_iterator.group_pointer->previous_group;
 							end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
-							end_iterator.skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(end_iterator.element_pointer) + end_iterator.group_pointer->size;
+							end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
 							PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group, 1);
 							end_iterator.group_pointer->next_group = NULL;
 							throw;
 						}
 
 						++end_iterator.skipfield_pointer;
-						++(next_group.last_endpoint);
-						++(next_group.number_of_elements);
+						++next_group.last_endpoint;
+						++next_group.number_of_elements;
 						++total_number_of_elements;
 						return return_iterator; /* returns value before incrementation */
 					}
@@ -1371,12 +1374,12 @@ public:
 						{
 							case 1: // previous erased consecutive elements, none following
 							{
-								*(new_location.skipfield_pointer - (*(new_location.skipfield_pointer) - 1)) = *(new_location.skipfield_pointer) - 1;
+								*(new_location.skipfield_pointer - (*new_location.skipfield_pointer - 1)) = *new_location.skipfield_pointer - 1;
 								break;
 							}
 							case 2: // No previous consecutive erased points, at least one following ie. this was the prime erasure point
 							{
-								skipfield_type update_count = *(new_location.skipfield_pointer) - 1;
+								skipfield_type update_count = *new_location.skipfield_pointer - 1;
 								skipfield_pointer_type following = new_location.skipfield_pointer + 1;
 								*following = update_count;
 								skipfield_type update_value = 2;
@@ -1384,10 +1387,8 @@ public:
 								skipfield_type vectorize = --update_count / 4;
 								update_count -= vectorize * 4;
 	
-								while (vectorize != 0)
+								while (vectorize-- != 0)
 								{
-									--vectorize;
-	
 									*(following + 1) = update_value;
 									*(following + 2) = update_value + 1;
 									*(following + 3) = update_value + 2;
@@ -1406,7 +1407,7 @@ public:
 							}
 							case 3: // both preceding and following consecutive erased elements
 							{
-								const skipfield_type value = *(new_location.skipfield_pointer);
+								const skipfield_type value = *new_location.skipfield_pointer;
 								skipfield_pointer_type start_node = new_location.skipfield_pointer - (value - 1);
 								skipfield_type update_count = *start_node - value;
 								*start_node = value - 1;
@@ -1419,10 +1420,8 @@ public:
 								skipfield_type vectorize = --update_count / 4;
 								update_count -= vectorize * 4;
 								
-								while (vectorize != 0)
+								while (vectorize-- != 0)
 								{
-									--vectorize;
-									
 									*(following + 1) = update_value;
 									*(following + 2) = update_value + 1;
 									*(following + 3) = update_value + 2;
@@ -2096,10 +2095,10 @@ public:
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
 				begin_iterator.group_pointer = first_group; // note: end iterator only needs to be changed if the deleted group was the final group in the chain
-				begin_iterator.skipfield_pointer = first_group->skipfield;
+
 				// If the beginning index has been erased (ie. != 0), skip to next non-erased element:
-				begin_iterator.element_pointer = first_group->elements + *(begin_iterator.skipfield_pointer);
-				begin_iterator.skipfield_pointer += *(begin_iterator.skipfield_pointer);
+				begin_iterator.element_pointer = first_group->elements + *(first_group->skipfield);
+				begin_iterator.skipfield_pointer = first_group->skipfield + *(first_group->skipfield);
 
 				return begin_iterator;
 			}
@@ -2109,11 +2108,10 @@ public:
 
 				the_group.next_group->previous_group = the_group.previous_group;
 				return_iterator.group_pointer = the_group.previous_group->next_group = the_group.next_group; // close the chain, removing this group from it
-				return_iterator.skipfield_pointer = return_iterator.group_pointer->skipfield;
 
 				// If first element of next group is erased (ie. skipfield != 0), skip to the next non-erased element:
-				return_iterator.element_pointer = return_iterator.group_pointer->elements + *(return_iterator.skipfield_pointer);
-				return_iterator.skipfield_pointer += *(return_iterator.skipfield_pointer);
+				return_iterator.element_pointer = the_group.next_group->elements + *(the_group.next_group->skipfield);
+				return_iterator.skipfield_pointer = the_group.next_group->skipfield + *(the_group.next_group->skipfield);
 
 				// Update group numbers:
 				update_subsequent_group_numbers(the_group.next_group);
@@ -2525,9 +2523,8 @@ private:
 					else
 					{
 						group_pointer = group_pointer->next_group;
-						skipfield_pointer = group_pointer->skipfield;
-						element_pointer = group_pointer->elements + *skipfield_pointer;
-						skipfield_pointer += *skipfield_pointer;
+						element_pointer = group_pointer->elements + *(group_pointer->skipfield);
+						skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
 
 						if ((distance -= distance_from_end) == 0)
 						{
@@ -2539,7 +2536,8 @@ private:
 				{
 					while(true)
 					{
-						element_pointer += 1 + *(++skipfield_pointer);
+						++skipfield_pointer;
+						element_pointer += 1 + *skipfield_pointer;
 						skipfield_pointer += *skipfield_pointer;
 
 						if (element_pointer != group_pointer->last_endpoint)
@@ -2554,9 +2552,8 @@ private:
 						else if(group_pointer->next_group != NULL) // ie. beyond end of available data
 						{
 							group_pointer = group_pointer->next_group;
-							skipfield_pointer = group_pointer->skipfield;
-							element_pointer = group_pointer->elements + *skipfield_pointer;
-							skipfield_pointer += *skipfield_pointer;
+							element_pointer = group_pointer->elements + *(group_pointer->skipfield);
+							skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
 						}
 
 						if (distance-- == 1)
@@ -2586,9 +2583,8 @@ private:
 					}
 
 					group_pointer = group_pointer->next_group;
-					skipfield_pointer = group_pointer->skipfield;
-					element_pointer = group_pointer->elements + *skipfield_pointer;
-					skipfield_pointer += *skipfield_pointer;
+					element_pointer = group_pointer->elements + *(group_pointer->skipfield);
+					skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
 
 					if ((distance -= current_group.number_of_elements) == 0)
 					{
@@ -2607,7 +2603,8 @@ private:
 				{
 					while(distance-- != 1)
 					{
-						element_pointer += 1 + *(++skipfield_pointer);
+						++skipfield_pointer;
+						element_pointer += 1 + *skipfield_pointer;
 						skipfield_pointer += *skipfield_pointer;
 					}
 
@@ -2647,8 +2644,8 @@ private:
 					else 
 					{ // No need to process erasure field in prev group either - this will be handled by the next section of code, if necessary
 						group_pointer = current_group.previous_group;
-						element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield);
-						skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(element_pointer) + group_pointer->size;
+						element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);
+						skipfield_pointer = current_group.previous_group->skipfield + current_group.previous_group->size;
 						distance -= distance_from_beginning;
 					}
 				}
@@ -2658,7 +2655,8 @@ private:
 					{
 						if (element_pointer != current_group.elements) // ie. not already at beginning of group 
 						{
-							element_pointer -= 1 + *(--skipfield_pointer);
+							--skipfield_pointer;
+							element_pointer -= 1 + *skipfield_pointer;
 							skipfield_pointer -= *skipfield_pointer;
 
 							if (element_pointer != current_group.elements - 1) // ie. iterator was not already at beginning of colony, and skipfield does not takes us into the previous group)
@@ -2670,8 +2668,8 @@ private:
 						if (current_group.previous_group != NULL)
 						{
 							group_pointer = current_group.previous_group;
-							element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield);
-							skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(element_pointer) + group_pointer->size;
+							element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);
+							skipfield_pointer = current_group.previous_group->skipfield + group_pointer->size;
 							break; // Process through other groups
 						}
 						else
@@ -2699,8 +2697,8 @@ private:
 
 					distance -= current_group.number_of_elements;
 					group_pointer = current_group.previous_group;
-					element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield);
-					skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(element_pointer) + group_pointer->size;
+					element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);
+					skipfield_pointer = current_group.previous_group->skipfield + current_group.previous_group->size;
 					continue;
 				}
 				// number_of_elements is > distance, so no need to worry about traversing more groups
@@ -2714,7 +2712,8 @@ private:
 				{
 					while(distance-- != 1)
 					{
-						element_pointer -= 1 + *(--skipfield_pointer);
+						--skipfield_pointer;
+						element_pointer -= 1 + *skipfield_pointer;
 						skipfield_pointer -= *skipfield_pointer;
 					}
 
@@ -2778,8 +2777,8 @@ private:
 					else 
 					{ // No need to process erasure field in prev group either - this will be handled by the next section of code, if necessary
 						group_pointer = current_group.previous_group;
-						element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield);
-						skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(element_pointer) + group_pointer->size;
+						element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);
+						skipfield_pointer = current_group.previous_group->skipfield + current_group.previous_group->size;
 						distance -= distance_from_beginning;
 					}
 				}
@@ -2789,7 +2788,8 @@ private:
 					{
 						if (element_pointer != current_group.elements) // ie. not already at beginning of group
 						{
-							element_pointer -= 1 + *(--skipfield_pointer);
+							--skipfield_pointer;
+							element_pointer -= 1 + *skipfield_pointer;
 							skipfield_pointer -= *skipfield_pointer;
 
 							if (element_pointer != current_group.elements - 1) // ie. iterator was not already at beginning of colony, and skipfield does not takes us into the previous group)
@@ -2801,8 +2801,8 @@ private:
 						if (current_group.previous_group != NULL)
 						{
 							group_pointer = current_group.previous_group;
-							element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield);
-							skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(element_pointer) + group_pointer->size;
+							element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);
+							skipfield_pointer = current_group.previous_group->skipfield + current_group.previous_group->size;
 							break; // Process through other groups
 						}
 						else
@@ -2832,8 +2832,8 @@ private:
 					
 					distance -= static_cast<distance_type>(current_group.number_of_elements);
 					group_pointer = current_group.previous_group;
-					element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield);
-					skipfield_pointer = reinterpret_cast<skipfield_pointer_type>(element_pointer) + group_pointer->size;
+					element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);
+					skipfield_pointer = current_group.previous_group->skipfield + current_group.previous_group->size;
 					continue;
 				}
 				else if (current_group.number_of_elements == static_cast<const skipfield_type>(current_group.last_endpoint - current_group.elements))
@@ -2846,7 +2846,8 @@ private:
 				{
 					while(distance-- != 1)
 					{
-						element_pointer -= 1 + *(--skipfield_pointer);
+						--skipfield_pointer;
+						element_pointer -= 1 + *skipfield_pointer;
 						skipfield_pointer -= *skipfield_pointer;
 					}
 
@@ -3001,7 +3002,8 @@ private:
 				
 				while (iterator1.element_pointer != endpoint)
 				{
-					iterator1.element_pointer += 1 + *(++iterator1.skipfield_pointer);
+					++iterator1.skipfield_pointer;
+					iterator1.element_pointer += 1 + *iterator1.skipfield_pointer;
 					iterator1.skipfield_pointer += *iterator1.skipfield_pointer;
 
 					++distance;
@@ -3034,7 +3036,8 @@ private:
 		{
 			while (iterator1.element_pointer != iterator2.element_pointer)
 			{
-				iterator1.element_pointer += 1 + *(++iterator1.skipfield_pointer);
+				++iterator1.skipfield_pointer;
+				iterator1.element_pointer += 1 + *iterator1.skipfield_pointer;
 				iterator1.skipfield_pointer += *iterator1.skipfield_pointer;
 
 				++distance;

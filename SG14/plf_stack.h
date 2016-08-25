@@ -402,7 +402,7 @@ private:
 		}
 
 		current_element = start_element = first_group->elements;
-		end_element = current_group->end;
+		end_element = first_group->end;
 	}
 
 
