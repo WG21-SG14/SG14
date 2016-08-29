@@ -64,10 +64,16 @@ follows:</p>
 <code>template &lt;class T, class Allocator = std::allocator &lt;T&gt; &gt;
 class stack</code> 
 
-<p><code><b>T</b></code> - the element type. T must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
+<p><code><b>T</b></code> - the element type. In general T must meet the
+requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
 href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
 and <a
-href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.<br>
+href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.
+However, if only move-push and/or emplace are utilized to insert elements
+into the stack, T is only required to meet the requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a> and <a
+href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator</a>. The
