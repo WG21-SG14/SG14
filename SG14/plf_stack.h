@@ -468,7 +468,7 @@ public:
 				++total_number_of_elements;
 				return;
 			}
-			case 2:
+			case 2: // ie. empty stack, must initialize
 			{
 				initialize();
 				
@@ -576,7 +576,7 @@ public:
 		#ifdef PLF_STACK_VARIADICS_SUPPORT
 			template<typename... Arguments> inline void emplace(Arguments... parameters)
 			{
-				push(element_type(std::forward<Arguments>(parameters)...)); // Use object's parameter'd constructor
+				push(std::move(element_type(std::forward<Arguments>(parameters)...))); // Use object's parameter'd constructor
 			}
 		#endif
 	#endif
@@ -689,7 +689,7 @@ public:
 
 		while (temp_group != NULL)
 		{
-			total_size += static_cast<size_type>((temp_group->end + 1) - temp_group->elements);
+			total_size += (temp_group->end + 1) - temp_group->elements;
 			temp_group = temp_group->next_group;
 		}
 
@@ -705,7 +705,7 @@ public:
 
 		while (temp_group != NULL)
 		{
-			memory_use += static_cast<size_type>((((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group));
+			memory_use += (((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group);
 			temp_group = temp_group->next_group;
 		}
 

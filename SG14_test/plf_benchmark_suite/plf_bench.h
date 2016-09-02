@@ -1735,7 +1735,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 	assert (number_of_elements > 1);
 
 	double total = 0;
-	unsigned int end_approximate_memory_use = 0, num_erasures;
+	unsigned int end_approximate_memory_use = 0;
 	plf::nanotimer full_time;
 	full_time.start();
 
@@ -1755,14 +1755,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
-			num_erasures = 0;
-
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
 				if (rand_within(number_of_elements) < number_of_modifications)
 				{
 					container_erase(container, current_element);
-					++num_erasures;
 				}
 				else
 				{
@@ -1770,10 +1767,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 
-			if (num_erasures != 0)
-			{
-				container_remove_if(container);
-			}
+			container_remove_if(container);
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
@@ -1806,14 +1800,11 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
 		{
-			num_erasures = 0;
-
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
 				if (rand_within(number_of_elements) < number_of_modifications)
 				{
 					container_erase(container, current_element);
-					++num_erasures;
 				}
 				else
 				{
@@ -1821,10 +1812,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 				}
 			}
 
-			if (num_erasures != 0)
-			{
-				container_remove_if(container);
-			}
+			container_remove_if(container);
 
 			for (unsigned int number_of_insertions = 0; number_of_insertions != number_of_modifications; ++number_of_insertions)
 			{
@@ -2527,7 +2515,7 @@ inline PLF_FORCE_INLINE void benchmark_range(const unsigned int min_number_of_el
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (min_number_of_elements > 1);
@@ -2564,7 +2552,7 @@ inline PLF_FORCE_INLINE void benchmark_range_remove_if(const unsigned int min_nu
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_remove_if_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_remove_if_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (min_number_of_elements > 1);
@@ -2601,7 +2589,7 @@ inline PLF_FORCE_INLINE void benchmark_range_remove_if_reinsertion(const unsigne
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (min_number_of_elements > 1);
@@ -2698,7 +2686,7 @@ inline PLF_FORCE_INLINE void benchmark_erasure_range_reinsertion(const unsigned 
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
+inline void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
 {
 	if (output_csv)
 	{
@@ -2726,7 +2714,7 @@ inline PLF_FORCE_INLINE void benchmark_range_stack(const unsigned int min_number
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
 {
 	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
@@ -2757,7 +2745,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use(const unsigned int min_
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_general_use_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2788,7 +2776,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_percentage(const unsign
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2819,7 +2807,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_small_percentage(const 
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2850,7 +2838,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_small_percent
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
 {
 	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
@@ -2882,7 +2870,7 @@ inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if(const unsigne
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_range_general_use_remove_if_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
+inline void benchmark_range_general_use_remove_if_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2918,7 +2906,7 @@ inline PLF_FORCE_INLINE void output_to_csv_file(char *filename)
 {
 	freopen("errors.log","w", stderr);
 	char logfile[512];
-	sprintf(logfile, "../../%s.csv", filename);
+	sprintf(logfile, "%s.csv", filename);
 	std::cout << "Outputting results to logfile " << logfile << "." << std::endl << "Please wait while program completes. This may take a while. Program will close once complete." << std::endl;
 	freopen(logfile,"w", stdout);
 }

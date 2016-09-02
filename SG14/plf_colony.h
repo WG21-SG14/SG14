@@ -125,8 +125,8 @@ public:
 	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT // C++11
 		typedef typename std::allocator_traits<element_allocator_type>::size_type			size_type;
 		typedef typename std::allocator_traits<element_allocator_type>::difference_type 	difference_type;
-		typedef element_type &																				reference;
-		typedef const element_type &																		const_reference;
+		typedef element_type &																reference;
+		typedef const element_type &														const_reference;
 		typedef typename std::allocator_traits<element_allocator_type>::pointer 			pointer;
 		typedef typename std::allocator_traits<element_allocator_type>::const_pointer		const_pointer;
 	#else
@@ -135,12 +135,12 @@ public:
 		typedef typename element_allocator_type::reference			reference;
 		typedef typename element_allocator_type::const_reference	const_reference;
 		typedef typename element_allocator_type::pointer			pointer;
-		typedef typename element_allocator_type::const_pointer	const_pointer;
+		typedef typename element_allocator_type::const_pointer		const_pointer;
 	#endif
 
 	// Iterator declarations:
 	template <class colony_element_allocator_type, bool is_const> class colony_iterator;
-	typedef colony_iterator<element_allocator_type, false>	iterator;
+	typedef colony_iterator<element_allocator_type, false>		iterator;
 	typedef colony_iterator<element_allocator_type, true>		const_iterator;
 	friend class colony_iterator<element_allocator_type, false>; // clang complains if typedefs used in friend declarations
 	friend class colony_iterator<element_allocator_type, true>;
@@ -171,7 +171,7 @@ private:
 		typedef typename element_allocator_type::template rebind<skipfield_type>::other		skipfield_allocator_type; // Equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, > 16-bit integer in case where platform doesn't support 16-bit types
 		typedef typename element_allocator_type::template rebind<unsigned char>::other		uchar_allocator_type; // Using uchar as the generic allocator type, as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas, for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
 
-		typedef typename element_allocator_type::pointer			element_pointer_type; // Identical typedef to 'pointer', for clarity in code (between group_pointers etc)
+		typedef typename element_allocator_type::pointer			element_pointer_type; // Identical typedef to 'pointer', for clarity in code (to differentiate element pointers from group_pointers, etc)
 		typedef typename group_allocator_type::pointer 				group_pointer_type;
 		typedef typename group_allocator_type::reference 			group_reference_type;
 		typedef typename skipfield_allocator_type::pointer 			skipfield_pointer_type;
@@ -345,7 +345,11 @@ public:
 
 
 
+#if defined(_MSC_VER) && _MSC_VER <= 1600 // MSVC 2010 needs a bit of a leg-up when it comes to optimizing
+		inline PLF_COLONY_FORCE_INLINE colony_iterator & operator ++ ()
+#else
 		inline colony_iterator & operator ++ ()
+#endif
 		{
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
@@ -376,7 +380,7 @@ public:
 
 
 	private:
-		inline void check_for_end_of_group_and_progress() // used by erase and operator ++
+		inline PLF_COLONY_FORCE_INLINE void check_for_end_of_group_and_progress() // used by erase and operator ++
 		{
 			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 			{
@@ -1186,8 +1190,8 @@ public:
 							*following = update_count;
 							skipfield_type update_value = 2;
 	
-							skipfield_type vectorize = --update_count / 4;
-							update_count -= vectorize * 4;
+							skipfield_type vectorize = --update_count >> 2;
+							update_count = update_count & 3; //ie. % 4
 	
 							while (vectorize-- != 0)
 							{
@@ -1219,8 +1223,8 @@ public:
 	
 							skipfield_type update_value = 2;
 	
-							skipfield_type vectorize = --update_count / 4;
-							update_count -= vectorize * 4;
+							skipfield_type vectorize = --update_count >> 2;
+							update_count = update_count & 3; //ie. % 4
 	
 							while (vectorize-- != 0)
 							{
@@ -1384,8 +1388,8 @@ public:
 								*following = update_count;
 								skipfield_type update_value = 2;
 	
-								skipfield_type vectorize = --update_count / 4;
-								update_count -= vectorize * 4;
+								skipfield_type vectorize = --update_count >> 2;
+								update_count = update_count & 3; //ie. % 4
 	
 								while (vectorize-- != 0)
 								{
@@ -1417,8 +1421,8 @@ public:
 	
 								skipfield_type update_value = 2;
 	
-								skipfield_type vectorize = --update_count / 4;
-								update_count -= vectorize * 4;
+								skipfield_type vectorize = --update_count >> 2;
+								update_count = update_count & 3; //ie. % 4
 								
 								while (vectorize-- != 0)
 								{
@@ -1619,7 +1623,6 @@ public:
 
 	// Range insert
 
-
 	template <class iterator_type>
 	iterator insert (const typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, iterator_type>::type &first, const iterator_type &last)
 	{
@@ -1641,7 +1644,7 @@ public:
 	
 
 	
-	// Initializer-list insert
+	// Initializer-list insert    
 
 	#ifdef PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		iterator insert (const std::initializer_list<element_type> &element_list)
@@ -1920,7 +1923,7 @@ private:
 
 
 
-	inline void update_subsequent_group_numbers(group_pointer_type the_group) PLF_COLONY_NOEXCEPT
+	inline PLF_COLONY_FORCE_INLINE void update_subsequent_group_numbers(group_pointer_type the_group) PLF_COLONY_NOEXCEPT
 	{
 		do
 		{
@@ -1997,8 +2000,8 @@ public:
 					*the_iterator.skipfield_pointer = update_count + 1;
 					skipfield_type update_value = 1;
 
-					skipfield_type vectorize = update_count / 4;
-					update_count -= vectorize * 4;
+					skipfield_type vectorize = update_count >> 2;
+					update_count = update_count & 3; //ie. % 4
 
 					while (vectorize-- != 0)
 					{
@@ -2034,8 +2037,8 @@ public:
 					return_iterator.skipfield_pointer = the_iterator.skipfield_pointer + update_count;
 					return_iterator.check_for_end_of_group_and_progress();
 
-					skipfield_type vectorize = update_count / 4;
-					update_count -= vectorize * 4;
+					skipfield_type vectorize = update_count >> 2;
+					update_count = update_count & 3; //ie. % 4
 
 					while (vectorize-- != 0)
 					{

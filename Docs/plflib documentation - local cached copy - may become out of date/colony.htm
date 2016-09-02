@@ -231,7 +231,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_24-08-2016.zip">here</a> (30kb zip file) or
+<p>Download <a href="plf_colony_02-09-2016.zip">here</a> (32kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -240,7 +240,7 @@ command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_24-08-2016.zip">plf benchmark suite</a> (37kb zip
+href="plf_benchmark_suite_02-09-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -1795,6 +1795,7 @@ programming.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-09-02: v3.61 - Slight performance improvement for general-use-cases for colony, small performance/usability improvements in benchmark suite. Tweak for MSVC2010 performance. Correction to stack emplace.</li>
   <li>2016-08-24: v3.6 - 8 percent speedup on iteration, vs v3.55, for colony with larger-than-scalar types. Performance increases and minor corrections in benchmark suite.</li>
   <li>2016-08-20: v3.55 - Updates to benchmark suite - now uses a faster xorshift-type rand generator and a fast_mod function, test differences between containers more obvious now. Memory approximation also now outside of main loops, test cases updated for general_use test. Entirely new test-case function. Minor performance enhancements to insert/erase/operator++ for colony + code tidy-up. Minor warning removal for test suite.</li>
   <li>2016-08-04: v3.51 - Correction to move-insert courtesy of Peet Nick.
