@@ -1,76 +1,47 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD><TITLE>Introduction of std::segmented_stack to the standard and replacement of std::stack adaptor's default container</TITLE>
+<HTML><HEAD><TITLE>Introduction of std::segmented_stack concept class to the standard</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=windows-1252">
 </HEAD>
 <BODY>
 Audience: LEWG, SG14<br>
 Document number: D0410R0<br>
 Date: 	2016-06-10<br>
-Project: 	Introduction of std::segmented_stack to the standard and replacement of the std::stack adaptor's default container<br>
+Project: 	Introduction of std::segmented_stack concept class to the standard<br>
 Reply-to: 	Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
-<H1>Introduction of std::segmented_stack to the standard and replacement of the std::stack adaptor's default container</H1>
+<H1>Introduction of std::segmented_stack concept class to the standard</H1>
 
 
 <H2>I. Introduction</H2>
 
-<p>This document proposes replacing std::stack's default adapted container with a higher-performance implementation of a stack, namely the implementation used in plf::stack, to achieve greater stack performance and performance-similarity across compilers and platforms. This implementation can be named std::segmented_stack in the standard. Alternatively, if it is deemed worthwhile, the std::stack container adaptor could be replaced by an actual container whose implementation is the same as plf::stack. There has been some suggestion that the latter would break ABI compatibility and is therefore less desirable.</p>
+<p>This document proposes introducing a higher-performance stack class to the standard, deprecating std::stack as the go-to class for stack usage. This implementation could be named std::segmented_stack in the standard.</p>
 
 <H2>II. Motivation and Scope</H2>
 
-<p>Stacks, as one of the simplest of abstract data types, should have adequate and, ideally, predictable performance across implementations. With the current standard, the performance of the default adapted container used by the std::stack container adaptor is highly variable, and will perform poorly where the adapted container has low performance (eg. MSVC 2013 uses a low-performance std::deque implementation by default). This results in an unreliable solution across compilers when performance is a consideration.</p>
-<p>plf::stack is a different way of implementing a stack which has better performance characteristics than current standard library container implementations in a stack context, including std::vector and std::deque, and across compilers (tested under GCC 4.3-5.1 and MSVC 2010-2013). In addition it does not invalidate references to pushed elements (as obtained by the top() function) upon subsequent pushes, unlike std::vector, making it more suitable for some use-cases. It is my viewpoint that this should be introduced to the standard as std::segmented_stack and that the container should become the default adapted container for std::stack.</p>
-<p>A full overview of benefits, including graphs of comparative performance versus std::stack and std::vector under GCC and MSVC 2013 can be found at <a href="http://www.plflib.org/stack.htm">this page</a> or below in the references.</p>
+<p>Stacks, as one of the simplest of abstract data types, should have adequate and, ideally, predictable performance across implementations. With the current standard, the performance of the default adapted container used by the std::stack container adaptor is highly variable, and will perform poorly where the adapted container has low performance (eg. MSVC 2013/2015 use an implementation std::deque which has some advantages as a deque, but performs quite poorly in a stack context). This results in the current standard of std::stack being an unreliable solution across compilers where performance is a consideration.</p>
+<p>A segmented ie. multiple-memory-block approach is best when it comes to considering stack implementations, as a singular memory block (as used by vector) has very slow 'push' times due to reallocation, which are not proportionate to the relatively small overall performance advantage gained during during 'pop' and 'top' operations.</p>
+<p><a href="http://www.plflib.org/stack.htm">plf::stack</a> is a custom stack implementation and proof-of-concept using a similar interface to std::stack, which has better performance characteristics than current standard library container implementations in a stack context, including std::vector and std::deque, across compilers (tested under GCC 4.3-5.1, clang, and MSVC 2010-2015). In addition it does not invalidate references to pushed elements (as obtained by the top() function) upon subsequent pushes, unlike std::vector, which could potentially make it more suitable for some use-cases. It is my viewpoint that the data-type of stack should be given it's own non-container-adapted class type in the standard, in order to achieve much greater performance in this area (2-4x faster than std::vector/std::deque, depending on element stored). plf::stack may be viewed as a reference implementation in this regard.</p>
+<p>A full overview of the benefits of implementing a stack this way, including graphs of comparative performance versus std::stack (adapting std::deque) and std::vector can be found <a href="http://www.plflib.org/stack.htm">here</a> for GCC and <a href="http://plflib.org/stack_msvc_results.htm">here</a> for MSVC 2013.</p>
+<p>Because the standard currently requires that all container classes have an iterator - and because an iterator is not necessary or useful for a stack - this class would take the form of a 'concept class' rather than a 'container class'.</p>
 
 <H2>III. Impact On the Standard</H2>
-<p>No changes are necessary to the standard's interface for std::stack except to change the default adapted container to std::segmented_stack. The underlying architecture would take the form of a chained-group memory allocation structure as described on <a href="http://www.plflib.org/chained_group_allocation_pattern.htm">this page</a>.</p>
+<p>No changes are necessary to the standard except to add std::segmented_stack. The underlying architecture could take a form similar to plf::stack or, if benchmarking shows better performance, some alternative form.</p>
 
 <h2>IV. Design Decisions</h2>
-<p>The proposed internal structure as indicated above has a higher performance in a stack context due to the reduced complexity compared to a std::deque implementation (typically a vector of memory blocks as opposed to a linked chain), and the removal of the necessity for reallocation of data as is required in a std::vector once insertion breaches current capacity. Because a stack does not require the ordered insertion, ordered erasure and other operations of a deque or vector, it also does not require the complexity and overhead of these.</p>
+<p>The internal structure of the reference implementation as indicated above has a higher performance in a stack context due to the reduced complexity compared to a std::deque implementation (typically a vector of memory-blocks/memory-block-pointers as opposed to a linked list of memory blocks as is used in plf::stack), and the removal of the necessity for reallocation of data as is required in a std::vector once insertion breaches current capacity. Because a stack does not require non-back insertion, non-back erasure and other sundry operations associated with deques or vectors, it also does not require a technical structure or functions to support these operations, which can simplify the architecture, decrease code size and subsequent cache usage.</p>
 
 <h2>V. Technical Specifications</h2>
-<p>The class is made up of a linked chain of groups, structs containing a memory block and metadata, with a growth pattern to be determined by the implementor (however, 2x is recommended). The metadata within the groups - 'elements' (pointer to the memory block), previous_group (pointer or NULL), next_group (pointer or NULL), and 'end' (pointer to last element in memory block) - aid respectively in the identification of when when a pop reaches the start of the memory block, iterating backwards to the previous group, iterating forwards to the next group, and identifying when a push reaches the capacity of any given memory block.</p>
-<p>When capacity of the current memory block is reached, a new group is created and linked to via the next_group pointer. The plf::stack implementation does not release memory blocks to the OS when the beginning of a group is reached via pop() and navigation to a previous group completed (this is deferred to the 'shrink_to_fit' function), but the code to do so can be put in the pop() function, with a minor performance cost.</p>
+<p>Reference implementation is made up of a doubly-linked intrusive list of groups, which are structs containing both a memory block and memory block metadata, with a memory-block growth pattern to be determined by the implementor (however based on extensive benchmarking a growth factor of 2 is recommended). Higher growth factors reduce the performance cost associated with allocation, and also reduce the number of cache misses when testing for end-of-block/beginning-of-block when pushing or popping respectively. They also of course increase the risk of memory allocation errors when delaing with larger numbers of elements.</p>
+<p>The reference implementation's sub-group metadata contains - 'elements' (a pointer to the memory block), previous_group (pointer or NULL), next_group (pointer or NULL), and 'end' (pointer to last element in memory block, doubles as a measure of group size when subtracting 'elements'). These aid, respectively, in the identification of when when a pop reaches the start of the memory block, iterating backwards to the previous group, iterating forwards to the next group, and identifying when a push reaches the capacity of any given memory block.</p>
+<p>When the capacity of the current memory block is reached, a new group is created and linked to, via the next_group pointer. The plf::stack implementation does not release memory blocks to the OS when popping, as this is a costly operation and may be counterproductive in the case of a number of pop's followed by a number of pushes (which could result in a block deallocation followed by a block allocation if empty blocks were deallocated). Freeing empty trailing groups is deferred to the 'trim_trailing_groups()' function which can be called at the programmer's discretion and at a point in time which is unlikely to disrupt program flow or performance. There is also a 'shrink_to_fit()' function which will additionally attempt to move all pushed elements into a sigular memory block.</p>
 <p>A download of the full plf::stack implementation can be found here <a href="https://github.com/WG21-SG14/SG14/blob/master/SG14/plf_stack.h">https://github.com/WG21-SG14/SG14/blob/master/SG14/plf_stack.h</a></p>
 
 
 <h2>VI. Acknowledgements</h2>
-<p>Thanks to Jonathan Blow for advice, Mike Acton for influence.</p>
+<p>Thanks to Jonathan Blow for initial advice, Mike Acton for influence.</p>
 
 <h2>VII. References</h2>
 
-<h3>Benchmarks</h3>
-<p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
-
-<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1 x64 as compiler. Build settings are "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft Visual Studio 2013 x64 follow separately, with "/O2 /Oi /Ot /Oy /GL" release settings. Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate. Reserve testing does not make significant sense for an extensible container, as the entire benefit of such is that we can adapt to situations where we do not know the total number of elements in advance.</p>
-
-<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason (and for the sake of simplicity) only total time benchmarks are presented below, however the separate timings are <a href="http://www.plflib.org/stack_all_gcc_results.htm">here for GCC</a> and <a href="http://www.plflib.org/stack_all_msvc_results.htm">here for MSVC</a>, for anyone interested.</p>
-
-<h4>Total Time - GCC 5.1 x64</h4>
-
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/char_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/char_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/int_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/int_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/double_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/double_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/small_struct_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/small_struct_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/large_struct_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/gcc/stack/large_struct_total_time_log.png"><br>
-
-<h4>Total Time - MSVC 2013 x64</h4>
-
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/char_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/char_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/int_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/int_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/double_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/double_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/small_struct_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/small_struct_total_time_log.png"><br>
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/large_struct_total_time.png">
-<img alt="test result graph" src="http://www.plflib.org/tests/msvc/stack/large_struct_total_time_log.png"><br>
-
-
+<h3>Full benchmarks for plf::stack implementation</h3>
+<p>Go <a href="http://www.plflib.org/stack.htm">here</a> for GCC benchmark results and <a href="http://plflib.org/stack_msvc_results.htm">here</a> for MSVC benchmark results.</p>
 </BODY></HTML>
