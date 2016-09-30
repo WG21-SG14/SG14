@@ -1,28 +1,200 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD><TITLE>Introduction of std::colony to the standard library</TITLE>
-<META http-equiv=Content-Type content="text/html; charset=windows-1252">
-</HEAD>
-<BODY>
+<html>
+<head>
+  <title>Introduction of std::colony to the standard library</title>
+  <meta http-equiv="content-type" content="text/html; charset=windows-1252">
+</head>
+<style>
+body {
+    font-size: 12pt;
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    color: black;
+    background-color: white;
+    line-height: 1.2em;
+    margin-left: 4em;
+    margin-right: 2em;
+   }
+
+/* paragraphs */
+p  {
+    padding: 0;
+    line-height: 1.3em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    text-align: left;
+   }
+
+/* paragraphs */
+table  {
+    margin-top: 3.8em;
+    margin-bottom: 2em;
+    text-align: left;
+   }
+/* headings */
+h1 {
+    font-size: 195%;
+    font-weight: bold;
+    font-style: normal;
+    font-variant: small-caps;
+    line-height: 1.6em;
+    text-align: left;
+    padding: 0;
+    margin-top: 3.5em;
+    margin-bottom: 1.7em;
+   }
+h2 {
+    font-size: 122%;
+    font-weight: bold;
+    font-style: normal;
+    text-decoration: underline;
+    padding: 0;
+    margin-top: 4.5em;
+    margin-bottom: 1.1em;
+   }
+h3 {
+    font-size: 110%;
+    font-weight: bold;
+    font-style: normal;
+    text-decoration: underline;
+    padding: 0;
+    margin-top: 4em;
+    margin-bottom: 1.1em;
+   }
+h4 {
+    font-size: 100%;
+    font-weight: bold;
+    font-style: normal;
+    padding: 0;    
+    margin-top: 4em;
+    margin-bottom: 1.1em;
+   }
+h5 {
+    font-size: 90%;
+    font-weight: bold;
+    font-style: italic;
+    padding: 0;
+    margin-top: 3em;
+    margin-bottom: 1em;
+   }
+h6 {
+    font-size: 80%;
+    font-weight: bold;
+    font-style: normal;
+    padding: 0;
+    margin-top: 1em;
+    margin-bottom: 1em;
+   }
+
+/* divisions */
+div {
+    padding: 0;
+    margin-top: 0em;
+    margin-bottom: 0em;
+   }
+
+	  ul {
+	   margin: 0pt 0pt 22pt 15.7pt;
+	   padding: 0pt 0pt 0pt 0pt;
+	   list-style-type: square;
+	   font-size: 10.5pt;
+	   font-family: sans-serif;
+			}
+	  ol {
+	   margin: 12pt 0pt 8pt 15.7pt;
+	   padding: 0pt 0pt 0pt 0pt;
+	   font-size: 10.5pt;
+			}
+	  li {
+	   margin: 0pt 0pt 10.5pt 0pt;
+	   padding: 0pt 0pt 0pt 0pt;
+	   text-indent: 0pt;
+	   font-size: 10.5pt;
+	   display: list-item;
+	   font-family: sans-serif;
+			}
+
+/* inline */
+strong {
+    font-weight: bold;
+   }
+sup, sub {
+   vertical-align: baseline;
+   position: relative;
+   top: -0.4em;
+   font-size: 70%;
+}
+sub { top: 0.4em; }
+em {
+    font-style: italic;
+   }
+code {
+    font-family: Courier New, Courier, monospace;
+    font-size: 90%;
+    padding: 0 0 0 0em;
+   }
+ins {
+    background-color: yellow;
+    text-decoration: underline;
+   }
+del {
+    text-decoration: line-through;
+   }
+
+
+		a:hover {
+		  color: #4398E1;
+		  }
+
+		a:active {
+		  color: #4598E1;
+		  text-decoration: none;
+		  }
+
+		a:link.review {
+		  color: #AAAAAF;
+		  }
+
+		a:hover.review {
+		  color: #4398E1;
+		  }
+
+		a:visited.review {
+		  color: #444444;
+		  }
+
+		a:active.review {
+		  color: #AAAAAF;
+		  text-decoration: none;
+		  }
+</style>
+<body>
 Audience: LEWG, SG14<br>
 Document number: <br>
-Date: 	2016-07-03<br>
-Project: 	Introduction of std::colony to the standard library<br>
-Reply-to: 	Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
-
-<H1>Introduction of std::colony to the standard library</H1>
+Date: 2016-07-03<br>
+Project: Introduction of std::colony to the standard library<br>
+Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
 
-<H2>I. Introduction</H2>
+<h1>Introduction of std::colony to the standard library</h1>
+
+<h2>I. Introduction</h2>
 
 <p>A colony is a C++ template-based unordered data container which provides
 better performance than any std:: library container when:</p>
 <ol type="a">
   <li>Insertions and erasures to the container are occuring frequently in
     realtime ie. in performance-critical code, <i><b>and/or</b></i> </li>
-  <li>Pointers to non-erased container elements must not be invalidated by insertion or erasure.</li>
+  <li>Pointers to non-erased container elements must not be invalidated by
+    insertion or erasure.</li>
 </ol>
 
-<p>It's predominant field of usage is game development, but subsequent reports from high-performance computing and other domains have suggested it may be more generically useful. While the benchmarks referenced in the appendix are a better method for understanding the performance characteristics, the general speed characteristics are:</p>
+<p>It's predominant field of usage is game development, but subsequent reports
+from high-performance computing and other domains have suggested it may be more
+generically useful. While the benchmarks referenced in the appendix are a
+better method for understanding the performance characteristics, the general
+speed characteristics are:</p>
 <ul>
   <li><i>Insertion</i>: better than any std:: library container except some
     implementations of deque.</li>
@@ -32,87 +204,248 @@ better performance than any std:: library container when:</p>
     any std:: library container except deque and vector.</li>
 </ul>
 
-<p>As explored in the benchmarks there are some vector/deque modifications/workarounds which can outperform
-during iteration while maintaining pointer validity, but at a cost to usability
-and memory use. Furthermore, when the ratio of insertions/erasures to iterations is greater than 1% insertions/erasures per 3600 full iterations over data, Colony tends to outperform these workarounds. Colony's other other advantages are freeing and recycling unused memory on-the-fly, the guaranteed stability of
-pointers/references to non-erased elements regardless of insertion and erasure (which makes programming
-with containers of interrelated data structures faster and much simpler). Iterators which do not point to end() or erased elements are also guaranteed to remain stable.</p>
+<p>As explored in the benchmarks there are some vector/deque
+modifications/workarounds which can outperform during iteration while
+maintaining pointer validity, but at a cost to usability and memory use.
+Furthermore, when the ratio of insertions/erasures to iterations is greater
+than 1% insertions/erasures per 3600 full iterations over data, Colony tends to
+outperform these workarounds. Colony's other other advantages are freeing and
+recycling unused memory on-the-fly, the guaranteed stability of
+pointers/references to non-erased elements regardless of insertion and erasure
+(which makes programming with containers of interrelated data structures faster
+and much simpler). Iterators which do not point to end() or erased elements are
+also guaranteed to remain stable.</p>
 
-<p>A colony is it's own abstract data type. It is most similar to a "bag", "bucket-array" or "multiset" ADT, but without key values. As it was initially developed predominantly for game development, colony favours small and large struct/class
-performance over scalar-type performance.</p>
+<p>A colony is it's own abstract data type. It is most similar to a "bag",
+"bucket-array" or "multiset" ADT, but without key values. As it was initially
+developed predominantly for game development, colony favours small and large
+struct/class performance over scalar-type performance.</p>
 
+<h2>II. Motivation and Scope</h2>
 
-<H2>II. Motivation and Scope</H2>
-
-<p>When working on video game engines we are predominantly dealing with collections of data where:<Br>
-(<i>Note: These requirements match other areas of software development as well, but to simplify discussion I will focus on video game development</i>)</p>
+<p>When working on video game engines we are predominantly dealing with
+collections of data where:<br>
+(<i>Note: These requirements match other areas of software development as well,
+but to simplify discussion I will focus on video game development</i>)</p>
 <ol type="a">
-<li>Elements within data collections refer to elements within other data collections (through a variety of methods - indices, pointers, etc). An example is a game entity referring to both a texture object and collision blocks, as well as sound data. These references must stay valid throughout the course of the game/level. For this reason, any container (or use of a container) which causes pointer or index invalidation can create difficulties or necessitate workarounds.</li>
-<li>Order is unimportant for the most part. The majority of data collections are simply iterated over, transformed, referred to and utilized with no regard to order.</li>
-<li>Storage of small-to-medium-sized classes and structs is the norm. Work with collections of small scalar types like int, double is far less common. Sometimes data can be stored in a SoA (Struct of Arrays) configuration, but these cases are somewhat less common.</li>
-<li>Erasing or otherwise removing or deactivating objects occurs frequently in-game and in realtime (though often erasures will be implemented to occur at the end of a frame due to multithreading concerns). An example could be destroying a wall, or a game enemy. For this reason methods of erasure which create strong performance penalties are avoided.</li>
-<li>Creating new objects and adding them into the gameworld on-the-fly is also common - for example, a tree which drops leaves every so often, or a quadtree.</li>
-<li>We don't always know in advance how many elements there will be in a container at the beginning of development, or even at the beginning of a level during playback - an example of this being a MMORPG (massively multiplayer online role-playing game). In a MMORPG the number of game entities fluctuates based on how many players are playing, though there may be maximum capacity limits. Genericized game engines in particular have to adapt to considerably different user requirements and scopes. For this reason extensible containers which can expand and contract in realtime are usually necessary.</li>
-<li>Depending on the complexity and scope of any given game, we can be dealing with anywhere between 10 and 100000 objects in a given area. We are not typically dealing with the types of capacities necessitated by large-scale mathematical or statistical applications.</li>
-<li>For performance reasons, memory storage which is more-or-less contiguous is preferred. Lists, vectors of pointers to dynamically-allocated objects, and maps as implemented in the standard library are unusable.</li>
+  <li>Elements within data collections refer to elements within other data
+    collections (through a variety of methods - indices, pointers, etc). An
+    example is a game entity referring to both a texture object and collision
+    blocks, as well as sound data. These references must stay valid throughout
+    the course of the game/level. For this reason, any container (or use of a
+    container) which causes pointer or index invalidation can create
+    difficulties or necessitate workarounds.</li>
+  <li>Order is unimportant for the most part. The majority of data collections
+    are simply iterated over, transformed, referred to and utilized with no
+    regard to order.</li>
+  <li>Storage of small-to-medium-sized classes and structs is the norm. Work
+    with collections of small scalar types like int, double is far less common.
+    Sometimes data can be stored in a SoA (Struct of Arrays) configuration, but
+    these cases are somewhat less common.</li>
+  <li>Erasing or otherwise removing or deactivating objects occurs frequently
+    in-game and in realtime (though often erasures will be implemented to occur
+    at the end of a frame due to multithreading concerns). An example could be
+    destroying a wall, or a game enemy. For this reason methods of erasure
+    which create strong performance penalties are avoided.</li>
+  <li>Creating new objects and adding them into the gameworld on-the-fly is
+    also common - for example, a tree which drops leaves every so often, or a
+    quadtree.</li>
+  <li>We don't always know in advance how many elements there will be in a
+    container at the beginning of development, or even at the beginning of a
+    level during playback - an example of this being a MMORPG (massively
+    multiplayer online role-playing game). In a MMORPG the number of game
+    entities fluctuates based on how many players are playing, though there may
+    be maximum capacity limits. Genericized game engines in particular have to
+    adapt to considerably different user requirements and scopes. For this
+    reason extensible containers which can expand and contract in realtime are
+    usually necessary.</li>
+  <li>Depending on the complexity and scope of any given game, we can be
+    dealing with anywhere between 10 and 100000 objects in a given area. We are
+    not typically dealing with the types of capacities necessitated by
+    large-scale mathematical or statistical applications.</li>
+  <li>For performance reasons, memory storage which is more-or-less contiguous
+    is preferred. Lists, vectors of pointers to dynamically-allocated objects,
+    and maps as implemented in the standard library are unusable.</li>
+  <li>Memory wastage is avoided, and in particular, any container which
+    allocates upon initialisation tends to be avoided as this can incur
+    purposeless memory and performance costs.</li>
 </ol>
 <br>
-<p>To meet these requirements, game developers tend to either (a) develop their own custom containers for given scenario or (b) develop workarounds for the failings of standard containers. These workarounds are many and varied, but the most common are probably:</p>
+
+<p>std::vector in it's default state does not meet these requirements:</p>
 <ol>
-<li>Inserting all data at the beginning of a level then never adding to the data, whilst using a boolean flag (or similar) to indicate the inactivity of an object (as opposed to actually erasing from the vector). When erasing, one simply adjusts the boolean flag, and when iterating, items with the adjusted boolean flag are skipped.</li>
-<li>Utilizing a vector of data with a secondary vector of indexes. When erasing, the erasure occurs on the vector of indexes, not the vector of data, and when iterating, one iterates over the vector of indexes, then accessing the data from the vector of data via the index.</li>
+<li>Poor erasure performance for large amounts of data (even with
+remove_if duration is highly variable)</li>
+
+<li>Poor insertion (non-fll) performance due to reallocation
+</li>
+<li>Insert invalidates pointers/iterators to all elements
+</li>
+<li>Erase invalidates pointers/iterators/indexes to all elements
+afer the erased element
+</li>
+<li>Requires single contiguous memory block (typically larger
+than cache lines) which increases chance of allocation failures
+for large amounts of data on insert</li>
+</ol>
+
+<p>To meet these requirements, game developers tend to either (a) develop their
+own custom containers for given scenario or (b) develop workarounds for the
+failings of vector. These workarounds are many and varied, but the most common
+are probably:</p>
+<ol>
+  <li>Using a boolean flag (or similar) to indicate the inactivity of an object
+    (as opposed to actually erasing from the vector). When erasing, one simply
+    adjusts the boolean flag, and when iterating, items with the adjusted
+    boolean flag are skipped. External elements refer to elements within the
+    container via indexes rather than pointers (which can be invalidated upon
+    insertion).
+    <p>Advantages: Fast erasure.</p>
+    <p>Disadvantages: Slow to iterate due to branching.</p>
+  </li>
+  <li>Utilizing a vector of data with a secondary vector of indexes. When
+    erasing, the erasure occurs in the vector of indexes, not the vector of
+    data, and when iterating, one iterates over the vector of indexes, then
+    accessing the data from the vector of data via the index.
+    <p>Advantages: Faster iteration.</p>
+    <p>Disadvantages: Erasure still incurs some reallocation cost, can increase
+    jitter.</p>
+  </li>
+  <li>Combining a swap-and-pop mechanism with some form of dereferenced lookup
+    system to enable contiguous element iteration (known as a 'packed array',
+    or various other names). This technique allows for standard vector
+    iteration speed, but decreases lookup and referential performance. Erasure
+    speed is also fast unless elements are large and/or non-trivially
+  swappable.</li>
 </ol>
 <br>
-<p>The first technique has the advantage of fast erasure and simplicity of use, but is comparablty slow to iterate over and never frees memory to the OS. The second technique still has somewhat slow erasure but fast iteration, and also never frees memory to the OS. The first technique disallows insertion on the fly, as this invalidates pointer references. The second can maintain external references upon subsequent insertions, but only if the external object referencing the data knows both the container and the index, which complicates implementation. In addition, insertions will be slow due to the vector's need to reallocate once reaching capacity.</p>
-
-<p>Colony is an attempt to bring a better and more generic solution to this area of work. It has the advantage of fast iteration while maintaining the same extremely fast erasure speed of the boolean technique described above, and without causing pointer/iterator invalidation upon either erasure or insertion. It's insertion speed is also faster than a vector's. Memory from erased elements is either reused by subsequent insertions or released to the OS on-the-fly.</p>
 
 
-<H2>III. Impact On the Standard</H2>
-<p>The only changes necessary to the standard are the introduction of std::colony and std::segmented_stack (separate proposal). std::segmented_stack (implemented <a href="http://www.plflib.org/stack.htm">here</a> as plf::stack) is used internally by colony and cannot be replaced by another type of container as it's relative performance and structure is also important to colony's overall performance. The reference implementation of colony is available <a href="http://www.plflib.org/colony.htm#download">here</a> as plf::colony.</p>
+<p>All three techniques have the disadvantage of slow singular insertions, and
+the first two will also continually expand memory usage when erasing and
+inserting over periods of time. The third deals better with this scenario as it
+swaps from the back rather than leaving gaps in the elements vector, however will suffer in performance if elements within the container are heavily referred to by external objects/elements, or if the elements are large and swap/copy is non-trivial.</p>
+
+<p>Colony is an attempt to bring a more generic solution to this domain. It has
+the advantage of good iteration speed while maintaining a similar erasure speed
+to the boolean technique described above, and without causing pointer
+invalidation (to non-erased elements) during erasure or insertion. It's insertion speed is
+much faster than a vector's and similar to a good deque implementation's. Memory from erased elements is either reused by
+subsequent insertions or released to the OS on-the-fly. It achieves these ends
+by via a number of new approaches: a <a
+href="http://www.plflib.org/the_jump_counting_skipfield_pattern.pdf">jump-counting
+skipfield</a> (instead of a boolean field), a <a
+href="chained_group_allocation_pattern.htm">linked chain</a> of
+increasingly-large memory blocks (instead of a singular memory block or vector
+of blocks), and an internal high-performance stack structure to enable erased memory location re-use.</p>
+
+
+<h2>III. Impact On the Standard</h2>
+
+<p>No changes are necessary to the standard, asides from the introduction of the colony container. The reference implementation of colony is available <a href="http://www.plflib.org/colony.htm#download">here</a> as
+plf::colony.</p>
 
 <h2>IV. Design Decisions</h2>
-<p>There are three necessary aspects to colony which make it function as it does, and which define any
-    implementation:</p>
-    <ol>
-      <li>A multiple-memory-block based allocation pattern which allows for the
-        fast removal of memory blocks when they become empty of elements, regardless of their location.</li>
-      <li>A skipfield to indicate erasures instead of reallocating elements,
-        the iteration of which should typically not necessitate the use of
-        branching code.</li>
-      <li>A stack of erased element locations to allow for reuse of erased
-        element memory space upon subsequent insertion.</li>
-    </ol>
-    <p>In the case of the reference implementation I utilize a doubly-linked intrusive list of 'group' structs containing (a) memory blocks, (b) memory block metadata and (c) skipfields. The linked-list pattern removes the possibility of non-O(1) operations when freeing empty memory blocks from the colony structure, compared to for example a vector of pointers to memory blocks. For the skipfield the reference implementation utilizes the <a href="http://www.plflib.org/the_jump_counting_skipfield_pattern.pdf">jump-counting
-    skipfield pattern</a> which unlike a boolean skipfield allows for O(1) time complexity iterator operations. On current architectures it should be stated that it is preferable for any skipfield implementation to avoid branching operations for traversal. For the stack the reference implementation uses <a href="stack.htm">plf::stack</a>, submitted in a separate proposal as std::segmented_stack. This is due to it outperforming the standard library alternatives in benchmarking across compilers.</p>
+
+<p>There are three necessary aspects to colony which make it function as it
+does, and which define any implementation:</p>
+<ol>
+  <li>A multiple-memory-block based allocation pattern which allows for the
+    fast removal of memory blocks when they become empty of elements,
+    regardless of their location.</li>
+  <li>A skipfield to indicate erasures instead of reallocating elements, the
+    iteration of which should typically not necessitate the use of branching
+    code.</li>
+  <li>A mechanism for reusing erased element locations upon subsequent insertions.</li>
+</ol>
+
+<p>In the case of the reference implementation I utilized a doubly-linked
+intrusive list of 'group' structs containing (a) memory blocks, (b) memory
+block metadata and (c) skipfields. The linked-list pattern removes the
+possibility of non-O(1) operations when freeing empty memory blocks from the
+colony structure, compared to a vector of pointers to memory
+blocks. A vector of pointers to memory blocks may however enable faster insertions while increasing implementation complexity. Comparitive benchmarks would be necessary to establish overall optimal approach.</p>
+
+<p>For the skipfield a boolean skipfield cannot be used:</p>
+<ul>
+<li>++ iteration is O(random), iterators require O(1) operations
+</li>
+<li>Any boolean skipfeld creates branching code in the iterator
+</li>
+<li>Dependent on CPU branch prediction for performance
+</li>
+<li>Iterator code complexity
+</li>
+<li>Waste of 7 bits (and 254 states) per element if aiming for speed
+(byte-level addressing- bool or char) rather than storage size
+(bitfeld - slower)</li>
+</ul>
+
+<p>For these reasons the reference implementation instead utilizes the <a
+href="http://www.plflib.org/the_jump_counting_skipfield_pattern.pdf">jump-counting
+skipfield pattern</a> which allows for O(1) time
+complexity iterator operations and performs better due to a lack of branching.</p>
+<h5>Iteration performance of vector with boolean skipfield vs colony with boolean skipfield vs colony with jump-counting skipfield:</h5>
+<a href="http://www.plflib.org/tests/gcc/colony/jump_counting/jump_counting_comparison_iteration_25.png"><img alt="test result graph" height="50%" width="50%" src="http://www.plflib.org/tests/gcc/colony/jump_counting/jump_counting_comparison_iteration_25.png"></a>
+
+
+<p>For the erased location re-use mechanism, the reference implementation uses a stripped-down custom internal stack class based on <a
+href="http://www.plflib.org/stack.htm">plf::stack</a> (plf::stack outperforms other std:: containers in a stack context across compilers).
+<h5>Time to push all elements + read-and-pop all elements, plf::stack vs std::stack (std::deque) vs std::vector:</h5>
+<a href="http://www.plflib.org/tests/gcc/stack/small_struct_total_time.png"><img alt="test result graph" width="50%" height="50%" src="http://www.plflib.org/tests/gcc/stack/small_struct_total_time.png"></a></p>
+
+
 
 <h2>V. Technical Specifications</h2>
-<p>Key features of a colony are as follows:</li>
+
+<p>The key features of a colony are as follows:</p>
 <ul>
-<li>Unordered non-associative data container</li>
-<li>Never invalidates pointers to non-erased elements</li>
-<li>Reuses memory from erased elements or frees to OS</li>
-<li>Performance is oriented towards small-large struct/class storage rather than scalar storage</li>
-<li>In the context of general game data (as described), should be faster than any unmodified standard library container</li>
+  <li>Unordered non-associative data container</li>
+  <li>Never invalidates pointers to non-erased elements</li>
+  <li>Reuses memory from erased elements or frees to OS</li>
+  <li>Performance is oriented towards small-large struct/class storage rather
+    than scalar storage</li>
+  <li>In the context of general game data (as described), should be faster than
+    any unmodified standard library container</li>
+	<li>Iterators to non-erased elements guaranteed to stay valid unless iterator == end()</li>
 </ul>
 
-<p>The full list of abstract requirements to support this is as follows:</p>
+<p>The full list of abstract requirements to support these features are as follows:</p>
 <ul>
-<li>Uses multiple memory-blocks – prevents element reallocation on insertion
-Blocks are freed to OS once empty</li>
-<li>Blocks must be removable with low performance cost and without pointers to elements being invalidated</li>
-<li>Has mechanism for reusing erased element locations upon insertion</li>
-<li>Erased elements recorded in a skipfield, skipped over during iteration - prevents element reallocation on erasure</li>
-<li>Skipfield design must allow for O(1) ++ and -- iteration</li>
+  <li>Uses multiple memory-blocks – prevents element reallocation on insertion
+    Blocks are freed to OS once empty</li>
+  <li>Blocks must be removable with low performance cost and without pointers
+    to elements being invalidated</li>
+  <li>Has mechanism for reusing erased element locations upon insertion</li>
+  <li>Erased elements recorded in a skipfield, skipped over during iteration -
+    prevents element reallocation on erasure</li>
+  <li>Skipfield design must allow for O(1) ++ and -- iteration</li>
 </ul>
+
+<p>Iterators are bidirectional but additionally support >, <, >= and <= operators for convenience.</p>
+
+<p>ADL overloads for the standard library functions advance(), next(), prev() and distance() are available. These are significantly faster in most cases for colony than the equivalent standard functions.</p>
+
+<p>Details on the chained-group allocation pattern are provided <a href="http://www.plflib.org/chained_group_allocation_pattern.htm">here</a>.<br>
+Details on the jump-counting skipfield pattern are provided <a href="http://www.plflib.org/chained_group_allocation_pattern.htm">here</a>, while benchmarks versus boolean skipfields are presented <a href="http://www.plflib.org/skipfield_comparison.htm">here</a>.<br>
+Lastly, plf::stack (on which the colony internal stack implementation is based) is explained in detail <a href="http://www.plflib.org/stack.htm">here</a>.</p>
+
+<p>The reference implementation of colony is available to download <a href="http://www.plflib.org/colony.htm#download">here</a> or via the <a
+href="https://github.com/mattreecebentley/plf_colony">github repository</a>.</p>
+
 
 <h2>VI. Acknowledgements</h2>
-<p>Thanks to Jonathan Blow for advice, Mike Acton for influence.</p>
+
+<p>Thanks to Jon Blow for initial advice, Mike Acton for influence, Glen Fernandes and Ion Gaztanaga for restructuring advice, Robert Ramey for documentation advice, various Boost and SG14 members for support, suggestions and bug reports including Sean Middleditch, Patrice Roy and Guy Davidson. And that jerk from Lionhead for pissing me off enough to force me to implement the jump-counting skipfield pattern finally...</p>
 
 <h2>VII. References</h2>
 
-<h3>Reference implementation (plf::colony) benchmarks</h3>
-<p>Benchmarks for GCC can be found <a href="http://plflib.org/colony.htm#benchmarks">here</a>, while benchmarks for MSVC can be found <a href="http://plflib.org/colony_benchmark_msvc_results.htm">here</a></p>
+<h4>Reference implementation (plf::colony) benchmarks</h4>
 
+<p>Benchmarks for GCC can be found <a
+href="http://plflib.org/colony.htm#benchmarks">here</a>, while benchmarks for
+MSVC can be found <a
+href="http://plflib.org/colony_benchmark_msvc_results.htm">here</a></p>
 
-</BODY></HTML>
+</body>
+</html>
