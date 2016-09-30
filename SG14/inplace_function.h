@@ -40,7 +40,7 @@ public:
 	// Moves the target of an implace function, storing the callable within the internal buffer
 	// If the callable is larger than the internal buffer, a compile-time error is issued
 	// May throw any exception encountered by the constructor when moving the target object
-	template<typename CallableT>
+	template<typename CallableT, class = typename std::enable_if<!std::is_lvalue_reference<CallableT>::value>::type>
 	inplace_function(CallableT&& c)
 	{
 		this->set(std::move(c));
@@ -120,8 +120,8 @@ public:
 
 	// Assign a new target
 	// If the copy constructor of target object throws, this is left in uninitialized state
-	template<typename Callable>
-	inplace_function& operator=(const Callable& target)
+	template<typename CallableT, class = typename std::enable_if<!std::is_lvalue_reference<CallableT>::value>::type>
+	inplace_function& operator=(const CallableT& target)
 	{
 		this->clear();
 		this->set(target);
