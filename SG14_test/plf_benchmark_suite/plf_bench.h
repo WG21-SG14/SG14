@@ -2907,7 +2907,7 @@ inline PLF_FORCE_INLINE void output_to_csv_file(char *filename)
 {
 	freopen("errors.log","w", stderr);
 	char logfile[512];
-	sprintf(logfile, "../../%s.csv", filename);
+	sprintf(logfile, "%s.csv", filename);
 	std::cout << "Outputting results to logfile " << logfile << "." << std::endl << "Please wait while program completes. This may take a while. Program will close once complete." << std::endl;
 	freopen(logfile,"w", stdout);
 }

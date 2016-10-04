@@ -932,7 +932,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     std::endl;</code> </p>
   </li>
   <li><code>size_type get_index_from_iterator(const iterator &amp;the_iterator) <b>slow</b></code>
-    <p>While colony is a container with unordered insertion (and is therefore unordered), it still has a (transitory) order which changes frequently upon erasure and insertion. Temporary index numbers are however obtainable. These can be useful, for example, when creating a save file in a computer game, where certain elements in a container may need to be re-linked to other elements in other container upon reloading the save file. Example:</p>
+    <p>While colony is a container with unordered insertion (and is therefore unordered), it still has a (transitory) order which changes frequently upon erasure and insertion. Temporary index numbers are however obtainable. These can be useful, for example, when creating a save file in a computer game, where certain elements <code>const_iterator</code> instead of <code>iterator</code>. Example:</p>
     <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
     plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
     a_struct struct_instance;<br>
@@ -1271,7 +1271,7 @@ container, to compare how the different models perform after reinsertion.</p>
 <h4>Insertion</h4>
 <img alt="test result graph" src="tests/gcc/colony/comparitive/insertion.png">
 <img alt="test result graph"
-src="tests/gcc/colony/comparitive/insertion_log.png"> 
+src="tests/gcc/colony/comparitive/insertion_log.png">
 
 <p>Here a deque_bool and plf::colony are more-or-less on a par with each other,
 with both pointer_deque modifications slightly behind and std::list and
