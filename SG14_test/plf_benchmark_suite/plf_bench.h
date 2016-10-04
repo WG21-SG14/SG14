@@ -12,6 +12,7 @@
 #include <limits> // std::numeric_limits
 
 #include "plf_colony.h"
+#include "plf_stack.h"
 #include "plf_nanotimer.h"
 #include "plf_indexed_vector.h"
 #include "plf_pointer_deque.h"
@@ -548,7 +549,7 @@ inline PLF_FORCE_INLINE void iteration_test(container_type &container, const uns
 	total_time = 0;
 
 	timer.start();
-	
+
 	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
 	{
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end(); ++current_element)
@@ -730,7 +731,7 @@ inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elemen
 		{
 			container_insert(container);
 		}
-		
+
 		push_time += timer.get_elapsed_us();
 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
@@ -1144,7 +1145,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 		number_of_erasures = 0;
 		erase_timer.start();
-	
+
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
 			if ((xor_rand() & 127) < erasure_percent_expanded)
@@ -1905,7 +1906,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 		
 		end_approximate_memory_use += container.approximate_memory_use();
 	}
-	
+
 	end_approximate_memory_use /= ((number_of_runs / 10) + 1) + 1;
 
 	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
@@ -2263,7 +2264,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 
 		number_of_erasures = 0;
 		erase_timer.start();
-	
+
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
 			if ((xor_rand() & 127) < erasure_percent_expanded)
@@ -2543,7 +2544,7 @@ inline void benchmark_range_remove_if(const unsigned int min_number_of_elements,
 		
 		benchmark_remove_if<container_type>(number_of_elements, 1000000 / number_of_elements, erasure_percentage, output_csv, reserve);
 	}
-	
+
 	if (output_csv)
 	{
 		std::cout << "\n,,,\n,,,\n";
@@ -2906,10 +2907,12 @@ inline PLF_FORCE_INLINE void output_to_csv_file(char *filename)
 {
 	freopen("errors.log","w", stderr);
 	char logfile[512];
-	sprintf(logfile, "%s.csv", filename);
+	sprintf(logfile, "../../%s.csv", filename);
 	std::cout << "Outputting results to logfile " << logfile << "." << std::endl << "Please wait while program completes. This may take a while. Program will close once complete." << std::endl;
 	freopen(logfile,"w", stdout);
 }
 
+
+#undef PLF_FORCE_INLINE
 
 #endif // PLF_BENCH_H

@@ -2,8 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="description"
-  content="PLF C++ Library">
+  <meta name="description" content="PLF C++ Library">
   <meta name="keywords"
   content="C++, C, vector, PLF, colony, stack, STL, containers, optimize, performance, pointer, iterator, invalidation">
   <title>PLF C++ Library</title>
@@ -13,25 +12,39 @@
 <body>
 <h1>PLF C++ Library</h1>
 
-<p>PLF is a collection of library modules for C++. At this stage I am only releasing plf::colony and plf::stack, container class templates providing high performance without pointer invalidation. Please click on the links below to learn more about them and download. More library modules may come in time. All modules are under a <a href="http://en.wikipedia.org/wiki/Zlib_License">Zlib permissive license</a> and support C++03/C++11/C++14. Tested compilers include Clang 3.61-3.71, GCC 4.6-5.1 (32-bit and 64-bit), MS Visual C++ 2010-2015.</p>
+<p>PLF is a collection of library modules for C++. Please click on the links below to
+learn more about the different modules and to download. All
+modules are under a permissive <a href="http://en.wikipedia.org/wiki/Zlib_License">Zlib
+license</a> and support C++03/C++11/C++14. Tested compilers include
+Clang 3.61-3.71, GCC 4.6-5.1 (32-bit and 64-bit), MS Visual C++ 2010-2015.</p>
 <br>
 <br>
 
-<p><a href="colony.htm"><strong>plf::colony</strong></a> - An unordered data container providing fast iteration/insertion/erasure while maintaining pointer validity to non-erased elements.</p>
 
-<p><a href="stack.htm"><strong>plf::stack</strong></a> - A data container similar to std::stack but with better performance.</p>
+<p><a href="colony.htm"><strong>plf::colony</strong></a> - An unordered data
+container providing fast iteration/insertion/erasure while maintaining pointer
+validity to non-erased elements.</p>
 
-<p><a href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf"><strong>The jump-counting skipfield pattern</strong></a> - A skipfield pattern which avoids branching during iteration and supercedes boolean skipfields (PDF).</p>
+<p><a href="stack.htm"><strong>plf::stack</strong></a> - A data container replicating std::stack functionality but
+with better performance than standard library containers in a stack context.</p>
+
+<p><a href="nanotimer.htm"><strong>plf::nanotimer</strong></a> - A cross-platform lowest-overhead microsecond-precision timer for simple benchmarking on Linux/BSD/Windows/Mac.</p>
+
+<p><a
+href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf"><strong>the jump-counting skipfield pattern</strong></a> (PDF) - A skipfield pattern which avoids
+branching during iteration. Used by colony.</p>
 <br>
 <br>
 
-<h3>NZGDC Talk 2015</h3>
-<p>The following simplified presentation titled "Colonies, performance and why you should care!" was help at the NZ Game Developers Conference in September 2015.<br>
-<a href="http://www.mediafire.com/download/rxbc2zb1chilq11/NZGDC2015+-+Colonies%2C+performance%2C+and+why+you+should+care.ppt">Download powerpoint slides</a><br>
-<!-- <a href="http://www.mediafire.com/listen/mex389aldb66bhe/GDCNZ15+talk.mp3">Hear/download audio recording</a> -->
+
+<h3>Cppcon 2016</h3>
+
+<p>The following talk entitled <a href="https://www.youtube.com/watch?v=wBER1R8YyGY">"Colonies, performance and why you should care"</a> was presented at CPPcon 2016:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/wBER1R8YyGY" frameborder="0"></iframe>
+<p>The slides for the talk are available <a href="http://www.mediafire.com/download/xf8zk9c16efsp66/Colonies%2C+performance+and+why+you+should+Care+-+cppcon+2016.pdf">here</a>.
 </p>
 
-<p>Contact: <img src="footer.gif" valign="bottom"><br>
-plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
+<p><a id="contact"></a>Contact: <img alt="footer" src="footer.gif"><br>
+plf:: library and this page Copyright (c) 2016, Matthew Bentley</p>
 </body>
 </html>

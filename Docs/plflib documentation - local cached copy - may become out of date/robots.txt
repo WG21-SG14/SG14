@@ -1,5 +1,0 @@
-User-agent: *
-Disallow: /tests/
-
-User-agent: Googlebot-Image
-Disallow: /

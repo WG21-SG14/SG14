@@ -6,7 +6,6 @@
 
 
 // Compiler-specific defines used by stack:
-// Note: these macros are replicated between stack and colony but given different names, to avoid compiler issues with multiple inclusions of colony and stack with a project, caused by the #undef'ing of these macros at the end of the headers:
 #if defined(_MSC_VER)
 	#define PLF_STACK_FORCE_INLINE __forceinline
 
@@ -108,7 +107,7 @@ public:
 	typedef element_type																value_type;
 	typedef element_allocator_type														allocator_type;
 
-	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
+	#ifdef PLF_STACK_ALLOCATOR_TRAITS_SUPPORT
 		typedef typename std::allocator_traits<element_allocator_type>::size_type		size_type;
 		typedef element_type &															reference;
 		typedef const element_type &													const_reference;
@@ -125,7 +124,7 @@ public:
 private:
 	struct group; // Forward declaration for typedefs below
 
-	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
+	#ifdef PLF_STACK_ALLOCATOR_TRAITS_SUPPORT
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<group> group_allocator_type;
 		typedef typename std::allocator_traits<group_allocator_type>::pointer		group_pointer_type;
 		typedef typename std::allocator_traits<element_allocator_type>::pointer 	element_pointer_type;
@@ -187,10 +186,6 @@ private:
 		size_type max_elements_per_group;
 		ebco_pair(const size_type max_elements) : max_elements_per_group(max_elements) {};
 	}						group_allocator_pair;
-
-
-	template <class colony_type, class colony_allocator, typename colony_skipfield_type> friend class colony;
-
 
 
 public:
@@ -549,7 +544,7 @@ public:
 					}
 		
 					end_element = current_group->end;
-					++total_number_of_elements; 
+					++total_number_of_elements;
 					return;
 				}	
 				case 2:
@@ -601,7 +596,7 @@ public:
 		{
 			PLF_STACK_DESTROY(element_allocator_type, (*this), current_element);
 		}
-		
+
 		// ie. if total_number_of_elements != 0 after decrement, or we were not already at the start of a non-first group
 		if (total_number_of_elements-- == 1 || current_element != start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves current_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
 		{
@@ -624,7 +619,7 @@ public:
 		destroy_all_data();
 		stack temp(source);
 
-		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+		#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
 			this->swap(temp);
@@ -689,7 +684,7 @@ public:
 
 		while (temp_group != NULL)
 		{
-			total_size += (temp_group->end + 1) - temp_group->elements;
+			total_size += static_cast<size_type>((temp_group->end + 1) - temp_group->elements);
 			temp_group = temp_group->next_group;
 		}
 
@@ -705,7 +700,7 @@ public:
 
 		while (temp_group != NULL)
 		{
-			memory_use += (((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group);
+			memory_use += static_cast<size_type>((((temp_group->end + 1) - temp_group->elements) * sizeof(value_type)) + sizeof(group));
 			temp_group = temp_group->next_group;
 		}
 
@@ -718,15 +713,15 @@ public:
 	{
 		change_group_sizes(min_allocation_amount, group_allocator_pair.max_elements_per_group);
 	}
-	
-	
+
+
 
 	inline void change_maximum_group_size(const size_type max_allocation_amount)
 	{
 		change_group_sizes(min_elements_per_group, max_allocation_amount);
 	}
-	
-	
+
+
 
 	void change_group_sizes(const size_type min_allocation_amount, const size_type max_allocation_amount)
 	{
@@ -848,7 +843,7 @@ public:
 
 		stack temp(*this);
 
-		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+		#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
 			this->swap(temp);
@@ -891,7 +886,7 @@ public:
 
 			stack temp(*this);
 
-			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+			#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 				*this = std::move(temp); // Avoid generating 2nd temporary
 			#else
 				this->swap(temp);

@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+
 #ifndef PLF_NANOTIMER
 #define PLF_NANOTIMER
 
@@ -8,7 +10,7 @@
 #if defined(__MACH__)
 	#include <mach/clock.h>
 	#include <mach/mach.h>
-	
+
 	namespace plf
 	{
 
@@ -22,17 +24,17 @@
 		{
 			host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &system_clock);
 		}
-		
+
 		~nanotimer()
 		{
 			mach_port_deallocate(mach_task_self(), system_clock);
 		}
-		
+
 		inline void start()
 		{
 			clock_get_time(system_clock, &time1);
 		}
-		
+
 		inline double get_elapsed_ms()
 		{
 			return static_cast<double>(get_elapsed_ns()) / 1000000.0;
@@ -56,7 +58,7 @@
 // Linux/BSD implementation:
 #elif (defined(linux) || defined(__linux__) || defined(__linux)) || (defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__))
 	#include <time.h>
-	#include <sys/time.h>	
+	#include <sys/time.h>
 
 	namespace plf
 	{
@@ -116,12 +118,12 @@
 			QueryPerformanceFrequency(&freq);
 			frequency = static_cast<double>(freq.QuadPart);
 		}
-		
+
 		inline void start()
 		{
 			QueryPerformanceCounter(&ticks1);
 		}
-		
+
 		double get_elapsed_ms()
 		{
 			QueryPerformanceCounter(&ticks2);
@@ -148,7 +150,7 @@ void nanosecond_delay(double delay_ns)
 {
 	nanotimer timer;
 	timer.start();
-	
+
 	while(timer.get_elapsed_ns() < delay_ns)
 	{};
 }
@@ -161,7 +163,7 @@ inline void microsecond_delay(double delay_us)
 }
 
 
-inline void millisecond_delay(double delay_ms) 
+inline void millisecond_delay(double delay_ms)
 {
 	nanosecond_delay(delay_ms * 1000000.0);
 }

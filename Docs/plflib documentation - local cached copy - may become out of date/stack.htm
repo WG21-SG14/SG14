@@ -10,21 +10,37 @@
 </head>
 
 <body>
-<a href="index.htm">Home</a> 
+<a href="index.htm">Home</a>
 
 <h1>PLF C++ Library - plf::stack</h1>
+<ul>
+  <li><a href="#intro">Intro</a></li>
+  <li><a href="#details">Implementation</a></li>
+  <li><a href="#license">License</a></li>
+  <li><a href="#download">Download</a></li>
+  <li><a href="#functions">Function Descriptions and Syntax</a></li>
+  <li><a href="#benchmarks">Benchmarks</a></li>
+  <li><a href="#faq">Frequently-asked Questions</a></li>
+  <li><a href="#version">Version History</a></li>
+  <li><a href="#contact">Contact</a></li>
+</ul>
 
-<h2>Intro</h2>
+<h2><a id="intro"></a>Intro</h2>
 
 <p>plf::stack is a container that gives the programmer the functionality of a
-FILO (first-in, last-out) stack. It is used internally by <a
-href="colony.htm">plf::colony</a> but can also be used on it's own. It is a
-more <a href="#benchmarks">efficient</a> drop-in replacement for std::stack, and 
-faster than all std:: containers in the context of a stack. It uses the same <a
-href="chained_group_allocation_pattern.htm">chained-group memory allocation
-pattern</a> as plf::colony, and like plf::colony it never invalidates
-references/pointers to non-popped elements, making it potentially better for
-programming with containers of interrelated data structures.</p>
+FILO (first-in, last-out) stack. It is a more <a
+href="#benchmarks">efficient</a> drop-in replacement for std::stack, and faster
+than all std:: containers in the context of a stack. Like plf::colony it never invalidates
+references/pointers to non-popped elements, making it at least potentially useful for
+programming with containers of inter-related data structures. It supports C++11
+move and emplace semantics and operations.</p>
+
+
+<h2><a id="implementation"></a>Implementation</h2>
+
+<p>plf::stack uses the same <a href="chained_group_allocation_pattern.htm">chained-group memory allocation
+pattern</a> as plf::colony ie. it is made up of a linked chain of 'groups', structs containing a memory block and metadata, with a growth factor of 2 for the memory blocks. The metadata within the groups - 'elements' (pointer to the memory block), previous_group (pointer or NULL), next_group (pointer or NULL), and 'end' (pointer to last element in memory block) - aid respectively in the identification of when when a pop reaches the start of the memory block, iterating backwards to the previous group, iterating forwards to the next group, and identifying when a push reaches the capacity of any given memory block.</p>
+<p>When capacity of the current memory block is reached, a new group is created and linked to via the next_group pointer. plf::stack does not release memory blocks to the OS when the beginning of a group is reached via pop() and navigation to a previous group completed (this is deferred to the <code>'trim_trailing_groups'</code> function, to be called by the programmer when convenient to the use-case). This avoids a deallocation/reallocation cost which could occur if the stack was pushed/popped repeatedly and group-boundaries crossed repeatedly in the process.</p>
 
 <h2><a id="license"></a>License</h2>
 
@@ -41,16 +57,16 @@ restrictions:</p>
   <li>The license notice must not be removed from source distributions.</li>
 </ul>
 
-<h2>Download</h2>
+<h2><a id="download"></a>Download</h2>
 
-<p>Download on the plf::colony page <a href="colony.htm#download">here</a> or
-view the <a
-href="https://github.com/mattreecebentley/plf_colony">repository</a>.<br>
-Both plf::stack and plf::colony are simple .h header files, to be included with
-a #include command. The download package includes both plf::colony and
-plf::stack.</p>
+<p>Download <a href="plf_stack_03-10-2016.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
+plf::stack is a simple .h header-only library, to be used with
+an #include command.</p>
+<p>If you are interested in benchmarking you can also download the <a
+href="plf_benchmark_suite_02-09-2016.zip">plf benchmark suite</a> (36kb zip
+file), which includes plf::nanotimer.</p>
 
-<h2>Function Descriptions and syntax</h2>
+<h2><a id="functions"></a>Function Descriptions and syntax</h2>
 
 <p>plf::stack meets the requirements of the C++ <a
 href="http://en.cppreference.com/w/cpp/concept/Container">Container</a> and <a
@@ -62,7 +78,7 @@ same as std::stack. However there are a few key differences, such as the
 meaning of using a number in the constructor. Formal description is as
 follows:</p>
 <code>template &lt;class T, class Allocator = std::allocator &lt;T&gt; &gt;
-class stack</code> 
+class stack</code>
 
 <p><code><b>T</b></code> - the element type. In general T must meet the
 requirements of <a
@@ -70,9 +86,10 @@ href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
 href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
 and <a
 href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.
-However, if only move-push and/or emplace are utilized to insert elements
-into the stack, T is only required to meet the requirements of <a
-href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a> and <a
+However, if only move-push and/or emplace are utilized to insert elements into
+the stack, T is only required to meet the requirements of <a
+href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a>
+and <a
 href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
@@ -131,7 +148,8 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     <tr>
       <td><code>size_type</code></td>
       <td><code>Allocator::size_type (pre-c++11)<br>
-        std::allocator_traits&lt;Allocator&gt;::size_type (post-c++11)</code></td>
+        std::allocator_traits&lt;Allocator&gt;::size_type
+      (post-c++11)</code></td>
     </tr>
     <tr>
       <td><code>reference</code></td>
@@ -151,28 +169,48 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     <tr>
       <td><code>const_pointer</code></td>
       <td><code>Allocator::const_pointer (pre-c++11)<br>
-        std::allocator_traits&lt;Allocator&gt;::const_pointer (post-c++11)</code></td>
+        std::allocator_traits&lt;Allocator&gt;::const_pointer
+        (post-c++11)</code></td>
     </tr>
   </tbody>
 </table>
 
-
 <h3>Constructors</h3>
 
 <table border="1">
-<tr><td>default</td><td><code>explicit stack(const allocator_type &alloc = allocator_type())<Br>
-explicit stack(const size_type min_group_size, const size_type max_group_size = std::numeric_limits&lt;size_type&gt;::max() / 2, const allocator_type &alloc = allocator_type())
-</code></td></tr>
-<tr><td>copy</td><td><code>stack(const stack &source)</code></td></tr>
-<tr><td>move</td><td><code>stack(const stack &&source) noexcept <font size="2">(C++11 and upwards)</font></code></td></tr>
+  <tbody>
+    <tr>
+      <td>default</td>
+      <td><code>explicit stack(const allocator_type &amp;alloc =
+        allocator_type())<br>
+        explicit stack(const size_type min_group_size, const size_type
+        max_group_size = std::numeric_limits&lt;size_type&gt;::max() / 2, const
+        allocator_type &amp;alloc = allocator_type()) </code></td>
+    </tr>
+    <tr>
+      <td>copy</td>
+      <td><code>stack(const stack &amp;source)</code></td>
+    </tr>
+    <tr>
+      <td>move</td>
+      <td><code>stack(const stack &amp;&amp;source) noexcept <font
+        size="2">(C++11 and upwards)</font></code></td>
+    </tr>
+  </tbody>
 </table>
 
 <h4>Constructor usage examples</h4>
 <ul>
-  <li><code>stack&lt;T&gt; a_stack</code> 
+  <li><code>stack&lt;T&gt; a_stack</code>
     <p>Default constructor - default minimum group size is 8, default maximum
-    group size is <code>std::numeric_limits&lt;size_type&gt;::max() / 2</code>. The reason for this maximum limitation is that each new group doubles the number of existing elements in the colony. And since the maximum number of elements that can be possibly held in a colony is std::numeric_limits&lt;size_type&gt;::max(), the maximum group size must be half that.<br>
-    Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack;</code><br>
+    group size is <code>std::numeric_limits&lt;size_type&gt;::max() / 2</code>.
+    The reason for this maximum limitation is that each new group doubles the
+    number of existing elements in the stack. And since the maximum number of
+    elements that can be possibly held in a stack is
+    std::numeric_limits&lt;size_type&gt;::max(), the maximum group size must be
+    half that.<br>
+    Example: <code style="color: brown">plf::stack&lt;int&gt;
+    int_stack;</code><br>
     </p>
   </li>
   <li><code>stack&lt;T, custom_allocator&lt;T&gt; &gt; a_stack</code> 
@@ -180,9 +218,11 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
     Example: <code style="color: brown">plf::stack&lt;int,
     tbb::allocator&lt;int&gt; &gt; int_stack;</code><br>
     Example2:<br>
-	<code style="color: brown">// Using an instance of an allocator as well as it's type<br>
-	tbb::allocator&lt;int&gt; alloc_instance;<br>
-	plf::stack&lt;int, tbb::allocator&lt;int&gt; &gt; int_stack(alloc_instance);</code> </p>
+    <code style="color: brown">// Using an instance of an allocator as well as
+    it's type<br>
+    tbb::allocator&lt;int&gt; alloc_instance;<br>
+    plf::stack&lt;int, tbb::allocator&lt;int&gt; &gt;
+    int_stack(alloc_instance);</code> </p>
   </li>
   <li><code>stack&lt;T&gt; a_stack(const size_type min_group_size)</code>
     <p>This sets the minimum group size - for example, to 50 (unlike a vector,
@@ -194,29 +234,28 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
     int_stack(62);</code></p>
   </li>
   <li><code>stack&lt;T&gt; a_stack(const size_type min_group_size, const
-    size_type max_group_size)</code> 
+    size_type max_group_size)</code>
     <p>This sets the minimum group size as above, as well as the maximum group
     size - this can be useful if you want to limit memory usage. Minimum group
     size may not be lower than 3. Maximum group size may not be larger than
-    <code>std::numeric_limits<size_type>::max() / 2</code>.<br>
+    <code>std::numeric_limits&lt;size_type&gt;::max() / 2</code>.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt; int_stack(64,
     512);</code></p>
   </li>
   <li><code>stack&lt;T&gt; a_stack(const stack &amp;source)</code> 
-    <p>Copies all contents from source. New minimum
-    group size is the total size of <code>source</code>, unless
-    <code>source</code>'s minimum group size is larger than it's total
-    size, in which case the new minimum group size is the source's minimum
-    group size. If source's total size is larger than it's maximum group size,
-    the new minimum group size is the same as the source's maximum group
-    size.<br>
+    <p>Copies all contents from source. New minimum group size is the total
+    size of <code>source</code>, unless <code>source</code>'s minimum group
+    size is larger than it's total size, in which case the new minimum group
+    size is the source's minimum group size. If source's total size is larger
+    than it's maximum group size, the new minimum group size is the same as the
+    source's maximum group size.<br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack_2(int_stack_1);</code></p>
   </li>
-  <li><code>stack&lt;T&gt; a_stack(stack &amp;&amp; source) <b>C++11 and upwards</b></code> 
-    <p>Moves all contents from source, does not alter
-    any group sizes. Source is now void of contents and can be safely
-    destructed. <br>
+  <li><code>stack&lt;T&gt; a_stack(stack &amp;&amp; source) <b>C++11 and
+    upwards</b></code>
+    <p>Moves all contents from source, does not alter any group sizes. Source
+    is now void of contents and can be safely destructed. <br>
     Example: <code style="color: brown">plf::stack&lt;int&gt;
     int_stack_2(std::move(int_stack_1));</code></p>
   </li>
@@ -228,23 +267,30 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
     <p>Push an element to the stack.<br>
     Example: <code style="color: brown">object_stack.push(object1);</code></p>
   </li>
-  <li><code>void push(the_type &amp;&amp;element) <b>C++11 and upwards</b></code> 
+  <li><code>void push(the_type &amp;&amp;element) <b>C++11 and
+    upwards</b></code> 
     <p>Move an element to the stack.<br>
     Example: <code
     style="color: brown">object_stack.push(std::move(object1));</code></p>
   </li>
-  <li><code>void emplace(Arguments ...parameters) <b>C++11 and upwards</b></code> 
+  <li><code>void emplace(Arguments ...parameters) <b>C++11 and
+    upwards</b></code> 
     <p>Constructs an element directly on the stack using the the constructor
     arguments specified.<br>
     Example: <code style="color: brown">object_stack.emplace(10, 200,
     "a");</code></p>
   </li>
-  <li><code>void pop()</code> 
-    <p>Pop the last push()'d element off the stack. In debug mode will test for stack emptiness prior to operation via an assert. Calling pop() on an empty stack in non-debug mode results in undefined behaviour.<br>
+  <li><code>void pop()</code>
+    <p>Pop the last push()'d element off the stack. In debug mode will test for
+    stack emptiness prior to operation via an assert. Calling pop() on an empty
+    stack in non-debug mode results in undefined behaviour.<br>
     Example: <code style="color: brown">object_stack.pop();</code></p>
   </li>
   <li><code>the_type &amp; top()</code> 
-    <p>Return a reference to the last push()'d element on the stack. In debug mode will test for stack emptiness prior to operation via an assert. Calling top() on an empty stack in non-debug mode results in undefined behaviour.<br>
+    <p>Return a reference to the last push()'d element on the stack. In debug
+    mode will test for stack emptiness prior to operation via an assert.
+    Calling top() on an empty stack in non-debug mode results in undefined
+    behaviour.<br>
     Example: <code style="color: brown">object2 = object_stack.top();</code></p>
   </li>
   <li><code>size_type size()</code> 
@@ -268,24 +314,34 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
     Example: <code style="color: brown">std::cout &lt;&lt; i_stack.capacity()
     &lt;&lt; std::endl;</code></p>
   </li>
-  <li><code>void reserve(size_type reserve_amount)</code>
+  <li><code>void reserve(size_type reserve_amount)</code> 
     <p>Preallocates memory space sufficient to store the number of elements
-    indicated by <code>reserve_amount</code>. Will not change minimum and maximum group
-    sizes. The reserve_amount is limited to the maximum group size of the stack and will be truncated if necessary. By default the maximum group size is the maximum number allowed by <code>size_type</code>.<br>
+    indicated by <code>reserve_amount</code>. Will not change minimum and
+    maximum group sizes. The reserve_amount is limited to the maximum group
+    size of the stack and will be truncated if necessary. By default the
+    maximum group size is the maximum number allowed by
+    <code>size_type</code>.<br>
     Example: <code style="color: brown">i_stack.reserve(15);</code></p>
   </li>
-  <li><code>void shrink_to_fit()</code>
-    <p>Reduces container capacity to the amount necessary to store all currently stored elements. If the total number of elements is larger than the maximum group size, the resultant capacity will be equal to <code>((total_elements / max_group_size) + 1) * max_group_size</code>. Invalidates all pointers, iterators and references to elements within the container.<br>
+  <li><code>void shrink_to_fit()</code> 
+    <p>Reduces container capacity to the amount necessary to store all
+    currently stored elements. If the total number of elements is larger than
+    the maximum group size, the resultant capacity will be equal to
+    <code>((total_elements / max_group_size) + 1) * max_group_size</code>.
+    Invalidates all pointers, iterators and references to elements within the
+    container.<br>
     Example: <code style="color: brown">i_stack.shrink_to_fit();</code></p>
   </li>
   <li><code>void trim_trailing_groups()</code>
     <p>Removes any trailing groups within the container substructure, which may
     be present in the scenario of many pushes followed by many pops. Unlike a
-    regular shrink_to_fit, does not shrink capacity to the size needed
-    to contain the currently-stored elements, simply frees up unused groups. Runtime cost is significantly lower than shrink_to_fit, but may not free as much memory.<br>
+    regular shrink_to_fit, does not shrink capacity to the size needed to
+    contain the currently-stored elements, simply frees up unused groups.
+    Runtime cost is significantly lower than shrink_to_fit, but may not free as
+    much memory.<br>
     Example: <code style="color: brown">i_stack.shrink_to_fit();</code></p>
   </li>
-  <li><code>bool empty()</code>
+  <li><code>bool empty()</code> 
     <p>Returns a boolean indicating whether the stack is currently empty of
     elements.<br>
     Example: <code style="color: brown">if (object_stack.empty())
@@ -295,19 +351,34 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
     <p>Empties the stack and removes all elements and groups.<br>
     Example: <code style="color: brown">object_stack.clear();</code></p>
   </li>
-  <li><code>void change_group_sizes(const size_type min_group_size, const size_type max_group_size)</code> 
-    <p>Changes the minimum and maximum internal group sizes, in terms of number of elements stored per group. If the stack is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
-    Example: <code style="color: brown">object_stack.change_group_sizes(1000, 10000);</code></p>
+  <li><code>void change_group_sizes(const size_type min_group_size, const
+    size_type max_group_size)</code> 
+    <p>Changes the minimum and maximum internal group sizes, in terms of number
+    of elements stored per group. If the stack is not empty, all elements will
+    be moved into new groups and all pointers/iterators/references
+    invalidated.<br>
+    Example: <code style="color: brown">object_stack.change_group_sizes(1000,
+    10000);</code></p>
   </li>
-  <li><code>void change_minimum_group_size(const size_type min_group_size)</code> 
-    <p>Changes the minimum internal group size only, in terms of minimum number of elements stored per group. If the stack is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
-    Example: <code style="color: brown">object_stack.change_minimum_group_size(100);</code></p>
+  <li><code>void change_minimum_group_size(const size_type
+    min_group_size)</code> 
+    <p>Changes the minimum internal group size only, in terms of minimum number
+    of elements stored per group. If the stack is not empty, all elements will
+    be moved into new groups and all pointers/iterators/references
+    invalidated.<br>
+    Example: <code
+    style="color: brown">object_stack.change_minimum_group_size(100);</code></p>
   </li>
-  <li><code>void change_maximum_group_size(const size_type min_group_size)</code> 
-    <p>Changes the maximum internal group size only, in terms of maximum number of elements stored per group. If the stack is not empty, all elements will be moved into new groups and all pointers/iterators/references invalidated.<br>
-    Example: <code style="color: brown">object_stack.change_maximum_group_size(1000);</code></p>
+  <li><code>void change_maximum_group_size(const size_type
+    min_group_size)</code> 
+    <p>Changes the maximum internal group size only, in terms of maximum number
+    of elements stored per group. If the stack is not empty, all elements will
+    be moved into new groups and all pointers/iterators/references
+    invalidated.<br>
+    Example: <code
+    style="color: brown">object_stack.change_maximum_group_size(1000);</code></p>
   </li>
-  <li><code>void swap(stack &amp;source)</code> 
+  <li><code>void swap(stack &amp;source)</code>
     <p>Swaps the stack's contents with that of <code>source</code>.<br>
     Example: <code
     style="color: brown">object_stack.swap(other_stack);</code></p>
@@ -323,7 +394,8 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
     of existing elements first.<br>
     Example: <code style="color: brown">object_stack = object_stack2;</code></p>
   </li>
-  <li><code>stack &amp; operator = (const stack &amp;&amp;source) <b>C++11 and upwards</b></code> 
+  <li><code>stack &amp; operator = (const stack &amp;&amp;source) <b>C++11 and
+    upwards</b></code> 
     <p>Move the elements from source stack to this stack, clearing this stack
     of existing elements first. Source stack becomes invalid but can be safely
     destructed without undefined behaviour.<br>
@@ -344,7 +416,7 @@ explicit stack(const size_type min_group_size, const size_type max_group_size = 
   </li>
 </ul>
 
-<h2><a id="benchmarks"></a>Benchmarks</h2>
+<h2><a id="benchmarks"></a>Benchmarks (out-of-date as of sept 2016)</h2>
 
 <p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
 
@@ -393,13 +465,13 @@ src="tests/gcc/stack/large_struct_total_time_log.png"><br>
 <p>Simply put, plf::stack out-performs both std::stack (std::deque) and
 std::vector, and we can see that the larger the stored type is, the greater the
 performance advantage is. For scalar types std::stack (std::deque) out-performs
-plf::colony when the number of elements is low (under 100 for double, under
-1000 for char). But in all other areas plf::stack dominates, and has a
-secondary advantage over std::vector in that pointers to it's elements (as
-obtained via back() after a push() operation) will not invalidate on subsequent
-pushes. std::vector will invalidate pointers to stack elements upon subsequent
-pushes, std::stack will not if it is wrapping a std::deque. The overall
-recommendation is to use plf::stack in all areas.</p>
+plf::stack when the number of elements is low (under 100 for double, under 1000
+for char). But in all other areas plf::stack dominates, and has a secondary
+advantage over std::vector in that pointers to it's elements (as obtained via
+back() after a push() operation) will not invalidate on subsequent pushes.
+std::vector will invalidate pointers to stack elements upon subsequent pushes,
+std::stack will not if it is wrapping a std::deque. The overall recommendation
+is to use plf::stack in all areas.</p>
 
 <p>plf::stack:<br>
 <font style="color: green">Advantages: Fastest general performance. Performance
@@ -425,8 +497,12 @@ compiler-dependent, so the above advantages will not apply generically.</font>
 pointers to stored elements on subsequent pushes.</font> </p>
 <br>
 
+<h2><a id="version"></a>Version history</h2>
+<ul>
+  <li>2016-10-03: v1.00 - Separated from colony package, friendship removed. See colony history prior to v3.71 for earlier version changes.</li>
+</ul>
 
-<p>Contact: <img src="footer.gif"><br>
-plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
+<p><a id="contact"></a>Contact: <img alt="footer" src="footer.gif"><br>
+plf:: library and this page Copyright (c) 2016, Matthew Bentley</p>
 </body>
 </html>

@@ -10,7 +10,7 @@
 </head>
 
 <body>
-<a href="index.htm">Home</a> 
+<a href="index.htm">Home</a>
 
 <h1>PLF C++ Library - plf::colony</h1>
 <ul>
@@ -28,7 +28,7 @@
 <h2><a id="intro"></a>Introduction</h2>
 
 <p>A colony is a C++ template-based unordered data container which provides
-better performance than any std:: library container when:</p>
+better performance than other std:: library containers when:</p>
 <ol type="a">
   <li>Insertions and erasures to the container are occuring frequently in
     realtime ie. in performance-critical code, <i><b>and/or</b></i> </li>
@@ -43,17 +43,18 @@ for the performance benefits, the general speed characteristics are:</p>
     implementations of deque.</li>
   <li><i>Erasure</i>: better than any std:: library container.</li>
   <li><i>Iteration</i>: better than any std:: library container where pointer
-    validity is important. Where pointer validity is unimportant, better than
-    any std:: library container except deque and vector.</li>
+    validity to non-erased elements is important. Where pointer validity is
+    unimportant, better than any std:: library container except deque and
+    vector.</li>
 </ul>
 
 <p>As explored further in the benchmarks there are some <a
 href="#comparative_tests">vector/deque modifications</a> which can outperform
-during iteration while maintaining pointer validity, but at a cost to usability
-and memory use. Colony has other advantages including the freeing and recycling
-of unused memory on-the-fly, the guaranteed stability of
+colony during iteration while maintaining pointer validity, but at a cost to
+usability and memory usage. Colony's other advantages include the freeing and
+recycling of unused memory on-the-fly, the guaranteed stability of
 pointers/references/iterators to non-erased elements (which makes programming
-with containers of interrelated data structures faster and much easier), and
+with containers of inter-related data structures faster and much easier), and
 broad cross-compiler support.</p>
 
 <p>It can be reasonably compared to a "bag" or "bucket-array" styled structure,
@@ -110,56 +111,76 @@ but to simplify discussion I will focus on video game development</i>)</p>
   <li>For performance reasons, memory storage which is more-or-less contiguous
     is preferred. Lists, vectors of pointers to dynamically-allocated objects,
     and maps as implemented in the standard library are unusable.</li>
+  <li>Memory wastage is avoided, and in particular, any container which allocates upon initialisation tends to be avoided as this can incur purposeless memory and performance costs.</li>
 </ol>
 <br>
 
 
 <p>To meet these requirements, game developers tend to either (a) develop their
 own custom containers for given scenario or (b) develop workarounds for the
-failings of standard containers. These workarounds are many and varied, but the
-most common are probably:</p>
+failings of std::vector. These workarounds are many and varied, but the most
+common are probably:</p>
 <ol>
-  <li>Inserting all data at the beginning of a level then never adding to the
-    data, whilst using a boolean flag (or similar) to indicate the inactivity
-    of an object (as opposed to actually erasing from the vector). When
-    erasing, one simply adjusts the boolean flag, and when iterating, items
-    with the adjusted boolean flag are skipped.</li>
+  <li>Using a boolean flag (or similar) to indicate the inactivity of an object
+    (as opposed to actually erasing from the vector). When erasing, one simply
+    adjusts the boolean flag, and when iterating, items with the adjusted
+    boolean flag are skipped. External elements refer to elements within the
+    container via indexes rather than pointers (which can be invalidated upon
+    insertion).
+    <p>Advantages: Fast erasure.</p>
+    <p>Disadvantages: Slow to iterate due to branching.</p>
+  </li>
   <li>Utilizing a vector of data with a secondary vector of indexes. When
-    erasing, the erasure occurs on the vector of indexes, not the vector of
+    erasing, the erasure occurs in the vector of indexes, not the vector of
     data, and when iterating, one iterates over the vector of indexes, then
-    accessing the data from the vector of data via the index.</li>
+    accessing the data from the vector of data via the index.
+    <p>Advantages: Faster iteration.</p>
+    <p>Disadvantages: Erasure still incurs some reallocation cost, can increase
+    jitter.</p>
+  </li>
+  <li>Combining a swap-and-pop mechanism with some form of dereferenced lookup
+    system to enable contiguous element iteration (known as a <a
+    href="http://bitsquid.blogspot.ca/2011/09/managing-decoupling-part-4-id-lookup.html">'packed array'</a>,
+    or various other names). In this case when erasing we swap the back element from the
+    vector of elements with the element being erased, then pop the (swapped)
+    back element. We keep a stable vector of indexes (or similar) and update the
+    index numbers corresponding with the element being erased and the element
+    being moved. In this case external objects referring to elements within the
+    container must store a pointer to the index for the element in question.
+    There are many slightly varied alternatives to this method.
+    This method is more useful when the container's data is mostly being
+    iterated over with fewer references to the individual elements from outside
+    objects.
+    <p>Advantages: Iteration is at standard vector speed.</p>
+    <p>Disadvantages: Erase could be slow if objects are large and swap cost is
+    therefore large. All references to elements incur additional costs.</p>
+  </li>
 </ol>
 <br>
 
 
-<p>The first technique has the advantage of fast erasure and simplicity of use,
-but is comparablty slow to iterate over and never frees memory to the OS. The
-second technique still has somewhat slow erasure but fast iteration, and also
-never frees memory to the OS. The first technique disallows insertion on the
-fly, as this invalidates pointer references. The second can maintain external
-references upon subsequent insertions, but only if the external object
-referencing the data knows both the container and the index, which complicates
-implementation. In addition, insertions will be slow due to the vector's need
-to reallocate once reaching capacity.</p>
+<p>All three techniques have the disadvantage of slow singular insertions, and
+the first two will also continually expand memory usage when erasing and
+inserting over periods of time. The third deals better with this scenario as it
+swaps from the back rather than leaving gaps in the elements vector, however will suffer in performance if elements within the container are heavily referred to by external objects/elements.</p>
 
-<p>Colony is an attempt to bring a better and more generic solution to this
-area of work. It has the advantage of fast iteration while maintaining the same
-extremely fast erasure speed of the boolean technique described above, and
-without causing pointer invalidation upon either erasure or insertion. It's
-insertion speed is also faster than a vector's. Memory from erased elements is
-either reused by subsequent insertions or released to the OS on-the-fly. It
-achieves these ends by via a number of new approaches: a <a
+<p>Colony is an attempt to bring a more generic solution to this domain. It has
+the advantage of good iteration speed while maintaining a similar erasure speed
+to the boolean technique described above, and without causing pointer
+invalidation upon either erasure or insertion. It's insertion speed is also
+much faster than a vector's. Memory from erased elements is either reused by
+subsequent insertions or released to the OS on-the-fly. It achieves these ends
+by via a number of new approaches: a <a
 href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
 skipfield</a> (instead of a boolean field), a <a
 href="chained_group_allocation_pattern.htm">linked chain</a> of
 increasingly-large memory blocks (instead of a singular memory block or vector
-of blocks), and a <a href="stack.htm">custom stack</a> (plf::stack) for memory
-location reuse.</p>
+of blocks), and a custom internal reduced stack (based on <a
+href="stack.htm">plf::stack</a>) to enable erased memory location re-use.</p>
 
 <p>More data on the performance characteristics of the colony versus other
 containers and workarounds can be found in the <a href="#benchmarks">benchmarks
-section</a>, but read further below to get a grasp of the mechanics of this
-container.</p>
+section</a>, read below to gain an understanding of the mechanics.</p>
 
 <h2><a id="details"></a>Implementation</h2>
 
@@ -167,54 +188,50 @@ container.</p>
 href="chained_group_allocation_pattern.htm">chained-group memory allocation
 pattern</a> with a growth factor of 2, (doubly-linked chains of element
 "groups" containing memory blocks with additional structure metadata, including
-in this case the jump-counting skipfield). While a growth factor of 2 gives the
-best performance in the majority of scenarios (which is why the same growth
-factor is used for the majority of vector implementations), in scenarios where
-a smaller or more static increase is required, colony's minimum and maximum
-group sizes can be adjusted to suit. This group-based approach removes the
-necessity for data reallocation upon insertion, and because data is not
-reallocated, all references/pointers/iterators to container elements stay valid
-after insertions to the container.</p>
+in this case per-memory-block jump-counting skipfields). A growth factor of 2
+tends gives the best performance in a majority of scenarios (hence why it is
+used for the majority of vector implementations). Colony's minimum and maximum
+memory block sizes can also be adjusted to suit individual use-cases. Using a
+multiple-memory-block approach removes the necessity for data reallocation upon
+insertion, and because data is not reallocated, all
+references/pointers/iterators to container elements stay valid
+post-insertion.</p>
 
 <p>Due to a std::vector being the most widely-used and commonly-understood of
-the std:: library containers, we will now contrast the storage mechanisms of
-colony with that of a std::vector:</p>
+the std:: library containers, we here contrast the storage mechanisms of a
+colony with that of a vector:</p>
 <img src="vector_addition.gif"
 alt="Visual demonstration of inserting to a full vector" height="540"
 width="960"> <img src="colony_addition.gif"
 alt="Visual demonstration of inserting to a full colony" height="540"
 width="960"> 
 
-<p>The lack of reallocation also explains why insertion into a colony is faster
-than insertion into a std::vector. Colony has two other internal mechanisms:
-one is the jump-counting skipfield, utilising an array of 16-bit integers
-corresponding to every element in the container, which enables the colony to
-skip over erased elements during iteration. The second is a <a
-href="stack.htm">plf::stack</a> of erased element locations for reuse during
-subsequent insertion. When an element is erased in a std::vector, the following
-happens:</p>
-<img src="vector_erasure.gif"
+<p>The lack of reallocation is also why insertion into a colony is faster than
+insertion into a std::vector. Now we look at erasure. When an element is erased
+in a std::vector, the following happens:</p>
+
+<p><img src="vector_erasure.gif"
 alt="Visual demonstration of randomly erasing from a vector" height="540"
-width="960"> 
+width="960"> </p>
 
 <p>When an element is erased in a colony, this happens:</p>
 <img src="colony_erasure.gif"
 alt="Visual demonstration of randomly erasing from a colony" height="540"
 width="960"> 
 
-<p>This also explains the typical performance advantage you get when erasing
-from a colony (variability based on element sizeof and amount of elements)
-versus erasing from a std::vector.</p>
+<p>This is why a colony has a performance advantage over std::vector when
+erasing. </p>
 
-<p>Upon subsequent insertions to a colony following an erasure, the container
-will check to see if erased location stack is empty. If it is empty, it inserts
-to the end of the colony, creating a new group if the old group is full. If not
-empty, it instead pops an erased element location off the stack and reuses that
-location for the newly-inserted element. If you erase all the elements in any
-given group in a colony, the group is removed from the colony's group chain and
-it's erased element locations removed from the location stack.</p>
+<p>Upon subsequent insertions to a colony post-erasure, colony will check to
+see if it's erased-location stack is empty. If it is empty, it inserts to the
+end of the colony, creating a new group if the last group is full. If it is not
+empty, it pops an erased element location off the stack and reuses that memory
+address for the newly-inserted element. If you erase all elements in any given
+group in a colony, the group is removed from the colony's chain and released to
+the OS - at that point any erased element locations present in the
+erased-location stack are also removed.</p>
 
-<h2><a id="license"></a>License</h2>
+<h2><a id="license" name="license"></a>License</h2>
 
 <p>plf::colony is under a permissive <a
 href="http://en.wikipedia.org/wiki/Zlib_License">zlib license</a>. This means:
@@ -231,7 +248,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_02-09-2016.zip">here</a> (32kb zip file) or
+<p>Download <a href="plf_colony_03-10-2016.zip">here</a> (26kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -265,7 +282,8 @@ and <a
 href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.
 However, if only move-insert and/or emplace are utilized to insert elements
 into the colony, T is only required to meet the requirements of <a
-href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a> and <a
+href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a>
+and <a
 href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
 <br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
@@ -401,7 +419,8 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     </tr>
     <tr>
       <td>insert, emplace</td>
-      <td>If an iterator is == end() it may be invalidated by a subsequent insert/emplace in some cases.</td>
+      <td>If an iterator is == end() it may be invalidated by a subsequent
+        insert/emplace in some cases. Otherwise no.</td>
     </tr>
   </tbody>
 </table>
@@ -706,12 +725,8 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
 <table border="1">
   <tbody>
     <tr>
-      <td>single element via iterator</td>
+      <td>single element</td>
       <td><code>iterator erase(const iterator &amp;it)</code></td>
-    </tr>
-    <tr>
-      <td>single element via pointer</td>
-      <td><code>int erase(const value_type *p)</code></td>
     </tr>
     <tr>
       <td>range</td>
@@ -721,7 +736,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
   </tbody>
 </table>
 <ul>
-  <li><code>iterator erase(const iterator &amp;it)</code> 
+  <li><code>iterator erase(const iterator &amp;it)</code>
     <p>Removes the element pointed to by the supplied iterator, from the
     colony. Returns an iterator pointing to the next non-erased element in the
     colony (or to end() if no more elements are available). This must return an
@@ -734,28 +749,6 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     plf::colony&lt;unsigned int&gt;::iterator an_iterator;<br>
     an_iterator = data_colony.insert(23);<br>
     an_iterator = data_colony.erase(an_iterator);</code> </li>
-  <li><code>int erase(const value_type *p)</code> 
-    <p>This enables erasure via a colony element's pointer, rather than it's
-    iterator. This is expected to be useful in the use-case where external
-    containers are storing pointers to colony elements instead of iterators (as
-    iterators have 3 times the size of an element pointer) and the program
-    wants to erase the element being pointed to. This method is about 20%
-    slower on average than iterator-based erasure as a lookup has to be
-    performed to find the colony element's group - but still faster than all
-    std:: container erasure times except std::list, which it is roughly equal
-    to. Returns non-zero if element pointer was not found in any colony group,
-    otherwise returns zero on success. Attempting to erase a previously-erased
-    element results in undefined behaviour (this is checked for via an assert
-    in debug mode). Example:</p>
-    <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
-    plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
-    a_struct struct_instance;<br>
-    an_iterator = data_colony.insert(struct_instance);<br>
-    a_struct *struct_pointer = &amp;(*an_iterator);<br>
-    int success = data_colony.erase(struct_pointer);<br>
-    if (success) std::cout &lt;&lt; "Erasure successful" &lt;&lt;
-    std::endl;</code> </p>
-  </li>
   <li><code>void erase(const iterator &amp;first, const iterator
     &amp;last)</code> 
     <p>Erases all contents of a given colony from <code>first</code> to the
@@ -863,12 +856,12 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     Example: <code
     style="color: brown">object_colony.change_maximum_group_size(1000);</code></p>
   </li>
-  <li><code>void swap(colony &amp;source)</code> 
+  <li><code>void swap(colony &amp;source)</code>
     <p>Swaps the colony's contents with that of <code>source</code>.<br>
     Example: <code
     style="color: brown">object_colony.swap(other_colony);</code></p>
   </li>
-  <li><code>friend void swap(colony &amp;A, source &amp;B)</code> 
+  <li><code>friend void swap(colony &amp;A, source &amp;B)</code>
     <p>External friend function, swaps the colony A's contents with that of
     colony B (assumes both stacks have same element type).<br>
     Example: <code style="color: brown">swap(object_colony,
@@ -894,35 +887,81 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     data_colony1 = std::move(data_colony2);<br>
     data_colony2 = std::move(data_colony3);</code></p>
   </li>
-  <li><code>bool operator == (const colony &amp;source)</code> 
+  <li><code>bool operator == (const colony &amp;source)</code>
     <p>Compare contents of another colony to this colony. Returns a boolean as
     to whether they are equal.<br>
     Example: <code style="color: brown">if (object_colony == object_colony2)
     return;</code></p>
   </li>
-  <li><code>bool operator != (const colony &amp;source)</code> 
+  <li><code>bool operator != (const colony &amp;source)</code>
     <p>Compare contents of another colony to this colony. Returns a boolean as
     to whether they are not equal.<br>
     Example: <code style="color: brown">if (object_colony != object_colony2)
     return;</code></p>
   </li>
   <li><code>iterator begin(), iterator end(), const_iterator cbegin(),
-    const_iterator cend()</code> 
+    const_iterator cend()</code>
     <p>Return iterators pointing to, respectively, the first element of the
     colony and the element one-past the end of the colony (as per standard STL
     guidelines).</p>
   </li>
   <li><code>reverse_iterator rbegin(), reverse_iterator rend(),
-    const_reverse_iterator cbegin(), const_reverse_iterator cend()</code> 
+    const_reverse_iterator cbegin(), const_reverse_iterator cend()</code>
     <p>Return reverse iterators pointing to, respectively, the last element of
     the colony and the element one-before the first element of the colony (as
     per standard STL guidelines).</p>
   </li>
+  <li><code>iterator get_iterator_from_pointer(const element_pointer_type the_pointer) <b>slow</b></code>
+    <p>Getting a pointer from an iterator is simple - simply dereference it then grab the address ie. <code>"&(*the_iterator);"</code>.
+    Getting an iterator from a pointer is typically not so simple. This function enables the user to do exactly that.
+    This is expected to be useful in the use-case where external
+    containers are storing pointers to colony elements instead of iterators (as
+    iterators have 3 times the size of an element pointer) and the program
+    wants to erase the element being pointed to or possibly change the element being pointed to.
+	 Converting a pointer to an iterator using this method and then erasing, is about 20%
+    slower on average than pure iterator-based erasure. This is less dramatic than it sounds, as it is still faster than all std:: container erasure times except std::list, which it is roughly equal
+    to. However this is a slower, lookup-based operation which should be used sparingly.
+	If the lookup doesn't find a non-erased element based on that pointer, it returns end(). Otherwise it returns an iterator pointing to the element in question. Example:</p>
+    <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
+    plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
+    a_struct struct_instance;<br>
+    an_iterator = data_colony.insert(struct_instance);<br>
+    a_struct *struct_pointer = &amp;(*an_iterator);<br>
+	iterator another_iterator = data_colony.get_iterator_from_pointer(struct_pointer);<br>
+    if (an_iterator == another_iterator) std::cout &lt;&lt; "Iterator is correct" &lt;&lt;
+    std::endl;</code> </p>
+  </li>
+  <li><code>size_type get_index_from_iterator(const iterator &amp;the_iterator) <b>slow</b></code>
+    <p>While colony is a container with unordered insertion (and is therefore unordered), it still has a (transitory) order which changes frequently upon erasure and insertion. Temporary index numbers are however obtainable. These can be useful, for example, when creating a save file in a computer game, where certain elements in a container may need to be re-linked to other elements in other container upon reloading the save file. Example:</p>
+    <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
+    plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
+    a_struct struct_instance;<br>
+    data_colony.insert(struct_instance);<br>
+    data_colony.insert(struct_instance);<br>
+    an_iterator = data_colony.insert(struct_instance);<br>
+    unsigned int index = data_colony.get_index_from_iterator(an_iterator);<br>
+    if (index == 2) std::cout &lt;&lt; "Index is correct" &lt;&lt;
+    std::endl;</code> </p>
+  </li>
+  <li><code>iterator get_iterator_from_index(const size_type index) <b>slow</b></code>
+    <p>As described above, there may be situations where obtaining iterators to specific elements based on an index can be useful, for example, when reloading save files. This function is basically a shorthand to avoid typing <code>"iterator it = colony.begin(); colony.advance(it, 50);"</code>. Example:</p>
+    <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
+    plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
+    a_struct struct_instance;<br>
+    data_colony.insert(struct_instance);<br>
+    data_colony.insert(struct_instance);<br>
+    iterator an_iterator = data_colony.insert(struct_instance);<br>
+    iterator another_iterator = data_colony.get_iterator_from_index(2);<br>
+    if (an_iterator == another_iterator) std::cout &lt;&lt; "Iterator is correct" &lt;&lt;
+    std::endl;</code> </p>
+  </li>
+
+
 </ul>
 <!-- <h3>Non-member functions</h3> -->
 <ul>
   <li><code>template &lt;iterator_type&gt; void advance(iterator_type iterator,
-    distance_type distance)</code> 
+    distance_type distance)</code>
     <p>Increments/decrements the iterator supplied by the positive or negative
     amount indicated by <i>distance</i>. Speed of incrementation will almost
     always be faster than using the ++ operator on the iterator for increments
@@ -961,7 +1000,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
   </li>
 </ul>
 
-<h2><a id="benchmarks"></a>Benchmarks</h2>
+<h2><a id="benchmarks"></a>Benchmarks (out-of-date as of Sept 2016)</h2>
 
 <p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
 
@@ -1293,7 +1332,7 @@ indexed_vector after ~500 total elements.</p>
 <img alt="test result graph"
 src="tests/gcc/colony/comparitive/iteration_50.png"> <img
 alt="test result graph"
-src="tests/gcc/colony/comparitive/iteration_50_log.png"> 
+src="tests/gcc/colony/comparitive/iteration_50_log.png">
 
 <p>At this point the poor iteration performance of deque_bool becomes much more
 apparent.</p>
@@ -1349,7 +1388,7 @@ tests.</p>
 <img alt="test result graph"
 src="tests/gcc/colony/general_use/general_use_low_modification.png"> <img
 alt="test result graph"
-src="tests/gcc/colony/general_use/general_use_low_modification_log.png"> 
+src="tests/gcc/colony/general_use/general_use_low_modification_log.png">
 
 <p>We can see pointer_deque winning out here, followed closely by plf::colony
 and indexed_vector tailing far behind. Both the <i>remove_if</i> modifications
@@ -1453,7 +1492,7 @@ you will be better off with a pointer_deque or indexed_vector approach.</p>
 except for deque_bool. Iteration performance very close to pointer_deque and
 indexed_vector. Recycles or releases erased element memory locations. Best
 overall performance where the ratio of insertions/erasures to iteration is
-high. Insertion, erasure and iteration are all O(1) operations.</font><br>
+high. Insertion, erasure and iteration are all very fast.</font><br>
 <font style="color: red">Disadvantages: Could be slower overall than
 pointer_deque or indexed_vector approaches for situations where memory
 expansion is not an issue, or where erasure and reinsertion are
@@ -1529,26 +1568,46 @@ programming.</font> </p>
     would typically end up being used in order to preserve object
     references.</p>
   </li>
+<li>
+	<h4>What situations should you explicitly <i>not</i> use a colony for?</h4>
+
+	<p>A colony should not be used as a stack, ie. erasing backwards from the back, and then filling, then erasing from the back, etc. In this case you should use a stack ie. plf::stack, std::vector or std::deque.
+	The reason is that erasing backwards sequentially creates the greatest time complexity for skipfield updates, as does reinserting to the start of a sequentially-erased skipblock (which is what stack usage will entail).
+	This effect is mitigated somewhat if an entire group is erased, in which case it is released to the OS and subsequent insertions will not be updating skipfields but simply pushing to back, but you'd still incur the skipfield update cost during erasure.</p>
+
+	<p>In general you should avoid erasing sequentially during reverse iteration except where absolutely neccessary - the skipfield format is optimized for forward-iteration and forward sequential erasure.</p></li>
+
+
   <li><h4>What are the time complexities for general operations?</h4>
-    <p>Insertion: O(1) amortized<br>
-    Erase: O(1) amortized<br>
-    std::find: O(n)<br>
-    <br>
-    Iterator operations:<br>
+    <p>Insertion: If no erasures have occured, always O(1) amortised. If erasures have occured, O(random) with the range of the random number being between from O(1) and O(std::numeric_limits&lt;skipfield_type&gt;::max() - 2) (65533 by default unless an alternative skipfield type is specified upon template instantiation. Average time complexity varies based on erasure pattern, but with a random erasure pattern it's closer to O(1) amortized.</p>
+    <p>Erase: If no consecutive erasures have occured, or only consecutive erasures prior to the element being erased have occured, O(1) amortised. Otherwise O(n), where n is the number of consecutive previously-erased elements after the element being erased, which will always be between from 1 and std::numeric_limits&lt;skipfield_type&gt;::max() - 2 (65533 by default unless an alternative skipfield type is specified upon template instantiation).<br>
+	 Assuming ignorance of consecutive erasure placement by the programmer, average time complexity will vary based on erasure patterns and will appear to be O(random). But with a random erasure pattern it will be closer to O(1) amortized.</p>
+    <p>std::find: O(n)</p>
+    <p>Iterator operations:<br>
     ++ and -- : O(1) amortized<br>
     begin()/end(): O(1)<br>
     advance/next/prev: between O(1) and O(n), depending on current location,
     end location and state of colony. Average O(log N).</p>
   </li>
+
+<li>
+<h4>If the time complexities of the insert/erase functions are (kind of) O(random, ranged), why are they still fast?</h4>
+
+<p>The skipfield for each group is contiguous and separate from the skipfields for other groups, and so fits into the cache easily (unless the skipfield type is changed); thus any changes to it can occur quickly - time complexity is, actually, no indicator of performance on a modern computer.</p>
+
+<p>Colony now also uses memmove instead of iterative updates for all but one of the insert/erase operations, which again decreases performance cost. In modern implementations, memmove will typically be implemented in memory chunks, which may reduce further the time complexity. There is one situation in erase which does not use memmove, a rarer case where an element is erased and is surrounded on both sides by consecutive erased skipfield nodes. In this case it isn't actually possible to update the skipfield using memmove because the requisite numbers do not already exist in the skipfield and cannot be copied, so it is implemented as a vectorized update instead. But again due to a low amount of branching the actual time taken for the update is quite quick, regardless of the number of nodes that need to be updated.</p>
+</li>
+
   <li><h4>Is it similar to a deque?</h4>
     <p>A deque is fairly dissimilar to a colony. A deque is a double-ended
     queue, which requires a bit of a different internal framework. It typically
     uses a vector of memory blocks, whereas a colony uses a linked list -
-    essentially. They have no comparable performance characteristics except for
-    insertion (on a decent deque implementation). Deque element erasure
+    essentially. A deque can't use a linked list of memory blocks because it will make some random_access iterator operations (eg. + operator) non-O(1). In addition, being a double-ended queue makes having a growth factor for memory blocks problematic because the rules for growth at each end of the queue become difficult to implement in a way which increase performance. And in fact, if you were to be remove memory blocks from within a deque, you could not utilize a growth factor because this would make the "+" iterator operator impossible to implement in O(1) time (as you would not be able to ascertain the size for each memory block without inspecting them all).</p>
+	 <p>A deque and colony have no comparable performance characteristics except for
+    insertion (for a decent deque implementation). Deque element erasure
     performance varies quite wildly depending on the compiler compared to
-    std::vector, and it does not free unused memory blocks to the OS once they
-    are empty, unlike a colony. In addition a deque invalidates references to
+    std::vector, but is generally more similar to a vector's performance, and it does not free unused memory blocks to the OS once they
+    are empty, unlike a colony. Lastly a deque invalidates references to
     subsequent container elements when erasing elements, which a colony does
     not.</p>
   </li>
@@ -1604,8 +1663,8 @@ programming.</font> </p>
     else.</p>
     <p>Colony on the other hand does not (mostly) invalidate pointers/iterators
     to elements during insertion and erasure (iterators == end() may be
-    invalidated by subsequent insertions, and iterators to elements which are erased will become
-    invalid), resulting in the following matrix:</p>
+    invalidated by subsequent insertions, and iterators to elements which are
+    erased will become invalid), resulting in the following matrix:</p>
 
     <table border="1" cellspacing="3">
       <tbody>
@@ -1788,6 +1847,35 @@ programming.</font> </p>
     gain was found under any tests when removing the copy and move
     constructors/operators.</p>
   </li>
+<li><h4>Why must groups be removed when empty?</h4>
+
+<p>Two reasons:<br>
+1. If groups aren't removed then iterator ++ and -- operations become non-O(1) for time complexity, which makes them illegal according to the C++ standard. At the moment they are O(1) amortised, typically one update for both skipfield and element pointers, but two if a skipfield jump takes the iterator beyond the bounds of the current group and into the next group.<br>
+If there are multiple empty groups in a row, ++ iteration essentially becomes O(random) because each group will require an op to check for emptiness and to jump to the next. Essentially you get the same scenario as you do with a boolean skipfield.<br>
+2. Performance. Iterating over empty groups is slower than them not being present, and pushing to the back of the colony is faster than recycling memory locations. When a group is removed it's recyclable memory locations are also removed from the stack, hence subsequent insertions are also faster.</p></li>
+
+
+<li><h4>Why use a stack instead of a free list for erased location storage?</h4>
+
+<p>Two reasons:</p>
+<ol>
+<li>Colony elements are not guaranteed to be of sufficient size (32-bit on x86, 64-bit or greater on other architectures) to store a pointer. I would rather not restrict the potential use-cases of colony in order to use a free list. While the use-cases in games indicate larger-than-scalar types, there has been some interest and indication of usefulness from the high-performance-computing and storage domains, and I cannot predict their data patterns or usage.</li>
+<li>A free list will likely incur a significant number of cache misses and subsequent jitter when a colony memory block is freed to the OS. With a stack the erased locations are in contiguous memory space, so it is extremely fast and cache-friendly to process the stack and remove erased locations belonging to the memory block being freed. On the other hand with a free list, removing the erased locations involves iterating through the list - which will most likely skip randomly throughout the colony blocks, involving many cache misses - in order to locate the nodes belonging to the erased memory block and joining previous nodes to the next non-erased-block locations.</li>
+</ol>
+<p>In short, it's not an effective solution, though there are other scenarios where it is ideal.</p>
+</li>
+
+<li><h4>Why use two pointers for iterators rather than a single index and then dereferencing?</h4>
+<p>It's faster. Trying on two separate occasions to switch to an index-based iterator approach, two separate pointers were notably faster on both occasions.</p>
+
+<li>
+<h4>Group sizes - what are they based on, how do they expand, etc</h4>
+
+<p>Group sizes start from the minimum size defined either by the default (8 elements) or by the programmer (with a minimum of 4 elements). Subsequent group sizes then increase the <i>total capacity</i> of the colony by a factor of 2 (so, 1st group 8 elements, 2nd 8 elements, 3rd 16 elements, 4th 32 elements etcetera) until the maximum group size is reached. The default maximum group size is the maximum possible number that the skipfield bitdepth is capable of representing (std::numeric_limits&lt;skipfield_type&gt;::max()). By default the skipfield bitdepth is 16 so the maximum size of a group is 65535 elements. However the skipfield bitdepth is also a template parameter which can be set to any unsigned integer - unsigned char, unsigned int, Uint_64, etc. Unsigned short (guaranteed to be at least 16 bit, equivalent to C++11's int_least16_t type) was found to have the best performance in real-world testing due to the balance between memory contiguousness, memory waste and the restriction on skipfield update time complexity. It also fits the use-case of gaming better (as games tend to utilize 10-100000 elements per section).</p></li>
+
+<li><h4>Why store a size member for each group when this can be obtained via <code>reinterpret_cast&lt;element_pointer_type&gt;(skipfield) - elements</code>?</h4>
+<p>Because it's faster. While it can be obtained that way, having it precalculated gives a small but significant benefit. And it's only 16 bits per group.</p>
+
 </ol>
 <br>
 <br>
@@ -1795,9 +1883,20 @@ programming.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-09-02: v3.61 - Slight performance improvement for general-use-cases for colony, small performance/usability improvements in benchmark suite. Tweak for MSVC2010 performance. Correction to stack emplace.</li>
-  <li>2016-08-24: v3.6 - 8 percent speedup on iteration, vs v3.55, for colony with larger-than-scalar types. Performance increases and minor corrections in benchmark suite.</li>
-  <li>2016-08-20: v3.55 - Updates to benchmark suite - now uses a faster xorshift-type rand generator and a fast_mod function, test differences between containers more obvious now. Memory approximation also now outside of main loops, test cases updated for general_use test. Entirely new test-case function. Minor performance enhancements to insert/erase/operator++ for colony + code tidy-up. Minor warning removal for test suite.</li>
+  <li>2016-09-26: v3.71 - Replaced all but one vectorizing skipfield update with memmove ops for greater performance. Colony is no longer dependent on plf::stack, now has it's own reduced-functionality internal structure. TLDR, slightly faster, slightly faster build time &amp; slightly less memory use. Colony and stack are no longer friends :( (aw). Updated documentation. Stack separated out of colony package and test suite and vice-versa. Added functions to convert element pointer to iterator, and to convert iterator to index and vice-versa. Removed pointer-based erase function (use get_iterator_from_pointer() instead and call erase() with the resultant iterator). Minor update to distance, advance, prev and next functions. Benchmark suite updated.</li>
+  <li>2016-09-02: v3.61 - Slight performance improvement for general-use-cases
+    for colony, small performance/usability improvements in benchmark suite.
+    Tweak for MSVC2010 performance. Correction to stack emplace.</li>
+  <li>2016-08-24: v3.6 - 8 percent speedup on iteration, vs v3.55, for colony
+    with larger-than-scalar types. Performance increases and minor corrections
+    in benchmark suite.</li>
+  <li>2016-08-20: v3.55 - Updates to benchmark suite - now uses a faster
+    xorshift-type rand generator and a fast_mod function, test differences
+    between containers more obvious now. Memory approximation also now outside
+    of main loops, test cases updated for general_use test. Entirely new
+    test-case function. Minor performance enhancements to
+    insert/erase/operator++ for colony + code tidy-up. Minor warning removal
+    for test suite.</li>
   <li>2016-08-04: v3.51 - Correction to move-insert courtesy of Peet Nick.
     Removal of end-block edge-case scenario code, as it was found to be of such
     low statistical significance as to be useless. The fix increased memory use
