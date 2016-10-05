@@ -87,7 +87,7 @@
 
 
 
-#include <cstring>	// memset, memcpy
+#include <cstring>	// memset, memcpy, memmove
 #include <cassert>	// assert
 #include <limits>  // std::numeric_limits
 #include <memory>	// std::uninitialized_copy, std::allocator
@@ -482,7 +482,7 @@ private:
 
 
 	public:
-	
+
 		void push(const stack_element_type the_element)
 		{
 			switch ((current_element == NULL) + (current_element == end_element))
@@ -538,7 +538,7 @@ private:
 						current_element = current_group->end;
 						throw;
 					}
-	
+
 					end_element = current_group->end;
 					++total_number_of_elements;
 					return;
@@ -565,13 +565,6 @@ private:
 
 
 
-		inline PLF_COLONY_FORCE_INLINE stack_element_type top() const PLF_COLONY_NOEXCEPT
-		{
-			return *current_element;
-		}
-
-
-
 		void pop() PLF_COLONY_NOEXCEPT
 		{
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
@@ -592,20 +585,6 @@ private:
 				start_element = current_group->elements;
 				end_element = current_element = current_group->end;
 			}
-		}
-
-
-
-		inline PLF_COLONY_FORCE_INLINE bool empty() const PLF_COLONY_NOEXCEPT
-		{
-			return total_number_of_elements == 0;
-		}
-
-
-
-		inline size_type size() const PLF_COLONY_NOEXCEPT
-		{
-			return total_number_of_elements;
 		}
 
 
@@ -848,7 +827,7 @@ public:
 
 
 
-#if defined(_MSC_VER) && _MSC_VER <= 1600 // MSVC 2010 needs a bit of a leg-up when it comes to optimizing
+#if defined(_MSC_VER) && _MSC_VER <= 1600 // MSVC 2010 needs a bit of a helping hand when it comes to optimizing
 		inline PLF_COLONY_FORCE_INLINE colony_iterator & operator ++ ()
 #else
 		inline colony_iterator & operator ++ ()
@@ -856,11 +835,11 @@ public:
 		{
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
-			
+
 			++skipfield_pointer;
 			element_pointer += 1 + *skipfield_pointer;
 			skipfield_pointer += *skipfield_pointer;
-			
+
 			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 			{
 				group_pointer = group_pointer->next_group;
@@ -1040,7 +1019,6 @@ public:
 		typedef typename choose<r_is_const, typename colony::const_reference, typename colony::reference>::type	reference;
 
 		friend class colony;
-		
 
 
 		inline colony_reverse_iterator& operator = (const colony_reverse_iterator &source) PLF_COLONY_NOEXCEPT
@@ -1197,7 +1175,7 @@ public:
 			{
 				return (the_iterator != rh.the_iterator);
 			}
-	
+
 	
 			inline bool operator > (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
 			{
@@ -1589,7 +1567,7 @@ public:
 	{
 		if (end_iterator.element_pointer != NULL)
 		{
-			switch(((!erased_locations.empty()) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
+			switch(((erased_locations.total_number_of_elements != 0) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 			{
 				case 0: // ie. erased_locations is empty and end_iterator is not at end of current final group
 				{
@@ -1651,7 +1629,7 @@ public:
 				default: // ie. erased_locations is not empty, reuse previous-erased element locations
 				{
 					iterator new_location;
-					new_location.element_pointer = erased_locations.top();
+					new_location.element_pointer = *erased_locations.current_element;
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_location.element_pointer, element);
 					erased_locations.pop();
 
@@ -1665,7 +1643,7 @@ public:
 					new_location.skipfield_pointer = new_location.group_pointer->skipfield + (new_location.element_pointer - new_location.group_pointer->elements);
 					
 					++(new_location.group_pointer->number_of_elements);
-	
+
 					if (new_location.group_pointer == first_group && new_location.element_pointer < begin_iterator.element_pointer)
 					{ /* ie. begin_iterator was moved forwards as the result of an erasure at some point, this erased element is before the current begin, hence, set current begin iterator to this element */
 						begin_iterator = new_location;
@@ -1674,7 +1652,7 @@ public:
 					++total_number_of_elements;
 	
 					// Pseudocode:
-					// if !erased_locations.empty(), check whether location we are restoring to has a slot before or after which is erased
+					// if erased_locations.total_number_of_elements != 0, check whether location we are restoring to has a slot before or after which is erased
 					// if it has only a slot before which is erased (ie. at end of erasure block), update the prime erasure point
 					// if it only has a slot after it which is erased, (ie. this is the prime erasure point), change next slot to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
 					// if it has both a slot before and after which is erased (ie. is in middle of erasure block), do both of the above
@@ -1744,7 +1722,7 @@ public:
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
-				switch(((!erased_locations.empty()) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
+				switch(((erased_locations.total_number_of_elements != 0) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 				{
 					case 0: // ie. erased_locations is empty and end_iterator is not at end of current final group
 					{
@@ -1806,7 +1784,7 @@ public:
 					default: // ie. erased_locations is not empty, reuse previous-erased element locations
 					{
 						iterator new_location;
-						new_location.element_pointer = erased_locations.top();
+						new_location.element_pointer = *erased_locations.current_element;
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_location.element_pointer, std::move(element));
 						erased_locations.pop();
 	
@@ -1829,7 +1807,7 @@ public:
 						++total_number_of_elements;
 
 						// Pseudocode:
-						// if !erased_locations.empty(), check whether location we are restoring to has a slot before or after which is erased
+						// if erased_locations.total_number_of_elements != 0, check whether location we are restoring to has a slot before or after which is erased
 						// if it has only a slot before which is erased (ie. at end of erasure block), update the prime erasure point
 						// if it only has a slot after it which is erased, (ie. this is the prime erasure point), change next slot to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
 						// if it has both a slot before and after which is erased (ie. is in middle of erasure block), do both of the above
@@ -2005,7 +1983,7 @@ public:
 		{
 			const iterator return_iterator = insert(element);
 			size_type num_elements = number_of_elements - 1;
-			size_type capacity_available = (reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) + erased_locations.size();
+			size_type capacity_available = (reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) + erased_locations.total_number_of_elements;
 			
 			// Use up erased locations and remainder of current group first:
 			while (capacity_available-- != 0 && num_elements-- != 0)
@@ -2117,24 +2095,12 @@ private:
 
 		// Remove trailing stack groups (not removed in general 'pop' usage in plf::stack for performance reasons)
 		erased_locations.trim_trailing_groups();
-		{
-			stack_group_pointer temp_group = erased_locations.current_group->next_group, temp_group2;
-			erased_locations.current_group->next_group = NULL; // Set to NULL regardless of whether it is already NULL (avoids branching). Cuts off rest of groups from this group.
-
-			while (temp_group != NULL)
-			{
-				temp_group2 = temp_group;
-				temp_group = temp_group->next_group;
-				PLF_COLONY_DESTROY(stack_group_allocator_type, stack_group_allocator, temp_group2);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, stack_group_allocator, temp_group2, 1);
-			}
-		}
 
 		// Determine what the size of erased_locations should be, based on the size of the first colony group:
 		const size_type temp_size = (min_elements_per_group < 8) ? min_elements_per_group : (min_elements_per_group >> 7) + 8;
 
 		// Note: All groups from here onwards refer to erased_location's stack groups, not colony groups, unless stated otherwise
-		
+
 		// Use either the size determined above or the current total number of elements in stack as an estimate of how large the first group in it should be:
 		// The current total number of elements in the stack is a good estimate for how large it might become in future, but if it's smaller than the first_group determination, we should probably use the first_group determination.
 		const size_type new_group_size = (erased_locations.total_number_of_elements < temp_size) ? temp_size : erased_locations.total_number_of_elements;
@@ -2586,7 +2552,7 @@ public:
 
 	inline size_type capacity() const PLF_COLONY_NOEXCEPT
 	{
-		return (first_group == NULL) ? 0 : (total_number_of_elements + static_cast<size_type>(erased_locations.size()) +
+		return (first_group == NULL) ? 0 : (total_number_of_elements + static_cast<size_type>(erased_locations.total_number_of_elements) +
 			static_cast<size_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer)) +
 			((end_iterator.group_pointer->next_group == NULL) ? 0 : end_iterator.group_pointer->next_group->size); // Empty last group clause
 	}

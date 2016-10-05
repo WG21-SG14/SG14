@@ -59,7 +59,7 @@ an #include command.</p>
 <ul>
   <li><code>nanotimer()</code>
     <p>Default constructor - no arguments.<br>
-    Example:<br><code style="color: brown">plf::nanotimer timer;</code><br>
+    Example: <code style="color: brown">plf::nanotimer timer;</code><br>
     </p>
   </li>
 </ul>
@@ -68,11 +68,11 @@ an #include command.</p>
 <ul>
   <li><code>void start()</code>
     <p>Start or restart timer.<br>
-    Example: <code style="color: brown"><br>
+    Example: <code style="color: brown">
 	timer.start();<br>
 	// Do something here<br>
 	double results = timer.get_elapsed_ns();<br>
-	std::cout &lt;&lt; "Timing: " &lt;&lt; results &lt;&lt; " nanoseconds." &lt;&lt; std::endl;<br>
+	std::cout << "Timing: " << results << " nanoseconds." << std::endl;<br>
 	timer.start(); // restart time<br>
 	// Do something here<br>
 	// etcetera
@@ -82,33 +82,33 @@ an #include command.</p>
 
   <li><code>double timer.get_elapsed_ns()</code>
     <p>Get elapsed time in nanoseconds.<br>
-    Example: <code style="color: brown"><br>
-	timer.start();<br>
-	// Do something here<br>
-	double results = timer.get_elapsed_ns();<br>
-	std::cout &lt;&lt; "Timing: " &lt;&lt; results &lt;&lt; " nanoseconds." &lt;&lt; std::endl;
+    Example: <code style="color: brown">
+	timer.start()
+	// Do something here
+	double results = timer.get_elapsed_ns();
+	std::cout << "Timing: " << results << " nanoseconds." << std::endl;
 	 </code><br>
     </p>
   </li>
 
   <li><code>double timer.get_elapsed_us()</code>
     <p>Get elapsed time in microseconds.<br>
-    Example: <code style="color: brown"><br>
-	timer.start();<br>
-	// Do something here<br>
-	double results = timer.get_elapsed_us();<br>
-	std::cout &lt;&lt; "Timing: " &lt;&lt; results &lt;&lt; " microseconds." &lt;&lt; std::endl;
+    Example: <code style="color: brown">
+	timer.start()
+	// Do something here
+	double results = timer.get_elapsed_us();
+	std::cout << "Timing: " << results << " microseconds." << std::endl;
 	 </code><br>
     </p>
   </li>
 
   <li><code>double timer.get_elapsed_ms()</code>
     <p>Get elapsed time in milliseconds.<br>
-    Example: <code style="color: brown"><br>
-	timer.start();<br>
-	// Do something here<br>
-	double results = timer.get_elapsed_ms();<br>
-	std::cout &lt;&lt; "Timing: " &lt;&lt; results &lt;&lt; " milliseconds." &lt;&lt; std::endl;
+    Example: <code style="color: brown">
+	timer.start()
+	// Do something here
+	double results = timer.get_elapsed_ms();
+	std::cout << "Timing: " << results << " milliseconds." << std::endl;
 	 </code><br>
     </p>
   </li>
@@ -119,6 +119,7 @@ an #include command.</p>
   <li><code>void plf::nanosecond_delay(double x)</code>
     <p>Delay until 'x' number of nanoseconds have passed. This is a polling loop with no freeing of timeslices to the OS.<br>
     Example: <code style="color: brown">
+	// Pause program:<br>
 	plf::nanosecond_delay(1040000);
 	 </code><br>
     </p>
@@ -127,6 +128,7 @@ an #include command.</p>
   <li><code>void plf::microsecond_delay(double x)</code>
     <p>Delay until 'x' number of microseconds have passed. This is a polling loop with no freeing of timeslices to the OS.<br>
     Example: <code style="color: brown">
+	// Pause program:<br>
 	plf::microsecond_delay(10400);
 	 </code><br>
     </p>
@@ -135,6 +137,7 @@ an #include command.</p>
   <li><code>void plf::millisecond_delay(double x)</code>
     <p>Delay until 'x' number of milliseconds have passed. This is a polling loop with no freeing of timeslices to the OS.<br>
     Example: <code style="color: brown">
+	// Pause program:<br>
 	plf::millisecond_delay(104);
 	 </code><br>
     </p>

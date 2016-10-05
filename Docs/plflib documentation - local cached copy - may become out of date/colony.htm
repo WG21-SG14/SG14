@@ -850,7 +850,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
   <li><code>void change_maximum_group_size(const unsigned short
     min_group_size)</code> 
     <p>Changes the maximum internal group size only, in terms of maximum number
-    of elements stored per group. If the colony is not empty, all elements will
+    of elements stored per group. If the colony is not empty, all elements will 
     be moved into new groups and all pointers/iterators/references
     invalidated.<br>
     Example: <code
@@ -911,7 +911,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     the colony and the element one-before the first element of the colony (as
     per standard STL guidelines).</p>
   </li>
-  <li><code>iterator get_iterator_from_pointer(const element_pointer_type the_pointer) <b>slow</b></code>
+  <li><code>iterator get_iterator_from_pointer(const element_pointer_type the_pointer) <b>(slow)</b></code>
     <p>Getting a pointer from an iterator is simple - simply dereference it then grab the address ie. <code>"&(*the_iterator);"</code>.
     Getting an iterator from a pointer is typically not so simple. This function enables the user to do exactly that.
     This is expected to be useful in the use-case where external
@@ -919,9 +919,9 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     iterators have 3 times the size of an element pointer) and the program
     wants to erase the element being pointed to or possibly change the element being pointed to.
 	 Converting a pointer to an iterator using this method and then erasing, is about 20%
-    slower on average than pure iterator-based erasure. This is less dramatic than it sounds, as it is still faster than all std:: container erasure times except std::list, which it is roughly equal
-    to. However this is a slower, lookup-based operation which should be used sparingly.
-	If the lookup doesn't find a non-erased element based on that pointer, it returns end(). Otherwise it returns an iterator pointing to the element in question. Example:</p>
+    slower on average than erasing when you already have the iterator. This is less dramatic than it sounds, as it is still faster than all std:: container erasure times except std::list, which it is roughly equal
+    to. However this is generally a slower, lookup-based operation.
+	If the lookup doesn't find a non-erased element based on that pointer, it returns <code>end()</code>. Otherwise it returns an iterator pointing to the element in question. Example:</p>
     <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
     plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
     a_struct struct_instance;<br>
@@ -931,8 +931,8 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     if (an_iterator == another_iterator) std::cout &lt;&lt; "Iterator is correct" &lt;&lt;
     std::endl;</code> </p>
   </li>
-  <li><code>size_type get_index_from_iterator(const iterator &amp;the_iterator) <b>slow</b></code>
-    <p>While colony is a container with unordered insertion (and is therefore unordered), it still has a (transitory) order which changes frequently upon erasure and insertion. Temporary index numbers are however obtainable. These can be useful, for example, when creating a save file in a computer game, where certain elements <code>const_iterator</code> instead of <code>iterator</code>. Example:</p>
+  <li><code>size_type get_index_from_iterator(const iterator &amp;the_iterator) <b>(slow)</b></code>
+    <p>While colony is a container with unordered insertion (and is therefore unordered), it still has a (transitory) order which changes frequently upon erasure and insertion. <i>Temporary</i> index numbers are therefore obtainable. These can be useful, for example, when creating a save file in a computer game, where certain elements in a container may need to be re-linked to other elements in other container upon reloading the save file. Example:</p>
     <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
     plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
     a_struct struct_instance;<br>
@@ -943,7 +943,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     if (index == 2) std::cout &lt;&lt; "Index is correct" &lt;&lt;
     std::endl;</code> </p>
   </li>
-  <li><code>iterator get_iterator_from_index(const size_type index) <b>slow</b></code>
+  <li><code>iterator get_iterator_from_index(const size_type index) <b>(slow)</b></code>
     <p>As described above, there may be situations where obtaining iterators to specific elements based on an index can be useful, for example, when reloading save files. This function is basically a shorthand to avoid typing <code>"iterator it = colony.begin(); colony.advance(it, 50);"</code>. Example:</p>
     <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
     plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
@@ -1271,7 +1271,7 @@ container, to compare how the different models perform after reinsertion.</p>
 <h4>Insertion</h4>
 <img alt="test result graph" src="tests/gcc/colony/comparitive/insertion.png">
 <img alt="test result graph"
-src="tests/gcc/colony/comparitive/insertion_log.png">
+src="tests/gcc/colony/comparitive/insertion_log.png"> 
 
 <p>Here a deque_bool and plf::colony are more-or-less on a par with each other,
 with both pointer_deque modifications slightly behind and std::list and
@@ -1883,7 +1883,8 @@ If there are multiple empty groups in a row, ++ iteration essentially becomes O(
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-09-26: v3.71 - Replaced all but one vectorizing skipfield update with memmove ops for greater performance. Colony is no longer dependent on plf::stack, now has it's own reduced-functionality internal structure. TLDR, slightly faster, slightly faster build time &amp; slightly less memory use. Colony and stack are no longer friends :( (aw). Updated documentation. Stack separated out of colony package and test suite and vice-versa. Added functions to convert element pointer to iterator, and to convert iterator to index and vice-versa. Removed pointer-based erase function (use get_iterator_from_pointer() instead and call erase() with the resultant iterator). Minor update to distance, advance, prev and next functions. Benchmark suite updated.</li>
+  <li>2016-10-04: v3.72 - minor fix to erase.</li>
+  <li>2016-10-03: v3.71 - Replaced all but one vectorizing skipfield update with memmove ops for greater performance. Colony is no longer dependent on plf::stack, now has it's own reduced-functionality internal structure. TLDR, slightly faster, slightly faster build time &amp; slightly less memory use. Colony and stack are no longer friends :( (aw). Updated documentation. Stack separated out of colony package and test suite and vice-versa. Added functions to convert element pointer to iterator, and to convert iterator to index and vice-versa. Removed pointer-based erase function (use get_iterator_from_pointer() instead and call erase() with the resultant iterator). Minor update to distance, advance, prev and next functions. Benchmark suite updated.</li>
   <li>2016-09-02: v3.61 - Slight performance improvement for general-use-cases
     for colony, small performance/usability improvements in benchmark suite.
     Tweak for MSVC2010 performance. Correction to stack emplace.</li>
