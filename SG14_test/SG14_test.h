@@ -3,13 +3,11 @@
 
 namespace sg14_test
 {
+	void transcode_test();
 	void ring_test();
 	void thread_communication_test();
 	void unstable_remove_test();
 	void uninitialized();
-	void plf_colony_test_suite();
-	void plf_stack_test_suite();
-	void inplace_function_test();
 }
 
 #endif
