@@ -1,360 +1,408 @@
-#include <array>
-#include <vector>
+#include <cstddef>
+#include <type_traits>
+#include <iterator>
+#include <cassert>
 
 namespace sg14
 {
-	template<typename T, std::size_t capacity>
-	class static_ring
+	template <typename T>
+	struct null_popper
 	{
-	public:
-		typedef std::array<T, capacity> container_type;
-		typedef typename container_type::value_type value_type;
-		typedef typename container_type::size_type size_type;
-		typedef typename container_type::reference reference;
-		typedef typename container_type::const_reference const_reference;
-		typedef typename container_type::iterator iterator;
-		typedef typename container_type::const_iterator const_iterator;
-		typedef typename container_type::reverse_iterator reverse_iterator;
-		typedef typename container_type::const_reverse_iterator const_reverse_iterator;
-
-		constexpr static_ring() noexcept(std::is_nothrow_default_constructible<T>::value)
-			: c()
-			, count(0)
-			, next_element(std::begin(c))
-			, last_element(next_element)
-		{
-		}
-
-		static_ring(const static_ring& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
-			: c(rhs.c)
-			, count(rhs.count)
-			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
-			, last_element(std::begin(c) + (rhs.last_element - std::begin(rhs.c)))
-		{
-		}
-
-		static_ring(static_ring&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
-			: c(std::move(rhs.c))
-			, count(std::move(rhs.count))
-			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
-			, last_element(std::begin(c) + (rhs.last_element - std::begin(rhs.c)))
-		{
-		}
-
-		static_ring(const container_type& rhs) noexcept(std::is_nothrow_copy_constructible<T>::value)
-			: c(rhs)
-			, count(0)
-			, next_element(std::begin(c))
-			, last_element(next_element)
-		{
-		}
-	
-		static_ring(container_type&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value)
-			: c(std::move(rhs))
-			, count(0)
-			, next_element(std::begin(c))
-			, last_element(next_element)
-		{
-		}
-
-		static_ring& operator=(const static_ring& rhs) noexcept(std::is_nothrow_copy_assignable<T>::value)
-		{
-			c = rhs.c;
-			return (*this);
-		}
-
-		static_ring& operator=(static_ring&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value)
-		{
-			c = std::move(rhs.c);
-			return (*this);
-		}
-
-		bool push(const value_type& from_value) noexcept(std::is_nothrow_copy_assignable<T>::value)
-		{
-			if (count == capacity)
-			{
-				return false;
-			}
-			*next_element = from_value;
-			increase_back();
-			return true;
-		}
-
-		bool push(value_type&& from_value) noexcept(std::is_nothrow_move_assignable<T>::value)
-		{
-			if (count == capacity)
-			{
-				return false;
-			}
-			*next_element = std::move(from_value);
-			increase_back();
-			return true;
-		}
-
-		template<class... FromType>
-		bool emplace(FromType&&... from_value) noexcept(std::is_nothrow_constructible<T, FromType...>::value
-								&& std::is_nothrow_move_assignable<T>::value)
-		{
-			if (count == capacity)
-			{
-				return false;
-			}
-			*next_element = T(std::forward<FromType>(from_value)...);
-			increase_back();
-			return true;
-		}
-
-		void pop()
-		{
-			*last_element = T();
-			increase_front();
-		}
-
-		bool empty() const noexcept
-		{
-			return (next_element == last_element);
-		}
-
-		size_type size() const noexcept
-		{
-			return count;
-		}
-
-		reference front() noexcept
-		{
-			return (*last_element);
-		}
-
-		const_reference front() const noexcept
-		{
-			return (*last_element);
-		}
-
-		reference back() noexcept
-		{
-			auto it = decrease(next_element);
-			return (*it);
-		}
-
-		const_reference back() const noexcept
-		{
-			auto it = decrease(next_element);
-			return (*it);
-		}
-
-		void swap(static_ring& rhs) noexcept
-		{
-			auto lhs_next = next_element - c.begin();
-			auto lhs_last = last_element - c.begin();
-			auto rhs_next = rhs.next_element - rhs.c.begin();
-			auto rhs_last = rhs.last_element - rhs.c.begin();
-			std::swap(c, rhs.c);
-			std::swap(count, rhs.count);
-			next_element = c.begin() + rhs_next;
-			last_element = c.begin() + rhs_last;
-			rhs.next_element = rhs.c.begin() + lhs_next;
-			rhs.last_element = rhs.c.begin() + lhs_last;
-		}
-
-	private:
-		container_type c;
-		size_t count;
-		iterator next_element;
-		iterator last_element;
-
-		void increase_back()
-		{
-			if (++next_element == c.end())
-			{
-				next_element = c.begin();
-			}
-			++count;
-		}
-
-		iterator decrease(iterator it)
-		{
-			if (it == c.begin())
-			{
-				it = c.end();
-			}
-			return --it;
-		}
-
-		void increase_front()
-		{
-			if (++last_element == c.end())
-			{
-				last_element = c.begin();
-			}
-			--count;
-		}
+		void operator()(T&);
 	};
 
-	template<typename T, class Container = std::vector<T, std::allocator<T>>>
-	class dynamic_ring
+	template <typename T>
+	struct default_popper
+	{
+		T operator()(T& t);
+	};
+
+	template <typename T>
+	struct copy_popper
+	{
+		copy_popper(T&& t);
+		T operator()(T& t);
+		T copy;
+	};
+
+	template <typename, bool>
+	class ring_iterator;
+
+	template<typename T, class Popper = default_popper<T>>
+	class ring_span
 	{
 	public:
-		typedef Container container_type;
-		typedef typename container_type::value_type value_type;
-		typedef typename container_type::size_type size_type;
-		typedef typename container_type::reference reference;
-		typedef typename container_type::const_reference const_reference;
-		typedef typename container_type::iterator iterator;
-		typedef typename container_type::const_iterator const_iterator;
-		typedef typename container_type::reverse_iterator reverse_iterator;
-		typedef typename container_type::const_reverse_iterator const_reverse_iterator;
+		using type = ring_span<T, Popper>;
+		using size_type = std::size_t;
+		using value_type = T;
+		using pointer = T*;
+		using reference = T&;
+		using const_reference = const T&;
+		using iterator = ring_iterator<type, false>;
+		using const_iterator = ring_iterator<type, true>;
 
-		explicit dynamic_ring(size_type initial_capacity/*, typename Container::allocator_type& = */)	// Hmmm, what WOULD be the default value?
-			: c(initial_capacity)																		// It would need to be passed through here
-			, count(0)
-			, next_element(std::begin(c))
-			, last_element(next_element)
-		{
-		}
+		friend class ring_iterator<type, false>;
+		friend class ring_iterator<type, true>;
 
-		dynamic_ring(const dynamic_ring& rhs)
-			: c(rhs.c)
-			, count(rhs.count)
-			, next_element(std::begin(c) + (rhs.next_element - std::begin(rhs.c)))
-			, last_element(std::begin(c) + (rhs.last_element - std::begin(rhs.c)))
-		{
-		}
+		template <class ContiguousIterator>
+		ring_span(ContiguousIterator begin, ContiguousIterator end, Popper p = Popper()) noexcept;
 
-//		dynamic_ring(dynamic_ring&& rhs);
-//		template<typename Alloc> explicit dynamic_ring(const Alloc&);
-//		template<typename Alloc> dynamic_ring(const dynamic_ring&, const Alloc&);
-//		template<typename Alloc> dynamic_ring(dynamic_ring&&, const Alloc&);
-//		template<typename Alloc> dynamic_ring(const container_type&, const Alloc&);
-//		template<typename Alloc> dynamic_ring(container_type&&, const Alloc&);
-		
-		dynamic_ring& operator=(const dynamic_ring& rhs)
-		{
-			c = rhs.c;
-			return (*this);
-		}
+		template <class ContiguousIterator>
+		ring_span(ContiguousIterator begin, ContiguousIterator end, ContiguousIterator first, size_type size, Popper p = Popper()) noexcept;
 
-		dynamic_ring& operator=(dynamic_ring&& rhs)
-		{
-			c = std::move(rhs.c);
-			return (*this);
-		}
+		ring_span(ring_span&&) = default;
+		ring_span& operator=(ring_span&&) = default;
 
-		bool push(const value_type& from_value)
-		{
-			if (count == c.capacity())
-			{
-				return false;
-			}
-			*next_element = from_value;
-			increase_back();
-			return true;
-		}
+		bool empty() const noexcept;
+		bool full() const noexcept;
+		size_type size() const noexcept;
+		size_type capacity() const noexcept;
 
-		bool push(value_type&& from_value)
-		{
-			if (count == c.capacity())
-			{
-				return false;
-			}
-			*next_element = std::move(from_value);
-			increase_back();
-			return true;
-		}
+		reference front() noexcept;
+		const_reference front() const noexcept;
+		reference back() noexcept;
+		const_reference back() const noexcept;
 
+		iterator begin() noexcept;
+		const_iterator begin() const noexcept;
+		const_iterator cbegin() const noexcept;
+		iterator end() noexcept;
+		const_iterator end() const noexcept;
+		const_iterator cend() const noexcept;
+
+		template<bool b = true, typename = std::enable_if_t<b && std::is_copy_assignable<T>::value>>
+		void push_back(const value_type& from_value) noexcept(std::is_nothrow_copy_assignable<T>::value);
+		template<bool b = true, typename = std::enable_if_t<b && std::is_move_assignable<T>::value>>
+		void push_back(value_type&& from_value) noexcept(std::is_nothrow_move_assignable<T>::value);
 		template<class... FromType>
-		bool emplace(FromType&&... from_value)
-		{
-			if (count == c.capacity())
-			{
-				return false;
-			}
-			*next_element = T(std::forward<FromType>(from_value)...);
-			increase_back();
-			return true;
-		}
+		void emplace_back(FromType&&... from_value) noexcept(std::is_nothrow_constructible<T, FromType...>::value && std::is_nothrow_move_assignable<T>::value);
+		auto pop_front();
 
-		void pop() noexcept
-		{
-			increase_front();
-		}
+		void swap(type& rhs) noexcept;// (std::is_nothrow_swappable<Popper>::value);
 
-		bool empty() const noexcept
-		{
-			return (next_element == last_element);
-		}
-
-		size_type size() const noexcept
-		{
-			return count;
-		}
-
-		reference front() noexcept
-		{
-			return (*last_element);
-		}
-
-		const_reference front() const noexcept
-		{
-			return (*last_element);
-		}
-
-		reference back() noexcept
-		{
-			auto it = decrease(next_element);
-			return (*it);
-		}
-
-		const_reference back() const noexcept
-		{
-			auto it = decrease(next_element);
-			return (*it);
-		}
-
-		void swap(dynamic_ring& rhs) noexcept
-		{
-			auto lhs_next = next_element - c.begin();
-			auto lhs_last = last_element - c.begin();
-			auto rhs_next = rhs.next_element - rhs.c.begin();
-			auto rhs_last = rhs.last_element - rhs.c.begin();
-			std::swap(c, rhs.c);
-			std::swap(count, rhs.count);
-			next_element = c.begin() + rhs_next;
-			last_element = c.begin() + rhs_last;
-			rhs.next_element = rhs.c.begin() + lhs_next;
-			rhs.last_element = rhs.c.begin() + lhs_last;
-		}
-
+		// Example implementation
 	private:
-		container_type c;
-		size_t count;
-		iterator next_element;
-		iterator last_element;
+		reference at(size_type idx) noexcept;
+		const_reference at(size_type idx) const noexcept;
+		size_type back_idx() const noexcept;
+		void increase_size() noexcept;
 
-		void increase_back()
-		{
-			if (++next_element == c.end())
-			{
-				next_element = c.begin();
-			}
-			++count;
-		}
+		T* m_data;
+		size_type m_size;
+		size_type m_capacity;
+		size_type m_front_idx;
+		Popper m_popper;
+	};
 
-		iterator decrease(iterator it)
-		{
-			if (it == c.begin())
-			{
-				it = c.end();
-			}
-			return --it;
-		}
+	template <typename Ring, bool is_const>
+	class ring_iterator
+	{
+	public:
+		using type = ring_iterator<Ring, is_const>;
+		using value_type = typename Ring::value_type;
+		using difference_type = std::ptrdiff_t;
+		using pointer = typename std::conditional_t<is_const, const value_type, value_type>*;
+		using reference = typename std::conditional_t<is_const, const value_type, value_type>&;
+		using iterator_category = std::random_access_iterator_tag;
 
-		void increase_front()
-		{
-			if (++last_element == c.end())
-			{
-				last_element = c.begin();
-			}
-			--count;
-		}
-	}; 
+		template <bool C>
+		bool operator==(const ring_iterator<Ring, C>& rhs) const noexcept;
+		template <bool C>
+		bool operator<(const ring_iterator<Ring, C>& rhs) const noexcept;
+
+		reference operator*() const noexcept;
+		type& operator++() noexcept;
+		type operator++(int) noexcept;
+		type& operator--() noexcept;
+		type operator--(int) noexcept;
+
+		friend type& operator+=(type& it, int i) noexcept;
+		friend type& operator-=(type& it, int i) noexcept;
+
+		// Example implementation
+	private:
+		friend Ring;
+		using size_type = typename Ring::size_type;
+		ring_iterator(size_type idx, Ring* rv) noexcept;
+		size_type modulo_capacity(size_type idx) noexcept;
+		size_type m_idx;
+		Ring* m_rv;
+	};
+}
+
+// Sample implementation
+
+template <typename T>
+void sg14::null_popper<T>::operator()(T&)
+{}
+
+template <typename T>
+T sg14::default_popper<T>::operator()(T& t)
+{
+	return std::move(t);
+}
+
+template <typename T>
+sg14::copy_popper<T>::copy_popper(T&& t)
+	: copy(std::move(t))
+{}
+
+template <typename T>
+T sg14::copy_popper<T>::operator()(T& t)
+{
+	T old = t;
+	t = copy;
+	return t;
+}
+
+template<typename T, class Popper>
+template<class ContiguousIterator>
+sg14::ring_span<T, Popper>::ring_span(ContiguousIterator begin, ContiguousIterator end, Popper p) noexcept
+	: m_data(&*begin)
+	, m_size(0)
+	, m_capacity(end - begin)
+	, m_front_idx(0)
+	, m_popper(std::move(p))
+{}
+
+template<typename T, class Popper>
+template<class ContiguousIterator>
+sg14::ring_span<T, Popper>::ring_span(ContiguousIterator begin, ContiguousIterator end, ContiguousIterator first, size_type size, Popper p = Popper()) noexcept
+	: m_data(&*begin)
+	, m_size(size)
+	, m_capacity(end - begin)
+	, m_front_idx(first - begin)
+	, m_popper(std::move(p))
+{}
+
+template<typename T, class Popper>
+bool sg14::ring_span<T, Popper>::empty() const noexcept
+{
+	return m_size == 0;
+}
+
+template<typename T, class Popper>
+bool sg14::ring_span<T, Popper>::full() const noexcept
+{
+	return m_size == m_capacity;
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::size_type sg14::ring_span<T, Popper>::size() const noexcept
+{
+	return m_size;
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::size_type sg14::ring_span<T, Popper>::capacity() const noexcept
+{
+	return m_capacity;
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::reference sg14::ring_span<T, Popper>::front() noexcept
+{
+	return *begin();
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::reference sg14::ring_span<T, Popper>::back() noexcept
+{
+	return *(--end());
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reference sg14::ring_span<T, Popper>::front() const noexcept
+{
+	return *begin();
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reference sg14::ring_span<T, Popper>::back() const noexcept
+{
+	return *(--end());
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::iterator sg14::ring_span<T, Popper>::begin() noexcept
+{
+	return iterator(m_front_idx, this);
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::iterator sg14::ring_span<T, Popper>::end() noexcept
+{
+	return iterator(size() + m_front_idx, this);
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::begin() const noexcept
+{
+	return const_iterator(m_front_idx, this);
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::cbegin() const noexcept
+{
+	return const_iterator(m_front_idx, this);
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::end() const noexcept
+{
+	return const_iterator(size() + m_front_idx, this);
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::cend() const noexcept
+{
+	return const_iterator(size() + m_front_idx, this);
+}
+
+template<typename T, class Popper>
+template<bool b = true, typename = std::enable_if_t<b && std::is_copy_assignable<T>::value>>
+void sg14::ring_span<T, Popper>::push_back(const T& value) noexcept(std::is_nothrow_copy_assignable<T>::value)
+{
+	m_data[back_idx()] = value;
+	increase_size();
+}
+
+template<typename T, class Popper>
+template<bool b = true, typename = std::enable_if_t<b && std::is_move_assignable<T>::value>>
+void sg14::ring_span<T, Popper>::push_back(T&& value) noexcept(std::is_nothrow_move_assignable<T>::value)
+{
+	m_data[back_idx()] = std::move(value);
+	increase_size();
+}
+
+template<typename T, class Popper>
+template<class... FromType>
+void sg14::ring_span<T, Popper>::emplace_back(FromType&&... from_value) noexcept(std::is_nothrow_constructible<T, FromType...>::value && std::is_nothrow_move_assignable<T>::value)
+{
+	m_data[back_idx()] = T(std::forward<FromType>(from_value)...);
+	increase_size();
+}
+
+template<typename T, class Popper>
+auto sg14::ring_span<T, Popper>::pop_front()
+{
+	assert(m_size != 0);
+	auto old_front_idx = m_front_idx;
+	m_front_idx = (m_front_idx + 1) % m_capacity;
+	--m_size;
+	return m_popper(m_data[old_front_idx]);
+}
+
+template<typename T, class Popper>
+void sg14::ring_span<T, Popper>::swap(sg14::ring_span<T, Popper>& rhs) noexcept//(std::is_nothrow_swappable<Popper>::value)
+{
+	using std::swap;
+	swap(m_data, rhs.m_data);
+	swap(m_size, rhs.m_size);
+	swap(m_capacity, rhs.m_capacity);
+	swap(m_front_idx, rhs.m_front_idx);
+	swap(m_popper, rhs.m_popper);
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::reference sg14::ring_span<T, Popper>::at(size_type i) noexcept
+{
+	return m_data[i % m_capacity];
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reference sg14::ring_span<T, Popper>::at(size_type i) const noexcept
+{
+	return m_data[i % m_capacity];
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::size_type sg14::ring_span<T, Popper>::back_idx() const noexcept
+{
+	return (m_front_idx + m_size) % m_capacity;
+}
+
+template<typename T, class Popper>
+void sg14::ring_span<T, Popper>::increase_size() noexcept
+{
+	if (++m_size > m_capacity)
+	{
+		m_size = m_capacity;
+	}
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+bool sg14::ring_iterator<Ring, is_const>::operator==(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return (modulo_capacity(m_idx) == rhs.modulo_capacity(m_idx)) && (m_rv == rhs.m_rv);
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+bool sg14::ring_iterator<Ring, is_const>::operator<(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return (modulo_capacity(m_idx) < rhs.modulo_capacity(m_idx)) && (m_rv == rhs.m_rv);
+}
+
+template <typename Ring, bool is_const>
+typename sg14::ring_iterator<Ring, is_const>::reference sg14::ring_iterator<Ring, is_const>::operator*() const noexcept
+{
+	return m_rv->at(m_idx);
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const>& sg14::ring_iterator<Ring, is_const>::operator++() noexcept
+{
+	++m_idx;
+	return *this;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const> sg14::ring_iterator<Ring, is_const>::operator++(int) noexcept
+{
+	auto r(*this);
+	++*this;
+	return r;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const>& sg14::ring_iterator<Ring, is_const>::operator--() noexcept
+{
+	--m_idx;
+	return *this;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const> sg14::ring_iterator<Ring, is_const>::operator--(int) noexcept
+{
+	auto r(*this);
+	--*this;
+	return r;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const>& operator+=(sg14::ring_iterator<Ring, is_const>& it, int i) noexcept
+{
+	it.m_idx += i;
+	return it;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const>& operator-=(sg14::ring_iterator<Ring, is_const>& it, int i) noexcept
+{
+	it.m_idx -= i;
+	return it;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const>::ring_iterator(typename sg14::ring_iterator<Ring, is_const>::size_type idx, Ring* rv) noexcept
+	: m_idx(idx)
+	, m_rv(rv)
+{}
+
+template <typename Ring, bool is_const>
+typename sg14::ring_iterator<Ring, is_const>::size_type sg14::ring_iterator<Ring, is_const>::modulo_capacity(size_type idx) noexcept
+{
+	return idx % m_rv->capacity();
 }
