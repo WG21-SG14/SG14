@@ -104,7 +104,7 @@ public:
 	inplace_function& operator=(inplace_function&& other)
 	{
 		this->clear();
-		this->move(other);
+		this->move(std::move(other));
 		return *this;
 	}
 
@@ -126,7 +126,7 @@ public:
 	inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
 	{
 		this->clear();
-		this->move(other);
+		this->move(std::move(other));
 		return *this;
 	}
 
