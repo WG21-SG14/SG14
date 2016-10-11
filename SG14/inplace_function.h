@@ -7,6 +7,13 @@ namespace stdext
 constexpr size_t InplaceFunctionDefaultCapacity = 32;
 constexpr size_t InplaceFunctionDefaultAlignment = 16;
 
+enum class inplace_function_operation
+{
+	Destroy,
+	Copy,
+	Move
+};
+
 template <typename SignatureT, size_t CapacityT = InplaceFunctionDefaultCapacity, size_t AlignmentT = InplaceFunctionDefaultAlignment>
 class inplace_function;
 
@@ -226,12 +233,7 @@ private:
 
 	using CompatibleFunctionPointer = RetT(*)(ArgsT...);
 	using InvokeFctPtrType = RetT(*)(ArgsT..., const void* thisPtr);
-	enum class Operation
-	{
-		Destroy,
-		Copy,
-		Move
-	};
+	using Operation = inplace_function_operation;
 	using ManagerFctPtrType = void(*) (void* thisPtr, const void* fromPtr, Operation);
 
 	InvokeFctPtrType m_InvokeFctPtr;
