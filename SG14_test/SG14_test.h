@@ -3,8 +3,9 @@
 
 namespace sg14_test
 {
-	void transcode_test();
-	void ring_test();
+        void inplace_function_test();
+        void transcode_test();
+        void ring_test();
 	void thread_communication_test();
 	void unstable_remove_test();
 	void uninitialized();
