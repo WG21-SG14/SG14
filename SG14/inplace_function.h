@@ -21,7 +21,7 @@ template <typename RetT, typename... ArgsT, size_t CapacityT, size_t AlignmentT>
 class inplace_function<RetT(ArgsT...), CapacityT, AlignmentT>
 {
 public:
-	template <typename SignatureT, std::size_t CapacityT, std::size_t AlignmentT>
+	template <typename SignatureT2, std::size_t CapacityT2, std::size_t AlignmentT2>
 	friend class inplace_function;
 	
 	// TODO static_assert for misalignment
