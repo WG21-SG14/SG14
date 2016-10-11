@@ -486,7 +486,7 @@ public:
 
 
 	#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
-		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy. Also more C++03 compatible
+		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy. Also C++03 compatible
 		void push(element_type &&the_element)
 		{
 			switch ((current_element == NULL) + (current_element == end_element))
@@ -566,14 +566,91 @@ public:
 				}
 			}
 		}
+	#endif
 
 
-		#ifdef PLF_STACK_VARIADICS_SUPPORT
-			template<typename... Arguments> inline void emplace(Arguments... parameters)
+
+	#ifdef PLF_STACK_VARIADICS_SUPPORT
+		template<typename... Arguments> inline void emplace(Arguments... parameters)
+		void push(element_type &&the_element)
+		{
+			switch ((current_element == NULL) + (current_element == end_element))
 			{
-				push(std::move(element_type(std::forward<Arguments>(parameters)...))); // Use object's parameter'd constructor
+				case 0:
+				{
+					try
+					{
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::move(the_element));
+					}
+					catch (...)
+					{
+						--current_element;
+						throw;
+					}
+
+					++total_number_of_elements;
+					return;
+				}
+				case 1:
+				{
+					if (current_group->next_group == NULL)
+					{
+						current_group->next_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group); 
+						
+						try
+						{ 
+							#ifdef PLF_STACK_VARIADICS_SUPPORT
+								PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, (total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group);
+							#else
+								PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group((total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group));
+							#endif
+						} 
+						catch (...) 
+						{ 
+							PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
+							current_group->next_group = NULL; 
+							throw;
+						}
+					}
+					
+					current_group = current_group->next_group; 
+					start_element = current_element = current_group->elements;
+					
+					try
+					{
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+					}
+					catch (...)
+					{
+						current_group = current_group->previous_group;
+						start_element = current_group->elements;
+						current_element = current_group->end;
+						throw;
+					}
+		
+					end_element = current_group->end;
+					++total_number_of_elements;
+					return;
+				}	
+				case 2:
+				{
+					initialize();
+					
+					try
+					{
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+					}
+					catch (...)
+					{
+						clear();
+						throw;
+					}
+		
+					++total_number_of_elements; 
+					return;
+				}
 			}
-		#endif
+		}
 	#endif
 
 
@@ -709,6 +786,30 @@ public:
 
 
 
+	void change_group_sizes(const size_type min_allocation_amount, const size_type max_allocation_amount)
+	{
+		assert(min_allocation_amount > 2);
+		assert(min_allocation_amount <= max_allocation_amount);
+		assert(max_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
+
+		min_elements_per_group = min_allocation_amount;
+		group_allocator_pair.max_elements_per_group = max_allocation_amount;
+		trim_trailing_groups();
+
+		if (first_group != NULL && (first_group->size < min_allocation_amount || current_group->size > max_allocation_amount))
+		{
+			stack temp(*this);
+
+			#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
+				*this = std::move(temp); // Avoid generating 2nd temporary
+			#else
+				this->swap(temp);
+			#endif
+		}
+	}
+
+
+
 	inline void change_minimum_group_size(const size_type min_allocation_amount)
 	{
 		change_group_sizes(min_allocation_amount, group_allocator_pair.max_elements_per_group);
@@ -719,29 +820,6 @@ public:
 	inline void change_maximum_group_size(const size_type max_allocation_amount)
 	{
 		change_group_sizes(min_elements_per_group, max_allocation_amount);
-	}
-
-
-
-	void change_group_sizes(const size_type min_allocation_amount, const size_type max_allocation_amount)
-	{
-		assert(min_allocation_amount > 2);
-		assert(min_allocation_amount <= max_allocation_amount);
-		assert(max_allocation_amount <= std::numeric_limits<size_type>::max() / 2);
-
-		min_elements_per_group = min_allocation_amount;
-		group_allocator_pair.max_elements_per_group = max_allocation_amount;
-
-		if (first_group != NULL)
-		{
-			stack temp(*this);
-
-			#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
-				*this = std::move(temp); // Avoid generating 2nd temporary
-			#else
-				this->swap(temp);
-			#endif
-		}
 	}
 
 

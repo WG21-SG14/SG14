@@ -59,11 +59,11 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_stack_03-10-2016.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
+<p>Download <a href="plf_stack_10-10-2016.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
 plf::stack is a simple .h header-only library, to be used with
 an #include command.</p>
 <p>If you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_02-09-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_03-10-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -84,13 +84,12 @@ class stack</code>
 requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
 href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
-and <a
-href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.
-However, if only move-push and/or emplace are utilized to insert elements into
-the stack, T is only required to meet the requirements of <a
+and <a href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.<br>
+However, if emplace is utilized to insert elements
+into the stack, and no functions which involve copying or moving are utilized, T is only required to meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
+If move-insert is utilized instead of emplace, T must also meet the requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a>
-and <a
-href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
+.<br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator</a>. The
@@ -347,34 +346,28 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     Example: <code style="color: brown">if (object_stack.empty())
     return;</code></p>
   </li>
-  <li><code>void clear()</code> 
+  <li><code>void clear()</code>
     <p>Empties the stack and removes all elements and groups.<br>
     Example: <code style="color: brown">object_stack.clear();</code></p>
   </li>
-  <li><code>void change_group_sizes(const size_type min_group_size, const
-    size_type max_group_size)</code> 
+  <li><code>void change_group_sizes(const unsigned short min_group_size, const
+    unsigned short max_group_size)</code>
     <p>Changes the minimum and maximum internal group sizes, in terms of number
-    of elements stored per group. If the stack is not empty, all elements will
-    be moved into new groups and all pointers/iterators/references
-    invalidated.<br>
+    of elements stored per group. If the stack is not empty and either min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack, the stack will be internally copy-constructed into a new stack which uses the new group sizes, invalidating all pointers/iterators/references.<br>
     Example: <code style="color: brown">object_stack.change_group_sizes(1000,
     10000);</code></p>
   </li>
-  <li><code>void change_minimum_group_size(const size_type
-    min_group_size)</code> 
+  <li><code>void change_minimum_group_size(const unsigned short
+    min_group_size)</code>
     <p>Changes the minimum internal group size only, in terms of minimum number
-    of elements stored per group. If the stack is not empty, all elements will
-    be moved into new groups and all pointers/iterators/references
-    invalidated.<br>
+    of elements stored per group. If the stack is not empty and min_group_size is larger than the smallest group in the stack, the stack will be internally copy-constructed into a new stack which uses the new minimum group size, invalidating all pointers/iterators/references.<br>
     Example: <code
     style="color: brown">object_stack.change_minimum_group_size(100);</code></p>
   </li>
-  <li><code>void change_maximum_group_size(const size_type
-    min_group_size)</code> 
+  <li><code>void change_maximum_group_size(const unsigned short
+    min_group_size)</code>
     <p>Changes the maximum internal group size only, in terms of maximum number
-    of elements stored per group. If the stack is not empty, all elements will
-    be moved into new groups and all pointers/iterators/references
-    invalidated.<br>
+    of elements stored per group. If the stack is not empty and either max_group_size is smaller than the largest group in the stack, the stack will be internally copy-constructed into a new stack which uses the new maximum group size, invalidating all pointers/iterators/references.<br>
     Example: <code
     style="color: brown">object_stack.change_maximum_group_size(1000);</code></p>
   </li>
@@ -383,7 +376,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     Example: <code
     style="color: brown">object_stack.swap(other_stack);</code></p>
   </li>
-  <li><code>friend void swap(stack &amp;A, stack &amp;B)</code> 
+  <li><code>friend void swap(stack &amp;A, stack &amp;B)</code>
     <p>External friend function, swaps the stack A's contents with that of
     stack B (assumes both stacks have same element type).<br>
     Example: <code style="color: brown">swap(object_stack,
@@ -499,6 +492,7 @@ pointers to stored elements on subsequent pushes.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-10-10: v1.01 - change_group_size functions no longer copy-construct groups into a new stack unless the stack is not empty and either, min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. All change_group_size functions now trim trailing groups. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with stack (example: anything containing a std::mutex).</li>
   <li>2016-10-03: v1.00 - Separated from colony package, friendship removed. See colony history prior to v3.71 for earlier version changes.</li>
 </ul>
 

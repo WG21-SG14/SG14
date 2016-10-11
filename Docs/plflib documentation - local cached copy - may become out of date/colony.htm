@@ -170,9 +170,7 @@ to the boolean technique described above, and without causing pointer
 invalidation upon either erasure or insertion. It's insertion speed is also
 much faster than a vector's. Memory from erased elements is either reused by
 subsequent insertions or released to the OS on-the-fly. It achieves these ends
-by via a number of new approaches: a <a
-href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
-skipfield</a> (instead of a boolean field), a <a
+by via a number of new approaches: a <a href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting skipfield</a> (instead of a boolean field), a <a
 href="chained_group_allocation_pattern.htm">linked chain</a> of
 increasingly-large memory blocks (instead of a singular memory block or vector
 of blocks), and a custom internal reduced stack (based on <a
@@ -248,7 +246,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_03-10-2016.zip">here</a> (26kb zip file) or
+<p>Download <a href="plf_colony_10-10-2016.zip">here</a> (26kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -257,7 +255,7 @@ command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_02-09-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_03-10-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -278,13 +276,12 @@ Skipfield_Type = unsigned short&gt; class colony</code>
 requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
 href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
-and <a
-href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.
-However, if only move-insert and/or emplace are utilized to insert elements
-into the colony, T is only required to meet the requirements of <a
+and <a href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.<br>
+However, if emplace is utilized to insert elements
+into the colony, and no functions which involve copying or moving are utilized, T is only required to meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
+If move-insert is utilized instead of emplace, T must also meet the requirements of <a
 href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a>
-and <a
-href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
+.<br>
 <br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
@@ -406,12 +403,16 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
       <td>Never</td>
     </tr>
     <tr>
-      <td>clear, change_group_sizes, operator = </td>
+      <td>clear, reinitialize, operator = </td>
       <td>Always</td>
     </tr>
     <tr>
       <td>reserve, shrink_to_fit</td>
       <td>Only if capacity is changed</td>
+    </tr>
+    <tr>
+      <td>change_group_sizes, change_minimum_group_size, change_maximum_group_size</td>
+      <td>Only if supplied minimum group size is larger than smallest group in colony, or supplied maximum group size is smaller than largest group in colony.</td>
     </tr>
     <tr>
       <td>erase</td>
@@ -550,7 +551,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     int_colony;</code> </p>
   </li>
   <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony(const
-    allocator_type &amp;alloc = allocator_type())</code> 
+    allocator_type &amp;alloc = allocator_type())</code>
     <p>Default constructor, but using a custom memory allocator eg. something
     other than std::allocator.<br>
     Example: <code style="color: brown">plf::colony&lt;int,
@@ -802,7 +803,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     Example: <code style="color: brown">std::cout &lt;&lt; i_colony.max_size()
     &lt;&lt; std::endl;</code></p>
   </li>
-  <li><code>size_type capacity()</code> 
+  <li><code>size_type capacity()</code>
     <p>Returns total number of elements currently able to be stored in
     container without expansion.<br>
     Example: <code style="color: brown">std::cout &lt;&lt; i_colony.capacity()
@@ -825,36 +826,36 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     platforms.<br>
     Example: <code style="color: brown">i_colony.reserve(15);</code></p>
   </li>
-  <li><code>void clear()</code> 
+  <li><code>void clear()</code>
     <p>Empties the colony and removes all elements and groups.<br>
     Example: <code style="color: brown">object_colony.clear();</code></p>
   </li>
   <li><code>void change_group_sizes(const unsigned short min_group_size, const
-    unsigned short max_group_size)</code> 
+    unsigned short max_group_size)</code>
     <p>Changes the minimum and maximum internal group sizes, in terms of number
-    of elements stored per group. If the colony is not empty, all elements will
-    be moved into new groups and all pointers/iterators/references
-    invalidated.<br>
+    of elements stored per group. If the colony is not empty and either min_group_size is larger than the smallest group in the colony, or max_group_size is smaller than the largest group in the colony, the colony will be internally copy-constructed into a new colony which uses the new group sizes, invalidating all pointers/iterators/references.<br>
     Example: <code style="color: brown">object_colony.change_group_sizes(1000,
     10000);</code></p>
   </li>
   <li><code>void change_minimum_group_size(const unsigned short
-    min_group_size)</code> 
+    min_group_size)</code>
     <p>Changes the minimum internal group size only, in terms of minimum number
-    of elements stored per group. If the colony is not empty, all elements will
-    be moved into new groups and all pointers/iterators/references
-    invalidated.<br>
+    of elements stored per group. If the colony is not empty and min_group_size is larger than the smallest group in the colony, the colony will be internally copy-constructed into a new colony which uses the new minimum group size, invalidating all pointers/iterators/references.<br>
     Example: <code
     style="color: brown">object_colony.change_minimum_group_size(100);</code></p>
   </li>
   <li><code>void change_maximum_group_size(const unsigned short
-    min_group_size)</code> 
+    min_group_size)</code>
     <p>Changes the maximum internal group size only, in terms of maximum number
-    of elements stored per group. If the colony is not empty, all elements will 
-    be moved into new groups and all pointers/iterators/references
-    invalidated.<br>
+    of elements stored per group. If the colony is not empty and either max_group_size is smaller than the largest group in the colony, the colony will be internally copy-constructed into a new colony which uses the new maximum group size, invalidating all pointers/iterators/references.<br>
     Example: <code
     style="color: brown">object_colony.change_maximum_group_size(1000);</code></p>
+  </li>
+  <li><code>void reinitialize(const unsigned short min_group_size, const
+    unsigned short max_group_size)</code>
+    <p>Semantics of function are the same as "clear(); change_group_sizes(min_group_size, max_group_size);", but without the copy-construction code of the change_group_sizes() function - this means it can be used with element types which are non-copy-constructible, unlike change_group_sizes().<br>
+    Example: <code style="color: brown">object_colony.reinitialize(1000,
+    10000);</code></p>
   </li>
   <li><code>void swap(colony &amp;source)</code>
     <p>Swaps the colony's contents with that of <code>source</code>.<br>
@@ -1591,7 +1592,7 @@ programming.</font> </p>
   </li>
 
 <li>
-<h4>If the time complexities of the insert/erase functions are (kind of) O(random, ranged), why are they still fast?</h4>
+<h4>If the time complexities of the insert/erase functions are (kind of) O(random, ranged), why are they still quick?</h4>
 
 <p>The skipfield for each group is contiguous and separate from the skipfields for other groups, and so fits into the cache easily (unless the skipfield type is changed); thus any changes to it can occur quickly - time complexity is, actually, no indicator of performance on a modern computer.</p>
 
@@ -1663,7 +1664,7 @@ programming.</font> </p>
     else.</p>
     <p>Colony on the other hand does not (mostly) invalidate pointers/iterators
     to elements during insertion and erasure (iterators == end() may be
-    invalidated by subsequent insertions, and iterators to elements which are
+    invalidated by subsequent insertions, and iterators/pointers to elements which are
     erased will become invalid), resulting in the following matrix:</p>
 
     <table border="1" cellspacing="3">
@@ -1782,7 +1783,7 @@ programming.</font> </p>
       <li>A skipfield to indicate erasures instead of reallocating elements,
         the iteration of which should typically not necessitate the use of
         branching code.</li>
-      <li>A stack of erased element locations to allow for reuse of erased
+      <li>A mechanism for storing erased element locations to allow for reuse of erased
         element memory space upon subsequent insertion.</li>
     </ol>
     <p>In the case of my particular colony implementation I utilize a <a
@@ -1859,14 +1860,14 @@ If there are multiple empty groups in a row, ++ iteration essentially becomes O(
 
 <p>Two reasons:</p>
 <ol>
-<li>Colony elements are not guaranteed to be of sufficient size (32-bit on x86, 64-bit or greater on other architectures) to store a pointer. I would rather not restrict the potential use-cases of colony in order to use a free list. While the use-cases in games indicate larger-than-scalar types, there has been some interest and indication of usefulness from the high-performance-computing and storage domains, and I cannot predict their data patterns or usage.</li>
+<li>Colony elements are not guaranteed to be of sufficient size (32-bit on x86, 64-bit or greater on other architectures) to store a pointer. For smaller types and 64-bit pointers, a free list union would end up wasting more space than a 16-bit skipfield. While the use-cases in games indicate larger-than-scalar types, there has been some interest and indication of usefulness from the high-performance-computing and storage domains, and I cannot predict their data patterns or usage.</li>
 <li>A free list will likely incur a significant number of cache misses and subsequent jitter when a colony memory block is freed to the OS. With a stack the erased locations are in contiguous memory space, so it is extremely fast and cache-friendly to process the stack and remove erased locations belonging to the memory block being freed. On the other hand with a free list, removing the erased locations involves iterating through the list - which will most likely skip randomly throughout the colony blocks, involving many cache misses - in order to locate the nodes belonging to the erased memory block and joining previous nodes to the next non-erased-block locations.</li>
 </ol>
 <p>In short, it's not an effective solution, though there are other scenarios where it is ideal.</p>
 </li>
 
 <li><h4>Why use two pointers for iterators rather than a single index and then dereferencing?</h4>
-<p>It's faster. Trying on two separate occasions to switch to an index-based iterator approach, two separate pointers were notably faster on both occasions.</p>
+<p>It's faster. In attempting to two separate occasions to switch to an index-based iterator approach, utilizing two separate pointers was notably faster.</p>
 
 <li>
 <h4>Group sizes - what are they based on, how do they expand, etc</h4>
@@ -1883,6 +1884,7 @@ If there are multiple empty groups in a row, ++ iteration essentially becomes O(
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-10-10: v3.73 - change_group_size functions no longer copy-construct into a new colony unless the stack is not empty, and either min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. Correction to change_group_sizes code (was clearing erased locations unnecessarily). Reinitialize function added, which supports the changing of group sizes for colonies of non-copy-constructible element types. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with colony (example: anything containing a std::mutex). Minor correction to colony test suite under C++03.</li>
   <li>2016-10-04: v3.72 - minor fix to erase.</li>
   <li>2016-10-03: v3.71 - Replaced all but one vectorizing skipfield update with memmove ops for greater performance. Colony is no longer dependent on plf::stack, now has it's own reduced-functionality internal structure. TLDR, slightly faster, slightly faster build time &amp; slightly less memory use. Colony and stack are no longer friends :( (aw). Updated documentation. Stack separated out of colony package and test suite and vice-versa. Added functions to convert element pointer to iterator, and to convert iterator to index and vice-versa. Removed pointer-based erase function (use get_iterator_from_pointer() instead and call erase() with the resultant iterator). Minor update to distance, advance, prev and next functions. Benchmark suite updated.</li>
   <li>2016-09-02: v3.61 - Slight performance improvement for general-use-cases

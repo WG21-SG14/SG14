@@ -116,7 +116,7 @@ void plf_colony_test_suite()
 		{
 			title1("Colony");
 			title2("Test Basics");
-
+			
 			colony<int *> p_colony;
 			
 			failpass("Colony empty", p_colony.empty());
@@ -256,7 +256,7 @@ void plf_colony_test_suite()
 
 			failpass("Partial erase iteration test", total == 200);
 			failpass("Post-erase size test", p_colony.size() == 200);
-
+			
 			const unsigned int temp_capacity = static_cast<unsigned int>(p_colony.capacity());
 			p_colony.shrink_to_fit();
 			failpass("Shrink_to_fit test", p_colony.capacity() < temp_capacity);
@@ -307,7 +307,7 @@ void plf_colony_test_suite()
 			#endif
 
 			p_colony3 = p_colony2;
-
+			
 			failpass("Copy test 2", p_colony3.size() == 400);
 			
 			p_colony2.insert(&ten);
@@ -371,15 +371,23 @@ void plf_colony_test_suite()
 			failpass("Erase randomly till-empty test", i_colony.size() == 0);
 
 
-			i_colony.clear();
-			i_colony.change_minimum_group_size(10000);
+			i_colony.reinitialize(10000, 20000);
 			
-			for (unsigned int temp = 0; temp != 30000; ++temp)
+			for (unsigned int temp = 0; temp != 29999; ++temp)
 			{
 				i_colony.insert(1);
 			}
 			
-			failpass("Size after reinitialize + insert test", i_colony.size() == 30000);
+			failpass("Size after reinitialize + insert test", i_colony.size() == 29999);
+
+
+			#ifdef PLF_VARIADICS_SUPPORT
+				i_colony.emplace(1);
+				failpass("Emplace test", i_colony.size() == 30000);
+			#else
+				i_colony.insert(1);
+			#endif
+			
 
 			unsigned short count2 = 0;
 			
@@ -615,7 +623,7 @@ void plf_colony_test_suite()
 			i_colony2.insert(500000, 5);
 			
 			failpass("Fill insertion test", i_colony2.size() == 500003);
-			
+
 			std::vector<int> some_ints(500, 2);
 			
 			i_colony2.insert(some_ints.begin(), some_ints.end());
