@@ -797,7 +797,7 @@ public:
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
 		trim_trailing_groups();
 
-		if (first_group != NULL && (first_group->size < min_allocation_amount || current_group->size > max_allocation_amount))
+		if (first_group != NULL && (static_cast<size_type>((first_group->end + 1) - first_group->elements) < min_allocation_amount || static_cast<size_type>((current_group->end + 1) - current_group->elements) > max_allocation_amount))
 		{
 			stack temp(*this);
 
@@ -890,6 +890,11 @@ public:
 	// Remove trailing stack groups (not removed in general 'pop' usage for performance reasons)
 	void trim_trailing_groups() PLF_STACK_NOEXCEPT
 	{
+		if (current_group == NULL)
+		{
+			return;
+		}
+
 		group_pointer_type temp_group = current_group->next_group, temp_group2;
 		current_group->next_group = NULL; // Set to NULL regardless of whether it is already NULL (avoids branching). Cuts off rest of groups from this group.
 

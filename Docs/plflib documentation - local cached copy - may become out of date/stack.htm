@@ -63,7 +63,7 @@ restrictions:</p>
 plf::stack is a simple .h header-only library, to be used with
 an #include command.</p>
 <p>If you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_03-10-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_14-10-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -492,8 +492,8 @@ pointers to stored elements on subsequent pushes.</font> </p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-10-14: v1.02 - Corrections to move assignment operator, emplace and test_suite.</li>
-  <li>2016-10-10: v1.01 - change_group_size functions no longer copy-construct groups into a new stack unless the stack is not empty and either, min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. All change_group_size functions now trim trailing groups. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with stack (example: anything containing a std::mutex).</li>
+  <li>2016-10-14: v1.02 - Corrections to move assignment operator, trim_trailing_groups, emplace, change_group_sizes and test_suite.</li>
+  <li>2016-10-10: v1.01 - change_group_size functions no longer copy-construct groups into a new stack unless the stack is not empty and either min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. All change_group_size functions now trim trailing groups. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with stack (example: anything containing a std::mutex).</li>
   <li>2016-10-03: v1.00 - Separated from colony package, friendship removed. See colony history prior to v3.71 for earlier version changes.</li>
 </ul>
 

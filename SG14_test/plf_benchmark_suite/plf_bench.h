@@ -1440,7 +1440,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 			}
 		}
 
-		end_approximate_memory_use += container.approximate_memory_use();
+		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
 	}
 	
 	end_approximate_memory_use /= (number_of_runs / 10) + 1;
@@ -1561,7 +1561,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 			}
 		}
 
-		end_approximate_memory_use += container.approximate_memory_use();
+		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
 	}
 
 	end_approximate_memory_use /= dump_run_end;
