@@ -2,6 +2,7 @@
 #include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
+
 #include "plf_stack.h"
 
 
@@ -187,6 +188,11 @@ void plf_stack_test_suite()
 			} while (!i_stack.empty());;
 
 			failpass("Randomly pop/push till empty test", i_stack.size() == 0);
+
+			#ifdef PLF_VARIADICS_SUPPORT
+				i_stack.emplace(20);
+				failpass("Emplace test", i_stack.size() == 1);
+			#endif
 		}
 
 		{

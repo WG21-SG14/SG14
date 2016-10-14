@@ -41,7 +41,7 @@
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if __GNUC__ == 4 && __GNUC_MINOR__ >= 4 // 4.3 and below do not support initializer lists
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
-		#elif __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+		#elif __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable or initializer lists
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#endif
@@ -105,6 +105,7 @@
 #ifdef PLF_COLONY_INITIALIZER_LIST_SUPPORT
 	#include <initializer_list>
 #endif
+
 
 
 namespace plf
@@ -236,7 +237,7 @@ private:
 
 			~group() PLF_COLONY_NOEXCEPT
 			{
-				// Null check not necessary (for empty group and copied group as above) as delete will ignore.
+				// Null check not necessary (for empty group and copied group as above) as delete will ignore NULL pointer.
 				PLF_COLONY_DEALLOCATE(element_pointer_allocator_type, (*this), elements, (end - elements) + 1); // Size is calculated from end and elements
 			}
 		};
@@ -244,11 +245,11 @@ private:
 
 		stack_group_pointer_type		current_group, first_group;
 		stack_element_pointer_type		current_element, start_element, end_element;
-		size_type						total_number_of_elements, min_elements_per_group;
+		size_type						total_number_of_elements;
 		struct ebco_pair : stack_group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 		{
-			size_type max_elements_per_group;
-			ebco_pair(const size_type max_elements) : max_elements_per_group(max_elements) {};
+			size_type min_elements_per_group;
+			ebco_pair(const size_type min_elements) : min_elements_per_group(min_elements) {};
 		}						group_allocator_pair;
 
 
@@ -257,7 +258,7 @@ private:
 
 	public:
 
-		explicit reduced_stack(const element_pointer_allocator_type &alloc = element_pointer_allocator_type()):
+		explicit reduced_stack(const size_type min_allocation_amount = 8, const element_pointer_allocator_type &alloc = element_pointer_allocator_type()):
 			element_pointer_allocator_type(alloc),
 			current_group(NULL),
 			first_group(NULL),
@@ -265,22 +266,7 @@ private:
 			start_element(NULL),
 			end_element(NULL),
 			total_number_of_elements(0),
-			min_elements_per_group(8),
-			group_allocator_pair(std::numeric_limits<size_type>::max() / 2)
-		{}
-
-
-
-		explicit reduced_stack(const size_type min_allocation_amount, const size_type max_allocation_amount = (std::numeric_limits<size_type>::max() / 2), const element_pointer_allocator_type &alloc = element_pointer_allocator_type()):
-			element_pointer_allocator_type(alloc),
-			current_group(NULL),
-			first_group(NULL),
-			current_element(NULL),
-			start_element(NULL),
-			end_element(NULL),
-			total_number_of_elements(0),
-			min_elements_per_group(min_allocation_amount),
-			group_allocator_pair(max_allocation_amount)
+			group_allocator_pair(min_allocation_amount)
 		{}
 
 
@@ -293,8 +279,7 @@ private:
 			start_element(NULL),
 			end_element(NULL),
 			total_number_of_elements(source.total_number_of_elements),
-			min_elements_per_group(source.min_elements_per_group),
-			group_allocator_pair(source.group_allocator_pair.max_elements_per_group)
+			group_allocator_pair(source.group_allocator_pair.min_elements_per_group)
 		{
 			if (total_number_of_elements == 0)
 			{
@@ -304,11 +289,11 @@ private:
 			stack_group_pointer_type current_copy_group = source.first_group;
 			const stack_group_pointer_type end_copy_group = source.current_group;
 
-			if (total_number_of_elements <= group_allocator_pair.max_elements_per_group) // most common case
+			if (total_number_of_elements <= std::numeric_limits<size_type>::max() / 2) // most common case
 			{
-				min_elements_per_group = total_number_of_elements;
+				group_allocator_pair.min_elements_per_group = total_number_of_elements;
 				initialize();
-				min_elements_per_group = source.min_elements_per_group;
+				group_allocator_pair.min_elements_per_group = source.group_allocator_pair.min_elements_per_group;
 
 				// Copy groups to this stack:
 				while (current_copy_group != end_copy_group)
@@ -324,7 +309,7 @@ private:
 			}
 			else // uncommon edge case, so not optimising:
 			{
-				min_elements_per_group = group_allocator_pair.max_elements_per_group;
+				group_allocator_pair.min_elements_per_group = std::numeric_limits<size_type>::max() / 2;
 				total_number_of_elements = 0;
 				initialize();
 
@@ -343,11 +328,11 @@ private:
 				{
 					push(*element_to_copy);
 				}
-	
-				min_elements_per_group = source.min_elements_per_group;
+
+				group_allocator_pair.min_elements_per_group = source.group_allocator_pair.min_elements_per_group;
 			}
 		}
-	
+
 
 
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
@@ -360,14 +345,13 @@ private:
 				start_element(std::move(source.start_element)),
 				end_element(std::move(source.end_element)),
 				total_number_of_elements(source.total_number_of_elements),
-				min_elements_per_group(source.min_elements_per_group),
-				group_allocator_pair(source.group_allocator_pair.max_elements_per_group)
+				group_allocator_pair(source.group_allocator_pair.min_elements_per_group)
 			{
 				// Nullify source object's contents - only first_group and total_number_of_elements required for destructor:
 				source.first_group = NULL;
 				source.total_number_of_elements = 0;
 			}
-	
+
 
 
 			// Move assignment
@@ -381,7 +365,7 @@ private:
 				start_element = std::move(source.start_element);
 				end_element = std::move(source.end_element);
 				total_number_of_elements = source.total_number_of_elements;
-				group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+				group_allocator_pair.min_elements_per_group = source.group_allocator_pair.min_elements_per_group;
 
 				// Nullify source object's contents - only first_group and total_number_of_elements required to be altered for destructor to work on it:
 				source.first_group = NULL;
@@ -437,7 +421,7 @@ private:
 				{
 					PLF_COLONY_DESTROY(element_pointer_allocator_type, (*this), element_pointer);
 				}
-	
+
 				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, first_group);
 				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, first_group, 1);
 				first_group = NULL;
@@ -460,13 +444,12 @@ private:
 		{
 			first_group = current_group = PLF_COLONY_ALLOCATE(stack_group_allocator_type, group_allocator_pair, 1, 0);
 
-			// Initialize:
 			try
 			{
 				#ifdef PLF_COLONY_VARIADICS_SUPPORT
-					PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, first_group, min_elements_per_group);
+					PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, first_group, group_allocator_pair.min_elements_per_group);
 				#else
-					PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, first_group, group(min_elements_per_group));
+					PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, first_group, group(group_allocator_pair.min_elements_per_group));
 				#endif
 			}
 			catch (...)
@@ -511,9 +494,9 @@ private:
 						try
 						{
 							#ifdef PLF_COLONY_VARIADICS_SUPPORT
-								PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, current_group->next_group, (total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group);
+								PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, current_group->next_group, (total_number_of_elements < std::numeric_limits<size_type>::max() / 2) ? total_number_of_elements : std::numeric_limits<size_type>::max() / 2, current_group);
 							#else
-								PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, current_group->next_group, group((total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group));
+								PLF_COLONY_CONSTRUCT(stack_group_allocator_type, group_allocator_pair, current_group->next_group, group((total_number_of_elements < std::numeric_limits<size_type>::max() / 2) ? total_number_of_elements : std::numeric_limits<size_type>::max() / 2, current_group));
 							#endif
 						}
 						catch (...)
@@ -625,7 +608,7 @@ private:
 			#else
 				stack_group_pointer_type		swap_current_group = current_group, swap_first_group = first_group;
 				stack_element_pointer_type	swap_current_element = current_element, swap_start_element = start_element, swap_end_element = end_element;
-				size_type				swap_total_number_of_elements = total_number_of_elements, swap_min_elements_per_group = min_elements_per_group, swap_max_elements_per_group = group_allocator_pair.max_elements_per_group;
+				size_type				swap_total_number_of_elements = total_number_of_elements, swap_min_elements_per_group = group_allocator_pair.min_elements_per_group;
 
 				current_group = source.current_group;
 				first_group = source.first_group;
@@ -633,8 +616,7 @@ private:
 				start_element = source.start_element;
 				end_element = source.end_element;
 				total_number_of_elements = source.total_number_of_elements;
-				min_elements_per_group = source.min_elements_per_group;
-				group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+				group_allocator_pair.min_elements_per_group = source.group_allocator_pair.min_elements_per_group;
 
 				source.current_group = swap_current_group;
 				source.first_group = swap_first_group;
@@ -642,8 +624,7 @@ private:
 				source.start_element = swap_start_element;
 				source.end_element = swap_end_element;
 				source.total_number_of_elements = swap_total_number_of_elements;
-				source.min_elements_per_group = swap_min_elements_per_group;
-				source.group_allocator_pair.max_elements_per_group = swap_max_elements_per_group;
+				source.group_allocator_pair.min_elements_per_group = swap_min_elements_per_group;
 			#endif
 		}
 	}; // reduced_stack
@@ -1294,7 +1275,7 @@ public:
 		total_number_of_elements(0),
 		min_elements_per_group(source.min_elements_per_group),
 		group_allocator_pair(source.group_allocator_pair.max_elements_per_group),
-		erased_locations(source.erased_locations.min_elements_per_group)
+		erased_locations(source.erased_locations.group_allocator_pair.min_elements_per_group)
 	{
 		// Copy data from source:
 		insert(source.begin(), source.end());
@@ -2743,7 +2724,7 @@ public:
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
 
 		// The following will only have an effect if the erased_locations becomes empty or is already empty
-		erased_locations.min_elements_per_group = ((min_allocation_amount < 8) ? min_allocation_amount : (min_allocation_amount >> 7) + 8);
+		erased_locations.group_allocator_pair.min_elements_per_group = ((min_allocation_amount < 8) ? min_allocation_amount : (min_allocation_amount >> 7) + 8);
 
 		if (first_group != NULL && (first_group->size < min_allocation_amount || end_iterator.group_pointer->size > max_allocation_amount))
 		{
@@ -2782,7 +2763,7 @@ public:
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
 
 		clear();
-		erased_locations.min_elements_per_group = ((min_allocation_amount < 8) ? min_allocation_amount : (min_allocation_amount >> 7) + 8);
+		erased_locations.group_allocator_pair.min_elements_per_group = ((min_allocation_amount < 8) ? min_allocation_amount : (min_allocation_amount >> 7) + 8);
 	}
 
 
@@ -3672,10 +3653,10 @@ public:
 		size_type index = 0;
 		group_pointer_type group_pointer = the_iterator.group_pointer;
 
-		// If no erased elements in group, do straight array calc to get distance to start for first element
+
 		if (group_pointer->last_endpoint - group_pointer->elements == group_pointer->number_of_elements)
 		{
-			index += the_iterator.element_pointer - group_pointer->elements;
+			index += the_iterator.element_pointer - group_pointer->elements; // If no erased elements in group exist, do straight pointer arithmetic to get distance to start for first element
 		}
 		else // Otherwise do manual -- loop
 		{
@@ -3697,6 +3678,14 @@ public:
 		}
 
 		return index;
+	}
+
+
+
+	template <class colony_element_allocator_type, bool is_const>
+	inline size_type get_index_from_reverse_iterator(const colony_reverse_iterator<colony_element_allocator_type, is_const> &rev_iterator) const
+	{
+		return get_index_from_iterator(rev_iterator.the_iterator);
 	}
 
 

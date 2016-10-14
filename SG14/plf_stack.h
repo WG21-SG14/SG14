@@ -571,8 +571,8 @@ public:
 
 
 	#ifdef PLF_STACK_VARIADICS_SUPPORT
-		template<typename... Arguments> inline void emplace(Arguments... parameters)
-		void push(element_type &&the_element)
+		template<typename... Arguments>
+		void emplace(Arguments... parameters)
 		{
 			switch ((current_element == NULL) + (current_element == end_element))
 			{
@@ -580,7 +580,7 @@ public:
 				{
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::move(the_element));
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::forward<Arguments>(parameters)...);
 					}
 					catch (...)
 					{
@@ -618,7 +618,7 @@ public:
 					
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::forward<Arguments>(parameters)...);
 					}
 					catch (...)
 					{
@@ -638,7 +638,7 @@ public:
 					
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::forward<Arguments>(parameters)...);
 					}
 					catch (...)
 					{
@@ -721,6 +721,7 @@ public:
 			start_element = std::move(source.start_element);
 			end_element = std::move(source.end_element);
 			total_number_of_elements = source.total_number_of_elements;
+			min_elements_per_group = source.min_elements_per_group;
 			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
 
 			// Nullify source object's contents - only first_group and total_number_of_elements required to be altered for destructor to work on it:

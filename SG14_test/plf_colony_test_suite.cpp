@@ -4,6 +4,7 @@
 #include <cstdio> // log redirection
 #include <cstdlib> // rand
 #include <ctime> // timer
+
 #include "plf_colony.h"
 
 
@@ -542,7 +543,7 @@ void plf_colony_test_suite()
 			colony<int>::iterator temp_iterator = i_colony.begin();
 			i_colony.advance(temp_iterator, 500);
 			
-			unsigned int index = i_colony.get_index_from_iterator(temp_iterator);
+			unsigned int index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
 
 			failpass("Iterator-to-index test", index == 500);
 
@@ -623,7 +624,7 @@ void plf_colony_test_suite()
 			i_colony2.insert(500000, 5);
 			
 			failpass("Fill insertion test", i_colony2.size() == 500003);
-
+			
 			std::vector<int> some_ints(500, 2);
 			
 			i_colony2.insert(some_ints.begin(), some_ints.end());
