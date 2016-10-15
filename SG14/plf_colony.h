@@ -244,7 +244,7 @@ private:
 
 
 		stack_group_pointer_type		current_group, first_group;
-		stack_element_pointer_type		current_element, start_element, end_element;
+		stack_element_pointer_type		top_element, start_element, end_element;
 		size_type						total_number_of_elements;
 		struct ebco_pair : stack_group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 		{
@@ -262,7 +262,7 @@ private:
 			element_pointer_allocator_type(alloc),
 			current_group(NULL),
 			first_group(NULL),
-			current_element(NULL),
+			top_element(NULL),
 			start_element(NULL),
 			end_element(NULL),
 			total_number_of_elements(0),
@@ -275,7 +275,7 @@ private:
 			element_pointer_allocator_type(source),
 			current_group(NULL),
 			first_group(NULL),
-			current_element(NULL),
+			top_element(NULL),
 			start_element(NULL),
 			end_element(NULL),
 			total_number_of_elements(source.total_number_of_elements),
@@ -298,14 +298,14 @@ private:
 				// Copy groups to this stack:
 				while (current_copy_group != end_copy_group)
 				{
-					std::uninitialized_copy(current_copy_group->elements, current_copy_group->end + 1, current_element);
-					current_element += (current_copy_group->end + 1) - current_copy_group->elements;
+					std::uninitialized_copy(current_copy_group->elements, current_copy_group->end + 1, top_element);
+					top_element += (current_copy_group->end + 1) - current_copy_group->elements;
 					current_copy_group = current_copy_group->next_group;
 				}
 
 				// Handle special case of last group:
-				std::uninitialized_copy(source.start_element, source.current_element + 1, current_element);
-				end_element = current_element += source.current_element - source.start_element; // This should make current_element == the last "pushed" element, rather than the one past it
+				std::uninitialized_copy(source.start_element, source.top_element + 1, top_element);
+				end_element = top_element += source.top_element - source.start_element; // This should make top_element == the last "pushed" element, rather than the one past it
 			}
 			else // uncommon edge case, so not optimising:
 			{
@@ -324,7 +324,7 @@ private:
 				}
 
 				// Handle special case of last group:
-				for (stack_element_pointer_type element_to_copy = source.start_element; element_to_copy != source.current_element + 1; ++element_to_copy)
+				for (stack_element_pointer_type element_to_copy = source.start_element; element_to_copy != source.top_element + 1; ++element_to_copy)
 				{
 					push(*element_to_copy);
 				}
@@ -341,7 +341,7 @@ private:
 				element_pointer_allocator_type(source),
 				current_group(std::move(source.current_group)),
 				first_group(std::move(source.first_group)),
-				current_element(std::move(source.current_element)),
+				top_element(std::move(source.top_element)),
 				start_element(std::move(source.start_element)),
 				end_element(std::move(source.end_element)),
 				total_number_of_elements(source.total_number_of_elements),
@@ -361,7 +361,7 @@ private:
 
 				current_group = std::move(source.current_group);
 				first_group = std::move(source.first_group);
-				current_element = std::move(source.current_element);
+				top_element = std::move(source.top_element);
 				start_element = std::move(source.start_element);
 				end_element = std::move(source.end_element);
 				total_number_of_elements = source.total_number_of_elements;
@@ -394,7 +394,6 @@ private:
 				if (total_number_of_elements != 0)
 			#endif
 			{
-				total_number_of_elements = 0;
 				stack_group_pointer_type previous_group;
 				stack_element_pointer_type past_end;
 
@@ -415,27 +414,26 @@ private:
 				}
 
 				// Special case for current group:
-				past_end = current_element + 1;
+				past_end = top_element + 1;
 
 				for (stack_element_pointer_type element_pointer = start_element; element_pointer != past_end; ++element_pointer)
 				{
 					PLF_COLONY_DESTROY(element_pointer_allocator_type, (*this), element_pointer);
 				}
 
-				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, first_group);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, first_group, 1);
-				first_group = NULL;
+				first_group = first_group->next_group;
+				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, current_group);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, current_group, 1);
 			}
-			else
+			
+			total_number_of_elements = 0;
+
+			while (first_group != NULL)
 			{
-				// Although technically under a type-traits-supporting compiler total_number_of_elements could be non-zero at this point, since first_group would already be NULL in the case of double-destruction, it's unnecessary to zero total_number_of_elements here
-				while (first_group != NULL)
-				{
-					current_group = first_group;
-					first_group = first_group->next_group;
-					PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, current_group);
-					PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, current_group, 1);
-				}
+				current_group = first_group;
+				first_group = first_group->next_group;
+				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, current_group);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, current_group, 1);
 			}
 		}
 
@@ -459,7 +457,7 @@ private:
 				throw;
 			}
 
-			current_element = start_element = first_group->elements;
+			top_element = start_element = first_group->elements;
 			end_element = first_group->end;
 		}
 
@@ -468,17 +466,17 @@ private:
 
 		void push(const stack_element_type the_element)
 		{
-			switch ((current_element == NULL) + (current_element == end_element))
+			switch ((top_element == NULL) + (top_element == end_element))
 			{
 				case 0:
 				{
 					try
 					{
-						PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), ++current_element, the_element);
+						PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), ++top_element, the_element);
 					}
 					catch (...)
 					{
-						--current_element;
+						--top_element;
 						throw;
 					}
 
@@ -508,17 +506,17 @@ private:
 					}
 	
 					current_group = current_group->next_group;
-					start_element = current_element = current_group->elements;
+					start_element = top_element = current_group->elements;
 	
 					try
 					{
-						PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), current_element, the_element);
+						PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), top_element, the_element);
 					}
 					catch (...)
 					{
 						current_group = current_group->previous_group;
 						start_element = current_group->elements;
-						current_element = current_group->end;
+						top_element = current_group->end;
 						throw;
 					}
 
@@ -532,7 +530,7 @@ private:
 					
 					try
 					{
-						PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), current_element, the_element);
+						PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), top_element, the_element);
 					}
 					catch (...)
 					{
@@ -554,19 +552,19 @@ private:
 				if (!(std::is_trivially_destructible<stack_element_type>::value)) // This if-statement should be removed by the compiler on resolution of stack_element_type
 			#endif
 			{
-				PLF_COLONY_DESTROY(element_pointer_allocator_type, (*this), current_element);
+				PLF_COLONY_DESTROY(element_pointer_allocator_type, (*this), top_element);
 			}
 
 			// ie. if total_number_of_elements != 0 after decrement, or we were not already at the start of a non-first group
-			if (total_number_of_elements-- == 1 || current_element != start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves current_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
+			if (total_number_of_elements-- == 1 || top_element != start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves top_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
 			{
-				--current_element;
+				--top_element;
 			}
 			else
 			{ // ie. is start element, but not first group in stack (if it were, totalsize would be 0 after decrement)
 				current_group = current_group->previous_group;
 				start_element = current_group->elements;
-				end_element = current_element = current_group->end;
+				end_element = top_element = current_group->end;
 			}
 		}
 
@@ -591,8 +589,7 @@ private:
 		void clear() PLF_COLONY_NOEXCEPT
 		{
 			destroy_all_data();
-			total_number_of_elements = 0;
-			current_element = NULL;
+			top_element = NULL;
 			start_element = NULL;
 			end_element = NULL;
 		}
@@ -607,12 +604,12 @@ private:
 				*this = std::move(temp);
 			#else
 				stack_group_pointer_type		swap_current_group = current_group, swap_first_group = first_group;
-				stack_element_pointer_type	swap_current_element = current_element, swap_start_element = start_element, swap_end_element = end_element;
+				stack_element_pointer_type	swap_top_element = top_element, swap_start_element = start_element, swap_end_element = end_element;
 				size_type				swap_total_number_of_elements = total_number_of_elements, swap_min_elements_per_group = group_allocator_pair.min_elements_per_group;
 
 				current_group = source.current_group;
 				first_group = source.first_group;
-				current_element = source.current_element;
+				top_element = source.top_element;
 				start_element = source.start_element;
 				end_element = source.end_element;
 				total_number_of_elements = source.total_number_of_elements;
@@ -620,7 +617,7 @@ private:
 
 				source.current_group = swap_current_group;
 				source.first_group = swap_first_group;
-				source.current_element = swap_current_element;
+				source.top_element = swap_top_element;
 				source.start_element = swap_start_element;
 				source.end_element = swap_end_element;
 				source.total_number_of_elements = swap_total_number_of_elements;
@@ -831,7 +828,7 @@ public:
 
 
 	private:
-		inline PLF_COLONY_FORCE_INLINE void check_for_end_of_group_and_progress() // used by erase and operator ++
+		inline PLF_COLONY_FORCE_INLINE void check_for_end_of_group_and_progress() // used by erase
 		{
 			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 			{
@@ -1473,10 +1470,9 @@ private:
 	#endif
 		{
 			total_number_of_elements = 0;
-			first_group = NULL;
 
-			group_pointer_type previous_group, group_pointer = begin_iterator.group_pointer;
-			element_pointer_type element_pointer = begin_iterator.element_pointer, end_pointer = group_pointer->last_endpoint;
+			group_pointer_type previous_group;
+			element_pointer_type element_pointer = begin_iterator.element_pointer, end_pointer = first_group->last_endpoint;
 			skipfield_pointer_type skipfield_pointer = begin_iterator.skipfield_pointer;
 
 			while (true)
@@ -1489,20 +1485,20 @@ private:
 
 				if (element_pointer == end_pointer) // ie. beyond end of available data
 				{
-					previous_group = group_pointer;
-					group_pointer = group_pointer->next_group;
+					previous_group = first_group;
+					first_group = first_group->next_group;
 
 					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
 					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
 
-					if (group_pointer == NULL)
+					if (first_group == NULL)
 					{
 						return;
 					}
 
-					end_pointer = group_pointer->last_endpoint;
-					element_pointer = group_pointer->elements + *(group_pointer->skipfield);
-					skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
+					end_pointer = first_group->last_endpoint;
+					element_pointer = first_group->elements + *(first_group->skipfield);
+					skipfield_pointer = first_group->skipfield + *(first_group->skipfield);
 				}
 			}
 		}
@@ -1617,7 +1613,7 @@ public:
 				default: // ie. erased_locations is not empty, reuse previous-erased element locations
 				{
 					iterator new_location;
-					new_location.element_pointer = *erased_locations.current_element;
+					new_location.element_pointer = *erased_locations.top_element;
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_location.element_pointer, element);
 					erased_locations.pop();
 
@@ -1772,7 +1768,7 @@ public:
 					default: // ie. erased_locations is not empty, reuse previous-erased element locations
 					{
 						iterator new_location;
-						new_location.element_pointer = *erased_locations.current_element;
+						new_location.element_pointer = *erased_locations.top_element;
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_location.element_pointer, std::move(element));
 						erased_locations.pop();
 	
@@ -1926,7 +1922,7 @@ public:
 					default: // ie. erased_locations is not empty, reuse previous-erased element locations
 					{
 						iterator new_location;
-						new_location.element_pointer = *erased_locations.current_element;
+						new_location.element_pointer = *erased_locations.top_element;
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), new_location.element_pointer, std::forward<Arguments>(parameters)...);
 						erased_locations.pop();
 
@@ -2283,7 +2279,7 @@ private:
 			}
 			else
 			{
-				source_end = erased_locations.current_element + 1;
+				source_end = erased_locations.top_element + 1;
 			}
 
 			iterator_pointer = current_old_group->elements;
@@ -2407,7 +2403,7 @@ private:
 			{
 				new_group->previous_group = NULL;
 				erased_locations.first_group = erased_locations.current_group = new_group;
-				erased_locations.current_element = destination_begin - 1;
+				erased_locations.top_element = destination_begin - 1;
 				erased_locations.start_element = new_group->elements;
 				erased_locations.end_element = new_group->end;
 				erased_locations.total_number_of_elements = total_number_of_copies;
@@ -2418,7 +2414,7 @@ private:
 				new_group->previous_group = current_new_chain;
 				erased_locations.current_group = current_new_chain->next_group = new_group;
 				erased_locations.first_group = first_new_chain;
-				erased_locations.current_element = destination_begin - 1;
+				erased_locations.top_element = destination_begin - 1;
 				erased_locations.start_element = new_group->elements;
 				erased_locations.end_element = new_group->end;
 				erased_locations.total_number_of_elements = total_number_of_copies;
@@ -2432,7 +2428,7 @@ private:
 				current_new_chain->next_group = NULL;
 				erased_locations.current_group = current_new_chain;
 				erased_locations.first_group = first_new_chain;
-				erased_locations.current_element = the_end;
+				erased_locations.top_element = the_end;
 				erased_locations.start_element = current_new_chain->elements;
 				erased_locations.end_element = current_new_chain->end;
 				erased_locations.total_number_of_elements = total_number_of_copies;
@@ -2445,7 +2441,7 @@ private:
 
 				erased_locations.current_group = new_group;
 				erased_locations.first_group = new_group;
-				erased_locations.current_element = new_group->elements - 1;
+				erased_locations.top_element = new_group->elements - 1;
 				erased_locations.start_element = new_group->elements;
 				erased_locations.end_element = new_group->end;
 				erased_locations.total_number_of_elements = 0;

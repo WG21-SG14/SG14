@@ -179,7 +179,7 @@ private:
 
 
 	group_pointer_type		current_group, first_group;
-	element_pointer_type	current_element, start_element, end_element;
+	element_pointer_type	top_element, start_element, end_element;
 	size_type				total_number_of_elements, min_elements_per_group;
 	struct ebco_pair : group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 	{
@@ -194,7 +194,7 @@ public:
 		element_allocator_type(alloc),
 		current_group(NULL),
 		first_group(NULL),
-		current_element(NULL),
+		top_element(NULL),
 		start_element(NULL),
 		end_element(NULL),
 		total_number_of_elements(0),
@@ -211,7 +211,7 @@ public:
 		element_allocator_type(alloc),
 		current_group(NULL),
 		first_group(NULL),
-		current_element(NULL),
+		top_element(NULL),
 		start_element(NULL),
 		end_element(NULL),
 		total_number_of_elements(0),
@@ -229,7 +229,7 @@ public:
 		element_allocator_type(source),
 		current_group(NULL),
 		first_group(NULL),
-		current_element(NULL),
+		top_element(NULL),
 		start_element(NULL),
 		end_element(NULL),
 		total_number_of_elements(source.total_number_of_elements),
@@ -255,14 +255,14 @@ public:
 			// Copy groups to this stack:
 			while (current_copy_group != end_copy_group)
 			{
-				std::uninitialized_copy(current_copy_group->elements, current_copy_group->end + 1, current_element);
-				current_element += (current_copy_group->end + 1) - current_copy_group->elements;
+				std::uninitialized_copy(current_copy_group->elements, current_copy_group->end + 1, top_element);
+				top_element += (current_copy_group->end + 1) - current_copy_group->elements;
 				current_copy_group = current_copy_group->next_group;
 			}
 
 			// Handle special case of last group:
-			std::uninitialized_copy(source.start_element, source.current_element + 1, current_element);
-			end_element = current_element += source.current_element - source.start_element; // This should make current_element == the last "pushed" element, rather than the one past it
+			std::uninitialized_copy(source.start_element, source.top_element + 1, top_element);
+			end_element = top_element += source.top_element - source.start_element; // This should make top_element == the last "pushed" element, rather than the one past it
 		}
 		else // uncommon edge case, so not optimising:
 		{
@@ -281,7 +281,7 @@ public:
 			}
 
 			// Handle special case of last group:
-			for (element_pointer_type element_to_copy = source.start_element; element_to_copy != source.current_element + 1; ++element_to_copy)
+			for (element_pointer_type element_to_copy = source.start_element; element_to_copy != source.top_element + 1; ++element_to_copy)
 			{
 				push(*element_to_copy);
 			}
@@ -298,7 +298,7 @@ public:
 			element_allocator_type(source),
 			current_group(std::move(source.current_group)),
 			first_group(std::move(source.first_group)),
-			current_element(std::move(source.current_element)),
+			top_element(std::move(source.top_element)),
 			start_element(std::move(source.start_element)),
 			end_element(std::move(source.end_element)),
 			total_number_of_elements(source.total_number_of_elements),
@@ -330,7 +330,6 @@ private:
 			if (total_number_of_elements != 0)
 		#endif
 		{
-			total_number_of_elements = 0;
 			group_pointer_type previous_group;
 			element_pointer_type past_end;
 
@@ -351,27 +350,26 @@ private:
 			}
 
 			// Special case for current group:
-			past_end = current_element + 1;
+			past_end = top_element + 1;
 
 			for (element_pointer_type element_pointer = start_element; element_pointer != past_end; ++element_pointer)
 			{
 				PLF_STACK_DESTROY(element_allocator_type, (*this), element_pointer);
 			}
 
-			PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, first_group);
-			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, first_group, 1);
-			first_group = NULL;
+			first_group = first_group->next_group;
+			PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, current_group);
+			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
 		}
-		else
+
+		total_number_of_elements = 0;
+
+		while (first_group != NULL)
 		{
-			// Although technically under a type-traits-supporting compiler total_number_of_elements could be non-zero at this point, since first_group would already be NULL in the case of double-destruction, it's unnecessary to zero total_number_of_elements here
-			while (first_group != NULL)
-			{
-				current_group = first_group;
-				first_group = first_group->next_group;
-				PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, current_group);
-				PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
-			}
+			current_group = first_group;
+			first_group = first_group->next_group;
+			PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, current_group);
+			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
 		}
 	}
 
@@ -396,7 +394,7 @@ private:
 			throw;
 		}
 
-		current_element = start_element = first_group->elements;
+		top_element = start_element = first_group->elements;
 		end_element = first_group->end;
 	}
 
@@ -405,17 +403,17 @@ public:
 
 	void push(const element_type &the_element)
 	{
-		switch ((current_element == NULL) + (current_element == end_element))
+		switch ((top_element == NULL) + (top_element == end_element))
 		{
 			case 0:
 			{
 				try
 				{
-					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, the_element);
+					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++top_element, the_element);
 				}
 				catch (...)
 				{
-					--current_element;
+					--top_element;
 					throw;
 				}
 
@@ -445,17 +443,17 @@ public:
 				}
 
 				current_group = current_group->next_group;
-				start_element = current_element = current_group->elements;
+				start_element = top_element = current_group->elements;
 
 				try
 				{
-					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
+					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), top_element, the_element);
 				}
 				catch (...)
 				{
 					current_group = current_group->previous_group;
 					start_element = current_group->elements;
-					current_element = current_group->end;
+					top_element = current_group->end;
 					throw;
 				}
 
@@ -469,7 +467,7 @@ public:
 				
 				try
 				{
-					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, the_element);
+					PLF_STACK_CONSTRUCT(element_allocator_type, (*this), top_element, the_element);
 				}
 				catch (...)
 				{
@@ -489,17 +487,17 @@ public:
 		// Note: the reason for code duplication from non-move push, as opposed to using std::forward for both, was because most compilers didn't actually create as-optimal code in that strategy. Also C++03 compatible
 		void push(element_type &&the_element)
 		{
-			switch ((current_element == NULL) + (current_element == end_element))
+			switch ((top_element == NULL) + (top_element == end_element))
 			{
 				case 0:
 				{
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::move(the_element));
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++top_element, std::move(the_element));
 					}
 					catch (...)
 					{
-						--current_element;
+						--top_element;
 						throw;
 					}
 		
@@ -529,17 +527,17 @@ public:
 					}
 					
 					current_group = current_group->next_group; 
-					start_element = current_element = current_group->elements;
+					start_element = top_element = current_group->elements;
 					
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), top_element, std::move(the_element));
 					}
 					catch (...)
 					{
 						current_group = current_group->previous_group;
 						start_element = current_group->elements;
-						current_element = current_group->end;
+						top_element = current_group->end;
 						throw;
 					}
 		
@@ -553,7 +551,7 @@ public:
 					
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::move(the_element));
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), top_element, std::move(the_element));
 					}
 					catch (...)
 					{
@@ -574,17 +572,17 @@ public:
 		template<typename... Arguments>
 		void emplace(Arguments... parameters)
 		{
-			switch ((current_element == NULL) + (current_element == end_element))
+			switch ((top_element == NULL) + (top_element == end_element))
 			{
 				case 0:
 				{
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++current_element, std::forward<Arguments>(parameters)...);
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), ++top_element, std::forward<Arguments>(parameters)...);
 					}
 					catch (...)
 					{
-						--current_element;
+						--top_element;
 						throw;
 					}
 
@@ -614,17 +612,17 @@ public:
 					}
 					
 					current_group = current_group->next_group; 
-					start_element = current_element = current_group->elements;
+					start_element = top_element = current_group->elements;
 					
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::forward<Arguments>(parameters)...);
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), top_element, std::forward<Arguments>(parameters)...);
 					}
 					catch (...)
 					{
 						current_group = current_group->previous_group;
 						start_element = current_group->elements;
-						current_element = current_group->end;
+						top_element = current_group->end;
 						throw;
 					}
 		
@@ -638,7 +636,7 @@ public:
 					
 					try
 					{
-						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), current_element, std::forward<Arguments>(parameters)...);
+						PLF_STACK_CONSTRUCT(element_allocator_type, (*this), top_element, std::forward<Arguments>(parameters)...);
 					}
 					catch (...)
 					{
@@ -658,7 +656,7 @@ public:
 	inline PLF_STACK_FORCE_INLINE reference top() const PLF_STACK_NOEXCEPT
 	{
 		assert(!empty());
-		return *current_element;
+		return *top_element;
 	}
 
 
@@ -671,19 +669,19 @@ public:
 			if (!(std::is_trivially_destructible<element_type>::value)) // This if-statement should be removed by the compiler on resolution of element_type
 		#endif
 		{
-			PLF_STACK_DESTROY(element_allocator_type, (*this), current_element);
+			PLF_STACK_DESTROY(element_allocator_type, (*this), top_element);
 		}
 
 		// ie. if total_number_of_elements != 0 after decrement, or we were not already at the start of a non-first group
-		if (total_number_of_elements-- == 1 || current_element != start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves current_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
+		if (total_number_of_elements-- == 1 || top_element != start_element) // If total_number_of_elements is now 0 after decrement, this essentially moves top_element back to it's initial position (start_element - 1). But otherwise, this is just a regular pop
 		{
-			--current_element;
+			--top_element;
 		}
 		else
 		{ // ie. is start element, but not first group in stack (if it were, totalsize would be 0 after decrement)
 			current_group = current_group->previous_group;
 			start_element = current_group->elements;
-			end_element = current_element = current_group->end;
+			end_element = top_element = current_group->end;
 		}
 	}
 
@@ -717,7 +715,7 @@ public:
 
 			current_group = std::move(source.current_group);
 			first_group = std::move(source.first_group);
-			current_element = std::move(source.current_element);
+			top_element = std::move(source.top_element);
 			start_element = std::move(source.start_element);
 			end_element = std::move(source.end_element);
 			total_number_of_elements = source.total_number_of_elements;
@@ -829,7 +827,7 @@ public:
 	{
 		destroy_all_data();
 		total_number_of_elements = 0;
-		current_element = NULL;
+		top_element = NULL;
 		start_element = NULL;
 		end_element = NULL;
 	}
@@ -858,7 +856,7 @@ public:
 			{
 				return false;
 			}
-			else if (this_pointer == current_element) // end condition
+			else if (this_pointer == top_element) // end condition
 			{
 				break;
 			}
@@ -990,12 +988,12 @@ public:
 			*this = std::move(temp);
 		#else
 			group_pointer_type		swap_current_group = current_group, swap_first_group = first_group;
-			element_pointer_type	swap_current_element = current_element, swap_start_element = start_element, swap_end_element = end_element;
+			element_pointer_type	swap_top_element = top_element, swap_start_element = start_element, swap_end_element = end_element;
 			size_type				swap_total_number_of_elements = total_number_of_elements, swap_min_elements_per_group = min_elements_per_group, swap_max_elements_per_group = group_allocator_pair.max_elements_per_group;
 
 			current_group = source.current_group;
 			first_group = source.first_group;
-			current_element = source.current_element;
+			top_element = source.top_element;
 			start_element = source.start_element;
 			end_element = source.end_element;
 			total_number_of_elements = source.total_number_of_elements;
@@ -1004,7 +1002,7 @@ public:
 			
 			source.current_group = swap_current_group;
 			source.first_group = swap_first_group;
-			source.current_element = swap_current_element;
+			source.top_element = swap_top_element;
 			source.start_element = swap_start_element;
 			source.end_element = swap_end_element;
 			source.total_number_of_elements = swap_total_number_of_elements;
