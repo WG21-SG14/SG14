@@ -30,6 +30,7 @@
 <p>A colony is a C++ template-based unordered data container which provides
 better performance than other std:: library containers when:</p>
 <ol type="a">
+<li>Insertion order is unimportant,</li>
   <li>Insertions and erasures to the container are occuring frequently in
     realtime ie. in performance-critical code, <i><b>and/or</b></i> </li>
   <li>Pointers which point to non-erased container elements must not be
@@ -39,7 +40,7 @@ better performance than other std:: library containers when:</p>
 <p>While the benchmarks in the section below are a better area to get a feel
 for the performance benefits, the general speed characteristics are:</p>
 <ul>
-  <li><i>Insertion</i>: better than any std:: library container except good
+  <li><i>Singular, unordered insertion</i>: better than any std:: library container except good
     implementations of deque.</li>
   <li><i>Erasure</i>: better than any std:: library container.</li>
   <li><i>Iteration</i>: better than any std:: library container where pointer
@@ -68,10 +69,8 @@ performance over scalar-type (float, int, etc) performance.</p>
 
 <h2><a id="motivation"></a>Motivation</h2>
 
-<p>When working on video game engines we are predominantly dealing with
-collections of data where:<br>
-(<i>Note: These requirements match other areas of software development as well,
-but to simplify discussion I will focus on video game development</i>)</p>
+<p><i>Note: initial motivation for the project came from video game engine development. Since this point it has become a more generalized container. Nevertheless, the initial motivation is presented below.</i><br>
+When working on video game engines we are predominantly dealing with collections of data where:</p>
 <ol type="a">
   <li>Elements within data collections refer to elements within other data
     collections (through a variety of methods - indices, pointers, etc). An
@@ -83,10 +82,6 @@ but to simplify discussion I will focus on video game development</i>)</p>
   <li>Order is unimportant for the most part. The majority of data collections
     are simply iterated over, transformed, referred to and utilized with no
     regard to order.</li>
-  <li>Storage of small-to-medium-sized classes and structs is the norm. Work
-    with collections of small scalar types like int, double is far less common.
-    Sometimes data can be stored in a SoA (Struct of Arrays) configuration, but
-    these cases are somewhat less common.</li>
   <li>Erasing or otherwise removing or deactivating objects occurs frequently
     in-game and in realtime (though often erasures will be implemented to occur
     at the end of a frame due to multithreading concerns). An example could be
@@ -139,21 +134,19 @@ common are probably:</p>
     jitter.</p>
   </li>
   <li>Combining a swap-and-pop mechanism with some form of dereferenced lookup
-    system to enable contiguous element iteration (known as a <a
-    href="http://bitsquid.blogspot.ca/2011/09/managing-decoupling-part-4-id-lookup.html">'packed array'</a>,
-    or various other names). In this case when erasing we swap the back element from the
+    system to enable contiguous element iteration (sometimes known as a <a href="http://bitsquid.blogspot.ca/2011/09/managing-decoupling-part-4-id-lookup.html">'packed array'</a>, various other names). In this case when erasing we swap the back element from the
     vector of elements with the element being erased, then pop the (swapped)
-    back element. We keep a stable vector of indexes (or similar) and update the
+    back element. When iterating over the data we simply iterate through the vector of elements. However to maintain valid external links to elements (which may be moved at any time) we must also maintain a stable vector of indexes (or similar) and update the
     index numbers corresponding with the element being erased and the element
     being moved. In this case external objects referring to elements within the
     container must store a pointer to the index for the element in question.
-    There are many slightly varied alternatives to this method.
-    This method is more useful when the container's data is mostly being
+    There are many varied alternatives to this method.
+    The method is more useful when the container's data is mostly being
     iterated over with fewer references to the individual elements from outside
     objects.
     <p>Advantages: Iteration is at standard vector speed.</p>
     <p>Disadvantages: Erase could be slow if objects are large and swap cost is
-    therefore large. All references to elements incur additional costs.</p>
+    therefore large. All references to elements incur additional costs due to a two-fold reference mechanism.</p>
   </li>
 </ol>
 <br>
@@ -246,7 +239,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_14-10-2016.zip">here</a> (26kb zip file) or
+<p>Download <a href="plf_colony_16-10-2016.zip">here</a> (26kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -506,11 +499,11 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     <tr>
       <td>fill</td>
       <td><code>explicit colony(const size_type n, const unsigned short
-        min_group_size = 8, const unsigned short max_group_size = USHRT_MAX,
+        min_group_size = 8, const unsigned short max_group_size = std::numeric_limits&lt;Skipfield_type&gt;::max(),
         const allocator_type &amp;alloc = allocator_type())<br>
         explicit colony(const size_type n, const value_type &amp;element, const
         unsigned short min_group_size = 8, const unsigned short max_group_size
-        = USHRT_MAX, const allocator_type &amp;alloc = allocator_type())
+        = std::numeric_limits&lt;Skipfield_type&gt;::max(), const allocator_type &amp;alloc = allocator_type())
       </code></td>
     </tr>
     <tr>
@@ -518,7 +511,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
       <td><code>template&lt;typename InputIterator&gt; colony(const
         InputIterator &amp;first, const InputIterator &amp;last, const unsigned
         short min_group_size = 8, const unsigned short max_group_size =
-        USHRT_MAX, const allocator_type &amp;alloc = allocator_type())<br>
+        std::numeric_limits&lt;Skipfield_type&gt;::max(), const allocator_type &amp;alloc = allocator_type())<br>
         </code></td>
     </tr>
     <tr>
@@ -534,7 +527,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
       <td>initializer list</td>
       <td><code>colony(const std::initializer_list&lt;value_type&gt;
         &amp;element_list, const unsigned short min_group_size = 8, const
-        unsigned short max_group_size = USHRT_MAX, const allocator_type
+        unsigned short max_group_size = std::numeric_limits&lt;Skipfield_type&gt;::max(), const allocator_type
         &amp;alloc = allocator_type()) </code></td>
     </tr>
   </tbody>
@@ -544,7 +537,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 <ul>
   <li><code>colony&lt;T&gt; a_colony</code> 
     <p>Default constructor - default minimum group size is 8, default maximum
-    group size is USHRT_MAX (typically 65535). You cannot set the group sizes
+    group size is std::numeric_limits&lt;Skipfield_type&gt;::max() (typically 65535). You cannot set the group sizes
     from the constructor in this scenario, but you can call the
     change_group_sizes() member function after construction has occurred.<br>
     Example: <code style="color: brown">plf::colony&lt;int&gt;
@@ -564,7 +557,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     int_colony(alloc_instance);</code> </p>
   </li>
   <li><code>colony&lt;T&gt; colony(const size_type n, const unsigned short
-    min_group_size = 8, const unsigned short max_group_size = USHRT_MAX)</code> 
+    min_group_size = 8, const unsigned short max_group_size = std::numeric_limits&lt;Skipfield_type&gt;::max())</code> 
     <p>Fill constructor with value_type unspecified, so the value_type's
     default constructor is used. <code>n</code> specifies the number of
     elements to create upon construction. If <code>n</code> is larger than
@@ -583,7 +576,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
   <li><code>colony&lt;T&gt; colony(const
     std::initializer_list&lt;value_type&gt; &amp;element_list, const unsigned
     short min_group_size = 8, const unsigned short max_group_size =
-    USHRT_MAX)</code> 
+    std::numeric_limits&lt;Skipfield_type&gt;::max())</code> 
     <p>Using an initialiser list to insert into the colony upon
     construction.<br>
     Example: <code style="color: brown">std::initializer_list&lt;int&gt;
@@ -774,9 +767,9 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     <p><code style="color: brown">class simple_class<br>
     {<br>
     private:<br>
-    Â int number;<br>
+    &nbsp; int number;<br>
     public:<br>
-    Â simple_class(int a_number): number (a_number) {};<br>
+    &nbsp; simple_class(int a_number): number (a_number) {};<br>
     };<br>
     <br>
     plf::colony&lt;simple_class&gt; simple_classes;<br>
@@ -1852,11 +1845,11 @@ programming.</font> </p>
     guarantee.</p>
   </li>
   <li><h4>Iterators not following rule of zero?</h4>
-    <p>It was found under GCC that the high-modification scenario benchmarks
+    <p>It was found under GCC and clang that the high-modification scenario benchmarks
     suffered a 11% overall performance loss when iterator copy and move
     constructors/operators where not explicitly defined, possibly because GCC
     did not know to vectorise the operations without explicit code or because
-    it implemented copy/swap idiom instead of copying directly. No performance
+    the compiler implemented copy/swap idiom instead of simply copying directly. No performance
     gain was found under any tests when removing the copy and move
     constructors/operators.</p>
   </li>
@@ -1896,6 +1889,8 @@ If there are multiple empty groups in a row, ++ iteration essentially becomes O(
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-10-16: v3.78 - Further optimization.</li>
+  <li>2016-10-15: v3.76 - Removed potential memory leak in internal stack mechanism.</li>
   <li>2016-10-14: v3.75 - Added get_index_from_reverse_iterator(). Further optimization (and one minor correction) of the reduced_stack storage mechanism , leading to an 8% performance increase in general_use benchmarks for small structs. Additional minor optimization for C++03. Some code comment tidyup.</li>
   <li>2016-10-10: v3.73 - change_group_size functions no longer copy-construct into a new colony unless the stack is not empty, and either min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. Correction to change_group_sizes code (was clearing erased locations unnecessarily). Reinitialize function added, which supports the changing of group sizes for colonies of non-copy-constructible element types. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with colony (example: anything containing a std::mutex). Minor correction to colony test suite under C++03.</li>
   <li>2016-10-04: v3.72 - minor fix to erase.</li>

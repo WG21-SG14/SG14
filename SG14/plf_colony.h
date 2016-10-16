@@ -1640,7 +1640,7 @@ public:
 					// if it has only a slot before which is erased (ie. at end of erasure block), update the prime erasure point
 					// if it only has a slot after it which is erased, (ie. this is the prime erasure point), change next slot to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
 					// if it has both a slot before and after which is erased (ie. is in middle of erasure block), do both of the above
-					const unsigned char prev_skipfield = (new_location.skipfield_pointer != new_location.group_pointer->skipfield && *(new_location.skipfield_pointer - 1) != 0);
+					const unsigned char prev_skipfield = (new_location.skipfield_pointer != new_location.group_pointer->skipfield) & (*(new_location.skipfield_pointer - 1) != 0);
 					const unsigned char after_skipfield = (*(new_location.skipfield_pointer + 1) != 0); // NOTE: first test removed due to extra slot in skipfield (compared to element field)
 
 					switch (prev_skipfield | (after_skipfield << 1))
@@ -1795,7 +1795,7 @@ public:
 						// if it has only a slot before which is erased (ie. at end of erasure block), update the prime erasure point
 						// if it only has a slot after it which is erased, (ie. this is the prime erasure point), change next slot to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
 						// if it has both a slot before and after which is erased (ie. is in middle of erasure block), do both of the above
-						const unsigned char prev_skipfield = (new_location.skipfield_pointer != new_location.group_pointer->skipfield && *(new_location.skipfield_pointer - 1) != 0);
+						const unsigned char prev_skipfield = (new_location.skipfield_pointer != new_location.group_pointer->skipfield) & (*(new_location.skipfield_pointer - 1) != 0);
 						const unsigned char after_skipfield = (*(new_location.skipfield_pointer + 1) != 0); // NOTE: first test removed due to extra slot in skipfield (compared to element field)
 
 						switch (prev_skipfield | (after_skipfield << 1))
@@ -1949,7 +1949,7 @@ public:
 						// if it has only a slot before which is erased (ie. at end of erasure block), update the prime erasure point
 						// if it only has a slot after it which is erased, (ie. this is the prime erasure point), change next slot to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
 						// if it has both a slot before and after which is erased (ie. is in middle of erasure block), do both of the above
-						const unsigned char prev_skipfield = (new_location.skipfield_pointer != new_location.group_pointer->skipfield && *(new_location.skipfield_pointer - 1) != 0);
+						const unsigned char prev_skipfield = (new_location.skipfield_pointer != new_location.group_pointer->skipfield) & (*(new_location.skipfield_pointer - 1) != 0);
 						const unsigned char after_skipfield = (*(new_location.skipfield_pointer + 1) != 0); // NOTE: first test removed due to extra slot in skipfield (compared to element field)
 
 						switch (prev_skipfield | (after_skipfield << 1))
@@ -2221,8 +2221,6 @@ private:
 			typedef typename reduced_stack::stack_group_allocator_type stack_group_allocator_type; // Not used by PLF_COLONY_DESTROY etc when std::allocator_traits not supported
 		#endif
 
-		typename reduced_stack::ebco_pair &stack_group_allocator = erased_locations.group_allocator_pair;
-
 		// Remove trailing stack groups (not removed in general 'pop' usage in reduced_stack for performance reasons)
 		{
 			stack_group_pointer temp_group = erased_locations.current_group->next_group, temp_group2;
@@ -2232,8 +2230,8 @@ private:
 			{
 				temp_group2 = temp_group;
 				temp_group = temp_group->next_group;
-				PLF_COLONY_DESTROY(stack_group_allocator_type, stack_group_allocator, temp_group2);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, stack_group_allocator, temp_group2, 1);
+				PLF_COLONY_DESTROY(stack_group_allocator_type, erased_locations.group_allocator_pair, temp_group2);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, erased_locations.group_allocator_pair, temp_group2, 1);
 			}
 		}
 
@@ -2247,21 +2245,21 @@ private:
 		const size_type new_group_size = (erased_locations.total_number_of_elements < temp_size) ? temp_size : erased_locations.total_number_of_elements;
 
 		stack_group_pointer current_old_group = erased_locations.first_group, 
-							new_group = PLF_COLONY_ALLOCATE(stack_group_allocator_type, stack_group_allocator, 1, erased_locations.current_group),
+							new_group = PLF_COLONY_ALLOCATE(stack_group_allocator_type, erased_locations.group_allocator_pair, 1, erased_locations.current_group),
 							first_new_chain = NULL,
 							current_new_chain = NULL;
 
 		try
 		{
 			#ifdef PLF_COLONY_VARIADICS_SUPPORT
-				PLF_COLONY_CONSTRUCT(stack_group_allocator_type, stack_group_allocator, new_group, new_group_size, erased_locations.current_group);
+				PLF_COLONY_CONSTRUCT(stack_group_allocator_type, erased_locations.group_allocator_pair, new_group, new_group_size, erased_locations.current_group);
 			#else
-				PLF_COLONY_CONSTRUCT(stack_group_allocator_type, stack_group_allocator, new_group, typename reduced_stack::group(new_group_size, erased_locations.current_group));
+				PLF_COLONY_CONSTRUCT(stack_group_allocator_type, erased_locations.group_allocator_pair, new_group, typename reduced_stack::group(new_group_size, erased_locations.current_group));
 			#endif
 		}
 		catch (...)
 		{
-			PLF_COLONY_DEALLOCATE(stack_group_allocator_type, stack_group_allocator, new_group, 1);
+			PLF_COLONY_DEALLOCATE(stack_group_allocator_type, erased_locations.group_allocator_pair, new_group, 1);
 			throw;
 		}
 
@@ -2391,8 +2389,8 @@ private:
 				// Remove old group:
 				const stack_group_pointer prev_group = current_old_group;
 				current_old_group = current_old_group->next_group;
-				PLF_COLONY_DESTROY(stack_group_allocator_type, stack_group_allocator, prev_group);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, stack_group_allocator, prev_group, 1);
+				PLF_COLONY_DESTROY(stack_group_allocator_type, erased_locations.group_allocator_pair, prev_group);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, erased_locations.group_allocator_pair, prev_group, 1);
 			}
 		} while (current_old_group != NULL);
 
@@ -2422,8 +2420,8 @@ private:
 			}
 			case 3: // else if (current_new_chain != NULL && destination_begin == destination_start) - No copies, some old groups - destination_begin == destination_start implied by previous if's
 			{
-				PLF_COLONY_DESTROY(stack_group_allocator_type, stack_group_allocator, new_group);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, stack_group_allocator, new_group, 1);
+				PLF_COLONY_DESTROY(stack_group_allocator_type, erased_locations.group_allocator_pair, new_group);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, erased_locations.group_allocator_pair, new_group, 1);
 
 				current_new_chain->next_group = NULL;
 				erased_locations.current_group = current_new_chain;
@@ -2496,8 +2494,8 @@ public:
 
 			iterator return_iterator;
 
-			const unsigned char prev_skipfield = (the_iterator.skipfield_pointer != the_group.skipfield && *(the_iterator.skipfield_pointer - 1) != 0);
-			const unsigned char after_skipfield = (the_iterator.element_pointer + 1 != the_group.last_endpoint && *(the_iterator.skipfield_pointer + 1) != 0);
+			const unsigned char prev_skipfield = (the_iterator.skipfield_pointer != the_group.skipfield) & (*(the_iterator.skipfield_pointer - 1) != 0);
+			const unsigned char after_skipfield = (the_iterator.element_pointer + 1 != the_group.last_endpoint) & (*(the_iterator.skipfield_pointer + 1) != 0);
 
 			switch (prev_skipfield | (after_skipfield << 1))
 			{
