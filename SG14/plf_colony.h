@@ -113,6 +113,7 @@ namespace plf
 
 
 template <class element_type, class element_allocator_type = std::allocator<element_type>, typename skipfield_type = unsigned short > class colony : private element_allocator_type  // Empty base class optimisation - inheriting allocator functions
+// Note: unsigned short is equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, > 16-bit integer in case where platform doesn't support 16-bit types
 {
 public:
 	// Standard container typedefs:
@@ -156,7 +157,7 @@ private:
 
 	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT // C++11
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<group>				group_allocator_type;
-		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<skipfield_type>		skipfield_allocator_type; // Equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, > 16-bit integer in case where platform doesn't support 16-bit types
+		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<skipfield_type>		skipfield_allocator_type;
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<unsigned char>		uchar_allocator_type; // Using uchar as the generic allocator type, as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas, for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
 
 		typedef typename std::allocator_traits<element_allocator_type>::pointer				element_pointer_type;
@@ -168,8 +169,8 @@ private:
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<element_pointer_type>	element_pointer_allocator_type;
 	#else
 		typedef typename element_allocator_type::template rebind<group>::other				group_allocator_type;
-		typedef typename element_allocator_type::template rebind<skipfield_type>::other		skipfield_allocator_type; // Equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, > 16-bit integer in case where platform doesn't support 16-bit types
-		typedef typename element_allocator_type::template rebind<unsigned char>::other		uchar_allocator_type; // Using uchar as the generic allocator type, as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas, for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
+		typedef typename element_allocator_type::template rebind<skipfield_type>::other		skipfield_allocator_type;
+		typedef typename element_allocator_type::template rebind<unsigned char>::other		uchar_allocator_type;
 
 		typedef typename element_allocator_type::pointer			element_pointer_type; // Identical typedef to 'pointer', for clarity in code (to differentiate element pointers from group_pointers, etc)
 		typedef typename group_allocator_type::pointer 				group_pointer_type;
@@ -954,6 +955,14 @@ public:
 
 
 
+	private:
+		// Used by cend(), erase() etc:
+		colony_iterator(const group_pointer_type group_p, const element_pointer_type element_p, const skipfield_pointer_type skipfield_p) PLF_COLONY_NOEXCEPT: group_pointer(group_p), element_pointer(element_p), skipfield_pointer(skipfield_p) {}
+
+
+
+	public:
+
 		inline colony_iterator (const colony_iterator &source) PLF_COLONY_NOEXCEPT:
 			group_pointer(source.group_pointer),
 			element_pointer(source.element_pointer),
@@ -1006,7 +1015,7 @@ public:
 
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			// move assignment
-			inline colony_reverse_iterator& operator = (colony_reverse_iterator &&source) PLF_COLONY_NOEXCEPT 
+			inline colony_reverse_iterator& operator = (colony_reverse_iterator &&source) PLF_COLONY_NOEXCEPT
 			{
 				the_iterator = std::move(source.the_iterator);
 				return *this;
@@ -1019,12 +1028,14 @@ public:
 		{
 			return (the_iterator == rh.the_iterator);
 		}
-		
+
+
 
 		inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return (the_iterator != rh.the_iterator);
 		}
+
 
 
 		inline PLF_COLONY_FORCE_INLINE reference operator * () const PLF_COLONY_NOEXCEPT
@@ -1038,10 +1049,10 @@ public:
 		{
 			return the_iterator.element_pointer;
 		}
-		
 
 
-		// Need to redefine rather than using internal iterator's -- operator, in order for ++ to be able to reach rend() ie. elements[-1]
+
+		// In this case we have to redefine the algorithm, rather than using the internal iterator's -- operator, in order for the reverse_iterator to be able to reach rend() ie. elements[-1]
 		colony_reverse_iterator & operator ++ ()
 		{
 			colony::group_pointer_type &group_pointer = the_iterator.group_pointer;
@@ -1057,7 +1068,7 @@ public:
 				element_pointer -= 1 + *skipfield_pointer;
 				skipfield_pointer -= *skipfield_pointer;
 
-				if (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)) // ie. iterator is not now at rend()
+				if (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)) // ie. iterator is not == rend()
 				{
 					return *this;
 				}
@@ -1204,6 +1215,14 @@ public:
 		{}
 
 
+
+	private:
+		// Used by rend(), etc:
+		colony_reverse_iterator(const group_pointer_type group_p, const element_pointer_type element_p, const skipfield_pointer_type skipfield_p) PLF_COLONY_NOEXCEPT: the_iterator(group_p, element_p, skipfield_p) {}
+
+
+
+	public:
 
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			// move constructors
@@ -1394,26 +1413,14 @@ public:
 
 	inline const const_iterator cbegin() const PLF_COLONY_NOEXCEPT
 	{
-		const_iterator return_iterator;
-
-		return_iterator.group_pointer = begin_iterator.group_pointer;
-		return_iterator.element_pointer = begin_iterator.element_pointer;
-		return_iterator.skipfield_pointer = begin_iterator.skipfield_pointer;
-
-		return return_iterator;
+		return const_iterator(begin_iterator.group_pointer, begin_iterator.element_pointer, begin_iterator.skipfield_pointer);
 	}
 
 
 
 	inline const_iterator cend() const PLF_COLONY_NOEXCEPT
 	{
-		const_iterator return_iterator;
-
-		return_iterator.group_pointer = end_iterator.group_pointer;
-		return_iterator.element_pointer = end_iterator.element_pointer;
-		return_iterator.skipfield_pointer = end_iterator.skipfield_pointer;
-
-		return return_iterator;
+		return const_iterator(end_iterator.group_pointer, end_iterator.element_pointer, end_iterator.skipfield_pointer);
 	}
 
 
@@ -1427,10 +1434,7 @@ public:
 
 	inline reverse_iterator rend() const PLF_COLONY_NOEXCEPT
 	{
-		reverse_iterator beforebegin(begin_iterator);
-		--(beforebegin.the_iterator.element_pointer); // ie. point to memory space before first element
-		--(beforebegin.the_iterator.skipfield_pointer); // ie. point to memory space before first erasure field
-		return beforebegin;
+		return reverse_iterator(begin_iterator.group_pointer, begin_iterator.element_pointer - 1, begin_iterator.skipfield_pointer - 1);
 	}
 
 
@@ -1444,10 +1448,7 @@ public:
 
 	inline const_reverse_iterator crend() const PLF_COLONY_NOEXCEPT
 	{
-		const_reverse_iterator beforebegin(begin_iterator);
-		--(beforebegin.the_iterator.element_pointer); // ie. point to memory space before first element
-		--(beforebegin.the_iterator.skipfield_pointer); // ie. point to memory space before first erasure field
-		return beforebegin;
+		return const_reverse_iterator(begin_iterator.group_pointer, begin_iterator.element_pointer - 1, begin_iterator.skipfield_pointer - 1);
 	}
 
 
@@ -1544,8 +1545,9 @@ private:
 		end_iterator = begin_iterator;
 	}
 
-public:
 
+
+public:
 
 	iterator insert(const element_type &element)
 	{
@@ -1558,11 +1560,12 @@ public:
 					const iterator return_iterator = end_iterator; /* Make copy for return before adjusting components */
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), end_iterator.element_pointer, element);
 
-					++end_iterator.element_pointer; /* not postfix incrementing prev statement as necessitates a slower try-catch block to reverse increment if necessary */
+					++end_iterator.element_pointer; /* not postfix incrementing prev statement as it would necessitate a try-catch block to reverse increment if necessary (which would decrease speed by increasing code size) */
 					++end_iterator.skipfield_pointer;
 					++(end_iterator.group_pointer->last_endpoint);
 					++(end_iterator.group_pointer->number_of_elements);
 					++total_number_of_elements;
+
 					return return_iterator; /* returns value before incrementation */
 				}
 				case 1:	// ie. erased_locations is empty and end_iterator is at end of current final group - ie. colony is full - create new group
@@ -1588,6 +1591,7 @@ public:
 					end_iterator.group_pointer = &next_group;
 					end_iterator.element_pointer = next_group.elements;
 					end_iterator.skipfield_pointer = next_group.skipfield;
+
 					const iterator return_iterator = end_iterator; /* Make copy for return before adjusting components */
 
 					try
@@ -1599,6 +1603,7 @@ public:
 						end_iterator.group_pointer = end_iterator.group_pointer->previous_group;
 						end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
 						end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
+						PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group);
 						PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group, 1);
 						end_iterator.group_pointer->next_group = NULL;
 						throw;
@@ -1608,6 +1613,7 @@ public:
 					++next_group.last_endpoint;
 					++next_group.number_of_elements;
 					++total_number_of_elements;
+
 					return return_iterator; /* returns value before incrementation */
 				}
 				default: // ie. erased_locations is not empty, reuse previous-erased element locations
@@ -1618,14 +1624,14 @@ public:
 					erased_locations.pop();
 
 					new_location.group_pointer = end_iterator.group_pointer; // Start with last group first, as will be the largest group
-			
+
 					while (new_location.element_pointer < new_location.group_pointer->elements || new_location.element_pointer >= reinterpret_cast<element_pointer_type>(new_location.group_pointer->skipfield))
 					{
 						new_location.group_pointer = new_location.group_pointer->previous_group;
 					}
 
 					new_location.skipfield_pointer = new_location.group_pointer->skipfield + (new_location.element_pointer - new_location.group_pointer->elements);
-					
+
 					++(new_location.group_pointer->number_of_elements);
 
 					if (new_location.group_pointer == first_group && new_location.element_pointer < begin_iterator.element_pointer)
@@ -1634,7 +1640,7 @@ public:
 					}
 	
 					++total_number_of_elements;
-	
+
 					// Pseudocode:
 					// if erased_locations.total_number_of_elements != 0, check whether location we are restoring to has a slot before or after which is erased
 					// if it has only a slot before which is erased (ie. at end of erasure block), update the prime erasure point
@@ -1754,6 +1760,7 @@ public:
 							end_iterator.group_pointer = end_iterator.group_pointer->previous_group;
 							end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
 							end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
+							PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group);
 							PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group, 1);
 							end_iterator.group_pointer->next_group = NULL;
 							throw;
@@ -1763,6 +1770,7 @@ public:
 						++next_group.last_endpoint;
 						++next_group.number_of_elements;
 						++total_number_of_elements;
+
 						return return_iterator; /* returns value before incrementation */
 					}
 					default: // ie. erased_locations is not empty, reuse previous-erased element locations
@@ -1908,6 +1916,7 @@ public:
 							end_iterator.group_pointer = end_iterator.group_pointer->previous_group;
 							end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
 							end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
+							PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group);
 							PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, end_iterator.group_pointer->next_group, 1);
 							end_iterator.group_pointer->next_group = NULL;
 							throw;
@@ -1917,6 +1926,7 @@ public:
 						++next_group.last_endpoint;
 						++next_group.number_of_elements;
 						++total_number_of_elements;
+
 						return return_iterator; /* returns value before incrementation */
 					}
 					default: // ie. erased_locations is not empty, reuse previous-erased element locations
@@ -2075,6 +2085,7 @@ public:
 				min_elements_per_group = group_allocator_pair.max_elements_per_group;
 				initialize(); // Construct first group
 				min_elements_per_group = temp;
+
 				group_fill(element, group_allocator_pair.max_elements_per_group);
 
 				// Create and fill all remaining groups:
@@ -2086,7 +2097,7 @@ public:
 					group_create();
 					group_fill(element, group_allocator_pair.max_elements_per_group);
 				}
-				
+
 				if (element_remainder != 0)
 				{
 					group_create();
@@ -2101,7 +2112,7 @@ public:
 				min_elements_per_group = (number_of_elements < min_elements_per_group) ? min_elements_per_group : static_cast<skipfield_type>(number_of_elements);
 				initialize(); // Construct first group
 				min_elements_per_group = temp;
-				
+
 				group_fill(element, static_cast<skipfield_type>(number_of_elements));
 				end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + number_of_elements;
 			}
@@ -2114,7 +2125,7 @@ public:
 			const iterator return_iterator = insert(element);
 			size_type num_elements = number_of_elements - 1;
 			size_type capacity_available = (reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) + erased_locations.total_number_of_elements;
-			
+
 			// Use up erased locations and remainder of current group first:
 			while (capacity_available-- != 0 && num_elements-- != 0)
 			{
@@ -2138,7 +2149,7 @@ public:
 				group_fill(element, element_remainder);
 				end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + element_remainder;
 			}
-			
+
 			total_number_of_elements += num_elements;
 
 			return return_iterator;
@@ -2148,7 +2159,7 @@ public:
 
 
 	// Range insert
-	
+
 	template <class iterator_type>
 	iterator insert (const typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, iterator_type>::type &first, const iterator_type &last)
 	{
@@ -2159,7 +2170,7 @@ public:
 
 		const iterator return_iterator = insert(*first);
 		iterator_type current_element = first;
-		
+
 		while (++current_element != last)
 		{
 			insert(*current_element);
@@ -2167,7 +2178,7 @@ public:
 
 		return return_iterator;
 	}
-	
+
 
 	
 	// Initializer-list insert
@@ -2503,7 +2514,7 @@ public:
 				{
 					*the_iterator.skipfield_pointer = 1; // solo erase point
 
-					return_iterator.group_pointer = the_iterator.group_pointer;
+					return_iterator.group_pointer = the_group_pointer;
 					return_iterator.element_pointer = the_iterator.element_pointer + 1;
 					return_iterator.skipfield_pointer = the_iterator.skipfield_pointer + 1;
 					return_iterator.check_for_end_of_group_and_progress();
@@ -2514,7 +2525,7 @@ public:
 					*the_iterator.skipfield_pointer = *(the_iterator.skipfield_pointer - 1) + 1;
 					++(*(the_iterator.skipfield_pointer - *(the_iterator.skipfield_pointer - 1)));
 
-					return_iterator.group_pointer = the_iterator.group_pointer;
+					return_iterator.group_pointer = the_group_pointer;
 					return_iterator.element_pointer = the_iterator.element_pointer + 1;
 					return_iterator.skipfield_pointer = the_iterator.skipfield_pointer + 1;
 					return_iterator.check_for_end_of_group_and_progress();
@@ -2526,7 +2537,7 @@ public:
 					std::memmove(&*(the_iterator.skipfield_pointer + 1), &*(the_iterator.skipfield_pointer + 2), sizeof(skipfield_type) * (update_count - 1));
 					*(the_iterator.skipfield_pointer + update_count) = *(the_iterator.skipfield_pointer) = update_count + 1;
 
-					return_iterator.group_pointer = the_iterator.group_pointer;
+					return_iterator.group_pointer = the_group_pointer;
 					return_iterator.element_pointer = the_iterator.element_pointer + *(the_iterator.skipfield_pointer);
 					return_iterator.skipfield_pointer = the_iterator.skipfield_pointer + *(the_iterator.skipfield_pointer);
 					return_iterator.check_for_end_of_group_and_progress();
@@ -2539,7 +2550,7 @@ public:
 					skipfield_type update_count = *(following + 2) + 1;
 					*(the_iterator.skipfield_pointer - update_value) += update_count;
 
-					return_iterator.group_pointer = the_iterator.group_pointer;
+					return_iterator.group_pointer = the_group_pointer;
 					return_iterator.element_pointer = the_iterator.element_pointer + update_count;
 					return_iterator.skipfield_pointer = the_iterator.skipfield_pointer + update_count;
 					return_iterator.check_for_end_of_group_and_progress();
@@ -2598,52 +2609,44 @@ public:
 
 				// Update group numbers:
 				update_subsequent_group_numbers(first_group);
-
 				consolidate_erased_locations(the_group_pointer); // There must be erased_locations for an empty non-final group, no emptiness check is necessary
 
 				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
-				begin_iterator.group_pointer = first_group; // note: end iterator only needs to be changed if the deleted group was the final group in the chain
-
-				// If the beginning index has been erased (ie. != 0), skip to next non-erased element:
-				begin_iterator.element_pointer = first_group->elements + *(first_group->skipfield);
+				begin_iterator.group_pointer = first_group; // note: end iterator only needs to be changed if the deleted group was the final group in the chain ie. not in this case
+				begin_iterator.element_pointer = first_group->elements + *(first_group->skipfield); // If the beginning index has been erased (ie. skipfield != 0), skip to next non-erased element
 				begin_iterator.skipfield_pointer = first_group->skipfield + *(first_group->skipfield);
 
 				return begin_iterator;
 			}
 			case 3: // this is a non-first group but not final group in chain: the group is completely empty of elements, so delete the group, then link previous group's next-group field to the next non-empty group in the series, removing this link in the chain:
 			{
-				iterator return_iterator;
-
 				the_group.next_group->previous_group = the_group.previous_group;
-				return_iterator.group_pointer = the_group.previous_group->next_group = the_group.next_group; // close the chain, removing this group from it
-
-				// If first element of next group is erased (ie. skipfield != 0), skip to the next non-erased element:
-				return_iterator.element_pointer = the_group.next_group->elements + *(the_group.next_group->skipfield);
-				return_iterator.skipfield_pointer = the_group.next_group->skipfield + *(the_group.next_group->skipfield);
+				const group_pointer_type return_group = the_group.previous_group->next_group = the_group.next_group; // close the chain, removing this group from it
 
 				// Update group numbers:
-				update_subsequent_group_numbers(the_group.next_group);
+				update_subsequent_group_numbers(return_group);
 
 				consolidate_erased_locations(the_group_pointer); // There must be erased_locations for an empty non-final group, no emptiness check is necessary
 
 				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
-				return return_iterator;
+				// If first element of next group is erased (ie. skipfield != 0), skip to the next non-erased element:
+				return iterator(return_group, return_group->elements + *(return_group->skipfield), return_group->skipfield + *(return_group->skipfield));
 			}
 			default: // this is a non-first group and the final group in the chain: the group is completely empty of elements
 			{
-				if (the_iterator.element_pointer != the_group.elements || the_iterator.element_pointer + 1 != end_iterator.element_pointer) // If the element pointer is not right at the start of the group and the end_iterator right afterwards, that means there must be some erased element locations that've been stored. This check is necessary because the consolidate function doesn't check if erased_locations's empty
+				if (!((the_iterator.element_pointer == the_group.elements) & (the_iterator.element_pointer + 1 == end_iterator.element_pointer))) // If the element pointer is not right at the start of the group and the end_iterator right afterwards, that means there must be some erased element locations that've been stored. This check is necessary because the consolidate function doesn't check if erased_locations is empty
 				{
 					consolidate_erased_locations(the_group_pointer);
 				}
 
 				the_group.previous_group->next_group = NULL;
 				end_iterator.group_pointer = the_group.previous_group; // end iterator only needs to be changed if this is the final group in the chain
-				end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(the_group.previous_group->skipfield);
-				end_iterator.skipfield_pointer = the_group.previous_group->skipfield + the_group.previous_group->size;
+				end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
+				end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
 
 				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
@@ -2852,7 +2855,7 @@ public:
 
 	void shrink_to_fit()
 	{
-		if (first_group == NULL || total_number_of_elements == capacity())
+		if ((first_group == NULL) | (total_number_of_elements == capacity()))
 		{
 			return;
 		}
@@ -3261,7 +3264,7 @@ private:
 		if (distance > 0) // ie. += - this needs to be implemented differently to iterator's advance, as it needs to be able to reach rend() ie. beginning - 1
 		{
 			assert (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)); // Check that we're not already at rend()
-			
+
 			// Special case for initial element pointer and initial group (we don't know how far into the group the element pointer is)
 			if (element_pointer != group_pointer->last_endpoint)
 			{
@@ -3270,14 +3273,14 @@ private:
 				if (current_group.number_of_elements == static_cast<const skipfield_type>(current_group.last_endpoint - current_group.elements))
 				{
 					distance_type distance_from_beginning = static_cast<distance_type>(element_pointer - current_group.elements);
-					
+
 					if(distance <= distance_from_beginning || current_group.previous_group == NULL) // can ignore skipfield field as no elements have been erased in this group
 					{
 						element_pointer -= distance;
 						skipfield_pointer -= distance;
 						return;
 					}
-					else 
+					else
 					{ // No need to process erasure field in prev group either - this will be handled by the next section of code, if necessary
 						group_pointer = current_group.previous_group;
 						element_pointer = reinterpret_cast<element_pointer_type>(current_group.previous_group->skipfield);

@@ -16,6 +16,7 @@
 #include "plf_nanotimer.h"
 #include "plf_indexed_vector.h"
 #include "plf_pointer_deque.h"
+#include "plf_packed_deque.h"
 
 
 // Defines:
@@ -171,6 +172,13 @@ inline PLF_FORCE_INLINE void container_reserve(std::vector<container_contents> &
 
 
 template<class container_contents>
+inline PLF_FORCE_INLINE void container_reserve(plf::indexed_vector<container_contents> &container, unsigned int amount)
+{
+	container.reserve(amount);
+}
+
+
+template<class container_contents>
 inline PLF_FORCE_INLINE void container_reserve(plf::stack<container_contents> &container, unsigned int amount)
 {
 	container.reserve(amount);
@@ -182,6 +190,7 @@ inline PLF_FORCE_INLINE void container_reserve(plf::colony<container_contents> &
 {
 	container.reserve(amount);
 }
+
 
 
 
@@ -207,6 +216,13 @@ template <class container_contents>
 inline PLF_FORCE_INLINE void container_insert(std::map<unsigned int, container_contents> &container)
 {
 	container.insert(std::make_pair(static_cast<unsigned int>(container.size()), container_contents(xor_rand() & 255)));
+}
+
+
+template <class container_contents>
+inline PLF_FORCE_INLINE void container_insert(plf::packed_deque<container_contents> &container)
+{
+	container.insert(container_contents(xor_rand() & 255));
 }
 
 
@@ -520,6 +536,21 @@ inline PLF_FORCE_INLINE unsigned int container_iterate(const plf::indexed_vector
 	return static_cast<unsigned int>((the_container.get(the_iterator)).number);
 }
 
+
+
+
+
+inline PLF_FORCE_INLINE unsigned int container_iterate(const plf::packed_deque<small_struct> &the_container, const typename plf::packed_deque<small_struct>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->element.number);
+}
+
+
+
+inline PLF_FORCE_INLINE unsigned int container_iterate(const plf::packed_deque<large_struct> &the_container, const typename plf::packed_deque<large_struct>::iterator &the_iterator)
+{
+	return static_cast<unsigned int>(the_iterator->element.number);
+}
 
 
 
@@ -1306,13 +1337,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(number_of_elements) < number_of_modifications)
+				if (rand_within(number_of_elements) >= number_of_modifications)
 				{
-					container_erase(container, current_element);
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
 				}
 			}
 
@@ -1349,13 +1380,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(number_of_elements) < number_of_modifications)
+				if (rand_within(number_of_elements) >= number_of_modifications)
 				{
-					container_erase(container, current_element);
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
 				}
 			}
 
@@ -1424,13 +1455,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) < erasure_percent_expanded)
+				if ((xor_rand() & 127) >= erasure_percent_expanded)
 				{
-					container_erase(container, current_element);
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
 				}
 			}
 
@@ -1468,13 +1499,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) < erasure_percent_expanded)
+				if ((xor_rand() & 127) >= erasure_percent_expanded)
 				{
-					container_erase(container, current_element);
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
 				}
 			}
 
@@ -1544,14 +1575,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) >= comparison_percentage)
 				{
-					container_erase(container, current_element);
-					++num_erasures;
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
+					++num_erasures;
 				}
 			}
 
@@ -1590,14 +1621,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) >= comparison_percentage)
 				{
-					container_erase(container, current_element);
-					++num_erasures;
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
+					++num_erasures;
 				}
 			}
 
@@ -1648,14 +1679,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(co
 			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) >= comparison_percentage)
 				{
-					container_erase(container, current_element);
-					++num_erasures;
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
+					++num_erasures;
 				}
 			}
 
@@ -1670,7 +1701,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(co
 			}
 		}
 
-		end_approximate_memory_use += container.approximate_memory_use();
+		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
 	}
 
 	end_approximate_memory_use /= dump_run_end;
@@ -1699,14 +1730,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(co
 			
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{ // substituting bitwise-and for modulo for speed:
-				if ((xor_rand() & 16777215) < comparison_percentage)
+				if ((xor_rand() & 16777215) >= comparison_percentage)
 				{
-					container_erase(container, current_element);
-					++num_erasures;
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
+					++num_erasures;
 				}
 			}
 
@@ -1758,13 +1789,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(number_of_elements) < number_of_modifications)
+				if (rand_within(number_of_elements) >= number_of_modifications)
 				{
-					container_erase(container, current_element);
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
 				}
 			}
 
@@ -1803,13 +1834,13 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if (rand_within(number_of_elements) < number_of_modifications)
+				if (rand_within(number_of_elements) >= number_of_modifications)
 				{
-					container_erase(container, current_element);
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
 				}
 			}
 
@@ -1882,14 +1913,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) < erasure_percent_expanded)
+				if ((xor_rand() & 127) >= erasure_percent_expanded)
 				{
-					container_erase(container, current_element);
-					++num_erasures;
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
+					++num_erasures;
 				}
 			}
 
@@ -1904,7 +1935,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 			}
 		}
 		
-		end_approximate_memory_use += container.approximate_memory_use();
+		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
 	}
 
 	end_approximate_memory_use /= ((number_of_runs / 10) + 1) + 1;
@@ -1933,14 +1964,14 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) < erasure_percent_expanded)
+				if ((xor_rand() & 127) >= erasure_percent_expanded)
 				{
-					container_erase(container, current_element);
-					++num_erasures;
+					total += container_iterate(container, current_element++);
 				}
 				else
 				{
-					total += container_iterate(container, current_element++);
+					container_erase(container, current_element);
+					++num_erasures;
 				}
 			}
 
@@ -2024,7 +2055,11 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if ((xor_rand() & 127) < erasure_percent_expanded)
+			if ((xor_rand() & 127) >= erasure_percent_expanded)
+			{
+				++current_element;
+			}
+			else
 			{
 				container_erase(container, current_element);
 
@@ -2032,10 +2067,6 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 				{
 					break;
 				}
-			}
-			else
-			{
-				++current_element;
 			}
 		}
 		
@@ -2093,7 +2124,11 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if ((xor_rand() & 127) < erasure_percent_expanded)
+			if ((xor_rand() & 127) >= erasure_percent_expanded)
+			{
+				++current_element;
+			}
+			else
 			{
 				container_erase(container, current_element);
 
@@ -2101,10 +2136,6 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 				{
 					break;
 				}
-			}
-			else
-			{
-				++current_element;
 			}
 		}
 		
@@ -2167,7 +2198,11 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) < erasure_percent_expanded)
+				if ((xor_rand() & 127) >= erasure_percent_expanded)
+				{
+					++current_element;
+				}
+				else
 				{
 					container_erase(container, current_element);
 
@@ -2175,10 +2210,6 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 					{
 						break;
 					}
-				}
-				else
-				{
-					++current_element;
 				}
 			}
 			
@@ -2267,7 +2298,11 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if ((xor_rand() & 127) < erasure_percent_expanded)
+			if ((xor_rand() & 127) >= erasure_percent_expanded)
+			{
+				++current_element;
+			}
+			else
 			{
 				container_erase(container, current_element);
 
@@ -2275,10 +2310,6 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 				{
 					break;
 				}
-			}
-			else
-			{
-				++current_element;
 			}
 		}
 		
@@ -2338,7 +2369,11 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 	
 		for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 		{
-			if ((xor_rand() & 127) < erasure_percent_expanded)
+			if ((xor_rand() & 127) >= erasure_percent_expanded)
+			{
+				++current_element;
+			}
+			else
 			{
 				container_erase(container, current_element);
 
@@ -2346,10 +2381,6 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 				{
 					break;
 				}
-			}
-			else
-			{
-				++current_element;
 			}
 		}
 		
@@ -2415,7 +2446,11 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) < erasure_percent_expanded)
+				if ((xor_rand() & 127) >= erasure_percent_expanded)
+				{
+					++current_element;
+				}
+				else
 				{
 					container_erase(container, current_element);
 
@@ -2423,10 +2458,6 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 					{
 						break;
 					}
-				}
-				else
-				{
-					++current_element;
 				}
 			}
 			
@@ -2516,7 +2547,7 @@ inline PLF_FORCE_INLINE void benchmark_range(const unsigned int min_number_of_el
 
 
 template <class container_type>
-inline void benchmark_range_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (min_number_of_elements > 1);
@@ -2553,7 +2584,7 @@ inline void benchmark_range_remove_if(const unsigned int min_number_of_elements,
 
 
 template <class container_type>
-inline void benchmark_range_remove_if_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_remove_if_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (min_number_of_elements > 1);
@@ -2590,7 +2621,7 @@ inline void benchmark_range_remove_if_reinsertion(const unsigned int min_number_
 
 
 template <class container_type>
-inline void benchmark_range_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_reinsertion(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
 {
 	assert (erasure_percentage < 100); // Ie. lower than 100%
 	assert (min_number_of_elements > 1);
@@ -2687,7 +2718,7 @@ inline PLF_FORCE_INLINE void benchmark_erasure_range_reinsertion(const unsigned 
 
 
 template <class container_type>
-inline void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
+void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
 {
 	if (output_csv)
 	{
@@ -2715,7 +2746,7 @@ inline void benchmark_range_stack(const unsigned int min_number_of_elements, con
 
 
 template <class container_type>
-inline void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
 {
 	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
@@ -2746,7 +2777,7 @@ inline void benchmark_range_general_use(const unsigned int min_number_of_element
 
 
 template <class container_type>
-inline void benchmark_range_general_use_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2777,7 +2808,7 @@ inline void benchmark_range_general_use_percentage(const unsigned int min_number
 
 
 template <class container_type>
-inline void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2808,7 +2839,7 @@ inline void benchmark_range_general_use_small_percentage(const unsigned int min_
 
 
 template <class container_type>
-inline void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2839,7 +2870,7 @@ inline void benchmark_range_general_use_remove_if_small_percentage(const unsigne
 
 
 template <class container_type>
-inline void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
 {
 	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
@@ -2871,7 +2902,7 @@ inline void benchmark_range_general_use_remove_if(const unsigned int min_number_
 
 
 template <class container_type>
-inline void benchmark_range_general_use_remove_if_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_remove_if_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
 {
 	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
@@ -2902,7 +2933,935 @@ inline void benchmark_range_general_use_remove_if_percentage(const unsigned int 
 
 
 
-// Utility function:
+// Referencer functions:
+
+struct component1;
+struct component2;
+struct referencer;
+
+
+struct entity
+{
+	plf::packed_deque<component1>::handle comp1_handle;
+	plf::packed_deque<component2>::handle comp2_handle;
+	plf::packed_deque<referencer>::handle referencer_handle;
+
+	double *empty_field_1;
+	double unused_number;
+	unsigned int empty_field2;
+	double *empty_field_3;
+	double number;
+	unsigned int empty_field_4;
+
+	entity(): empty_field_1(NULL), unused_number(0), empty_field2(0), empty_field_3(NULL), number(0), empty_field_4(0) {};
+};
+
+
+
+
+struct component1
+{
+	int numbers[100];
+	char a_string[50];
+	double unused_number;
+	double number;
+	double *empty_field_1;
+	double *empty_field_2;
+	unsigned int empty_field_3;
+	unsigned int empty_field_4;
+
+	component1(): unused_number(0), number(0), empty_field_1(NULL), empty_field_2(NULL), empty_field_3(0), empty_field_4(0) {};
+};
+
+
+
+
+struct component2
+{
+	double unused_number;
+	double number;
+	unsigned int empty_field_3;
+	unsigned int empty_field_4;
+
+	component2(): unused_number(0), number(0), empty_field_3(0), empty_field_4(0)  {};
+};
+
+
+
+struct referencer
+{
+	plf::packed_deque<entity>::handle entity_handle;
+	unsigned int x, y, w, h;
+
+	referencer(): x(0), y(0), w(0), h(0) {};
+};
+
+
+
+
+struct component1_colony;
+struct component2_colony;
+struct referencer_colony;
+
+
+struct entity_colony
+{
+	component1_colony *comp1_handle;
+	component2_colony *comp2_handle;
+	referencer_colony *referencer_handle;
+	double *empty_field_1;
+	double unused_number;
+	unsigned int empty_field2;
+	double *empty_field_3;
+	double number;
+	unsigned int empty_field_4;
+
+	entity_colony(): empty_field_1(NULL), unused_number(0), empty_field2(0), empty_field_3(NULL), number(0), empty_field_4(0) {};
+};
+
+
+
+
+struct component1_colony
+{
+	int numbers[100];
+	char a_string[50];
+	double unused_number;
+	double number;
+	double *empty_field_1;
+	double *empty_field_2;
+	unsigned int empty_field_3;
+	unsigned int empty_field_4;
+
+	component1_colony(): unused_number(0), number(0), empty_field_1(NULL), empty_field_2(NULL), empty_field_3(0), empty_field_4(0) {};
+};
+
+
+
+
+struct component2_colony
+{
+	double unused_number;
+	double number;
+	unsigned int empty_field_3;
+	unsigned int empty_field_4;
+
+	component2_colony(): unused_number(0), number(0), empty_field_3(0), empty_field_4(0) {};
+};
+
+
+
+struct referencer_colony
+{
+	entity_colony *entity_handle;
+
+	unsigned int x, y, w, h;
+	referencer_colony(): x(0), y(0), w(0), h(0) {};
+};
+
+
+
+
+
+inline PLF_FORCE_INLINE void benchmark_referencer_percentage_colony(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage)
+{
+	const unsigned int total_number_of_insertions = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
+
+	double total = 0;
+	unsigned int end_approximate_memory_use = 0;
+	plf::nanotimer full_time;
+	full_time.start();
+
+	entity_colony temp_entity;
+	component1_colony temp_comp1;
+	component2_colony temp_comp2;
+	referencer_colony temp_referencer;
+
+
+	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	{
+		plf::colony<entity_colony> entities;
+		plf::colony<component1_colony> comp1s;
+		plf::colony<component2_colony> comp2s;
+		plf::colony<referencer_colony> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+			temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+			temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+			temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			for (plf::colony<entity_colony>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					total += current_entity_package->number + current_entity_package->comp1_handle->number + current_entity_package->comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_entity_package->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_entity_package->comp2_handle));
+					collisions.erase(collisions.get_iterator_from_pointer(current_entity_package->referencer_handle));
+					current_entity_package = entities.erase(current_entity_package);
+				}
+			}
+
+			for (plf::colony<referencer_colony>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp2_handle));
+					entities.erase(entities.get_iterator_from_pointer(current_referencer_package->entity_handle));
+					current_referencer_package = collisions.erase(current_referencer_package);
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+				temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+				temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+				temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+			}
+		}
+
+		end_approximate_memory_use += entities.approximate_memory_use() + comp1s.approximate_memory_use() + comp2s.approximate_memory_use() + collisions.approximate_memory_use();
+	}
+
+	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+
+
+	full_time.start();
+
+	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
+	{
+		plf::colony<entity_colony> entities;
+		plf::colony<component1_colony> comp1s;
+		plf::colony<component2_colony> comp2s;
+		plf::colony<referencer_colony> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+			temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+			temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+			temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			for (plf::colony<entity_colony>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					total += current_entity_package->number + current_entity_package->comp1_handle->number + current_entity_package->comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_entity_package->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_entity_package->comp2_handle));
+					collisions.erase(collisions.get_iterator_from_pointer(current_entity_package->referencer_handle));
+					current_entity_package = entities.erase(current_entity_package);
+				}
+			}
+
+
+			for (plf::colony<referencer_colony>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp2_handle));
+					entities.erase(entities.get_iterator_from_pointer(current_referencer_package->entity_handle));
+					current_referencer_package = collisions.erase(current_referencer_package);
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+				temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+				temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+				temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+			}
+		}
+	}
+
+	const double total_time = full_time.get_elapsed_us();
+
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
+	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+}
+
+
+
+
+void benchmark_range_referencer_percentage_colony(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition)
+{
+	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
+	{
+		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
+
+		std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
+
+		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
+		{
+			std::cout << number_of_elements;
+			benchmark_referencer_percentage_colony(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage);
+		}
+
+		std::cout << "\n,,,\n,,,\n";
+	}
+}
+
+
+
+
+
+inline PLF_FORCE_INLINE void benchmark_referencer_small_percentage_colony(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage)
+{
+	assert (number_of_elements > 1);
+
+	const unsigned int comparison_percentage = static_cast<unsigned int>((erasure_percentage * 167772.16) + 0.5);
+
+	double total = 0;
+	unsigned int end_approximate_memory_use = 0;
+	plf::nanotimer full_time;
+	full_time.start();
+
+	unsigned int num_erasures;
+	entity_colony temp_entity;
+	component1_colony temp_comp1;
+	component2_colony temp_comp2;
+	referencer_colony temp_referencer;
+
+
+	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	{
+		plf::colony<entity_colony> entities;
+		plf::colony<component1_colony> comp1s;
+		plf::colony<component2_colony> comp2s;
+		plf::colony<referencer_colony> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+			temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+			temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+			temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			num_erasures = 0;
+			
+			for (plf::colony<entity_colony>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					total += current_entity_package->number + current_entity_package->comp1_handle->number + current_entity_package->comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_entity_package->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_entity_package->comp2_handle));
+					collisions.erase(collisions.get_iterator_from_pointer(current_entity_package->referencer_handle));
+					current_entity_package = entities.erase(current_entity_package);
+					++num_erasures;
+				}
+			}
+
+			for (plf::colony<referencer_colony>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp2_handle));
+					entities.erase(entities.get_iterator_from_pointer(current_referencer_package->entity_handle));
+					current_referencer_package = collisions.erase(current_referencer_package);
+					++num_erasures;
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != num_erasures; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+				temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+				temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+				temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+			}
+		}
+
+		end_approximate_memory_use += entities.approximate_memory_use() + comp1s.approximate_memory_use() + comp2s.approximate_memory_use() + collisions.approximate_memory_use();
+	}
+
+	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+
+
+	full_time.start();
+
+	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
+	{
+		plf::colony<entity_colony> entities;
+		plf::colony<component1_colony> comp1s;
+		plf::colony<component2_colony> comp2s;
+		plf::colony<referencer_colony> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+			temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+			temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+			temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			num_erasures = 0;
+			
+			for (plf::colony<entity_colony>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					total += current_entity_package->number + current_entity_package->comp1_handle->number + current_entity_package->comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_entity_package->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_entity_package->comp2_handle));
+					collisions.erase(collisions.get_iterator_from_pointer(current_entity_package->referencer_handle));
+					current_entity_package = entities.erase(current_entity_package);
+					++num_erasures;
+				}
+			}
+
+			for (plf::colony<referencer_colony>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(comp1s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp1_handle));
+					comp2s.erase(comp2s.get_iterator_from_pointer(current_referencer_package->entity_handle->comp2_handle));
+					entities.erase(entities.get_iterator_from_pointer(current_referencer_package->entity_handle));
+					current_referencer_package = collisions.erase(current_referencer_package);
+					++num_erasures;
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != num_erasures; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = &*(entities.insert(temp_entity));
+				temp_referencer.entity_handle->comp1_handle = &*(comp1s.insert(temp_comp1));
+				temp_referencer.entity_handle->comp2_handle = &*(comp2s.insert(temp_comp2));
+				temp_referencer.entity_handle->referencer_handle = &*(collisions.insert(temp_referencer));
+			}
+		}
+	}
+
+	const double total_time = full_time.get_elapsed_us();
+
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
+	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+}
+
+
+
+
+void benchmark_range_referencer_small_percentage_colony(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition)
+{
+	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
+	{
+		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
+		std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
+
+		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
+		{
+			std::cout << number_of_elements;
+			benchmark_referencer_small_percentage_colony(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage);
+		}
+
+		std::cout << "\n,,,\n,,,\n";
+	}
+}
+
+
+
+
+
+
+inline PLF_FORCE_INLINE void benchmark_referencer_percentage_packed_deque(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage)
+{
+	assert (number_of_elements > 1);
+
+	const unsigned int total_number_of_insertions = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
+	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
+
+	double total = 0;
+	unsigned int end_approximate_memory_use = 0;
+	plf::nanotimer full_time;
+	full_time.start();
+
+	entity temp_entity;
+	component1 temp_comp1;
+	component2 temp_comp2;
+	referencer temp_referencer;
+
+
+	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	{
+		plf::packed_deque<entity> entities;
+		plf::packed_deque<component1> comp1s;
+		plf::packed_deque<component2> comp2s;
+		plf::packed_deque<referencer> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = entities.insert(temp_entity);
+			temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+			temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+			temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			for (plf::packed_deque<entity>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					total += current_entity_package->element.number + current_entity_package->element.comp1_handle->number + current_entity_package->element.comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(current_entity_package->element.comp1_handle);
+					comp2s.erase(current_entity_package->element.comp2_handle);
+					collisions.erase(current_entity_package->element.referencer_handle);
+					current_entity_package = entities.erase(current_entity_package);
+				}
+			}
+
+			for (plf::packed_deque<referencer>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(current_referencer_package->element.entity_handle->comp1_handle);
+					comp2s.erase(current_referencer_package->element.entity_handle->comp2_handle);
+					entities.erase(current_referencer_package->element.entity_handle);
+					current_referencer_package = collisions.erase(current_referencer_package);
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = entities.insert(temp_entity);
+				temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+				temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+				temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+			}
+		}
+
+		end_approximate_memory_use += entities.approximate_memory_use() + comp1s.approximate_memory_use() + comp2s.approximate_memory_use() + collisions.approximate_memory_use();
+	}
+
+	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+
+
+	full_time.start();
+
+	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
+	{
+		plf::packed_deque<entity> entities;
+		plf::packed_deque<component1> comp1s;
+		plf::packed_deque<component2> comp2s;
+		plf::packed_deque<referencer> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = entities.insert(temp_entity);
+			temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+			temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+			temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			for (plf::packed_deque<entity>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					total += current_entity_package->element.number + current_entity_package->element.comp1_handle->number + current_entity_package->element.comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(current_entity_package->element.comp1_handle);
+					comp2s.erase(current_entity_package->element.comp2_handle);
+					collisions.erase(current_entity_package->element.referencer_handle);
+					current_entity_package = entities.erase(current_entity_package);
+				}
+			}
+
+
+			for (plf::packed_deque<referencer>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 255) >= erasure_percent_expanded)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(current_referencer_package->element.entity_handle->comp1_handle);
+					comp2s.erase(current_referencer_package->element.entity_handle->comp2_handle);
+					entities.erase(current_referencer_package->element.entity_handle);
+					current_referencer_package = collisions.erase(current_referencer_package);
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != total_number_of_insertions; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = entities.insert(temp_entity);
+				temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+				temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+				temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+			}
+		}
+	}
+
+	const double total_time = full_time.get_elapsed_us();
+
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
+	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+}
+
+
+
+
+void benchmark_range_referencer_percentage_packed_deque(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition)
+{
+	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
+	{
+		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
+
+		std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
+
+		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
+		{
+			std::cout << number_of_elements;
+			benchmark_referencer_percentage_packed_deque(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage);
+		}
+
+		std::cout << "\n,,,\n,,,\n";
+	}
+}
+
+
+
+
+
+
+inline PLF_FORCE_INLINE void benchmark_referencer_small_percentage_packed_deque(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage)
+{
+	assert (number_of_elements > 1);
+
+	const unsigned int comparison_percentage = static_cast<unsigned int>((erasure_percentage * 167772.16) + 0.5);
+
+	unsigned int num_erasures;
+	unsigned int end_approximate_memory_use = 0;
+	double total = 0;
+	plf::nanotimer full_time;
+	full_time.start();
+
+	entity temp_entity;
+	component1 temp_comp1;
+	component2 temp_comp2;
+	referencer temp_referencer;
+
+
+	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	{
+		plf::packed_deque<entity> entities;
+		plf::packed_deque<component1> comp1s;
+		plf::packed_deque<component2> comp2s;
+		plf::packed_deque<referencer> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = entities.insert(temp_entity);
+			temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+			temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+			temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			num_erasures = 0;
+
+			for (plf::packed_deque<entity>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					total += current_entity_package->element.number + current_entity_package->element.comp1_handle->number + current_entity_package->element.comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(current_entity_package->element.comp1_handle);
+					comp2s.erase(current_entity_package->element.comp2_handle);
+					collisions.erase(current_entity_package->element.referencer_handle);
+					current_entity_package = entities.erase(current_entity_package);
+					++num_erasures;
+				}
+			}
+
+			for (plf::packed_deque<referencer>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(current_referencer_package->element.entity_handle->comp1_handle);
+					comp2s.erase(current_referencer_package->element.entity_handle->comp2_handle);
+					entities.erase(current_referencer_package->element.entity_handle);
+					current_referencer_package = collisions.erase(current_referencer_package);
+					++num_erasures;
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != num_erasures; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = entities.insert(temp_entity);
+				temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+				temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+				temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+			}
+		}
+
+		end_approximate_memory_use += entities.approximate_memory_use() + comp1s.approximate_memory_use() + comp2s.approximate_memory_use() + collisions.approximate_memory_use();
+	}
+
+	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+
+	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+
+
+	full_time.start();
+
+	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
+	{
+		plf::packed_deque<entity> entities;
+		plf::packed_deque<component1> comp1s;
+		plf::packed_deque<component2> comp2s;
+		plf::packed_deque<referencer> collisions;
+
+		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
+		{
+			temp_entity.number = xor_rand() & 255;
+			temp_comp1.number = xor_rand() & 255;
+			temp_comp2.number = xor_rand() & 255;
+
+			temp_referencer.entity_handle = entities.insert(temp_entity);
+			temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+			temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+			temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+		}
+
+
+		for (unsigned int cycle = 0; cycle != number_of_cycles; ++cycle)
+		{
+			num_erasures = 0;
+
+			for (plf::packed_deque<entity>::iterator current_entity_package = entities.begin(); current_entity_package != entities.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					total += current_entity_package->element.number + current_entity_package->element.comp1_handle->number + current_entity_package->element.comp2_handle->number;
+					++current_entity_package;
+				}
+				else
+				{
+					comp1s.erase(current_entity_package->element.comp1_handle);
+					comp2s.erase(current_entity_package->element.comp2_handle);
+					collisions.erase(current_entity_package->element.referencer_handle);
+					current_entity_package = entities.erase(current_entity_package);
+					++num_erasures;
+				}
+			}
+
+			for (plf::packed_deque<referencer>::iterator current_referencer_package = collisions.begin(); current_referencer_package != collisions.end();)
+			{
+				if ((xor_rand() & 16777215) >= comparison_percentage)
+				{
+					++current_referencer_package;
+				}
+				else
+				{
+					comp1s.erase(current_referencer_package->element.entity_handle->comp1_handle);
+					comp2s.erase(current_referencer_package->element.entity_handle->comp2_handle);
+					entities.erase(current_referencer_package->element.entity_handle);
+					current_referencer_package = collisions.erase(current_referencer_package);
+					++num_erasures;
+				}
+			}
+
+
+			for (unsigned int number_of_insertions = 0; number_of_insertions != num_erasures; ++number_of_insertions)
+			{
+				temp_entity.number = xor_rand() & 255;
+				temp_comp1.number = xor_rand() & 255;
+				temp_comp2.number = xor_rand() & 255;
+
+				temp_referencer.entity_handle = entities.insert(temp_entity);
+				temp_referencer.entity_handle->comp1_handle = comp1s.insert(temp_comp1);
+				temp_referencer.entity_handle->comp2_handle = comp2s.insert(temp_comp2);
+				temp_referencer.entity_handle->referencer_handle = collisions.insert(temp_referencer);
+			}
+		}
+	}
+
+	const double total_time = full_time.get_elapsed_us();
+
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
+	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
+}
+
+
+
+
+void benchmark_range_referencer_small_percentage_packed_deque(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition)
+{
+	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
+	{
+		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
+		std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
+
+		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
+		{
+			std::cout << number_of_elements;
+
+			benchmark_referencer_small_percentage_packed_deque(number_of_elements, 100000 / number_of_elements, number_of_cycles, erasure_percentage);
+		}
+
+		std::cout << "\n,,,\n,,,\n";
+	}
+}
+
+
+
+
+
+
+
+
+
+// Utility functions:
+
 inline PLF_FORCE_INLINE void output_to_csv_file(char *filename)
 {
 	freopen("errors.log","w", stderr);

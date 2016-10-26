@@ -239,7 +239,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_16-10-2016.zip">here</a> (26kb zip file) or
+<p>Download <a href="plf_colony_27-10-2016.zip">here</a> (26kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -248,7 +248,7 @@ command. The package includes the plf::stack .h file, which is used internally
 by plf::colony.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_14-10-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_27-10-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -1744,6 +1744,9 @@ programming.</font> </p>
         iterators and pointers to a colony element can become invalidated.</li>
     </ol>
   </li>
+  <li><h4>Am I better off storing iterators or pointers to colony elements?</h4>
+    <p>My testing so far indicates that storing pointers and then using <code>get_iterator_from_pointer()</code> when or if you need to do an erase operation on the element being pointed to, is more performant than storing iterators and performing erase directly on the iterator.</p>
+  </li>
   <li><h4>Any special-case uses?</h4>
     <p>In the special case where many, many elements are being continually
     erased/inserted in realtime, you might want to experiment with limiting the
@@ -1889,7 +1892,7 @@ If there are multiple empty groups in a row, ++ iteration essentially becomes O(
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-10-16: v3.78 - Further optimization.</li>
+  <li>2016-10-27: v3.80 - Further optimizations. Removed a potential memory leak which would only occur upon exception-based state rollback within insert functions. Update to benchmark suite, addition of packed_deque container and associated tests.</li>
   <li>2016-10-15: v3.76 - Removed potential memory leak in internal stack mechanism.</li>
   <li>2016-10-14: v3.75 - Added get_index_from_reverse_iterator(). Further optimization (and one minor correction) of the reduced_stack storage mechanism , leading to an 8% performance increase in general_use benchmarks for small structs. Additional minor optimization for C++03. Some code comment tidyup.</li>
   <li>2016-10-10: v3.73 - change_group_size functions no longer copy-construct into a new colony unless the stack is not empty, and either min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. Correction to change_group_sizes code (was clearing erased locations unnecessarily). Reinitialize function added, which supports the changing of group sizes for colonies of non-copy-constructible element types. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with colony (example: anything containing a std::mutex). Minor correction to colony test suite under C++03.</li>
