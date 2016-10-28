@@ -17,10 +17,10 @@ enum class inplace_function_operation
 };
 
 template <typename SignatureT, size_t CapacityT = InplaceFunctionDefaultCapacity, size_t AlignmentT = InplaceFunctionDefaultAlignment>
-class inplace_function;
+class alignas(AlignmentT) inplace_function;
 
 template <typename RetT, typename... ArgsT, size_t CapacityT, size_t AlignmentT>
-class inplace_function<RetT(ArgsT...), CapacityT, AlignmentT>
+class alignas(AlignmentT) inplace_function<RetT(ArgsT...), CapacityT, AlignmentT>
 {
 public:
 	template <typename SignatureT2, std::size_t CapacityT2, std::size_t AlignmentT2>
