@@ -63,32 +63,29 @@
 
 
 
-void title1(const char *title_text)
+namespace
 {
-	std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
-	std::cout << "===========================================" << std::endl << std::endl << std::endl;
-}
-
-void title2(const char *title_text)
-{
-	std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
-}
-
-
-void failpass(const char *test_type, bool condition)
-{
-	std::cout << test_type << ": ";
-
-	if (condition)
-	{
-		std::cout << "Pass" << std::endl;
-	}
-	else
-	{
-		std::cout << "Fail" << std::endl;
-		std::cin.get();
-		abort();
-	}
+    void title1(const char *title_text)
+    {
+        std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
+        std::cout << "===========================================" << std::endl << std::endl << std::endl;
+    }
+    
+    void failpass(const char *test_type, bool condition)
+    {
+        std::cout << test_type << ": ";
+        
+        if (condition)
+        {
+            std::cout << "Pass" << std::endl;
+        }
+        else
+        {
+            std::cout << "Fail" << std::endl;
+            std::cin.get();
+            abort();
+        }
+    }
 }
 
 
@@ -221,8 +218,6 @@ void plf_stack_test_suite()
 
 	title1("Test Suite PASS - Press ENTER to Exit");
 	cin.get();
-
-	return 0;
 }
 
 }

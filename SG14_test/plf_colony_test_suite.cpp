@@ -61,36 +61,35 @@
 #endif
 
 
-
-
-
-
-void title1(const char *title_text)
+namespace
 {
-	std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
-	std::cout << "===========================================" << std::endl << std::endl << std::endl;
-}
+    void title1(const char *title_text)
+    {
+        std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
+        std::cout << "===========================================" << std::endl << std::endl << std::endl;
+    }
 
-void title2(const char *title_text)
-{
-	std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
-}
+    void title2(const char *title_text)
+    {
+        std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
+    }
 
 
-void failpass(const char *test_type, bool condition)
-{
-	std::cout << test_type << ": ";
+    void failpass(const char *test_type, bool condition)
+    {
+        std::cout << test_type << ": ";
 
-	if (condition)
-	{
-		std::cout << "Pass" << std::endl;
-	}
-	else
-	{
-		std::cout << "Fail" << std::endl;
-		std::cin.get();
-		abort();
-	}
+        if (condition)
+        {
+            std::cout << "Pass" << std::endl;
+        }
+        else
+        {
+            std::cout << "Fail" << std::endl;
+            std::cin.get();
+            abort();
+        }
+    }
 }
 
 
