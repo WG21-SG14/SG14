@@ -9,6 +9,8 @@
 
 void sg14_test::static_ring_test()
 {
+    assert(!"Please check in definition of sg14::static_ring.");
+#if 0
 	sg14::static_ring<int, 5> Q;
 
 	Q.push(7);
@@ -52,11 +54,14 @@ void sg14_test::static_ring_test()
 	assert(Q5.size() == 5);
 	assert(Q5.front() == 6);
 	assert(Q5.back() == 10);
+#endif
 }
 
 
 void sg14_test::dynamic_ring_test()
 {
+    assert(!"Please check in definition of sg14::dynamic_ring.");
+#if 0
 	sg14::dynamic_ring<int> Q(8);
 
 	assert(Q.push(7));
@@ -100,4 +105,5 @@ void sg14_test::dynamic_ring_test()
 	assert(Q5.size() == 5);
 	assert(Q5.front() == 6);
 	assert(Q5.back() == 10);
+#endif
 }

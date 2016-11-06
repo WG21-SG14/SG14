@@ -167,7 +167,7 @@ sg14::ring_span<T, Popper>::ring_span(ContiguousIterator begin, ContiguousIterat
 
 template<typename T, class Popper>
 template<class ContiguousIterator>
-sg14::ring_span<T, Popper>::ring_span(ContiguousIterator begin, ContiguousIterator end, ContiguousIterator first, size_type size, Popper p = Popper()) noexcept
+sg14::ring_span<T, Popper>::ring_span(ContiguousIterator begin, ContiguousIterator end, ContiguousIterator first, size_type size, Popper p) noexcept
 	: m_data(&*begin)
 	, m_size(size)
 	, m_capacity(end - begin)
@@ -260,7 +260,7 @@ typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::
 }
 
 template<typename T, class Popper>
-template<bool b = true, typename = std::enable_if_t<b && std::is_copy_assignable<T>::value>>
+template<bool b, typename>
 void sg14::ring_span<T, Popper>::push_back(const T& value) noexcept(std::is_nothrow_copy_assignable<T>::value)
 {
 	m_data[back_idx()] = value;
@@ -268,7 +268,7 @@ void sg14::ring_span<T, Popper>::push_back(const T& value) noexcept(std::is_noth
 }
 
 template<typename T, class Popper>
-template<bool b = true, typename = std::enable_if_t<b && std::is_move_assignable<T>::value>>
+template<bool b, typename>
 void sg14::ring_span<T, Popper>::push_back(T&& value) noexcept(std::is_nothrow_move_assignable<T>::value)
 {
 	m_data[back_idx()] = std::move(value);
