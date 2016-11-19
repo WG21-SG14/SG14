@@ -59,11 +59,11 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_stack_15-10-2016.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
+<p>Download <a href="plf_stack_17-11-2016.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
 plf::stack is a simple .h header-only library, to be used with
 an #include command.</p>
 <p>If you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_14-10-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_16-11-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -409,22 +409,18 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
   </li>
 </ul>
 
-<h2><a id="benchmarks"></a>Benchmarks (out-of-date as of sept 2016)</h2>
+<h2><a id="benchmarks"></a>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 16-04-2016 v3.04</i></p>
+<p style="font-size: 75%"><i>Last updated 15-11-2016 v1.04</i></p>
 
 <p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1
 x64 as compiler. Build settings are
 "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft
-Visual Studio 2013 can be found <a href="stack_msvc_results.htm">here</a>.
+Visual Studio 2015 Update 3 can be found <a href="stack_benchmark_msvc_results.htm">here</a>.
 Tests are based on a sliding scale of number of runs vs number of elements, so
 a test with only 10 elements in a container may average 100000 runs, whereas a
 test with 100000 elements may only average 10 runs. This tends to give adequate
-results without overly lengthening test times. I have not included results
-involving 'reserve()' functions as the differences to overall insertion
-performance were not adequate. Reserve testing does not make significant sense
-for an extensible container, as the entire benefit of such is that we can adapt
-to situations where we do not know the total number of elements in advance.</p>
+results without overly lengthening test times.</p>
 
 <p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b)
 a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct
@@ -434,64 +430,125 @@ of chars. In order to better facilitate accurate time-keeping for short tests,
 both container construction and destruction times are included in the tests.
 The sequence is as follows: construction, push N elements, read (back) + pop
 all elements, destruction. Because unlike a regular container, a stack must be
-pushed for every pop, and popped for every read, it makes little sense to
-analyse these aspects of use separately, as what is most important is the
-overall time taken. For that reason (and for the sake of simplicity) only total
-time benchmarks are presented below, however the separate timings are <a
-href="stack_all_gcc_results.htm">here</a>, for anyone interested.</p>
-<img alt="test result graph" src="tests/gcc/stack/char_total_time.png"> <img
-alt="test result graph" src="tests/gcc/stack/char_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/int_total_time.png"> <img
-alt="test result graph" src="tests/gcc/stack/int_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/double_total_time.png"> <img
-alt="test result graph" src="tests/gcc/stack/double_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/small_struct_total_time.png">
+pushed for every pop, and popped for every read, it most sense to combine these two timings and compare on that basis, as what is most important is the
+overall time taken. For that reason both separate and combined ("total
+time") benchmarks are presented below.</p>
+
+<h2>Construction + Push</h2>
+                                                                       
+<p><i>Click images or hover over to see results at linear scale instead</i></p>
+<img alt="test result graph" 
+onmouseover="this.src='tests/gcc/stack/char_push.png';"
+onmouseout="this.src='tests/gcc/stack/char_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/char_push.png';"
+src="tests/gcc/stack/char_push_log.png"><br>
 <img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/int_push.png';"
+onmouseout="this.src='tests/gcc/stack/int_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/int_push.png';"
+src="tests/gcc/stack/int_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/double_push.png';"
+onmouseout="this.src='tests/gcc/stack/double_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/double_push.png';"
+src="tests/gcc/stack/double_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/small_struct_push.png';"
+onmouseout="this.src='tests/gcc/stack/small_struct_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/small_struct_push.png';"
+src="tests/gcc/stack/small_struct_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/large_struct_push.png';"
+onmouseout="this.src='tests/gcc/stack/large_struct_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/large_struct_push.png';"
+src="tests/gcc/stack/large_struct_push_log.png"><br>
+
+
+<h2>Back + Pop + Destruction</h2>
+
+<p><i>Click images or hover over to see results at linear scale instead</i></p>
+<img alt="test result graph" 
+onmouseover="this.src='tests/gcc/stack/char_pop.png';"
+onmouseout="this.src='tests/gcc/stack/char_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/char_pop.png';"
+src="tests/gcc/stack/char_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/int_pop.png';"
+onmouseout="this.src='tests/gcc/stack/int_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/int_pop.png';"
+src="tests/gcc/stack/int_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/double_pop.png';"
+onmouseout="this.src='tests/gcc/stack/double_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/double_pop.png';"
+src="tests/gcc/stack/double_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/small_struct_pop.png';"
+onmouseout="this.src='tests/gcc/stack/small_struct_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/small_struct_pop.png';"
+src="tests/gcc/stack/small_struct_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/large_struct_pop.png';"
+onmouseout="this.src='tests/gcc/stack/large_struct_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/large_struct_pop.png';"
+src="tests/gcc/stack/large_struct_pop_log.png"><br>
+
+
+<h2>Total Time</h2>
+
+<p><i>Click images or hover over to see results at linear scale instead</i></p>
+<img alt="test result graph" 
+onmouseover="this.src='tests/gcc/stack/char_total_time.png';"
+onmouseout="this.src='tests/gcc/stack/char_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/char_total_time.png';"
+src="tests/gcc/stack/char_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/int_total_time.png';"
+onmouseout="this.src='tests/gcc/stack/int_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/int_total_time.png';"
+src="tests/gcc/stack/int_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/double_total_time.png';"
+onmouseout="this.src='tests/gcc/stack/double_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/double_total_time.png';"
+src="tests/gcc/stack/double_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/small_struct_total_time.png';"
+onmouseout="this.src='tests/gcc/stack/small_struct_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/small_struct_total_time.png';"
 src="tests/gcc/stack/small_struct_total_time_log.png"><br>
-<img alt="test result graph" src="tests/gcc/stack/large_struct_total_time.png">
 <img alt="test result graph"
+onmouseover="this.src='tests/gcc/stack/large_struct_total_time.png';"
+onmouseout="this.src='tests/gcc/stack/large_struct_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/gcc/stack/large_struct_total_time.png';"
 src="tests/gcc/stack/large_struct_total_time_log.png"><br>
 
 
 <h4>Conclusion</h4>
 
 <p>Simply put, plf::stack out-performs both std::stack (std::deque) and
-std::vector, and we can see that the larger the stored type is, the greater the
-performance advantage is. For scalar types std::stack (std::deque) out-performs
-plf::stack when the number of elements is low (under 100 for double, under 1000
-for char). But in all other areas plf::stack dominates, and has a secondary
-advantage over std::vector in that pointers to it's elements (as obtained via
-back() after a push() operation) will not invalidate on subsequent pushes.
-std::vector will invalidate pointers to stack elements upon subsequent pushes,
-std::stack will not if it is wrapping a std::deque. The overall recommendation
-is to use plf::stack in all areas.</p>
-
-<p>plf::stack:<br>
-<font style="color: green">Advantages: Fastest general performance. Performance
-advantage increases with size of stored element. Pointers to stored elements
-never invalidate.</font><br>
-<font style="color: red">Disadvantages: None.</font> </p>
-
-<p>std::stack (wrapping std::deque):<br>
-<font style="color: green">Advantages: Fastest performance for scalar types
-when number of elements is between roughly 20 and 100-1000 (this last depends
-on size of type - 64-bit types will be closer to 100, 8-bit closer to 1000).
-Pointers to stored elements never invalidate.</font><br>
-<font style="color: red">Disadvantages: Lower performance with
-larger-than-scalar types (structs and classes) and in all other areas.
-std::stack is not guaranteed to be wrapping a std::deque depending on the
-implementation, and std::deque implementation structure is also
-compiler-dependent, so the above advantages will not apply generically.</font>
-</p>
-
-<p>std::vector:<br>
-<font style="color: green">Advantages: None.</font><br>
-<font style="color: red">Disadvantages: Slower than other methods. Invalidates
-pointers to stored elements on subsequent pushes.</font> </p>
-<br>
+std::vector once you take into account both push and pop time, and we can see that the larger the stored type is, the greater the
+performance advantage is.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-11-17: v1.05 - Improvement in performance for smaller numbers of scalar types.</li>
+  <li>2016-11-13: v1.04 - Minor update.</li>
   <li>2016-10-15: v1.03 - Removed potential memory leak in clear, move and destructor.</li>
   <li>2016-10-14: v1.02 - Corrections to move assignment operator, trim_trailing_groups, emplace, change_group_sizes and test_suite.</li>
   <li>2016-10-10: v1.01 - change_group_size functions no longer copy-construct groups into a new stack unless the stack is not empty and either min_group_size is larger than the smallest group in the stack, or max_group_size is smaller than the largest group in the stack. All change_group_size functions now trim trailing groups. Emplace changed to no longer require move semantics, which enables the use of non-move-constructible/non-copy-constructible types with stack (example: anything containing a std::mutex).</li>

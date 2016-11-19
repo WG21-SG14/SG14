@@ -1,7 +1,4 @@
 #include <iostream>
-#include <cstdio> // log redirection
-#include <cstdlib> // rand
-#include <ctime> // timer
 
 #include "plf_stack.h"
 
@@ -95,14 +92,6 @@ namespace sg14_test
 
 void plf_stack_test_suite()
 {
-	freopen("error.log","w", stderr);
-
-	{
-		time_t timer;
-		time(&timer);
-		srand((unsigned int)timer); // Note: using random numbers to avoid CPU prediction
-	}
-
 	using namespace std;
 	using namespace plf;
 
@@ -174,7 +163,7 @@ void plf_stack_test_suite()
 
 			do
 			{
-				if (rand() % 5 == 0)
+				if ((xor_rand() & 3) == 0)
 				{
 					i_stack.push(10);
 				}

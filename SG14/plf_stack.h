@@ -1,5 +1,22 @@
 // Copyright (c) 2016, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
+// This software is provided 'as-is', without any express or implied
+// warranty. In no event will the authors be held liable for any damages
+// arising from the use of this software.
+// 
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+// 
+// 1. The origin of this software must not be misrepresented; you must not
+//    claim that you wrote the original software. If you use this software
+//    in a product, an acknowledgement in the product documentation would be
+//    appreciated but is not required.
+// 2. Altered source versions must be plainly marked as such, and must not be
+//    misrepresented as being the original software.
+// 3. This notice may not be removed or altered from any source distribution.
+
+
 #ifndef PLF_STACK_H
 #define PLF_STACK_H
 
@@ -198,7 +215,7 @@ public:
 		start_element(NULL),
 		end_element(NULL),
 		total_number_of_elements(0),
-		min_elements_per_group(8),
+		min_elements_per_group((sizeof(element_type) * 8 > (sizeof(*this) + sizeof(group)) * 2) ? 8 : (((sizeof(*this) + sizeof(group)) * 2) / sizeof(element_type)) + 1),
 		group_allocator_pair(std::numeric_limits<size_type>::max() / 2)
 	{
 		assert(min_elements_per_group > 2);
@@ -678,7 +695,7 @@ public:
 			--top_element;
 		}
 		else
-		{ // ie. is start element, but not first group in stack (if it were, totalsize would be 0 after decrement)
+		{ // ie. is start element, but not first group in stack (if it were, total_number_of_elements would be 0 after decrement)
 			current_group = current_group->previous_group;
 			start_element = current_group->elements;
 			end_element = top_element = current_group->end;
@@ -739,7 +756,7 @@ public:
 
 
 	
-	inline size_type size() const PLF_STACK_NOEXCEPT
+	inline PLF_STACK_FORCE_INLINE size_type size() const PLF_STACK_NOEXCEPT
 	{
 		return total_number_of_elements;
 	}

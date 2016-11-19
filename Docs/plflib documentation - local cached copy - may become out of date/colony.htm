@@ -27,7 +27,7 @@
 
 <h2><a id="intro"></a>Introduction</h2>
 
-<p>A colony is a C++ template-based unordered data container which provides
+<p>A colony is the highest-performance C++ template-based data container for high-modification scenarios with unordered data. Specifically it provides
 better performance than other std:: library containers when:</p>
 <ol type="a">
   <li>Insertion order is unimportant,</li>
@@ -255,7 +255,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_01-11-2016.zip">here</a> (26kb zip file) or
+<p>Download <a href="plf_colony_19-11-2016.zip">here</a> (26kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -263,7 +263,7 @@ The colony library is a simple .h header file, to be included with a #include
 command.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_01-11-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_16-11-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -959,7 +959,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     iterator using this method and then erasing, is about 20% slower on average
     than erasing when you already have the iterator. This is less dramatic than
     it sounds, as it is still faster than all std:: container erasure times
-    except std::list, which it is roughly equal to. However this is generally a
+  	which it is roughly equal to. However this is generally a
     slower, lookup-based operation. If the lookup doesn't find a non-erased
     element based on that pointer, it returns <code>end()</code>. Otherwise it
     returns an iterator pointing to the element in question. Example:</p>
@@ -1071,7 +1071,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
 
 <h2><a id="benchmarks"></a>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 4-11-2016 v3.81</i></p>
+<p style="font-size: 75%"><i>Last updated 19-11-2016 v3.86</i></p>
 <ol>
   <li><a href="#testsetup">Test setup</a></li>
   <li><a href="#testdesign">Tests design</a></li>
@@ -1081,7 +1081,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     (against modified standard containers)</a></li>
   <li><a href="#lowmodification">Low-modification scenario test</a></li>
   <li><a href="#highmodification">High-modification scenario test</a></li>
-  <li><a href="#heavyreferencing">Heavy-referencing scenario test</a></li>
+  <li><a href="#heavyreferencing">Referencing scenario test</a></li>
   <li><a href="#overall">Overall performance conclusions</a></li>
 </ol>
 
@@ -1107,7 +1107,7 @@ functions as the differences to overall insertion performance were not
 adequate.</p>
 
 <p><b>Insertion:</b> is into empty containers for the raw and comparitive
-tests, entering single elements at a time. For the 'real world simulation'
+tests, entering single elements at a time. For the 'scenario'
 tests there is also ongoing insertion at random intervals. This matches the use
 case of colony, where insertion on-the-fly is expected to be one of the driving
 factors of usage. Insertion is always at the most performant location for the
@@ -1182,9 +1182,9 @@ src="tests/gcc/colony/raw/large_struct_insertion_log.png"><br>
 insertion:<br>
 std::deque dominates insertion, with plf::colony equal after about 100
 elements, but then for large structs it's performance completely eclipses
-std::deque. This is because libstdc++'s implementation of deque caps mmemory
+std::deque. This is because libstdc++'s implementation of deque caps the memory
 block size at 512 bytes, whereas the large struct in question is ~506 bytes
-(depending on platform), meaning it becomes a std::list but with additional
+(depending on platform), meaning it, essentially, becomes a std::list but with additional
 overheads. Colony avoids this downfall due to it's memory allocation pattern of
 basing memory block sizes on fixed numbers of elements with a growth factor of
 2, not fixed numbers of bytes. std::vector is nearly on a par with std::deque
@@ -1238,7 +1238,7 @@ onclick="this.src='tests/gcc/colony/raw/large_struct_erase_25.png';"
 src="tests/gcc/colony/raw/large_struct_erase_25_log.png"><br>
 
 
-<p>Across all types, plf::colony dominates performance, with std::list coming
+<p>Across all types plf::colony dominates performance, with std::list coming
 close behind. std::deque and std::vector have predictably poor performance as a
 remove_if pattern is not being used, as much as 100000x worse than plf::colony
 and std::list for large numbers of large types.</p>
@@ -1660,7 +1660,7 @@ src="tests/gcc/colony/general_use/per_frame_mem_10_log.png"><br>
 
 <p>Obviously if you are doing a lot of referencing into a packed_deque from outside objects, you may encounter some speed problems due to the dereferencing system - which the next test will cover. On the other hand, if you are mainly iterating over unordered data, erasing occasionally, and only ever referring <i>outwards from</i> elements within the packed_deque, it will be an ideal solution.</p>
 
-<h3><a id="heavyreferencing"></a>'Real-world' scenario-testing: heavy referencing with
+<h3><a id="heavyreferencing"></a>'Real-world' scenario-testing: referencing with
 interlinked containers</h3>
 
 <p>In order to completely test plf::colony against a packed-array-style
@@ -1769,8 +1769,8 @@ src="tests/gcc/colony/referencer/per_frame_10_log.png"><br>
 
 
 <p>As we can see from the performance results, at low levels of modification
-packed_deque has a very small performance advantage over colony, until about
-9000 elements. After 9000 elements, colony has a huge performance advantage.
+packed_deque has a small performance advantage over colony, until about
+9000 elements. After 9000 elements, colony has a larger performance advantage.
 And the higher the level of modification, the fewer elements there have to be
 in the containers before colony has an advantage. At 1% modification per frame,
 only 200 elements are needed, while at 5% per-frame and above, colony always
@@ -2284,6 +2284,8 @@ use a colony.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-11-19: v3.86 - Performance improvements for low numbers of scalar types. Minor optimizations for fill-constructor and initializer-list constructor. Corrections to advance.</li>
+  <li>2016-11-12: v3.83 - Minor optimizations. Edge-case corrections for advance functions and copy constructor. Optimizations to get_index_from_iterator, get_iterator_from_pointer, distance, advance. Advance now correctly bounds to rbegin and rend for reverse iterators. Warning removal for test suite.</li>
   <li>2016-11-1: v3.81 - Optimizations to insert functions. Corrections to
     fill-insert/fill-construct functions. Minor correction to internal stack
     copy constructor. Some function and comment tidyup. Moved referencer test code out from

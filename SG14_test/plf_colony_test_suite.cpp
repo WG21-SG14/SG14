@@ -1,9 +1,6 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-#include <cstdio> // log redirection
-#include <cstdlib> // rand
-#include <ctime> // timer
 
 #include "plf_colony.h"
 
@@ -90,6 +87,25 @@ namespace
             abort();
         }
     }
+
+
+	// Fast xorshift+128 random number generator function (original: https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/)
+	unsigned int xor_rand()
+	{
+		static unsigned int x = 123456789;
+		static unsigned int y = 362436069;
+		static unsigned int z = 521288629;
+		static unsigned int w = 88675123;
+		
+		const unsigned int t = x ^ (x << 11); 
+	
+		// Rotate the static values (w rotation in return statement):
+		x = y;
+		y = z;
+		z = w;
+	   
+		return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
+	}
 }
 
 
@@ -98,12 +114,6 @@ namespace sg14_test
 
 void plf_colony_test_suite()
 {
-	{
-		time_t timer;
-		time(&timer);
-		srand((unsigned int)timer); // Note: using random numbers to avoid CPU prediction
-	}
-
 	using namespace std;
 	using namespace plf;
 
@@ -322,7 +332,7 @@ void plf_colony_test_suite()
 		
 		{
 			title1("Insert and Erase tests");
-
+			
 			colony<int> i_colony;
 
 			for (unsigned int temp = 0; temp != 500000; ++temp)
@@ -355,13 +365,12 @@ void plf_colony_test_suite()
 			{
 				for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 				{
-					if (rand() % 5 == 0)
+					if ((xor_rand() & 7) == 0)
 					{
 						the_iterator = i_colony.erase(the_iterator);
 					}
 					else
 					{
-						colony<int>::iterator temp_iterator = the_iterator;
 						++the_iterator;
 					}
 				}
@@ -371,23 +380,15 @@ void plf_colony_test_suite()
 			failpass("Erase randomly till-empty test", i_colony.size() == 0);
 
 
-			i_colony.reinitialize(10000, 20000);
+			i_colony.clear();
+			i_colony.change_minimum_group_size(10000);
 			
-			for (unsigned int temp = 0; temp != 29999; ++temp)
+			for (unsigned int temp = 0; temp != 30000; ++temp)
 			{
 				i_colony.insert(1);
 			}
 			
-			failpass("Size after reinitialize + insert test", i_colony.size() == 29999);
-
-
-			#ifdef PLF_VARIADICS_SUPPORT
-				i_colony.emplace(1);
-				failpass("Emplace test", i_colony.size() == 30000);
-			#else
-				i_colony.insert(1);
-			#endif
-			
+			failpass("Size after reinitialize + insert test", i_colony.size() == 30000);
 
 			unsigned short count2 = 0;
 			
@@ -395,14 +396,13 @@ void plf_colony_test_suite()
 			{
 				for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 				{
-					if (rand() % 5 == 0)
+					if ((xor_rand() & 7) == 0)
 					{
 						the_iterator = i_colony.erase(the_iterator);
 						++count2;
 					}
 					else
 					{
-						colony<int>::iterator temp_iterator = the_iterator;
 						++the_iterator;
 					}
 				}
@@ -444,7 +444,7 @@ void plf_colony_test_suite()
 			{
 				for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 				{
-					if (rand() % 3 == 0)
+					if ((xor_rand() & 3) == 0)
 					{
 						++the_iterator;
 						i_colony.insert(1);
@@ -492,7 +492,7 @@ void plf_colony_test_suite()
 
 			failpass("Large multi-decrement iterator test", i_colony.size() == 250000);
 
-
+			
 			for (unsigned int temp = 0; temp != 250000; ++temp)
 			{
 				i_colony.insert(10);
@@ -528,7 +528,7 @@ void plf_colony_test_suite()
 			}
 			
 			begin_iterator = i_colony.begin();
-			i_colony.advance(begin_iterator, 300000);
+			i_colony.advance(begin_iterator, 300001);
 			
 			
 			for (colony<int>::iterator the_iterator = begin_iterator; the_iterator != i_colony.end();)
@@ -536,15 +536,21 @@ void plf_colony_test_suite()
 				the_iterator = i_colony.erase(the_iterator);
 			}
 			
-			failpass("Non-beginning increment + erase test", i_colony.size() == 300000);
-			
+			failpass("Non-beginning increment + erase test", i_colony.size() == 300001);
 
 			colony<int>::iterator temp_iterator = i_colony.begin();
+			i_colony.advance(temp_iterator, 2); // Advance test 1
+
+			unsigned int index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
+			failpass("Advance + iterator-to-index test", index == 2);
+
+			i_colony.erase(temp_iterator);
+			temp_iterator = i_colony.begin(); // Check edge-case with advance when erasures present in initial group
 			i_colony.advance(temp_iterator, 500);
 			
-			unsigned int index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
+			index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
 
-			failpass("Iterator-to-index test", index == 500);
+			failpass("Advance + iterator-to-index test", index == 500);
 
 			colony<int>::iterator temp2 = i_colony.get_iterator_from_pointer(&(*temp_iterator));
 			
@@ -577,7 +583,7 @@ void plf_colony_test_suite()
 			{
 				for (unsigned int loop = 0; loop != 10; ++loop)
 				{
-					if (rand() % 5 == 0)
+					if ((xor_rand() & 7) == 0)
 					{
 						i_colony.insert(1);
 						++count;
@@ -586,7 +592,7 @@ void plf_colony_test_suite()
 
 				for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end();)
 				{
-					if (rand() % 5 == 0)
+					if ((xor_rand() & 7) == 0)
 					{
 						the_iterator = i_colony.erase(the_iterator);
 						--count;
@@ -627,15 +633,13 @@ void plf_colony_test_suite()
 			std::vector<int> some_ints(500, 2);
 			
 			i_colony2.insert(some_ints.begin(), some_ints.end());
-
+			
 			failpass("Fill insertion test", i_colony2.size() == 500503);
 		}
 	}
 
 	title1("Test Suite PASS - Press ENTER to Exit");
 	cin.get();
-
-  return;
 }
 
 }

@@ -566,9 +566,12 @@ inline PLF_FORCE_INLINE void iteration_test(container_type &container, const uns
 	
 	timer.start();
 	
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	const typename container_type::iterator end_element = container.end(); 
+	
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{	
-		for (typename container_type::iterator current_element = container.begin(); current_element != container.end(); ++current_element)
+		for (typename container_type::iterator current_element = container.begin(); current_element != end_element; ++current_element)
 		{
 			total += container_iterate(container, current_element);
 		}
@@ -583,7 +586,7 @@ inline PLF_FORCE_INLINE void iteration_test(container_type &container, const uns
 
 	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
 	{
-		for (typename container_type::iterator current_element = container.begin(); current_element != container.end(); ++current_element)
+		for (typename container_type::iterator current_element = container.begin(); current_element != end_element; ++current_element)
 		{
 			total += container_iterate(container, current_element);
 		}
@@ -680,28 +683,8 @@ inline PLF_FORCE_INLINE void container_back_pop(std::vector<large_struct> &conta
 }
 
 
-template <class container_contents>
-inline PLF_FORCE_INLINE void container_change_group_size(plf::stack<container_contents> &container, const unsigned int min_group_size, const unsigned int max_group_size)
-{
-	container.change_group_sizes(min_group_size, max_group_size);
-}
-
-
-template <class container_contents>
-inline PLF_FORCE_INLINE void container_change_group_size(std::stack<container_contents> &container, const unsigned int min_group_size, const unsigned int max_group_size)
-{
-}
-
-
-template <class container_contents>
-inline PLF_FORCE_INLINE void container_change_group_size(std::vector<container_contents> &container, const unsigned int min_group_size, const unsigned int max_group_size)
-{
-}
-
-
-
 template<class container_type>
-inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elements, const unsigned int number_of_runs, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
+inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elements, const unsigned int number_of_runs, const bool output_csv = false, const bool reserve = false)
 {
 	double push_time = 0, pop_back_time = 0, total = 0;
 	plf::nanotimer timer, timer2;
@@ -709,14 +692,13 @@ inline PLF_FORCE_INLINE void benchmark_stack(const unsigned int number_of_elemen
 	timer2.start();
 	
 	// Warm up cache:
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		timer.start();
 	
 		container_type container;
 
-		container_change_group_size(container, min_group_size, max_group_size);
-		
 		if (reserve)
 		{
 			container_reserve(container, number_of_elements);
@@ -810,7 +792,8 @@ inline PLF_FORCE_INLINE void benchmark(const unsigned int number_of_elements, co
 
 
 	// Dump-runs to get the cache 'warmed up':
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
 
@@ -1083,7 +1066,8 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 
 	// Dump-runs to get the cache 'warmed up':
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
 	
@@ -1310,7 +1294,7 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int number_of_modifications, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int number_of_modifications)
 {
 	assert (number_of_elements > 1);
 
@@ -1319,14 +1303,10 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 	plf::nanotimer full_time;
 	full_time.start();
 
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
-		
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
 		
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1356,7 +1336,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 		end_approximate_memory_use += container.approximate_memory_use();
 	}
 	
-	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+	end_approximate_memory_use /= end;
 
 	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
@@ -1365,11 +1345,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
 	{
 		container_type container;
-		
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
 		
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1399,52 +1374,27 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 
 	const double total_time = full_time.get_elapsed_us();
 
-	if (output_csv)
-	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
-	}
-	else
-	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
-	}
-	
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
-
-
-	if (output_csv)
-	{
-		std::cout << "\n";
-	}
-	else
-	{
-		std::cout << "\n\n";
-	}
-
 }
 
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage)
 {
 	assert (number_of_elements > 1);
 
 	const unsigned int total_number_of_insertions = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
-	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
-	
 	double total = 0;
 	unsigned int end_approximate_memory_use = 0;
 	plf::nanotimer full_time;
 	full_time.start();
 
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
-		
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
 		
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1455,7 +1405,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) >= erasure_percent_expanded)
+				if (rand_within(100) >= erasure_percentage)
 				{
 					total += container_iterate(container, current_element++);
 				}
@@ -1474,7 +1424,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
 	}
 	
-	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+	end_approximate_memory_use /= end;
 
 	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
@@ -1485,11 +1435,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 	{
 		container_type container;
 
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
-		
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
 			container_insert(container);
@@ -1499,7 +1444,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 		{
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) >= erasure_percent_expanded)
+				if (rand_within(100) >= erasure_percentage)
 				{
 					total += container_iterate(container, current_element++);
 				}
@@ -1518,26 +1463,8 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 
 	const double total_time = full_time.get_elapsed_us();
 
-	if (output_csv)
-	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
-	}
-	else
-	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
-	}
-	
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
-
-
-	if (output_csv)
-	{
-		std::cout << "\n";
-	}
-	else
-	{
-		std::cout << "\n\n";
-	}
 }
 
 
@@ -1545,7 +1472,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 
 // new type for more realistic test:
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage)
 {
 	assert (number_of_elements > 1);
 
@@ -1559,11 +1486,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 	{
 		container_type container;
 
- 		if (reserve)
- 		{
- 			container_reserve(container, number_of_elements);
- 		}
- 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
 			container_insert(container);
@@ -1605,11 +1527,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 	{
 		container_type container;
 
- 		if (reserve)
- 		{
- 			container_reserve(container, number_of_elements);
- 		}
-
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
 			container_insert(container);
@@ -1649,7 +1566,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const double erasure_percentage)
 {
 	assert (number_of_elements > 1);
 
@@ -1662,11 +1579,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(co
 	for (unsigned int run_number = 0; run_number != dump_run_end; ++run_number)
 	{
 		container_type container;
-
- 		if (reserve)
- 		{
- 			container_reserve(container, number_of_elements);
- 		}
 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1713,11 +1625,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(co
 	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
 	{
 		container_type container;
-
- 		if (reserve)
- 		{
- 			container_reserve(container, number_of_elements);
- 		}
 
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1771,7 +1678,8 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 	plf::nanotimer full_time;
 	full_time.start();
 
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
 
@@ -1810,7 +1718,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 		end_approximate_memory_use += container.approximate_memory_use();
 	}
 	
-	end_approximate_memory_use /= (number_of_runs / 10) + 1;
+	end_approximate_memory_use /= end;
 
 	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
@@ -1881,26 +1789,21 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 
 
 template <class container_type>
-inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage, const bool output_csv = false, const bool reserve = false)
+inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int erasure_percentage)
 {
 	assert (number_of_elements > 1);
 
 	const unsigned int total_number_of_insertions = static_cast<unsigned int>((static_cast<double>(number_of_elements) * (static_cast<double>(erasure_percentage) / 100.0)) + 0.5);
-	const unsigned int erasure_percent_expanded = static_cast<unsigned int>((static_cast<double>(erasure_percentage) * 1.28) + 0.5);
 	
 	double total = 0;
 	unsigned int end_approximate_memory_use = 0, num_erasures;
 	plf::nanotimer full_time;
 	full_time.start();
 
-	for (unsigned int run_number = 0; run_number != ((number_of_runs / 10) + 1) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
-		
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
 		
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1913,7 +1816,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) >= erasure_percent_expanded)
+				if (rand_within(100) >= erasure_percentage)
 				{
 					total += container_iterate(container, current_element++);
 				}
@@ -1938,7 +1841,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
 	}
 
-	end_approximate_memory_use /= ((number_of_runs / 10) + 1) + 1;
+	end_approximate_memory_use /= end;
 
 	std::cerr << "Dump total and time and approximate_memory_use: " << total << full_time.get_elapsed_us() << end_approximate_memory_use << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 	 
@@ -1947,11 +1850,6 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 	for (unsigned int run_number = 0; run_number != number_of_runs; ++run_number)
 	{
 		container_type container;
-		
-		if (reserve)
-		{
-			container_reserve(container, number_of_elements);
-		}
 		
 		for (unsigned int element_number = 0; element_number != number_of_elements; ++element_number)
 		{
@@ -1964,7 +1862,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 			for (typename container_type::iterator current_element = container.begin(); current_element != container.end();)
 			{
-				if ((xor_rand() & 127) >= erasure_percent_expanded)
+				if (rand_within(100) >= erasure_percentage)
 				{
 					total += container_iterate(container, current_element++);
 				}
@@ -1989,27 +1887,8 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 
 	const double total_time = full_time.get_elapsed_us();
 
-	if (output_csv)
-	{
-		std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use;
-	}
-	else
-	{
-		std::cout << "Iterate and sum: " << (total_time / static_cast<double>(number_of_runs)) << "us, size = " << end_approximate_memory_use << std::endl;
-	}
-	
+	std::cout << ", " << (total_time / static_cast<double>(number_of_runs)) << ", " << end_approximate_memory_use << "\n";
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
-
-
-	if (output_csv)
-	{
-		std::cout << "\n";
-	}
-	else
-	{
-		std::cout << "\n\n";
-	}
-
 }
 
 
@@ -2029,7 +1908,8 @@ inline PLF_FORCE_INLINE void benchmark_reinsertion(const unsigned int number_of_
 
 
 	// Dump-runs to get the cache 'warmed up':
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
 	
@@ -2272,7 +2152,8 @@ inline PLF_FORCE_INLINE void benchmark_remove_if_reinsertion(const unsigned int 
 
 
 	// Dump-runs to get the cache 'warmed up':
-	for (unsigned int run_number = 0; run_number != (number_of_runs / 10) + 1; ++run_number)
+	const unsigned int end = (number_of_runs / 10) + 1;
+	for (unsigned int run_number = 0; run_number != end; ++run_number)
 	{
 		container_type container;
 	
@@ -2718,7 +2599,7 @@ inline PLF_FORCE_INLINE void benchmark_erasure_range_reinsertion(const unsigned 
 
 
 template <class container_type>
-void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false, const unsigned int min_group_size = 8, const unsigned int max_group_size = std::numeric_limits<unsigned int>::max() / 2)
+void benchmark_range_stack(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const bool output_csv = false, const bool reserve = false)
 {
 	if (output_csv)
 	{
@@ -2732,7 +2613,7 @@ void benchmark_range_stack(const unsigned int min_number_of_elements, const unsi
 			std::cout << number_of_elements;
 		}
 		
-		benchmark_stack<container_type>(number_of_elements, 100000000 / number_of_elements, output_csv, reserve, min_group_size, max_group_size);
+		benchmark_stack<container_type>(number_of_elements, 100000000 / number_of_elements, output_csv, reserve);
 	}
 	
 	if (output_csv)
@@ -2746,155 +2627,100 @@ void benchmark_range_stack(const unsigned int min_number_of_elements, const unsi
 
 
 template <class container_type>
-void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount)
 {
 	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
-		std::cout << "Number of modifications during 1 frame: " << number_of_modifications << std::endl << std::endl;
-
-		if (output_csv)
-		{
-			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
-		}
+		std::cout << "Number of modifications during 1 frame: " << number_of_modifications << "\n\nNumber of elements, Total time, Memory Usage\n";
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
 		{
-			if (output_csv)
-			{
-				std::cout << number_of_elements;
-			}
-
-			benchmark_general_use<container_type>(number_of_elements, (40000 / number_of_elements) + 1, number_of_modifications, output_csv, reserve);
+			std::cout << number_of_elements;
+			
+			benchmark_general_use<container_type>(number_of_elements, (1000 / number_of_elements) + 1, number_of_modifications);
 		}
 
-		if (output_csv)
-		{
-			std::cout << "\n,,,\n,,,\n";
-		}
+		std::cout << "\n,,,\n,,,\n";
 	}
 }
 
 
 
 template <class container_type>
-void benchmark_range_general_use_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition)
 {
 	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
-		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
-
-		if (output_csv)
-		{
-			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
-		}
+		std::cout << "Erasure percentage: " << erasure_percentage << "\n\nNumber of elements, Total time, Memory Usage\n";
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
 		{
-			if (output_csv)
-			{
-				std::cout << number_of_elements;
-			}
-			
-			benchmark_general_use_percentage<container_type>(number_of_elements, (40000 / number_of_elements) + 1, number_of_cycles, erasure_percentage, output_csv, reserve);
+			std::cout << number_of_elements;
+
+			benchmark_general_use_percentage<container_type>(number_of_elements, (1000 / number_of_elements) + 1, number_of_cycles, erasure_percentage);
 		}
 		
-		if (output_csv)
-		{
-			std::cout << "\n,,,\n,,,\n";
-		}
+		std::cout << "\n,,,\n,,,\n";
 	}
 }
 
 
 
 template <class container_type>
-void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
-		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
-
-		if (output_csv)
-		{
-			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
-		}
+		std::cout << "Erasure percentage: " << erasure_percentage << "\n\nNumber of elements, Total time, Memory Usage\n";
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
 		{
-			if (output_csv)
-			{
-				std::cout << number_of_elements;
-			}
-			
-			benchmark_general_use_small_percentage<container_type>(number_of_elements, (40000 / number_of_elements) + 1, number_of_cycles, erasure_percentage, output_csv, reserve);
+			std::cout << number_of_elements;
+
+			benchmark_general_use_small_percentage<container_type>(number_of_elements, (1000 / number_of_elements) + 1, number_of_cycles, erasure_percentage);
 		}
 		
-		if (output_csv)
-		{
-			std::cout << "\n,,,\n,,,\n";
-		}
+		std::cout << "\n,,,\n,,,\n";
 	}
 }
 
 
 
 template <class container_type>
-void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_remove_if_small_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const double initial_erasure_percentage, const double max_erasure_percentage, const double erasure_addition)
 {
 	for (double erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
-		std::cout << "Erasure percentage (remove_if): " << erasure_percentage << std::endl << std::endl;
-
-		if (output_csv)
-		{
-			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
-		}
+		std::cout << "Erasure percentage (remove_if): " << erasure_percentage << "\n\nNumber of elements, Total time, Memory Usage\n";
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
 		{
-			if (output_csv)
-			{
-				std::cout << number_of_elements;
-			}
+			std::cout << number_of_elements;
 			
-			benchmark_general_use_remove_if_small_percentage<container_type>(number_of_elements, (40000 / number_of_elements) + 1, number_of_cycles, erasure_percentage, output_csv, reserve);
+			benchmark_general_use_remove_if_small_percentage<container_type>(number_of_elements, (1000 / number_of_elements) + 1, number_of_cycles, erasure_percentage);
 		}
 		
-		if (output_csv)
-		{
-			std::cout << "\n,,,\n,,,\n";
-		}
+		std::cout << "\n,,,\n,,,\n";
 	}
 }
 
 
 
 template <class container_type>
-void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_number_of_modifications, const unsigned int max_number_of_modifications, const unsigned int number_of_modification_addition_amount)
 {
 	for (double number_of_modifications = initial_number_of_modifications; number_of_modifications <= max_number_of_modifications; number_of_modifications += number_of_modification_addition_amount)
 	{
-		std::cout << "Number of modifications during 1 frame: " << number_of_modifications << std::endl << std::endl;
-		
-		if (output_csv)
-		{
-			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
-		}
+		std::cout << "Number of modifications during 1 frame: " << number_of_modifications << "\n\nNumber of elements, Total time, Memory Usage\n";
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
 		{
-			if (output_csv)
-			{
-				std::cout << number_of_elements;
-			}
+			std::cout << number_of_elements;
 
-			benchmark_general_use_remove_if<container_type>(number_of_elements, (40000 / number_of_elements) + 1, number_of_cycles, number_of_modifications, output_csv, reserve);
+			benchmark_general_use_remove_if<container_type>(number_of_elements, (1000 / number_of_elements) + 1, number_of_cycles, number_of_modifications);
 		}
 
-		if (output_csv)
-		{
-			std::cout << "\n,,,\n,,,\n";
-		}
+		std::cout << "\n,,,\n,,,\n";
 	}
 }
 
@@ -2902,31 +2728,20 @@ void benchmark_range_general_use_remove_if(const unsigned int min_number_of_elem
 
 
 template <class container_type>
-void benchmark_range_general_use_remove_if_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition, const bool output_csv = false, const bool reserve = false)
+void benchmark_range_general_use_remove_if_percentage(const unsigned int min_number_of_elements, const unsigned int max_number_of_elements, const double multiply_factor, const unsigned int number_of_cycles, const unsigned int initial_erasure_percentage, const unsigned int max_erasure_percentage, const unsigned int erasure_addition)
 {
 	for (unsigned int erasure_percentage = initial_erasure_percentage; erasure_percentage < max_erasure_percentage; erasure_percentage += erasure_addition)
 	{
-		std::cout << "Erasure percentage: " << erasure_percentage << std::endl << std::endl;
-
-		if (output_csv)
-		{
-			std::cout << "Number of elements, Total time, Memory Usage" << std::endl;
-		}
+		std::cout << "Erasure percentage: " << erasure_percentage << "\n\nNumber of elements, Total time, Memory Usage\n";
 
 		for (unsigned int number_of_elements = min_number_of_elements; number_of_elements <= max_number_of_elements; number_of_elements = static_cast<unsigned int>(static_cast<double>(number_of_elements) * multiply_factor))
 		{
-			if (output_csv)
-			{
-				std::cout << number_of_elements;
-			}
+			std::cout << number_of_elements;
 
-			benchmark_general_use_remove_if_percentage<container_type>(number_of_elements, (40000 / number_of_elements) + 1, number_of_cycles, erasure_percentage, output_csv, reserve);
+			benchmark_general_use_remove_if_percentage<container_type>(number_of_elements, (1000 / number_of_elements) + 1, number_of_cycles, erasure_percentage);
 		}
 
-		if (output_csv)
-		{
-			std::cout << "\n,,,\n,,,\n";
-		}
+		std::cout << "\n,,,\n,,,\n";
 	}
 }
 
