@@ -61,7 +61,7 @@ broad cross-compiler support.</p>
 <p>It can be reasonably compared to a "bag" or "bucket-array" styled structure,
 where each element location can be emptied and skipped over. Unlike a bucket
 array it does not use keys, iterates faster due to the use of a <a
-href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
+href="skipfield_comparison.htm">jump-counting
 skipfield</a> instead of a boolean field, and frees or recycles unused memory
 from erased element locations on the fly. As it was initially developed
 predominantly for game development, colony favours larger-than-scalar-type
@@ -178,7 +178,7 @@ invalidation upon either erasure or insertion. It's insertion speed is also
 much faster than a vector's. Memory from erased elements is either reused by
 subsequent insertions or released to the OS on-the-fly. It achieves these ends
 by via a number of new approaches: a <a
-href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
+href="skipfield_comparison.htm">jump-counting
 skipfield</a> (instead of a boolean field), a <a
 href="chained_group_allocation_pattern.htm">linked chain</a> of
 increasingly-large memory blocks (instead of a singular memory block or vector
@@ -1816,10 +1816,9 @@ src="tests/gcc/colony/referencer/per_frame_mem_10_log.png"><br>
 
 
 <p>As we can see the memory results don't really change between different
-levels of modification - packed_deque always has an advantage over colony,
-though not a huge one. The memory difference can be mitigated somewhat by setting a smaller maximum group size for colony, but this will likely come at an expense of speed.</p>
+levels of modification - packed_deque always has a small advantage over colony in terms of memory usage. The memory difference could be mitigated somewhat by setting a smaller maximum group size for colony, but this will likely come at an expense of speed.</p>
 
-<h3>Overall Performance Conclusions</h3>
+<h3><a id="overall"></a>Overall Performance Conclusions</h3>
 
 <p>For situations where unordered, often-inserted/erased content is required,
 colony provides a convenient solution, while also outperforming the
@@ -1827,7 +1826,7 @@ alternatives for the most part. Where modification rates and the number of
 elements are low, a packed-array-style structure like packed_deque may be your
 best solution both in terms of performance and memory usage. However once the
 numbers of elements and rates of modification begin to rise, a colony shines
-forth. In addition, a packed array will be affected adversely when the type is larger or non-trivially movable, due to the neccessity of moving elements from the back when erasing.</p>
+forth. In addition, a packed array will be affected adversely when the type is larger or non-trivially movable, due to the necessity of moving elements from the back when erasing.</p>
 
 <p>Using a boolean skipfield in combination with a vector or deque is of course
 a no-go, due to it's poor iteration performance once the number of erasures
@@ -1837,10 +1836,8 @@ and poor performance once the number of modifications or elements becomes too
 high.</p>
 
 <p>In short, use a packed-array where both the rate of modification is &lt;=
-10% of all elements per 3600 frames and the number of elements is &lt;= 9000,
-or if external access to container elements is uncommon. In all other areas,
-for unordered data,<br>
-use a colony.</p>
+10% of all elements per 3600 iterations over data and the number of elements is &lt;= 9000,
+or if external object access to container elements via the dereferencing system is uncommon, or if all memory is at a premium. In all other cases involving unordered data, use colony.</p>
 
 <h2><a id="faq"></a>Frequently Asked Questions</h2>
 <ol>
@@ -1852,33 +1849,31 @@ use a colony.</p>
     characteristics while maintaining pointer stability to container
     elements.</p>
   </li>
-  <li><h4>Where is it worth using in place of other std:: containers?</h4>
-    <p>It is most worthwhile, for performance reasons, in situations where the
-    order of container elements is not important, and:</p>
+  <li><h4>Where is it worth using a colony in place of other std:: containers?</h4>
+    <p>As mentioned, it is worthwhile for performance reasons in situations where the
+    order of container elements is not important and:</p>
     <ol type="a">
-      <li>Pointers and iterators which point to container elements must stay
-        valid regardless of container insertions and erasures,<br>
-        <br>
-        <b>and/or</b><br>
-      </li>
-      <li>Insertions and erasures to the container will be occuring in realtime
-        ie. in performance-critical code.</li>
+	  <li>Insertion order is unimportant</li>
+	  <li>Insertions and erasures to the container occur frequently in
+	    performance-critical code, <i><b>and</b></i> </li>
+	  <li>Links to non-erased container elements may not be
+	    invalidated by insertion or erasure.</li>
     </ol>
     <p>Under these circumstances a colony will generally out-perform other
     std:: containers. In addition, because it never invalidates pointer
     references to container elements (except when the element being pointed to
-    has been previously erased) it can make many programming tasks involving
+    has been previously erased) it may make many programming tasks involving
     inter-relating structures in an object-oriented or modular environment much
-    faster, and can be considered in those circumstances.</p>
+    faster, and could be considered in those circumstances.</p>
   </li>
   <li><h4>What are some examples of situations where a colony might improve
     performance?</h4>
-    <p>Some ideal situations to use a colony: quadtree, persistent octtree,
-    general game entities or destructible-objects in a video game, anywhere
+    <p>Some ideal situations to use a colony: cellular/atomic simulation, persistent octtree/quadtree,
+    general game entities or destructible-objects in a video game, particle physics, anywhere
     where objects are being created and destroyed continuously. Also, anywhere
     where a vector of pointers to dynamically-allocated objects or a std::list
     would typically end up being used in order to preserve object
-    references.</p>
+    references but where order is unimportant.</p>
   </li>
   <li><h4>What situations should you explicitly <i>not</i> use a colony
     for?</h4>
@@ -1942,11 +1937,10 @@ use a colony.</p>
     need to be updated.</p>
   </li>
   <li><h4>Is it similar to a deque?</h4>
-    <p>A deque is fairly dissimilar to a colony. A deque is a double-ended
-    queue, which requires a bit of a different internal framework. It typically
-    uses a vector of memory blocks, whereas a colony uses a linked list -
-    essentially. A deque can't use a linked list of memory blocks because it
-    will make some random_access iterator operations (eg. + operator) non-O(1).
+    <p>A deque is reasonably dissimilar to a colony - being a double-ended
+    queue, it requires quite a bit of a different internal framework. It typically
+    uses a vector of memory blocks, whereas the colony implementation uses a linked list of memory blocks, essentially.
+	A deque can't technically use a linked list of memory blocks because it will make some random_access iterator operations (eg. + operator) non-O(1).
     In addition, being a double-ended queue makes having a growth factor for
     memory blocks problematic because the rules for growth at each end of the
     queue become difficult to implement in a way which increase performance.
@@ -1956,17 +1950,15 @@ use a colony.</p>
     able to ascertain the size for each memory block without inspecting them
     all).</p>
     <p>A deque and colony have no comparable performance characteristics except
-    for insertion (for a decent deque implementation). Deque element erasure
-    performance varies quite wildly depending on the compiler compared to
-    std::vector, but is generally more similar to a vector's performance, and
-    it does not free unused memory blocks to the OS once they are empty, unlike
-    a colony. Lastly a deque invalidates references to subsequent container
+    for insertion (for a decent deque implementation). Deque erasure
+    performance varies wildly depending on the implementation compared to
+    std::vector, but is generally similar to vector erasure performance. A deque also invalidates pointers to subsequent container
     elements when erasing elements, which a colony does not.</p>
   </li>
   <li><h4>What are the thread-safe guarantees?</h4>
     <p>Unlike a std::vector, a colony can be read from and written to at the
     same time, however it cannot be iterated over and written to at the same
-    time. If we look at a std::vector's threadsafe matrix, to see which basic
+    time. If we look at a (non-concurrent implementation of) std::vector's threadsafe matrix, to see which basic
     operations can occur at the same time, it reads as follows (please note
     push_back() is the same as insertion in this regard):</p>
 
@@ -2013,10 +2005,8 @@ use a colony.</p>
     simultaneously, but the invalidation caused by insertion/push_back and
     erasure means those operations cannot occur at the same time as anything
     else.</p>
-    <p>Colony on the other hand does not (mostly) invalidate pointers/iterators
-    to elements during insertion and erasure (iterators == end() may be
-    invalidated by subsequent insertions, and iterators/pointers to elements
-    which are erased will become invalid), resulting in the following
+    <p>Colony on the other hand does not invalidate pointers/iterators
+    to non-erased elements during insertion and erasure, resulting in the following
     matrix:</p>
 
     <table border="1" cellspacing="3">
@@ -2032,7 +2022,7 @@ use a colony.</p>
           <td>Insertion</td>
           <td>No</td>
           <td>No</td>
-          <td>Mostly</td>
+          <td>No</td>
           <td>Yes</td>
         </tr>
         <tr>
@@ -2044,7 +2034,7 @@ use a colony.</p>
         </tr>
         <tr>
           <td>Iteration</td>
-          <td>Mostly</td>
+          <td>No</td>
           <td>No</td>
           <td>Yes</td>
           <td>Yes</td>
@@ -2064,31 +2054,14 @@ use a colony.</p>
     iterations may not occur at the same time as an erasure or insertion, as
     either of these may change the state of the skipfield which's being
     iterated over. Erasures will not invalidate iterators unless the iterator
-    points to the erased element.</p>
-    <p></p>
-    <p>So, colony is inherently more threadsafe than a std::vector, but still
-    has some areas which would require mutexes or atomics to navigate in a
-    multithreaded environment.</p>
+    points to the erased element. Note that iterators pointing to end() may be invalidated by insertion.</p>
+    <p>So, colony could be considered more inherently threadsafe than a (non-concurrent implementation of) std::vector, but still
+    has some areas which would require mutexes or atomics to navigate in a multithreaded environment.</p>
   </li>
-  <li><h4>Any "gotcha"'s to watch out for?</h4>
-    <p>Only a few:</p>
-    <ol type="a">
-      <li>"insert" placement can be at the back, front, or frankly anywhere in
-        the container, depending on what's been erased previously and where it
-        was. Insertion is essentially random unless no erasures have been made
-        prior, or an equal number of erasures and insertions have been made
-        prio.</li>
-      <li>For architectural reasons, reserve can only reserve up to 65535
-        elements. A fill-constructor can however create as many elements as
-        possible.</li>
-      <li>Once an element has been erased, any iterator or pointer pointing to
-        that element is no longer valid. This is the same as vector and other
-        std:: container rules, but not the same as an array. In the case of
-        colony, the memory block the iterator pointed to may no longer exist,
-        because, if it were the final remaining element in the memory block,
-        the group containing the memory block will have been removed from the
-        colony chain. Erasure of the specific element is the only way that
-        iterators and pointers to a colony element can become invalidated.</li>
+  <li><h4>Any pitfalls to watch out for?</h4>
+    <ol type="1">
+      <li>Because erased-element memory locations will be reused by <code>insert()</code> and <code>emplace()</code>, insertion position is essentially random unless no erasures have been made, or an equal number of erasures and insertions have been made.</li>
+      <li>For architectural reasons, reserve can only reserve a number of elements up to the maximum bit-depth of the skipfield type (65535 unless an alternative type is specified in the constructor).</li>
     </ol>
   </li>
   <li><h4>Am I better off storing iterators or pointers to colony elements?</h4>
@@ -2251,7 +2224,7 @@ use a colony.</p>
     notably faster.</p>
   </li>
 
-  <h4>Group sizes - what are they based on, how do they expand, etc</h4>
+  <li><h4>Group sizes - what are they based on, how do they expand, etc</h4>
 
   <p>Group sizes start from the minimum size defined either by the default (8
   elements) or by the programmer (with a minimum of 3 elements). Subsequent
@@ -2269,7 +2242,7 @@ use a colony.</p>
   balance between memory contiguousness, memory waste and the restriction on
   skipfield update time complexity. It also fits the use-case of gaming better
   (as games tend to utilize lower numbers of elements than some other
-  fields).</p>
+  fields).</p></li>
   <li><h4>Why store a size member for each group when this can be obtained via
     <code>reinterpret_cast&lt;element_pointer_type&gt;(skipfield) -
     elements</code>?</h4>

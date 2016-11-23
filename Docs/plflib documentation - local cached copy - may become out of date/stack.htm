@@ -411,12 +411,12 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 
 <h2><a id="benchmarks"></a>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 15-11-2016 v1.04</i></p>
+<p style="font-size: 75%"><i>Last updated 17-11-2016 v1.04</i></p>
 
-<p>The test setup is an E8500 on an Intel motherboard, 8GB ram, running GCC 5.1
+<p>The test setup is an E8500 (Core2Duo) on an Intel motherboard, 8GB ram, running GCC 5.1
 x64 as compiler. Build settings are
 "-O2;-march=native;-std=c++11;-fomit-frame-pointer". Results for Microsoft
-Visual Studio 2015 Update 3 can be found <a href="stack_benchmark_msvc_results.htm">here</a>.
+Visual Studio 2015 Update 3 under a Haswell core CPU can be found <a href="stack_benchmark_msvc_results.htm">here</a>.
 Tests are based on a sliding scale of number of runs vs number of elements, so
 a test with only 10 elements in a container may average 100000 runs, whereas a
 test with 100000 elements may only average 10 runs. This tends to give adequate

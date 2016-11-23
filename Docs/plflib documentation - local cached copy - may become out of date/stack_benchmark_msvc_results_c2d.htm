@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+  <meta name="description" content="PLF C++ Library - plf::stack">
+  <meta name="keywords"
+  content="C++, C, vector, stack, plf::stack, containers, optimize, performance, pointer, iterator, invalidation, benchmarks, results, benchmark, vs, versus, std::vector, std::deque, deque, std::stack, MSVC, visual studio, 2015">
+  <title>PLF C++ Library - plf::stack - MSVC 2015 Benchmark results</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<a href="index.htm">Home</a> 
+
+<h1>PLF C++ Library - plf::stack - MSVC 2015 Benchmark results - Core2Duo CPU</h1>
+
+<p style="font-size: 75%"><i>Last updated 17-11-2016 v1.05</i></p>
+
+<p>The test setup is a Haswell-class Xeon on an Intel motherboard, 16GB ECC ram, running MSVC 2015 update 3 x64 as compiler, but almost identical results are available for a Core2Duo (e8500) under the same compiler <a href="stack_benchmark_msvc_results_c2d.htm">here</a>. Build settings are x64 release, "/O2 /Oi /Ot /Oy /GL". Tests are based on a sliding scale of number of runs vs number of elements, so a test with only 10 elements in a container may average 100000 runs, whereas a test with 100000 elements may only average 10 runs. This tends to give adequate results without overly lengthening test times. I have not included results involving 'reserve()' functions as the differences to overall insertion performance were not adequate.</p>
+
+<p>Tests are carried out on the following types: (a) a 8-bit type ie. char, (b) a 32-bit type ie. int, (c) a 64-bit type ie. double, (d) a small struct containing two pointers and four scalar types, and (e) a large struct containing 2 pointers, 4 scalar types, a large array of ints and a small array of chars. In order to better facilitate accurate time-keeping for short tests, both container construction and destruction times are included in the tests. The sequence is as follows: construction, push N elements, read (back) + pop all elements, destruction. Because unlike a regular container, a stack must be pushed for every pop, and popped for every read, it makes little sense to analyse these aspects of use separately, as what is most important is the overall time taken. For that reason both separate and combined ("total time") benchmarks are presented below.</p>
+
+<h2>Construction + Push</h2>
+                                                                       
+<p><i>Click images or hover over to see results at linear scale instead</i></p>
+<img alt="test result graph" 
+onmouseover="this.src='tests/msvc/stack/char_push.png';"
+onmouseout="this.src='tests/msvc/stack/char_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/char_push.png';"
+src="tests/msvc/stack/char_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/int_push.png';"
+onmouseout="this.src='tests/msvc/stack/int_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/int_push.png';"
+src="tests/msvc/stack/int_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/double_push.png';"
+onmouseout="this.src='tests/msvc/stack/double_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/double_push.png';"
+src="tests/msvc/stack/double_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/small_struct_push.png';"
+onmouseout="this.src='tests/msvc/stack/small_struct_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/small_struct_push.png';"
+src="tests/msvc/stack/small_struct_push_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/large_struct_push.png';"
+onmouseout="this.src='tests/msvc/stack/large_struct_push_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/large_struct_push.png';"
+src="tests/msvc/stack/large_struct_push_log.png"><br>
+
+
+<h2>Back + Pop + Destruction</h2>
+
+<p><i>Click images or hover over to see results at linear scale instead</i></p>
+<img alt="test result graph" 
+onmouseover="this.src='tests/msvc/stack/char_pop.png';"
+onmouseout="this.src='tests/msvc/stack/char_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/char_pop.png';"
+src="tests/msvc/stack/char_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/int_pop.png';"
+onmouseout="this.src='tests/msvc/stack/int_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/int_pop.png';"
+src="tests/msvc/stack/int_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/double_pop.png';"
+onmouseout="this.src='tests/msvc/stack/double_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/double_pop.png';"
+src="tests/msvc/stack/double_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/small_struct_pop.png';"
+onmouseout="this.src='tests/msvc/stack/small_struct_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/small_struct_pop.png';"
+src="tests/msvc/stack/small_struct_pop_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/large_struct_pop.png';"
+onmouseout="this.src='tests/msvc/stack/large_struct_pop_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/large_struct_pop.png';"
+src="tests/msvc/stack/large_struct_pop_log.png"><br>
+
+
+<h2>Total Time</h2>
+
+<p><i>Click images or hover over to see results at linear scale instead</i></p>
+<img alt="test result graph" 
+onmouseover="this.src='tests/msvc/stack/char_total_time.png';"
+onmouseout="this.src='tests/msvc/stack/char_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/char_total_time.png';"
+src="tests/msvc/stack/char_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/int_total_time.png';"
+onmouseout="this.src='tests/msvc/stack/int_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/int_total_time.png';"
+src="tests/msvc/stack/int_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/double_total_time.png';"
+onmouseout="this.src='tests/msvc/stack/double_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/double_total_time.png';"
+src="tests/msvc/stack/double_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/small_struct_total_time.png';"
+onmouseout="this.src='tests/msvc/stack/small_struct_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/small_struct_total_time.png';"
+src="tests/msvc/stack/small_struct_total_time_log.png"><br>
+<img alt="test result graph"
+onmouseover="this.src='tests/msvc/stack/large_struct_total_time.png';"
+onmouseout="this.src='tests/msvc/stack/large_struct_total_time_log.png';"
+style="cursor: pointer;"
+onclick="this.src='tests/msvc/stack/large_struct_total_time.png';"
+src="tests/msvc/stack/large_struct_total_time_log.png"><br>
+
+<h4>Conclusion</h4>
+
+<p>Simply put, plf::stack out-performs both std::stack (std::deque) and std::vector under MSVC 2015 once both push and pop time are taken into account, except for char with more than 1000 elements, where vector has a performance advantage. We can also see that the larger the stored type is, the greater the performance advantage is.</p>
+
+<p>Contact: <img src="footer.gif"><br>
+plf:: library and this site Copyright (c) 2016, Matthew Bentley</p>
+</body>
+</html>
