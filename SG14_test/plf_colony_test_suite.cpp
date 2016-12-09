@@ -135,7 +135,7 @@ void plf_colony_test_suite()
 			p_colony.insert(&ten);
 			
 			failpass("Colony not-empty", !p_colony.empty());
-		
+
 			title2("Iterator tests");
 			
 			failpass("Begin() working", **p_colony.begin() == 10);
@@ -218,7 +218,7 @@ void plf_colony_test_suite()
 			colony<int *>::reverse_iterator r_iterator2 = p_colony.next(r_iterator, 2);
 
 			failpass("Reverse iterator next and distance test", p_colony.distance(p_colony.rbegin(), r_iterator2) == -52);
-			
+
 			numtotal = 0;
 			total = 0;
 
@@ -296,7 +296,7 @@ void plf_colony_test_suite()
 			{
 				++total;
 			}
-			
+
 			failpass("Negative iteration test", total == 399);
 
 
@@ -323,7 +323,7 @@ void plf_colony_test_suite()
 			p_colony2.insert(&ten);
 
 			p_colony2.swap(p_colony3);
-			
+
 			failpass("Swap test", p_colony2.size() == p_colony3.size() - 1);
 			failpass("max_size() test", p_colony2.max_size() > p_colony2.size());
 			
@@ -331,7 +331,7 @@ void plf_colony_test_suite()
 
 		
 		{
-			title1("Insert and Erase tests");
+			title2("Insert and Erase tests");
 			
 			colony<int> i_colony;
 
@@ -463,7 +463,7 @@ void plf_colony_test_suite()
 			{
 				i_colony.insert(10);
 			}
-			
+
 			failpass("Insert post-erase test", i_colony.size() == 500000);
 			colony<int>::iterator the_iterator = i_colony.begin();
 			i_colony.advance(the_iterator, 250000);
@@ -547,7 +547,7 @@ void plf_colony_test_suite()
 			i_colony.erase(temp_iterator);
 			temp_iterator = i_colony.begin(); // Check edge-case with advance when erasures present in initial group
 			i_colony.advance(temp_iterator, 500);
-			
+
 			index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
 
 			failpass("Advance + iterator-to-index test", index == 500);
@@ -603,13 +603,231 @@ void plf_colony_test_suite()
 					}
 				}
 			}
-			
+
 			failpass("Multiple sequential small insert/erase commands test", count == i_colony.size());
 		}
 
 		{
-			title1("Different insertion-style tests");
+			title2("Range-erase tests");
+		
+			colony<int> i_colony;
 			
+			for (int counter = 0; counter != 1000; ++counter)
+			{
+				i_colony.insert(counter);
+			}
+			
+			
+			colony<int>::iterator it1 = i_colony.begin(), it2 = i_colony.begin();
+			
+			i_colony.advance(it1, 500);
+			i_colony.advance(it2, 800);
+			
+			i_colony.erase(it1, it2);
+			
+			unsigned int counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Simply range-erase test 1", counter == 700 && i_colony.size() == 700);
+
+		
+			it1 = it2 = i_colony.begin();
+			
+			i_colony.advance(it1, 400);
+			i_colony.advance(it2, 500); // This should put it2 past the point of previous erasures
+			
+			i_colony.erase(it1, it2);
+			
+			counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Simply range-erase test 2", counter == 600 && i_colony.size() == 600);
+
+			
+
+			it2 = it1 = i_colony.begin();
+			
+			i_colony.advance(it1, 4);
+			i_colony.advance(it2, 9); // This should put it2 past the point of previous erasures
+			
+			i_colony.erase(it1, it2);
+
+			counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Simple range-erase test 3", counter == 595 && i_colony.size() == 595);
+
+			
+
+
+			it2 = it1 = i_colony.begin();
+			
+			i_colony.advance(it2, 50); 
+			
+			i_colony.erase(it1, it2);
+			
+			counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Range-erase from begin() test 1", counter == 545 && i_colony.size() == 545);
+
+
+
+
+			it1 = i_colony.begin();
+			it2 = i_colony.end();
+			
+			i_colony.advance(it1, 345); // Test erasing and validity when it removes the final group in colony
+			i_colony.erase(it1, it2);
+			
+			counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Range-erase to end() test 1", counter == 345 && i_colony.size() == 345);
+
+
+
+			i_colony.clear();
+
+			for (counter = 0; counter != 3000; ++counter)
+			{
+				i_colony.insert(counter);
+			}
+			
+			for (colony<int>::iterator it = i_colony.begin(); it < i_colony.end(); ++it)
+			{
+				it = i_colony.erase(it);
+			}
+			
+			it2 = it1 = i_colony.begin();
+			
+			i_colony.advance(it1, 4);
+			i_colony.advance(it2, 600);
+			i_colony.erase(it1, it2);
+			
+			counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Range-erase with colony already half-erased, alternating erasures", counter == 904 && i_colony.size() == 904);
+
+
+
+			i_colony.clear();
+
+			for (counter = 0; counter != 3000; ++counter)
+			{
+				i_colony.insert(counter);
+			}
+			
+			for (colony<int>::iterator it = i_colony.begin(); it < i_colony.end(); ++it)
+			{
+				if ((xor_rand() & 1) == 0)
+				{
+					it = i_colony.erase(it);
+				}
+			}
+			
+			it1 = i_colony.begin();
+			it2 = i_colony.end();
+			
+			i_colony.advance(it1, 400);
+			i_colony.erase(it1, it2);
+
+			counter = 0;
+
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				++counter;
+			}
+
+			failpass("Range-erase with colony already third-erased, randomizes erasures", counter == 400 && i_colony.size() == 400);
+
+
+
+			unsigned int size, range1, range2, internal_loop_counter;
+
+			std::cout << "Fuzz-test range-erase randomly until empty: ";
+
+			for (unsigned int loop_counter = 0; loop_counter != 50; ++loop_counter)
+			{
+				i_colony.clear();
+
+				for (counter = 0; counter != 1000; ++counter)
+				{
+					i_colony.insert(counter);
+				}
+				
+				internal_loop_counter = 0;
+
+				while (!i_colony.empty())
+				{
+					it2 = it1 = i_colony.begin();
+
+					size = i_colony.size();
+					range1 = xor_rand() % size;
+					range2 = range1 + 1 + (xor_rand() % (size - range1));
+					i_colony.advance(it1, range1);
+					i_colony.advance(it2, range2);
+
+					i_colony.erase(it1, it2);
+
+					counter = 0;
+
+					for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+					{
+						++counter;
+					}
+
+					if (i_colony.size() != counter)
+					{
+						std::cout << "Fail. loop counter: " << loop_counter << ", internal_loop_counter: " << internal_loop_counter << "." << std::endl;
+						std::cin.get(); 
+						abort(); 
+					}
+					
+					if (i_colony.size() > 2)
+					{ // Test to make sure our stored erased_locations are valid
+						i_colony.insert(1);
+						i_colony.insert(10);
+					}
+	
+					++internal_loop_counter;
+				}
+			}
+
+			if (i_colony.size() == 0)
+			{
+				std::cout << "Pass\n";
+			}
+		}
+
+		{
+			title2("Different insertion-style tests");
+
 			#ifdef PLF_INITIALIZER_LIST_SUPPORT
 				colony<int> i_colony = {1, 2, 3};
 			#else
