@@ -255,7 +255,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_19-11-2016.zip">here</a> (26kb zip file) or
+<p>Download <a href="plf_colony_10-12-2016.zip">here</a> (26kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -431,12 +431,12 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     </tr>
     <tr>
       <td>erase</td>
-      <td>Only for the erased element</td>
+      <td>Only for the erased element. If an iterator is == end() it may be invalidated if the last element in the colony is erased, in some cases.</td>
     </tr>
     <tr>
       <td>insert, emplace</td>
       <td>If an iterator is == end() it may be invalidated by a subsequent
-        insert/emplace in some cases. Otherwise no.</td>
+        insert/emplace, in some cases.</td>
     </tr>
   </tbody>
 </table>
@@ -773,7 +773,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
   <li><code>void erase(const iterator &amp;first, const iterator
     &amp;last)</code> 
     <p>Erases all contents of a given colony from <code>first</code> to the
-    element before the <code>last</code> iterator. Example:</p>
+    element before the <code>last</code> iterator. This function is optimized for multiple consecutive erasures and will always be faster than sequential single-element erase calls in that scenario. Example:</p>
     <code style="color: brown">plf::colony&lt;int&gt; iterator1 =
     colony1.begin();<br>
     colony1.advance(iterator1, 10);<br>
@@ -2257,6 +2257,7 @@ or if external object access to container elements via the dereferencing system 
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2016-12-10: v3.87 - Optimized and corrected range erase. Documentation updated.</li>
   <li>2016-11-19: v3.86 - Performance improvements for low numbers of scalar types. Minor optimizations for fill-constructor and initializer-list constructor. Corrections to advance.</li>
   <li>2016-11-12: v3.83 - Minor optimizations. Edge-case corrections for advance functions and copy constructor. Optimizations to get_index_from_iterator, get_iterator_from_pointer, distance, advance. Advance now correctly bounds to rbegin and rend for reverse iterators. Warning removal for test suite.</li>
   <li>2016-11-1: v3.81 - Optimizations to insert functions. Corrections to
