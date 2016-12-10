@@ -1982,7 +1982,7 @@ private:
 			catch (...)
 			{
 				end_iterator.group_pointer->last_endpoint = --end_iterator.element_pointer;
-				const skipfield_type temp = static_cast<skipfield_type>(end_iterator.element_pointer - end_iterator.group_pointer->elements);
+				const skipfield_type temp = static_cast<const skipfield_type>(end_iterator.element_pointer - end_iterator.group_pointer->elements);
 				end_iterator.group_pointer->number_of_elements = temp;
 				end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + temp;
 				throw;
@@ -2016,7 +2016,7 @@ public:
 
 				// Create and fill all remaining groups:
 				size_type multiples = (number_of_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
-				const skipfield_type element_remainder = static_cast<skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
+				const skipfield_type element_remainder = static_cast<const skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
 
 				while (--multiples != 0)
 				{
@@ -2056,7 +2056,7 @@ public:
 			if (num_elements > group_allocator_pair.max_elements_per_group)
 			{
 				size_type multiples = (num_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
-				const skipfield_type element_remainder = static_cast<skipfield_type>(num_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
+				const skipfield_type element_remainder = static_cast<const skipfield_type>(num_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
 
 				while (multiples-- != 0)
 				{
@@ -2672,7 +2672,7 @@ public:
 					} while (current.element_pointer != end);
 				}
 
-				if (current.group_pointer->number_of_elements != static_cast<const skipfield_type>(current.group_pointer->last_endpoint - current.group_pointer->elements)) // no erasures
+				if (current.group_pointer->number_of_elements != static_cast<skipfield_type>(current.group_pointer->last_endpoint - current.group_pointer->elements)) // no erasures
 				{
 					consolidate_erased_locations(current.group_pointer);
 				}
@@ -2797,7 +2797,7 @@ public:
 				end_iterator.element_pointer = current.group_pointer->previous_group->last_endpoint;
 				end_iterator.skipfield_pointer = current.group_pointer->previous_group->skipfield + current.group_pointer->previous_group->size;
 
-				if (current.group_pointer->number_of_elements != static_cast<const skipfield_type>(current.group_pointer->last_endpoint - current.group_pointer->elements)) // ie. some prior erasures exist in group
+				if (current.group_pointer->number_of_elements != static_cast<skipfield_type>(current.group_pointer->last_endpoint - current.group_pointer->elements)) // ie. some prior erasures exist in group
 				{
 					consolidate_erased_locations(current.group_pointer);
 				}
@@ -3227,7 +3227,7 @@ public:
 
 
 			// Final group (if not already reached):
-			if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // No erasures in this group, use straight pointer addition
+			if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // No erasures in this group, use straight pointer addition
 			{
 				element_pointer = group_pointer->elements + distance;
 				skipfield_pointer = group_pointer->skipfield + distance;
@@ -3258,7 +3258,7 @@ public:
 			// Special case for initial element pointer and initial group (we don't know how far into the group the element pointer is)
 			if (element_pointer != group_pointer->last_endpoint) // ie. != end()
 			{
-				if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. no prior erasures have occurred in this group
+				if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. no prior erasures have occurred in this group
 				{
 					const difference_type distance_from_beginning = static_cast<const difference_type>(element_pointer - group_pointer->elements);
 
@@ -3329,7 +3329,7 @@ public:
 				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield); 
 				return;
 			}
-			else if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. no erased elements in this group
+			else if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. no erased elements in this group
 			{
 				element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield) - distance;
 				skipfield_pointer = (group_pointer->skipfield + group_pointer->size) - distance;
@@ -3373,7 +3373,7 @@ public:
 			assert (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)); // Check that we're not already at rend()
 			// Special case for initial element pointer and initial group (we don't know how far into the group the element pointer is)
 			// Since a reverse_iterator cannot == last_endpoint (ie. before rbegin()) we don't need to check for that like with iterator
-			if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements))
+			if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements))
 			{
 				difference_type distance_from_beginning = static_cast<difference_type>(element_pointer - group_pointer->elements);
 
@@ -3443,7 +3443,7 @@ public:
 				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
 				return;
 			}
-			else if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements))
+			else if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements))
 			{
 				element_pointer = reinterpret_cast<element_pointer_type>(group_pointer->skipfield) - distance;
 				skipfield_pointer = (group_pointer->skipfield + group_pointer->size) - distance;
@@ -3557,7 +3557,7 @@ public:
 			
 
 			// Final group (if not already reached):	
-			if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // No erasures in this group, use straight pointer addition
+			if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // No erasures in this group, use straight pointer addition
 			{
 				element_pointer = group_pointer->elements + distance;
 				skipfield_pointer = group_pointer->skipfield + distance;
