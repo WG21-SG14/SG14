@@ -2620,7 +2620,7 @@ public:
 				// Now update skipfield:
 				skipfield_pointer_type current_skipfield = iterator1.skipfield_pointer;
 				skipfield_type node_value = *(current_skipfield - 1); // Find value of left-hand node
-				skipfield_type update_count = end - current_skipfield;
+				skipfield_type update_count = static_cast<skipfield_type>(end - current_skipfield);
 				
 				*(current_skipfield - node_value) = node_value + update_count; // Either set current node as the start node, or if previous node is part of a skipblock, update that skipblock's start node and join to that skipblock
 				const bool left_node_is_zero = (node_value == 0);
@@ -2742,7 +2742,7 @@ public:
 
 			// Update skipfield:
 			skipfield_type node_value = *(current.skipfield_pointer - (current.group_pointer->skipfield != current.skipfield_pointer)); // Find value of left-hand node - if current node is at start of skipfield, we check the current node instead, which will always be zero.
-			skipfield_type update_count = iterator2.element_pointer - current.element_pointer;                 
+			skipfield_type update_count = static_cast<skipfield_type>(iterator2.element_pointer - current.element_pointer);
 			         
 			*(current.skipfield_pointer - node_value) = node_value + update_count; // Either set current node as the start node, or if previous node is part of a skipblock, update that skipblock's start node
 			const bool left_node_is_zero = (node_value == 0);
@@ -3111,8 +3111,8 @@ public:
 
 
 	// Advance implementation for iterator and const_iterator:
-	template <class colony_element_allocator_type, bool is_const, typename distance_type>
-	void advance(colony_iterator<colony_element_allocator_type, is_const> &it, distance_type distance) const
+	template <class colony_element_allocator_type, bool is_const>
+	void advance(colony_iterator<colony_element_allocator_type, is_const> &it, difference_type distance) const
 	{
 		// For code simplicity - should hopefully be optimized out by compiler:
 		group_pointer_type &group_pointer = it.group_pointer;
@@ -3145,7 +3145,7 @@ public:
 			{
 				if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. if there are no erasures in the group (using endpoint - elements_start to determine number of elements in group just in case this is the last group of the colony, in which case group->last_endpoint != group->elements + group->size)
 				{
-					const distance_type distance_from_end = static_cast<const distance_type>(group_pointer->last_endpoint - element_pointer);
+					const difference_type distance_from_end = static_cast<const difference_type>(group_pointer->last_endpoint - element_pointer);
 
 					if (distance < distance_from_end)
 					{
@@ -3204,7 +3204,7 @@ public:
 
 
 			// Intermediary groups - at the start of this code block and the subsequent block, the position of the iterator is assumed to be the first non-erased element in the current group:
-			while (static_cast<distance_type>(group_pointer->number_of_elements) <= distance)
+			while (static_cast<difference_type>(group_pointer->number_of_elements) <= distance)
 			{
 				if (group_pointer->next_group == NULL) // either we've reached end() or gone beyond it, so bound to end()
 				{
@@ -3260,7 +3260,7 @@ public:
 			{
 				if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. no prior erasures have occurred in this group
 				{
-					const distance_type distance_from_beginning = static_cast<const distance_type>(element_pointer - group_pointer->elements);
+					const difference_type distance_from_beginning = static_cast<const difference_type>(element_pointer - group_pointer->elements);
 
 					if (distance <= distance_from_beginning)
 					{
@@ -3308,7 +3308,7 @@ public:
 
 
 			// Intermediary groups - at the start of this code block and the subsequent block, the position of the iterator is assumed to be either the first non-erased element in the next group over, or end():
-			while(static_cast<distance_type>(group_pointer->number_of_elements) < distance)
+			while(static_cast<difference_type>(group_pointer->number_of_elements) < distance)
 			{
 				if (group_pointer->previous_group == NULL) // we've gone beyond begin(), so bound to it
 				{
@@ -3323,7 +3323,7 @@ public:
 				
 				
 			// Final group (if not already reached):
-			if (static_cast<distance_type>(group_pointer->number_of_elements) == distance)
+			if (static_cast<difference_type>(group_pointer->number_of_elements) == distance)
 			{
 				element_pointer = group_pointer->elements + *(group_pointer->skipfield);
 				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield); 
@@ -3357,8 +3357,8 @@ public:
 
 
 	// Advance for reverse_iterator and const_reverse_iterator:
-	template <class colony_element_allocator_type, bool is_const, typename distance_type>
-	void advance(colony_reverse_iterator<colony_element_allocator_type, is_const> &it, distance_type distance) const
+	template <class colony_element_allocator_type, bool is_const>
+	void advance(colony_reverse_iterator<colony_element_allocator_type, is_const> &it, difference_type distance) const
 	{
 		group_pointer_type &group_pointer = it.the_iterator.group_pointer;
 		element_pointer_type &element_pointer = it.the_iterator.element_pointer;
@@ -3375,7 +3375,7 @@ public:
 			// Since a reverse_iterator cannot == last_endpoint (ie. before rbegin()) we don't need to check for that like with iterator
 			if (group_pointer->number_of_elements == static_cast<const skipfield_type>(group_pointer->last_endpoint - group_pointer->elements))
 			{
-				distance_type distance_from_beginning = static_cast<distance_type>(element_pointer - group_pointer->elements);
+				difference_type distance_from_beginning = static_cast<difference_type>(element_pointer - group_pointer->elements);
 
 				if (distance <= distance_from_beginning)
 				{
@@ -3422,7 +3422,7 @@ public:
 
 
 			// Intermediary groups - at the start of this code block and the subsequent block, the position of the iterator is assumed to be the first non-erased element in the next group:
-			while(static_cast<distance_type>(group_pointer->number_of_elements) < distance)
+			while(static_cast<difference_type>(group_pointer->number_of_elements) < distance)
 			{
 				if (group_pointer->previous_group == NULL) // bound to rend()
 				{
@@ -3431,13 +3431,13 @@ public:
 					return;
 				}
 
-				distance -= static_cast<distance_type>(group_pointer->number_of_elements);
+				distance -= static_cast<difference_type>(group_pointer->number_of_elements);
 				group_pointer = group_pointer->previous_group;
 			} 
 			
 
 			// Final group (if not already reached)
-			if (static_cast<distance_type>(group_pointer->number_of_elements) == distance)
+			if (static_cast<difference_type>(group_pointer->number_of_elements) == distance)
 			{
 				element_pointer = group_pointer->elements + *(group_pointer->skipfield);
 				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
@@ -3471,7 +3471,7 @@ public:
 			{
 				if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. if there are no erasures in the group (using endpoint - elements_start to determine number of elements in group just in case this is the last group of the colony, in which case group->last_endpoint != group->elements + group->size)
 				{
-					const distance_type distance_from_end = static_cast<const distance_type>(group_pointer->last_endpoint - element_pointer);
+					const difference_type distance_from_end = static_cast<const difference_type>(group_pointer->last_endpoint - element_pointer);
 
 					if (distance < distance_from_end)
 					{
@@ -3533,7 +3533,7 @@ public:
 
 
 			// Intermediary groups - at the start of this code block and the subsequent block, the position of the iterator is assumed to be the first non-erased element in the current group:
-			while(static_cast<distance_type>(group_pointer->number_of_elements) <= distance)
+			while(static_cast<difference_type>(group_pointer->number_of_elements) <= distance)
 			{
 				if (group_pointer->next_group == NULL) // bound to rbegin()
 				{

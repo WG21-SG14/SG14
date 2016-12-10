@@ -431,7 +431,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     </tr>
     <tr>
       <td>erase</td>
-      <td>Only for the erased element. If an iterator is == end() it may be invalidated if the last element in the colony is erased, in some cases.</td>
+      <td>Only for the erased element. If an iterator is == end() it may be invalidated if the last element in the colony is erased, in some cases. If a reverse_iterator is == rend() it may be invalidated if the first element in the colony is erased, in some cases.</td>
     </tr>
     <tr>
       <td>insert, emplace</td>
