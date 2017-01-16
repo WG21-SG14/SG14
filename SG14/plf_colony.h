@@ -479,11 +479,11 @@ private:
 							throw;
 						}
 					}
-	
+
 					current_group = current_group->next_group;
 					start_element = top_element = current_group->elements;
 					end_element = current_group->end;
-	
+
 					PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, (*this), top_element, the_element);
 					++total_number_of_elements;
 					return;
@@ -1580,10 +1580,11 @@ public:
 					{ /* ie. begin_iterator was moved forwards as the result of an erasure at some point, this erased element is before the current begin, hence, set current begin iterator to this element */
 						begin_iterator = new_location;
 					}
-	
+
 					++total_number_of_elements;
 
-					// Pseudocode:
+					// Code logic for next section:
+					// ============================
 					// check whether location we are restoring to has a skipfield node before or after which is erased
 					// if it has only a node before which is erased (ie. at end of erasure block), update the prime erasure point
 					// if it only has a node after it which is erased, (ie. this is the prime erasure point), change next node to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
@@ -1707,7 +1708,7 @@ public:
 							end_iterator.group_pointer->next_group = NULL;
 							throw;
 						}
-	
+
 						end_iterator.group_pointer = &next_group;
 						end_iterator.element_pointer = next_group.last_endpoint;
 						end_iterator.skipfield_pointer = next_group.skipfield + 1;
@@ -1730,7 +1731,7 @@ public:
 						}
 	
 						new_location.skipfield_pointer = new_location.group_pointer->skipfield + (new_location.element_pointer - new_location.group_pointer->elements);
-						
+
 						++(new_location.group_pointer->number_of_elements);
 
 						if (new_location.group_pointer == first_group && new_location.element_pointer < begin_iterator.element_pointer)
@@ -1886,21 +1887,21 @@ public:
 						const bool test = (new_location.skipfield_pointer == new_location.group_pointer->skipfield);
 						const unsigned char prev_skipfield = *(new_location.skipfield_pointer - !test) != value * test;
 						const unsigned char after_skipfield = *(new_location.skipfield_pointer + 1) != 0;
-	
+
 						switch (prev_skipfield | (after_skipfield << 1))
 						{
-							case 1: 
+							case 1:
 							{
 								*(new_location.skipfield_pointer - (value - 1)) = value - 1;
 								break;
 							}
-							case 2: 
+							case 2:
 							{
 								std::memmove(&*(new_location.skipfield_pointer + 2), &*(new_location.skipfield_pointer + 1), sizeof(skipfield_type) * (value - 2));
 								*(new_location.skipfield_pointer + 1) = value - 1;
 								break;
 							}
-							case 3: 
+							case 3:
 							{
 								const skipfield_pointer_type start_node = new_location.skipfield_pointer - (value - 1);
 								const skipfield_type update_count = *start_node - value;
@@ -1916,7 +1917,7 @@ public:
 					}
 				}
 			}
-			else 
+			else
 			{
 				initialize(min_elements_per_group);
 
@@ -2107,9 +2108,9 @@ public:
 	}
 
 
-	
+
 	// Initializer-list insert
-	
+
 	#ifdef PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		iterator insert (const std::initializer_list<element_type> &element_list)
 		{
@@ -2409,7 +2410,7 @@ public:
 		#endif
 		{
 			PLF_COLONY_DESTROY(element_allocator_type, (*this), the_iterator.element_pointer); // Destruct element
-		}	
+		}
 
 		--total_number_of_elements;
 
@@ -2417,17 +2418,18 @@ public:
 		{
 			erased_locations.push(the_iterator.element_pointer);
 
-			// Pseudocode:
-			// If slot has no erased slots on either side, continue as usual
-			// If slot has erased slot before it, add 1 to prev slot no. and use as skipfield_pointer. Update prime erasure point
-			// If slot has erased slot after it but none before it, make this slot prime erasure slot and update subsequent slots
-			// If slot has erasure slot before it and after it, remove secondary prime erasure slot and update all slots after this point
+			// Code logic for following section:
+			// ---------------------------------
+			// If current skipfield node has no erased node on either side, continue as usual
+			// If node has erased node before it, add 1 to prev node value and set current node and start node of the skipblock to this.
+			// If node has erased node after it but none before it, make this node the start node of the skipblock and update subsequent nodes
+			// If node has erased nodes before and after it, set current node to left node + 1, then update all nodes after  the current node - effectively removing start node of the right-hand skipblock
 
 			iterator return_iterator;
 
 			// Optimization explanation:
 			// The contextual logic below is the same as that in the insert() functions but in this case the value of the current skipfield node will always be
-			// zero, meaning no additional manipulations are necessary for the previous skipfield node comparison - we only have to check against zero
+			// zero (since it is not yet erased), meaning no additional manipulations are necessary for the previous skipfield node comparison - we only have to check against zero
 			const unsigned char prev_skipfield = *(the_iterator.skipfield_pointer - (the_iterator.skipfield_pointer != the_group_pointer->skipfield)) != 0;
 			const unsigned char after_skipfield = *(the_iterator.skipfield_pointer + 1) != 0;  // NOTE: boundary test (checking against end-of-elements) is able to be skipped due to the extra skipfield node (compared to element field) - which is present to enable faster iterator operator ++ operations
 
@@ -2480,7 +2482,7 @@ public:
 					return_iterator.check_for_end_of_group_and_progress();
 
 					skipfield_type vectorize = update_count >> 2;
-					update_count &= 3; //ie. % 4
+					update_count &= 3; // ie. % 4
 
 					while (vectorize-- != 0)
 					{
@@ -2629,7 +2631,7 @@ public:
 				update_count -= left_node_is_zero;
 
 				// Vectorize the updates:
-				while (update_count  >= 4)
+				while (update_count >= 4)
 				{
 					*(current_skipfield) = node_value + 1;
 					*(current_skipfield + 1) = node_value + 2;
@@ -3500,7 +3502,7 @@ public:
 						skipfield_pointer += *skipfield_pointer;
 
 						--distance;
-                        
+
 						if (skipfield_pointer == endpoint)
 						{
 							break;
@@ -3554,7 +3556,7 @@ public:
 					group_pointer = group_pointer->next_group;
 				}	
 			}
-			
+
 
 			// Final group (if not already reached):	
 			if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // No erasures in this group, use straight pointer addition
