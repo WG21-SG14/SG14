@@ -1294,6 +1294,22 @@ inline PLF_FORCE_INLINE void benchmark_remove_if(const unsigned int number_of_el
 
 
 template <class container_type>
+inline PLF_FORCE_INLINE unsigned int approximate_memory_use(container_type &container)
+{
+	return static_cast<unsigned int>(container.approximate_memory_use());
+}
+
+
+
+template<class container_contents>
+inline PLF_FORCE_INLINE unsigned int approximate_memory_use(std::list<container_contents> &list)
+{
+	return static_cast<unsigned int>(sizeof(list) + (list.size() * (sizeof(container_contents) + sizeof(container_contents *) + (sizeof(void *) * 2))));
+}
+
+
+
+template <class container_type>
 inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_elements, const unsigned int number_of_runs, const unsigned int number_of_cycles, const unsigned int number_of_modifications)
 {
 	assert (number_of_elements > 1);
@@ -1333,7 +1349,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use(const unsigned int number_of_
 			}
 		}
 		
-		end_approximate_memory_use += container.approximate_memory_use();
+		end_approximate_memory_use += approximate_memory_use(container);
 	}
 	
 	end_approximate_memory_use /= end;
@@ -1421,7 +1437,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_percentage(const unsigned int
 			}
 		}
 
-		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
+		end_approximate_memory_use += approximate_memory_use(container);
 	}
 	
 	end_approximate_memory_use /= end;
@@ -1514,7 +1530,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 			}
 		}
 
-		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
+		end_approximate_memory_use += approximate_memory_use(container);
 	}
 
 	end_approximate_memory_use /= dump_run_end;
@@ -1562,6 +1578,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_small_percentage(const unsign
 	std::cerr << "Dump total: " << total << std::endl; // To prevent compiler from optimizing out both inner loops (ie. total must have a side effect or it'll be removed) - no kidding, gcc will actually do this with std::vector.
 
 }
+
 
 
 
@@ -1613,7 +1630,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_small_percentage(co
 			}
 		}
 
-		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
+		end_approximate_memory_use += approximate_memory_use(container);
 	}
 
 	end_approximate_memory_use /= dump_run_end;
@@ -1715,7 +1732,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if(const unsigned int 
 			}
 		}
 
-		end_approximate_memory_use += container.approximate_memory_use();
+		end_approximate_memory_use += approximate_memory_use(container);
 	}
 	
 	end_approximate_memory_use /= end;
@@ -1838,7 +1855,7 @@ inline PLF_FORCE_INLINE void benchmark_general_use_remove_if_percentage(const un
 			}
 		}
 		
-		end_approximate_memory_use += static_cast<unsigned int>(container.approximate_memory_use());
+		end_approximate_memory_use += approximate_memory_use(container);
 	}
 
 	end_approximate_memory_use /= end;
@@ -2683,6 +2700,7 @@ void benchmark_range_general_use_small_percentage(const unsigned int min_number_
 		std::cout << "\n,,,\n,,,\n";
 	}
 }
+
 
 
 

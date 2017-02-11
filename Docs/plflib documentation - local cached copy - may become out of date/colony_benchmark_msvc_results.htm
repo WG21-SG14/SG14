@@ -14,7 +14,7 @@
 
 <h1>PLF C++ Library - plf::colony - MSVC benchmarks</h1>
 
-<p style="font-size: 75%"><i>Last updated 19-11-2016 v3.86</i></p>
+<p style="font-size: 75%"><i>Last updated 8-2-2017 v3.87</i></p>
 <ol>
   <li><a href="#testsetup">Test setup</a></li>
   <li><a href="#rawperformance">Raw performance benchmarks (against standard
@@ -33,7 +33,7 @@ x64 as compiler. OS is a stripped-back Windows 7 x64 SP1 installation with most
 services, background tasks (including explorer) and all networking disabled.
 Build settings are "/O2 /Oi /Ot /Oy /GL". The
 source code for the benchmarks can be found in the colony page <a
-href="http://www.plflib.org/colony.htm#download">downloads</a> section, as can further details about the test designs. Lastly, because MSVC's deque implementation is not good, we've skipped the heavy-referencing tests for MSVC, and packed_deque in the comparitive tests (this's been replaced with std::list in case anyone's interested in the performance of that). In order to not duplicate effort and conclusions, commentary is left for the GCC results (with the exception of some small overall comclusions).</p>
+href="http://www.plflib.org/colony.htm#download">downloads</a> section, as can further details about the test designs. Lastly, because MSVC's deque implementation is not good, we've skipped the heavy-referencing tests for MSVC, and packed_deque in the comparitive tests (this's been replaced with std::list in case anyone's interested in the performance of that). In order to not duplicate effort and conclusions, commentary is left for the GCC results (with the exception of some small overall conclusions).</p>
 
 <h3><a id="rawperformance"></a>Raw performance tests</h3>
 
@@ -319,7 +319,7 @@ src="tests/msvc/colony/general_use/per_frame_mem_10_log.png"><br>
 
 <h3>Overall Performance Conclusions</h3>
 
-<p>For the most part MSV's results are similar to GCC's, with the exception of deque, which performs poorly, and vector, which slightly outperform's GCC's vector for iteration and erase performance, but underperforms by comparison for insertion performance. The end result is much the same, although we cannot compare packed_deque results.</p>
+<p>For the most part MSV's results are similar to GCC's, with the exception of deque, which performs poorly, and vector, which slightly outperform's GCC's vector for iteration and erase performance, but underperforms by comparison for insertion performance. The end result is much the same, although we cannot compare packed_deque results. std::list performs admirably under the modification tests, at least for less than 500 elements, but at higher numbers of elements it's performance becomes worse.</p>
 
 <p>Using a boolean skipfield in combination with a vector or deque is of course
 a no-go, due to it's poor iteration performance once the number of erasures
@@ -335,6 +335,6 @@ use a colony.</p>
 
 
 <p>Contact: <img alt="footer" src="footer.gif"><br>
-plf:: library and this page Copyright (c) 2016, Matthew Bentley</p>
+plf:: library and this page Copyright (c) 2017, Matthew Bentley</p>
 </body>
 </html>

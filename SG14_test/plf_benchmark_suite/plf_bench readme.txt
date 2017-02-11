@@ -1,6 +1,6 @@
 The benchmarking suite includes a range of functions, some of which may be important to you, some of which may not.
 
-They are all things I've used in the course of testing, so apologies for the clutter. Needs a cleanup .
+They are all things I've used in the course of testing, so apologies for the clutter.
 
 The individual_tests folder contains the files I used to generate the graphs in the plf::colony and plf::stack documentation.
 

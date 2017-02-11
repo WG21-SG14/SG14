@@ -2,10 +2,11 @@
 #define PLF_INDEXED_VECTOR_H
 
 #include <cstring> // for size_t
+#include <vector>
 
 
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
-	#define PLF_MOVE_SEMANTICS_SUPPORT
+	#define PLF_INDEXED_VECTOR_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
 #endif
 
@@ -30,27 +31,32 @@ public:
 	indexed_vector(): current_back_index(0) {};
 	indexed_vector(const indexed_vector &source): elements(source.elements), element_indexes(source.element_indexes), current_back_index(source.current_back_index) {};
 	~indexed_vector() {};
+
 	
 	inline const element_type & get(const iterator &location) const
 	{
 		return elements[*location];
 	}
+
 	
 	inline element_type & set(const iterator &location)
 	{
 		return elements[*location];
 	}
+
 	
 	inline void push_back(const element_type &element)
 	{
 		elements.push_back(element);
 		element_indexes.push_back(current_back_index++);
 	}
+
 	
 	inline iterator begin() { return element_indexes.begin(); };
 	inline iterator end() { return element_indexes.end(); };
 	inline const iterator & begin() const { return element_indexes.begin(); };
 	inline const iterator & end() const { return element_indexes.end(); };
+
 
 	inline iterator erase(iterator &location)
 	{
@@ -58,11 +64,13 @@ public:
 		return element_indexes.erase(location);
 	}
 
+
 	inline void reserve(unsigned int amount)
 	{
 		elements.reserve(amount);
 		element_indexes.reserve(amount);
 	}
+
 
 	inline indexed_vector & operator = (const indexed_vector &source)
 	{
@@ -74,7 +82,7 @@ public:
 	}
 
 
-#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+#ifdef PLF_INDEXED_VECTOR_MOVE_SEMANTICS_SUPPORT
 	indexed_vector(indexed_vector &&source): elements(std::move(source.elements)), element_indexes(std::move(source.element_indexes)), current_back_index(source.current_back_index) {}
 
 
@@ -93,12 +101,14 @@ public:
 	{
 		return static_cast<size_t>(element_indexes.size());
 	}
+
 	
 	inline size_t capacity() const
 	{
 		return static_cast<size_t>(elements.capacity());
 	}
 	
+
 	inline size_t approximate_memory_use() const
 	{
 		return static_cast<size_t>(
@@ -106,6 +116,7 @@ public:
 			(element_indexes.capacity() * sizeof(unsigned int)) + 
 			sizeof(*this));
 	}
+
 
 	inline void clear()
 	{
@@ -139,5 +150,9 @@ public:
 
 
 }
+
+#ifdef PLF_INDEXED_VECTOR_MOVE_SEMANTICS_SUPPORT
+#undef PLF_INDEXED_VECTOR_MOVE_SEMANTICS_SUPPORT
+#endif
 
 #endif // PLF_INDEXED_VECTOR_H

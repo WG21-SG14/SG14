@@ -4,7 +4,7 @@
 #include <cstring> // for size_t
 
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
-	#define PLF_MOVE_SEMANTICS_SUPPORT
+	#define PLF_POINTER_DEQUE_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
 #endif
 
@@ -76,13 +76,6 @@ public:
 	}
 
 	
-	inline void reserve(unsigned int amount)
-	{
-		elements.reserve(amount);
-		element_pointers.reserve(amount);
-	}
-
-	
 	inline pointer_deque & operator = (const pointer_deque &source)
 	{
 		elements = source.elements;
@@ -93,7 +86,7 @@ public:
 
 	
 
-#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+#ifdef PLF_POINTER_DEQUE_MOVE_SEMANTICS_SUPPORT
 	pointer_deque(pointer_deque &&source): elements(std::move(source.elements)), element_pointers(std::move(source.element_pointers)) { }
 
 
@@ -162,5 +155,10 @@ public:
 };
 
 }
+
+
+#ifdef PLF_POINTER_DEQUE_MOVE_SEMANTICS_SUPPORT
+#undef PLF_POINTER_DEQUE_MOVE_SEMANTICS_SUPPORT
+#endif
 
 #endif // PLF_POINTER_DEQUE_H

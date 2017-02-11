@@ -27,7 +27,8 @@
 
 <h2><a id="intro"></a>Introduction</h2>
 
-<p>A colony is the highest-performance C++ template-based data container for high-modification scenarios with unordered data. Specifically it provides
+<p>A colony is the highest-performance C++ template-based data container for
+high-modification scenarios with unordered data. Specifically it provides
 better performance than other std:: library containers when:</p>
 <ol type="a">
   <li>Insertion order is unimportant,</li>
@@ -61,12 +62,12 @@ broad cross-compiler support.</p>
 <p>It can be reasonably compared to a "bag" or "bucket-array" styled structure,
 where each element location can be emptied and skipped over. Unlike a bucket
 array it does not use keys, iterates faster due to the use of a <a
-href="skipfield_comparison.htm">jump-counting
-skipfield</a> instead of a boolean field, and frees or recycles unused memory
-from erased element locations on the fly. As it was initially developed
-predominantly for game development, colony favours larger-than-scalar-type
-(structs/classes of greater-than 128 bits total) performance over scalar-type
-(float, int, etc) performance.</p>
+href="skipfield_comparison.htm">jump-counting skipfield</a> instead of a
+boolean field, and frees or recycles unused memory from erased element
+locations on the fly. As it was initially developed predominantly for game
+development, colony favours larger-than-scalar-type (structs/classes of
+greater-than 128 bits total) performance over scalar-type (float, int, etc)
+performance.</p>
 
 <h2><a id="motivation"></a>Motivation</h2>
 
@@ -178,11 +179,10 @@ invalidation upon either erasure or insertion. It's insertion speed is also
 much faster than a vector's. Memory from erased elements is either reused by
 subsequent insertions or released to the OS on-the-fly. It achieves these ends
 by via a number of new approaches: a <a
-href="skipfield_comparison.htm">jump-counting
-skipfield</a> (instead of a boolean field), a <a
-href="chained_group_allocation_pattern.htm">linked chain</a> of
-increasingly-large memory blocks (instead of a singular memory block or vector
-of blocks), and a custom internal reduced stack (based on <a
+href="skipfield_comparison.htm">jump-counting skipfield</a> (instead of a
+boolean field), a <a href="chained_group_allocation_pattern.htm">linked
+chain</a> of increasingly-large memory blocks (instead of a singular memory
+block or vector of blocks), and a custom internal reduced stack (based on <a
 href="stack.htm">plf::stack</a>) to enable erased memory location re-use.</p>
 
 <p>More data on the performance characteristics of the colony versus other
@@ -263,7 +263,7 @@ The colony library is a simple .h header file, to be included with a #include
 command.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_16-11-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_8-2-2016.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -431,7 +431,10 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     </tr>
     <tr>
       <td>erase</td>
-      <td>Only for the erased element. If an iterator is == end() it may be invalidated if the last element in the colony is erased, in some cases. If a reverse_iterator is == rend() it may be invalidated if the first element in the colony is erased, in some cases.</td>
+      <td>Only for the erased element. If an iterator is == end() it may be
+        invalidated if the last element in the colony is erased, in some cases.
+        If a reverse_iterator is == rend() it may be invalidated if the first
+        element in the colony is erased, in some cases.</td>
     </tr>
     <tr>
       <td>insert, emplace</td>
@@ -773,7 +776,9 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
   <li><code>void erase(const iterator &amp;first, const iterator
     &amp;last)</code> 
     <p>Erases all contents of a given colony from <code>first</code> to the
-    element before the <code>last</code> iterator. This function is optimized for multiple consecutive erasures and will always be faster than sequential single-element erase calls in that scenario. Example:</p>
+    element before the <code>last</code> iterator. This function is optimized
+    for multiple consecutive erasures and will always be faster than sequential
+    single-element erase calls in that scenario. Example:</p>
     <code style="color: brown">plf::colony&lt;int&gt; iterator1 =
     colony1.begin();<br>
     colony1.advance(iterator1, 10);<br>
@@ -872,7 +877,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     style="color: brown">object_colony.change_minimum_group_size(100);</code></p>
   </li>
   <li><code>void change_maximum_group_size(const unsigned short
-    min_group_size)</code>
+    min_group_size)</code> 
     <p>Changes the maximum internal group size only, in terms of maximum number
     of elements stored per group. If the colony is not empty and either
     max_group_size is smaller than the largest group in the colony, the colony
@@ -928,7 +933,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     Example: <code style="color: brown">if (object_colony == object_colony2)
     return;</code></p>
   </li>
-  <li><code>bool operator != (const colony &amp;source)</code>
+  <li><code>bool operator != (const colony &amp;source)</code> 
     <p>Compare contents of another colony to this colony. Returns a boolean as
     to whether they are not equal.<br>
     Example: <code style="color: brown">if (object_colony != object_colony2)
@@ -959,10 +964,10 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     iterator using this method and then erasing, is about 20% slower on average
     than erasing when you already have the iterator. This is less dramatic than
     it sounds, as it is still faster than all std:: container erasure times
-  	which it is roughly equal to. However this is generally a
-    slower, lookup-based operation. If the lookup doesn't find a non-erased
-    element based on that pointer, it returns <code>end()</code>. Otherwise it
-    returns an iterator pointing to the element in question. Example:</p>
+    which it is roughly equal to. However this is generally a slower,
+    lookup-based operation. If the lookup doesn't find a non-erased element
+    based on that pointer, it returns <code>end()</code>. Otherwise it returns
+    an iterator pointing to the element in question. Example:</p>
     <p><code style="color: brown">plf::colony&lt;a_struct&gt; data_colony;<br>
     plf::colony&lt;a_struct&gt;::iterator an_iterator;<br>
     a_struct struct_instance;<br>
@@ -1071,7 +1076,7 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
 
 <h2><a id="benchmarks"></a>Benchmarks</h2>
 
-<p style="font-size: 75%"><i>Last updated 19-11-2016 v3.86</i></p>
+<p style="font-size: 75%"><i>Last updated 8-2-2017 v3.87</i></p>
 <ol>
   <li><a href="#testsetup">Test setup</a></li>
   <li><a href="#testdesign">Tests design</a></li>
@@ -1087,14 +1092,16 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
 
 <h4><a id="testsetup"></a>Test machine setup</h4>
 
-<p>The test setup is an Intel E8500, 8GB ram, running GCC 5.1
-x64 as compiler. OS is a stripped-back Windows 7 x64 SP1 installation with the
-most services, background tasks (including explorer) and all networking
-disabled. Build settings are "-O2 -march=native -std=c++11
--fomit-frame-pointer". Results under MSVC 2015 update 3, on an Intel Xeon E3-1241 (Haswell core) can be viewed <a href="colony_benchmark_msvc_results.htm">here</a>. There is no commentary for the MSVC results.</p>
-<p>The source code for the benchmarks can be found in the
-colony page <a href="http://www.plflib.org/colony.htm#download">downloads</a>
-section.</p>
+<p>The test setup is an Intel E8500, 8GB ram, running GCC 5.1 x64 as compiler.
+OS is a stripped-back Windows 7 x64 SP1 installation with the most services,
+background tasks (including explorer) and all networking disabled. Build
+settings are "-O2 -march=native -std=c++11 -fomit-frame-pointer". Results under
+MSVC 2015 update 3, on an Intel Xeon E3-1241 (Haswell core) can be viewed <a
+href="colony_benchmark_msvc_results.htm">here</a>. There is no commentary for
+the MSVC results.</p>
+
+<p>The source code for the benchmarks can be found in the colony page <a
+href="http://www.plflib.org/colony.htm#download">downloads</a> section.</p>
 
 <h4><a id="testdesign"></a>General test design</h4>
 
@@ -1107,11 +1114,11 @@ functions as the differences to overall insertion performance were not
 adequate.</p>
 
 <p><b>Insertion:</b> is into empty containers for the raw and comparitive
-tests, entering single elements at a time. For the 'scenario'
-tests there is also ongoing insertion at random intervals. This matches the use
-case of colony, where insertion on-the-fly is expected to be one of the driving
-factors of usage. Insertion is always at the most performant location for the
-specific container, for example front for list, or back for vector.<br>
+tests, entering single elements at a time. For the 'scenario' tests there is
+also ongoing insertion at random intervals. This matches the use case of
+colony, where insertion on-the-fly is expected to be one of the driving factors
+of usage. Insertion is always at the most performant location for the specific
+container, for example front for list, or back for vector.<br>
 <b>Erasure:</b> initially takes place in an iterative fashion for the raw
 tests, erasing elements at random as we iterate through the container. The
 exception to this is the tests involving a remove_if pattern (pointer_deque and
@@ -1184,18 +1191,16 @@ std::deque dominates insertion, with plf::colony equal after about 100
 elements, but then for large structs it's performance completely eclipses
 std::deque. This is because libstdc++'s implementation of deque caps the memory
 block size at 512 bytes, whereas the large struct in question is ~506 bytes
-(depending on platform), meaning it, essentially, becomes a std::list but with additional
-overheads. Colony avoids this downfall due to it's memory allocation pattern of
-basing memory block sizes on fixed numbers of elements with a growth factor of
-2, not fixed numbers of bytes. std::vector is nearly on a par with std::deque
-for very small element types with element numbers greater than a thousand, but
-becomes worse and worse the larger the size of the stored type is, and the
-fewer stored elements there are.<br>
-std::list, std::map and std::multiset all perform poorly by contrast, but with
-large structs the situation is almost reversed, with std::list and std::map
-outperforming all other contendors except for plf::colony. Overall, plf::colony
-and std::deque dominate, with std::list/std::map getting honourable mentions
-for large struct performance.</p>
+(depending on platform), meaning it, essentially, becomes a std::list but with
+additional overheads. Colony avoids this downfall due to it's memory allocation
+pattern of basing memory block sizes on fixed numbers of elements with a growth
+factor of 2, not fixed numbers of bytes. std::vector is nearly on a par with
+std::deque for very small element types with element numbers greater than a
+thousand, but becomes worse and worse the larger the size of the stored type
+is, and the fewer stored elements there are.<br>
+std::list, std::map and std::multiset all perform poorly by contrast, with the
+exception of large structs, where std::list comes in 2nd place to colony.
+Overall, plf::colony and std::deque dominate.</p>
 
 <h4>Erase Performance</h4>
 
@@ -1335,7 +1340,7 @@ performance tests which may compare both in performance and usage (after
 modification) are std::deque and std::vector. std::list does not meet these
 requirements as it has poor insertion and iteration performance. </p>
 
-<h4>pointer_deque and indexed_vector modifications</h4>
+<h4>pointer_deque and indexed_vector</h4>
 
 <p>Because std::deque does not invalidate pointers to elements upon insertion
 to the back or front, we can guarantee that pointers won't be invalidated
@@ -1542,21 +1547,34 @@ in terms of iteration.</p>
 <p>Summary: for iteration packed_deque comes 1st, pointer_deque 2nd,
 indexed_vector 3rd, colony 4th, vector_bool 5th and deque_bool 6th.</p>
 
+<h3><a id="lowmodification"></a>'Real-world' scenario testing - low
+modification</h3>
 
-<h3><a id="lowmodification"></a>'Real-world' scenario testing - low modification</h3>
+<p>While testing iteration, erasure and insertion separately can be a useful
+tool, they don't tell us how containers perform under real-world conditions, as
+under most use-cases we will not be simply inserting a bunch of elements,
+erasing some of them, then iterating once over the data. To get more valid
+results, we need to think about the kinds of use-cases we may have for
+different types of data, in this cas, video-game data.</p>
 
-<p>While testing iteration, erasure and insertion separately can be a useful tool, they don't tell us how containers perform under real-world conditions, as under most use-cases we will not be simply inserting a bunch of elements, erasing some of them, then iterating once over the data. To get more valid results, we need to think about the kinds of use-cases we may have for different types of data, in this cas, video-game data.</p>
+<p>In this test we simulate the use-case of a container for general video game
+objects, actors/entities, enemies etc. Initially we insert a number of small
+structs into the container, then simulate in-game 'frames'. We iterating over
+container elements every frame, and erase(at random locations)/insert 1% of the
+original number of elements for every minute of gametime ie. 3600 frames
+assuming 60 frames-per-second. We measure the total time taken to simulate this
+scenario for 108000 frames (half an hour of simulated game-time, assuming 60
+frames per second), as well as the amount of memory used by the container at
+the end of the test. We then re-test this scenario with 5% of all elements
+being inserted/erased, then 10%.</p>
 
-<p>In this test we simulate the use-case of a container for general video game objects,
-actors/entities, enemies etc. Initially we insert a number of small structs
-into the container, then simulate in-game 'frames'. We iterating over container
-elements every frame, and erase(at random locations)/insert 1% of the original
-number of elements for every minute of gametime ie. 3600 frames assuming 60
-frames-per-second. We measure the total time taken to simulate this scenario
-for 108000 frames (half an hour of simulated game-time, assuming 60 frames per
-second), as well as the amount of memory used by the container at the end of
-the test. We then re-test this scenario with 5% of all elements being
-inserted/erased, then 10%.</p>
+<p>With reluctance I have included the results for std::list in this test and
+the high modification tests, despite the face that the earlier 'raw'
+performance tests show beyond a shadow of a doubt that it is not a contendor
+for colony. This is because some people do not correctly relate the raw
+performance test outcomes to the expected outcomes of subsequent tests. By contrast there is even less point in including std::map nor std::multiset in these tests as their iteration, erasure, and insertion performance is poorer than all containers.</p>
+
+<p></p>
 
 <p><i>Click images or hover over to see results at linear scale instead</i></p>
 
@@ -1604,7 +1622,8 @@ onclick="this.src='tests/gcc/colony/general_use/per_minute_mem_10.png';"
 src="tests/gcc/colony/general_use/per_minute_mem_10_log.png"><br>
 
 
-<h3><a id="highmodification"></a>'Real-world' scenario testing - high modification</h3>
+<h3><a id="highmodification"></a>'Real-world' scenario testing - high
+modification</h3>
 
 <p>Same as the previous test but here we erase/insert 1% of all elements
 per-frame instead of per 3600 frames, then once again increase the percentage
@@ -1658,10 +1677,15 @@ onclick="this.src='tests/gcc/colony/general_use/per_frame_mem_10.png';"
 src="tests/gcc/colony/general_use/per_frame_mem_10_log.png"><br>
 
 
-<p>Obviously if you are doing a lot of referencing into a packed_deque from outside objects, you may encounter some speed problems due to the dereferencing system - which the next test will cover. On the other hand, if you are mainly iterating over unordered data, erasing occasionally, and only ever referring <i>outwards from</i> elements within the packed_deque, it will be an ideal solution.</p>
+<p>Obviously if you are doing a lot of referencing into a packed_deque from
+outside objects, you may encounter some speed problems due to the dereferencing
+system - which the next test will cover. On the other hand, if you are mainly
+iterating over unordered data, erasing occasionally, and only ever referring
+<i>outwards from</i> elements within the packed_deque, it will be an ideal
+solution.</p>
 
-<h3><a id="heavyreferencing"></a>'Real-world' scenario-testing: referencing with
-interlinked containers</h3>
+<h3><a id="heavyreferencing"></a>'Real-world' scenario-testing: referencing
+with interlinked containers</h3>
 
 <p>In order to completely test plf::colony against a packed-array-style
 implementation, it is necessary to measure performance while exploiting both
@@ -1685,8 +1709,7 @@ each containing different element types:</p>
   <li>Two subcomponent containers (these could be sprites, sounds, or anything
     else).</li>
 </ol>
-
-<img src="referencer_test.gif" alt="test class diagram">
+<img src="referencer_test.gif" alt="test class diagram"> 
 
 <p>This is actually a very low number of inter-related containers for a game,
 but we're reducing the number of components in this case just to simplify the
@@ -1769,10 +1792,10 @@ src="tests/gcc/colony/referencer/per_frame_10_log.png"><br>
 
 
 <p>As we can see from the performance results, at low levels of modification
-packed_deque has a small performance advantage over colony, until about
-9000 elements. After 9000 elements, colony has a larger performance advantage.
-And the higher the level of modification, the fewer elements there have to be
-in the containers before colony has an advantage. At 1% modification per frame,
+packed_deque has a small performance advantage over colony, until about 9000
+elements. After 9000 elements, colony has a larger performance advantage. And
+the higher the level of modification, the fewer elements there have to be in
+the containers before colony has an advantage. At 1% modification per frame,
 only 200 elements are needed, while at 5% per-frame and above, colony always
 has a strong advantage.</p>
 
@@ -1816,7 +1839,10 @@ src="tests/gcc/colony/referencer/per_frame_mem_10_log.png"><br>
 
 
 <p>As we can see the memory results don't really change between different
-levels of modification - packed_deque always has a small advantage over colony in terms of memory usage. The memory difference could be mitigated somewhat by setting a smaller maximum group size for colony, but this will likely come at an expense of speed.</p>
+levels of modification - packed_deque always has a small advantage over colony
+in terms of memory usage. The memory difference could be mitigated somewhat by
+setting a smaller maximum group size for colony, but this will likely come at
+an expense of speed.</p>
 
 <h3><a id="overall"></a>Overall Performance Conclusions</h3>
 
@@ -1826,7 +1852,9 @@ alternatives for the most part. Where modification rates and the number of
 elements are low, a packed-array-style structure like packed_deque may be your
 best solution both in terms of performance and memory usage. However once the
 numbers of elements and rates of modification begin to rise, a colony shines
-forth. In addition, a packed array will be affected adversely when the type is larger or non-trivially movable, due to the necessity of moving elements from the back when erasing.</p>
+forth. In addition, a packed array will be affected adversely when the type is
+larger or non-trivially movable, due to the necessity of moving elements from
+the back when erasing.</p>
 
 <p>Using a boolean skipfield in combination with a vector or deque is of course
 a no-go, due to it's poor iteration performance once the number of erasures
@@ -1836,8 +1864,10 @@ and poor performance once the number of modifications or elements becomes too
 high.</p>
 
 <p>In short, use a packed-array where both the rate of modification is &lt;=
-10% of all elements per 3600 iterations over data and the number of elements is &lt;= 9000,
-or if external object access to container elements via the dereferencing system is uncommon, or if all memory is at a premium. In all other cases involving unordered data, use colony.</p>
+10% of all elements per 3600 iterations over data and the number of elements is
+&lt;= 9000, or if external object access to container elements via the
+dereferencing system is uncommon, or if all memory is at a premium. In all
+other cases involving unordered data, use colony.</p>
 
 <h2><a id="faq"></a>Frequently Asked Questions</h2>
 <ol>
@@ -1849,15 +1879,16 @@ or if external object access to container elements via the dereferencing system 
     characteristics while maintaining pointer stability to container
     elements.</p>
   </li>
-  <li><h4>Where is it worth using a colony in place of other std:: containers?</h4>
-    <p>As mentioned, it is worthwhile for performance reasons in situations where the
-    order of container elements is not important and:</p>
+  <li><h4>Where is it worth using a colony in place of other std::
+    containers?</h4>
+    <p>As mentioned, it is worthwhile for performance reasons in situations
+    where the order of container elements is not important and:</p>
     <ol type="a">
-	  <li>Insertion order is unimportant</li>
-	  <li>Insertions and erasures to the container occur frequently in
-	    performance-critical code, <i><b>and</b></i> </li>
-	  <li>Links to non-erased container elements may not be
-	    invalidated by insertion or erasure.</li>
+      <li>Insertion order is unimportant</li>
+      <li>Insertions and erasures to the container occur frequently in
+        performance-critical code, <i><b>and</b></i> </li>
+      <li>Links to non-erased container elements may not be invalidated by
+        insertion or erasure.</li>
     </ol>
     <p>Under these circumstances a colony will generally out-perform other
     std:: containers. In addition, because it never invalidates pointer
@@ -1868,12 +1899,13 @@ or if external object access to container elements via the dereferencing system 
   </li>
   <li><h4>What are some examples of situations where a colony might improve
     performance?</h4>
-    <p>Some ideal situations to use a colony: cellular/atomic simulation, persistent octtree/quadtree,
-    general game entities or destructible-objects in a video game, particle physics, anywhere
-    where objects are being created and destroyed continuously. Also, anywhere
-    where a vector of pointers to dynamically-allocated objects or a std::list
-    would typically end up being used in order to preserve object
-    references but where order is unimportant.</p>
+    <p>Some ideal situations to use a colony: cellular/atomic simulation,
+    persistent octtree/quadtree, general game entities or destructible-objects
+    in a video game, particle physics, anywhere where objects are being created
+    and destroyed continuously. Also, anywhere where a vector of pointers to
+    dynamically-allocated objects or a std::list would typically end up being
+    used in order to preserve object references but where order is
+    unimportant.</p>
   </li>
   <li><h4>What situations should you explicitly <i>not</i> use a colony
     for?</h4>
@@ -1938,29 +1970,32 @@ or if external object access to container elements via the dereferencing system 
   </li>
   <li><h4>Is it similar to a deque?</h4>
     <p>A deque is reasonably dissimilar to a colony - being a double-ended
-    queue, it requires quite a bit of a different internal framework. It typically
-    uses a vector of memory blocks, whereas the colony implementation uses a linked list of memory blocks, essentially.
-	A deque can't technically use a linked list of memory blocks because it will make some random_access iterator operations (eg. + operator) non-O(1).
-    In addition, being a double-ended queue makes having a growth factor for
-    memory blocks problematic because the rules for growth at each end of the
-    queue become difficult to implement in a way which increase performance.
-    And in fact, if you were to be remove memory blocks from within a deque,
-    you could not utilize a growth factor because this would make the "+"
-    iterator operator impossible to implement in O(1) time (as you would not be
-    able to ascertain the size for each memory block without inspecting them
-    all).</p>
+    queue, it requires quite a bit of a different internal framework. It
+    typically uses a vector of memory blocks, whereas the colony implementation
+    uses a linked list of memory blocks, essentially. A deque can't technically
+    use a linked list of memory blocks because it will make some random_access
+    iterator operations (eg. + operator) non-O(1). In addition, being a
+    double-ended queue makes having a growth factor for memory blocks
+    problematic because the rules for growth at each end of the queue become
+    difficult to implement in a way which increase performance. And in fact, if
+    you were to be remove memory blocks from within a deque, you could not
+    utilize a growth factor because this would make the "+" iterator operator
+    impossible to implement in O(1) time (as you would not be able to ascertain
+    the size for each memory block without inspecting them all).</p>
     <p>A deque and colony have no comparable performance characteristics except
     for insertion (for a decent deque implementation). Deque erasure
     performance varies wildly depending on the implementation compared to
-    std::vector, but is generally similar to vector erasure performance. A deque also invalidates pointers to subsequent container
-    elements when erasing elements, which a colony does not.</p>
+    std::vector, but is generally similar to vector erasure performance. A
+    deque also invalidates pointers to subsequent container elements when
+    erasing elements, which a colony does not.</p>
   </li>
   <li><h4>What are the thread-safe guarantees?</h4>
     <p>Unlike a std::vector, a colony can be read from and written to at the
     same time, however it cannot be iterated over and written to at the same
-    time. If we look at a (non-concurrent implementation of) std::vector's threadsafe matrix, to see which basic
-    operations can occur at the same time, it reads as follows (please note
-    push_back() is the same as insertion in this regard):</p>
+    time. If we look at a (non-concurrent implementation of) std::vector's
+    threadsafe matrix, to see which basic operations can occur at the same
+    time, it reads as follows (please note push_back() is the same as insertion
+    in this regard):</p>
 
     <table border="1" cellspacing="3">
       <tbody>
@@ -2005,9 +2040,9 @@ or if external object access to container elements via the dereferencing system 
     simultaneously, but the invalidation caused by insertion/push_back and
     erasure means those operations cannot occur at the same time as anything
     else.</p>
-    <p>Colony on the other hand does not invalidate pointers/iterators
-    to non-erased elements during insertion and erasure, resulting in the following
-    matrix:</p>
+    <p>Colony on the other hand does not invalidate pointers/iterators to
+    non-erased elements during insertion and erasure, resulting in the
+    following matrix:</p>
 
     <table border="1" cellspacing="3">
       <tbody>
@@ -2054,14 +2089,22 @@ or if external object access to container elements via the dereferencing system 
     iterations may not occur at the same time as an erasure or insertion, as
     either of these may change the state of the skipfield which's being
     iterated over. Erasures will not invalidate iterators unless the iterator
-    points to the erased element. Note that iterators pointing to end() may be invalidated by insertion.</p>
-    <p>So, colony could be considered more inherently threadsafe than a (non-concurrent implementation of) std::vector, but still
-    has some areas which would require mutexes or atomics to navigate in a multithreaded environment.</p>
+    points to the erased element. Note that iterators pointing to end() may be
+    invalidated by insertion.</p>
+    <p>So, colony could be considered more inherently threadsafe than a
+    (non-concurrent implementation of) std::vector, but still has some areas
+    which would require mutexes or atomics to navigate in a multithreaded
+    environment.</p>
   </li>
   <li><h4>Any pitfalls to watch out for?</h4>
     <ol type="1">
-      <li>Because erased-element memory locations will be reused by <code>insert()</code> and <code>emplace()</code>, insertion position is essentially random unless no erasures have been made, or an equal number of erasures and insertions have been made.</li>
-      <li>For architectural reasons, reserve can only reserve a number of elements up to the maximum bit-depth of the skipfield type (65535 unless an alternative type is specified in the constructor).</li>
+      <li>Because erased-element memory locations will be reused by
+        <code>insert()</code> and <code>emplace()</code>, insertion position is
+        essentially random unless no erasures have been made, or an equal
+        number of erasures and insertions have been made.</li>
+      <li>For architectural reasons, reserve can only reserve a number of
+        elements up to the maximum bit-depth of the skipfield type (65535
+        unless an alternative type is specified in the constructor).</li>
     </ol>
   </li>
   <li><h4>Am I better off storing iterators or pointers to colony elements?</h4>
@@ -2223,26 +2266,9 @@ or if external object access to container elements via the dereferencing system 
     index-based iterator approach, utilizing three separate pointers was
     notably faster.</p>
   </li>
-
   <li><h4>Group sizes - what are they based on, how do they expand, etc</h4>
-
-  <p>Group sizes start from the minimum size defined either by the default (8
-  elements) or by the programmer (with a minimum of 3 elements). Subsequent
-  group sizes then increase the <i>total capacity</i> of the colony by a factor
-  of 2 (so, 1st group 8 elements, 2nd 8 elements, 3rd 16 elements, 4th 32
-  elements etcetera) until the maximum group size is reached. The default
-  maximum group size is the maximum possible number that the skipfield bitdepth
-  is capable of representing
-  (std::numeric_limits&lt;skipfield_type&gt;::max()). By default the skipfield
-  bitdepth is 16 so the maximum size of a group is 65535 elements. However the
-  skipfield bitdepth is also a template parameter which can be set to any
-  unsigned integer - unsigned char, unsigned int, Uint_64, etc. Unsigned short
-  (guaranteed to be at least 16 bit, equivalent to C++11's uint_least16_t type)
-  was found to have the best performance in real-world testing due to the
-  balance between memory contiguousness, memory waste and the restriction on
-  skipfield update time complexity. It also fits the use-case of gaming better
-  (as games tend to utilize lower numbers of elements than some other
-  fields).</p></li>
+    <p>Group sizes start from the minimum size defined either by the default (8 elements, or larger if the type stored is small) or by the programmer (with a minimum of 3 elements). Subsequent group sizes then increase the <i>total capacity</i> of the colony by a factor of 2 (so, 1st group 8 elements, 2nd 8 elements, 3rd 16 elements, 4th 32 elements etcetera) until the maximum group size is reached. The default maximum group size is the maximum possible number that the skipfield bitdepth is capable of representing (std::numeric_limits&lt;skipfield_type&gt;::max()). By default the skipfield bitdepth is 16 so the maximum size of a group is 65535 elements. However the skipfield bitdepth is also a template parameter which can be set to any unsigned integer - unsigned char, unsigned int, Uint_64, etc. Unsigned short (guaranteed to be at least 16 bit, equivalent to C++11's uint_least16_t type) was found to have the best performance in real-world testing due to the balance between memory contiguousness, memory waste and the restriction on skipfield update time complexity. Initially the design also fitted the use-case of gaming better (as games tend to utilize lower numbers of elements than some other fields), as that was the primary development field at the time.</p>
+  </li>
   <li><h4>Why store a size member for each group when this can be obtained via
     <code>reinterpret_cast&lt;element_pointer_type&gt;(skipfield) -
     elements</code>?</h4>
@@ -2257,15 +2283,24 @@ or if external object access to container elements via the dereferencing system 
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2016-12-10: v3.87 - Optimized and corrected range erase. Documentation updated.</li>
-  <li>2016-11-19: v3.86 - Performance improvements for low numbers of scalar types. Minor optimizations for fill-constructor and initializer-list constructor. Corrections to advance.</li>
-  <li>2016-11-12: v3.83 - Minor optimizations. Edge-case corrections for advance functions and copy constructor. Optimizations to get_index_from_iterator, get_iterator_from_pointer, distance, advance. Advance now correctly bounds to rbegin and rend for reverse iterators. Warning removal for test suite.</li>
+  <li>2017-02-08: Update and corrections to benchmark code and test results.</li>
+  <li>2016-12-10: v3.87 - Optimized and corrected range erase. Documentation
+    updated.</li>
+  <li>2016-11-19: v3.86 - Performance improvements for low numbers of scalar
+    types. Minor optimizations for fill-constructor and initializer-list
+    constructor. Corrections to advance.</li>
+  <li>2016-11-12: v3.83 - Minor optimizations. Edge-case corrections for
+    advance functions and copy constructor. Optimizations to
+    get_index_from_iterator, get_iterator_from_pointer, distance, advance.
+    Advance now correctly bounds to rbegin and rend for reverse iterators.
+    Warning removal for test suite.</li>
   <li>2016-11-1: v3.81 - Optimizations to insert functions. Corrections to
     fill-insert/fill-construct functions. Minor correction to internal stack
-    copy constructor. Some function and comment tidyup. Moved referencer test code out from
-    plf_bench.h to individual test files due to MSVC's forward declaration bug
-    (referencer tests not possible with MSVC for this reason). Possible
-    edge-case out-of-bounds memory access for insert removed. Benchmarks updated.</li>
+    copy constructor. Some function and comment tidyup. Moved referencer test
+    code out from plf_bench.h to individual test files due to MSVC's forward
+    declaration bug (referencer tests not possible with MSVC for this reason).
+    Possible edge-case out-of-bounds memory access for insert removed.
+    Benchmarks updated.</li>
   <li>2016-10-27: v3.80 - Further optimizations. Removed a potential memory
     leak which would only occur upon exception-based state rollback within
     insert functions. Update to benchmark suite, addition of packed_deque
@@ -2510,6 +2545,6 @@ or if external object access to container elements via the dereferencing system 
 </ul>
 
 <p><a id="contact"></a>Contact: <img alt="footer" src="footer.gif"><br>
-plf:: library and this page Copyright (c) 2016, Matthew Bentley</p>
+plf:: library and this page Copyright (c) 2017, Matthew Bentley</p>
 </body>
 </html>
