@@ -118,7 +118,7 @@ namespace
 		}
 
 		template <typename T, typename U>
-		perfect_forwarding_test(T&& inperfect1, U&& inperfect2)
+		perfect_forwarding_test(T&& imperfect1, U&& imperfect2)
 			: success(false)
 		{}
 	};
