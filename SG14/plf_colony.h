@@ -1801,7 +1801,7 @@ public:
 
 	#ifdef PLF_COLONY_VARIADICS_SUPPORT
 		template<typename... Arguments>
-		iterator emplace(Arguments... parameters)
+		iterator emplace(Arguments&&... parameters)
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
