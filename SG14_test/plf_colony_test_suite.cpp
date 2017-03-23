@@ -106,6 +106,22 @@ namespace
 	   
 		return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
 	}
+
+	struct perfect_forwarding_test
+	{
+		const bool success;
+
+		perfect_forwarding_test(int&& perfect1, int& perfect2)
+			: success(true)
+		{
+			perfect2 = 1;
+		}
+
+		template <typename T, typename U>
+		perfect_forwarding_test(T&& inperfect1, U&& inperfect2)
+			: success(false)
+		{}
+	};
 }
 
 
@@ -854,6 +870,22 @@ void plf_colony_test_suite()
 			
 			failpass("Fill insertion test", i_colony2.size() == 500503);
 		}
+
+		#ifdef PLF_VARIADICS_SUPPORT
+		{
+			title2("Perfect Forwarding tests");
+
+			colony<perfect_forwarding_test> i_colony;
+
+			int lvalue = 0;
+			int& lvalueref = lvalue;
+
+			i_colony.emplace(7, lvalueref);
+
+			failpass("Perfect forwarding test", (*i_colony.begin()).success);
+			failpass("Perfect forwarding test", 1 == lvalueref);
+		}
+		#endif
 	}
 
 	title1("Test Suite PASS - Press ENTER to Exit");
