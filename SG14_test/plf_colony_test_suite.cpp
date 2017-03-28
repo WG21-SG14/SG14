@@ -66,12 +66,13 @@ namespace
         std::cout << "===========================================" << std::endl << std::endl << std::endl;
     }
 
+    
     void title2(const char *title_text)
     {
         std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
     }
 
-
+    
     void failpass(const char *test_type, bool condition)
     {
         std::cout << test_type << ": ";
@@ -106,6 +107,8 @@ namespace
 	   
 		return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
 	}
+
+
 
 	struct perfect_forwarding_test
 	{
@@ -200,11 +203,15 @@ void plf_colony_test_suite()
 			#endif
 			
 			
-			colony<int *> p_colony2 = p_colony;
+			colony<int *> p_colony2;
+			p_colony2 = p_colony;
 			colony<int *> p_colony3(p_colony);
+			colony<int *> p_colony4(p_colony2, p_colony2.get_allocator());
 			
 			failpass("Copy test", p_colony2.size() == 400);
 			failpass("Copy construct test", p_colony3.size() == 400);
+			failpass("Allocator-extended copy construct test", p_colony4.size() == 400);
+		
 
 			failpass("Equality operator test", p_colony == p_colony2);
 			failpass("Equality operator test 2", p_colony2 == p_colony3);
@@ -328,6 +335,11 @@ void plf_colony_test_suite()
 			#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 				p_colony2 = std::move(p_colony);
 				failpass("Move test", p_colony2.size() == 400);
+
+				colony<int *> p_colony5(p_colony2);
+				colony<int *> p_colony6(std::move(p_colony5), p_colony2.get_allocator());
+				
+				failpass("Allocator-extended move construct test", p_colony6.size() == 400);
 			#else
 				p_colony2 = p_colony;
 			#endif
@@ -341,6 +353,11 @@ void plf_colony_test_suite()
 			p_colony2.swap(p_colony3);
 
 			failpass("Swap test", p_colony2.size() == p_colony3.size() - 1);
+
+			swap(p_colony2, p_colony3);
+
+			failpass("Swap test 2", p_colony3.size() == p_colony2.size() - 1);
+
 			failpass("max_size() test", p_colony2.max_size() > p_colony2.size());
 			
 		}
@@ -871,19 +888,20 @@ void plf_colony_test_suite()
 			failpass("Fill insertion test", i_colony2.size() == 500503);
 		}
 
+
 		#ifdef PLF_VARIADICS_SUPPORT
 		{
 			title2("Perfect Forwarding tests");
 
-			colony<perfect_forwarding_test> i_colony;
+			colony<perfect_forwarding_test> pf_colony;
 
 			int lvalue = 0;
-			int& lvalueref = lvalue;
+			int &lvalueref = lvalue;
 
-			i_colony.emplace(7, lvalueref);
+			pf_colony.emplace(7, lvalueref);
 
-			failpass("Perfect forwarding test", (*i_colony.begin()).success);
-			failpass("Perfect forwarding test", 1 == lvalueref);
+			failpass("Perfect forwarding test", (*pf_colony.begin()).success);
+			failpass("Perfect forwarding test 2", lvalueref == 1);
 		}
 		#endif
 	}

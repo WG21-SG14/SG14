@@ -59,11 +59,11 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_stack_17-11-2016.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
+<p>Download <a href="plf_stack_28-04-2017.zip">here</a> (8kb zip file) or view the <a href="https://github.com/mattreecebentley/plf_stack">repository</a>.<br>
 plf::stack is a simple .h header-only library, to be used with
 an #include command.</p>
 <p>If you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_16-11-2016.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_8-2-2017.zip">plf benchmark suite</a> (36kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -407,6 +407,9 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     Example: <code style="color: brown">if (object_stack != object_stack2)
     return;</code></p>
   </li>
+  <li><code>allocator_type get_allocator()</code> 
+    <p>Returns a copy of the allocator used by this stack</p>
+  </li>
 </ul>
 
 <h2><a id="benchmarks"></a>Benchmarks</h2>
@@ -547,6 +550,8 @@ performance advantage is.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2017-03-28: v1.06 - Correction to emplace. Addition of allocator-extended move and copy constructors. Some standards
+    compliance updates and corrections to noexcept statuses. Addition of get_allocator(). swap(stack &A, stack &B) is now non-member and non-friend.</li>
   <li>2016-11-17: v1.05 - Improvement in performance for smaller numbers of scalar types.</li>
   <li>2016-11-13: v1.04 - Minor update.</li>
   <li>2016-10-15: v1.03 - Removed potential memory leak in clear, move and destructor.</li>

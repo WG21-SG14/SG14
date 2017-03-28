@@ -68,6 +68,15 @@ namespace
         std::cout << "===========================================" << std::endl << std::endl << std::endl;
     }
     
+
+
+	void title2(const char *title_text)
+	{
+		std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
+	}
+
+
+
     void failpass(const char *test_type, bool condition)
     {
         std::cout << test_type << ": ";
@@ -83,6 +92,24 @@ namespace
             abort();
         }
     }
+
+
+
+	struct perfect_forwarding_test
+	{
+		const bool success;
+	
+		perfect_forwarding_test(int&& perfect1, int& perfect2)
+			: success(true)
+		{
+			perfect2 = 1;
+		}
+	
+		template <typename T, typename U>
+		perfect_forwarding_test(T&& imperfect1, U&& imperfect2)
+			: success(false)
+		{}
+	};
 }
 
 
@@ -102,7 +129,8 @@ void plf_stack_test_suite()
 	while (++looper != 50)
 	{
 		{
-			title1("Stack Tests");
+			title1("Stack");
+			title1("Test basics");
 
 			stack<unsigned int> i_stack(50);
 			
@@ -120,15 +148,25 @@ void plf_stack_test_suite()
 
 			failpass("Copy constructor test", i_stack3.size() == 250000);
 
+			stack<unsigned int> i_stack6(i_stack, i_stack3.get_allocator());
+
+			failpass("Allocator-extended copy constructor test", i_stack6.size() == 250000);
+
 			i_stack3.reserve(400000);
 
 			failpass("Reserve test", i_stack3.size() == 250000);
 
 
 			#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-				stack<unsigned int> i_stack4 = std::move(i_stack3);
+				stack<unsigned int> i_stack4;
+				i_stack4 = std::move(i_stack3);
 				failpass("Move equality operator test", i_stack2 == i_stack4);
-				i_stack3 = std::move(i_stack4);
+				stack<unsigned int> i_stack5(std::move(i_stack4), i_stack3.get_allocator());
+
+				failpass("Allocator-extended move-construct test", i_stack5.size() == 250000);
+
+				i_stack3 = std::move(i_stack5);
+				
 			#else
 				failpass("Equality operator test", i_stack2 == i_stack3);
 			#endif
@@ -140,6 +178,11 @@ void plf_stack_test_suite()
 			i_stack2.swap(i_stack3);
 			
 			failpass("Swap test", i_stack2.size() == i_stack3.size() - 1);
+
+			swap(i_stack2, i_stack3);
+			
+			failpass("Swap test 2", i_stack3.size() == i_stack2.size() - 1);
+
 			failpass("max_size() test", i_stack2.max_size() > i_stack2.size());
 			
 
@@ -182,7 +225,7 @@ void plf_stack_test_suite()
 		}
 
 		{
-			title1("Stack Special Case Tests");
+			title2("Stack Special Case Tests");
 
 			stack<unsigned int> i_stack(50, 100);
 
@@ -203,6 +246,23 @@ void plf_stack_test_suite()
 
 			failpass("Stack copy special case test", temp2 == 2560);
 		}
+
+
+		#ifdef PLF_VARIADICS_SUPPORT
+		{
+			title2("Perfect Forwarding tests");
+
+			stack<perfect_forwarding_test> pf_stack;
+
+			int lvalue = 0;
+			int &lvalueref = lvalue;
+
+			pf_stack.emplace(7, lvalueref);
+
+			failpass("Perfect forwarding test", pf_stack.top().success);
+			failpass("Perfect forwarding test 2", lvalueref == 1);
+		}
+		#endif
 	}
 
 	title1("Test Suite PASS - Press ENTER to Exit");
