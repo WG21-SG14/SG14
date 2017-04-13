@@ -131,10 +131,10 @@ namespace sg14
 	private:
 		friend Ring;
 		using size_type = typename Ring::size_type;
-		ring_iterator(size_type idx, Ring* rv) noexcept;
+		ring_iterator(size_type idx, std::conditional_t<is_const, const Ring, Ring>* rv) noexcept;
 		size_type modulo_capacity(size_type idx) const noexcept;
 		size_type m_idx;
-		Ring* m_rv;
+		std::conditional_t<is_const, const Ring, Ring>* m_rv;
 	};
 }
 
@@ -433,7 +433,7 @@ sg14::ring_iterator<Ring, is_const>& operator-=(sg14::ring_iterator<Ring, is_con
 }
 
 template <typename Ring, bool is_const>
-sg14::ring_iterator<Ring, is_const>::ring_iterator(typename sg14::ring_iterator<Ring, is_const>::size_type idx, Ring* rv) noexcept
+sg14::ring_iterator<Ring, is_const>::ring_iterator(typename sg14::ring_iterator<Ring, is_const>::size_type idx, std::conditional_t<is_const, const Ring, Ring>* rv) noexcept
 	: m_idx(idx)
 	, m_rv(rv)
 {}
