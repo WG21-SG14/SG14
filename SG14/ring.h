@@ -336,6 +336,7 @@ void sg14::ring_span<T, Popper>::increase_size() noexcept
 	if (++m_size > m_capacity)
 	{
 		m_size = m_capacity;
+		m_front_idx = (m_front_idx + 1) % m_capacity;
 	}
 }
 
