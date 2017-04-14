@@ -108,7 +108,15 @@ namespace sg14
 		template <bool C>
 		bool operator==(const ring_iterator<Ring, C>& rhs) const noexcept;
 		template <bool C>
+		bool operator!=(const ring_iterator<Ring, C>& rhs) const noexcept;
+		template <bool C>
 		bool operator<(const ring_iterator<Ring, C>& rhs) const noexcept;
+		template <bool C>
+		bool operator<=(const ring_iterator<Ring, C>& rhs) const noexcept;
+		template <bool C>
+		bool operator>(const ring_iterator<Ring, C>& rhs) const noexcept;
+		template <bool C>
+		bool operator>=(const ring_iterator<Ring, C>& rhs) const noexcept;
 
 		reference operator*() const noexcept;
 		type& operator++() noexcept;
@@ -123,10 +131,9 @@ namespace sg14
 	private:
 		friend Ring;
 		using size_type = typename Ring::size_type;
-		ring_iterator(size_type idx, Ring* rv) noexcept;
-		size_type modulo_capacity(size_type idx) noexcept;
+		ring_iterator(size_type idx, std::conditional_t<is_const, const Ring, Ring>* rv) noexcept;
 		size_type m_idx;
-		Ring* m_rv;
+		std::conditional_t<is_const, const Ring, Ring>* m_rv;
 	};
 }
 
@@ -328,6 +335,7 @@ void sg14::ring_span<T, Popper>::increase_size() noexcept
 	if (++m_size > m_capacity)
 	{
 		m_size = m_capacity;
+		m_front_idx = (m_front_idx + 1) % m_capacity;
 	}
 }
 
@@ -335,14 +343,42 @@ template <typename Ring, bool is_const>
 template<bool C>
 bool sg14::ring_iterator<Ring, is_const>::operator==(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
 {
-	return (modulo_capacity(m_idx) == rhs.modulo_capacity(m_idx)) && (m_rv == rhs.m_rv);
+	return (m_idx == rhs.m_idx) && (m_rv == rhs.m_rv);
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+bool sg14::ring_iterator<Ring, is_const>::operator!=(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return !(*this == rhs);
 }
 
 template <typename Ring, bool is_const>
 template<bool C>
 bool sg14::ring_iterator<Ring, is_const>::operator<(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
 {
-	return (modulo_capacity(m_idx) < rhs.modulo_capacity(m_idx)) && (m_rv == rhs.m_rv);
+	return (m_idx < rhs.m_idx) && (m_rv == rhs.m_rv);
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+bool sg14::ring_iterator<Ring, is_const>::operator<=(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return (m_idx <= rhs.m_idx) && (m_rv == rhs.m_rv);
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+bool sg14::ring_iterator<Ring, is_const>::operator>(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return (m_idx > rhs.m_idx) && (m_rv == rhs.m_rv);
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+bool sg14::ring_iterator<Ring, is_const>::operator>=(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return (m_idx > rhs.m_idx) && (m_rv == rhs.m_rv);
 }
 
 template <typename Ring, bool is_const>
@@ -396,13 +432,21 @@ sg14::ring_iterator<Ring, is_const>& operator-=(sg14::ring_iterator<Ring, is_con
 }
 
 template <typename Ring, bool is_const>
-sg14::ring_iterator<Ring, is_const>::ring_iterator(typename sg14::ring_iterator<Ring, is_const>::size_type idx, Ring* rv) noexcept
+sg14::ring_iterator<Ring, is_const>::ring_iterator(typename sg14::ring_iterator<Ring, is_const>::size_type idx, std::conditional_t<is_const, const Ring, Ring>* rv) noexcept
 	: m_idx(idx)
 	, m_rv(rv)
 {}
 
 template <typename Ring, bool is_const>
-typename sg14::ring_iterator<Ring, is_const>::size_type sg14::ring_iterator<Ring, is_const>::modulo_capacity(size_type idx) noexcept
+sg14::ring_iterator<Ring, is_const> operator+(sg14::ring_iterator<Ring, is_const> it, int i) noexcept
 {
-	return idx % m_rv->capacity();
+	it += i;
+	return it;
+}
+
+template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const> operator-(sg14::ring_iterator<Ring, is_const> it, int i) noexcept
+{
+	it -= i;
+	return it;
 }
