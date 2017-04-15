@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PLF_INDEXED_VECTOR_H
 #define PLF_INDEXED_VECTOR_H
 

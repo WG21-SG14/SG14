@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PLF_POINTER_DEQUE_H
 #define PLF_POINTER_DEQUE_H
 

@@ -1,3 +1,5 @@
+#pragma once
+
 // Copyright (c) 2016, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // This software is provided 'as-is', without any express or implied
