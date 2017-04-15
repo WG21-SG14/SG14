@@ -108,7 +108,6 @@ void sg14_test::filter_test()
 	// In an update loop, interrupt routine or the like
 	buffer.push_back( 7.0 );
 
-	assert( std::inner_product( buffer.begin(), buffer.end(), filter_coefficients.begin(), 0.0 ) / buffer.size() == 20/3 );
-
-	
+	assert( std::inner_product( buffer.begin(), buffer.end(), filter_coefficients.begin(), 0.0 ) == 5.0 );
+	puts( "Filter example completed.\n" );
 }
