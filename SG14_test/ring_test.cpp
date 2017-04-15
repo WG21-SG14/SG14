@@ -6,6 +6,7 @@
 #include <mutex>
 #include <future>
 #include <iostream>
+#include <numeric>
 
 void sg14_test::ring_test()
 {
@@ -88,4 +89,26 @@ void sg14_test::thread_communication_test()
 		} while (val != -1);
 		puts("Ring example completed.\n");
 	});
+}
+
+void sg14_test::filter_test()
+{
+	std::array< double, 3 > A;
+	sg14::ring_span< double > buffer( std::begin( A ), std::end( A ) );
+
+	buffer.push_back( 1.0 );
+	buffer.push_back( 2.0 );
+	buffer.push_back( 3.0 );
+	buffer.push_back( 5.0 );
+
+	assert( buffer.front() == 2.0 );
+
+	// In an update loop, interrupt routine or the like
+	buffer.push_back( 7.0 );
+
+	constexpr std::array< double, 3 > filter_coefficients = { 0.25, 0.5, 0.25 };
+
+	assert( std::inner_product( buffer.begin(), buffer.end(), filter_coefficients.begin(), 0.0 ) / buffer.size() == 20/3 );
+
+	
 }
