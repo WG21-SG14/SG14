@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Boost Software License - Version 1.0 - August 17th, 2003
  *
@@ -23,8 +25,6 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
-#pragma once
 
 #include <type_traits>
 #include <functional>

@@ -1,3 +1,5 @@
+#pragma once
+
 // Copyright (c) 2016, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 #ifndef PLF_NANOTIMER

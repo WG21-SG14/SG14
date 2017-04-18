@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PLF_BENCH_H
 #define PLF_BENCH_H
 

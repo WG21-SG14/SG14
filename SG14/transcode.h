@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iterator>
 
 namespace sg14
