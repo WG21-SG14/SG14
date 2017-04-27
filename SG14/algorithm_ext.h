@@ -54,9 +54,8 @@ namespace stdext
 			destruct(first, current);
 			throw;
 		}
-
 	}
-	
+
 	template<class FwdIt, class Sentinel>
 	FwdIt uninitialized_default_construct(FwdIt first, Sentinel last)
 	{
@@ -80,32 +79,37 @@ namespace stdext
 	template<class BidirIt, class UnaryPredicate>
 	BidirIt unstable_remove_if(BidirIt first, BidirIt last, UnaryPredicate p)
 	{
-		while (1) {
+		while (true) {
 			while ((first != last) && p(*first)) {
 				++first;
 			}
-			if (first == last--) break;
+			if (first == last) break;
+			--last;
 			while ((first != last) && !p(*last)) {
 				--last;
 			}
 			if (first == last) break;
-			*first++ = std::move(*last);
+			*first = std::move(*last);
+			++first;
 		}
 		return first;
 	}
+
 	template<class BidirIt, class Val>
 	BidirIt unstable_remove(BidirIt first, BidirIt last, Val v)
 	{
-		while (1) {
+		while (true) {
 			while ((first != last) && (*first == v)) {
 				++first;
 			}
-			if (first == last--) break;
+			if (first == last) break;
+			--last;
 			while ((first != last) && !(*last == v)) {
 				--last;
 			}
 			if (first == last) break;
-			*first++ = std::move(*last);
+			*first = std::move(*last);
+			++first;
 		}
 		return first;
 	}
@@ -116,16 +120,18 @@ namespace stdext
 	template<class BidirIt, class UnaryPredicate>
 	BidirIt partition(BidirIt first, BidirIt last, UnaryPredicate p)
 	{
-		while (1) {
+		while (true) {
 			while ((first != last) && p(*first)) {
 				++first;
 			}
-			if (first == last--) break;
+			if (first == last) break;
+			--last;
 			while ((first != last) && !p(*last)) {
 				--last;
 			}
 			if (first == last) break;
-			std::iter_swap(first++, last);
+			std::iter_swap(first, last);
+			++first;
 		}
 		return first;
 	}
@@ -135,10 +141,14 @@ namespace stdext
 	ForwardIt remove_if(ForwardIt first, ForwardIt last, UnaryPredicate p)
 	{
 		first = std::find_if(first, last, p);
-		if (first != last)
-			for (ForwardIt i = first; ++i != last; )
-				if (!p(*i))
-					*first++ = std::move(*i);
+		if (first != last) {
+			for (ForwardIt i = first; ++i != last; ) {
+				if (!p(*i)) {
+					*first = std::move(*i);
+					++first;
+				}
+			}
+		}
 		return first;
 	}
 }
