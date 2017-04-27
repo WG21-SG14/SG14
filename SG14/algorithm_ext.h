@@ -33,7 +33,6 @@ namespace stdext
 			destruct(Dst, current);
 			throw;
 		}
-
 	}
 
 	template<class FwdIt, class Sentinel>
@@ -80,40 +79,61 @@ namespace stdext
 	BidirIt unstable_remove_if(BidirIt first, BidirIt last, UnaryPredicate p)
 	{
 		while (true) {
-			while ((first != last) && p(*first)) {
+			// Find the first instance of "p"...
+			while (true) {
+				if (first == last) {
+					return first;
+				}
+				if (p(*first)) {
+					break;
+				}
 				++first;
 			}
-			if (first == last) break;
-			--last;
-			while ((first != last) && !p(*last)) {
+			// ...and the last instance of "not p"...
+			while (true) {
 				--last;
+				if (first == last) {
+					return first;
+				}
+				if (!p(*last)) {
+					break;
+				}
 			}
-			if (first == last) break;
+			// ...and move the latter over top of the former.
 			*first = std::move(*last);
 			++first;
 		}
-		return first;
 	}
 
 	template<class BidirIt, class Val>
 	BidirIt unstable_remove(BidirIt first, BidirIt last, const Val& v)
 	{
 		while (true) {
-			while ((first != last) && (*first == v)) {
+			// Find the first instance of "v"...
+			while (true) {
+				if (first == last) {
+					return first;
+				}
+				if (*first == v) {
+					break;
+				}
 				++first;
 			}
-			if (first == last) break;
-			--last;
-			while ((first != last) && !(*last == v)) {
+			// ...and the last instance of "not v"...
+			while (true) {
 				--last;
+				if (first == last) {
+					return first;
+				}
+				if (!(*last == v)) {
+					break;
+				}
 			}
-			if (first == last) break;
+			// ...and move the latter over top of the former.
 			*first = std::move(*last);
 			++first;
 		}
-		return first;
 	}
-
 
 
 	//this exists as a point of reference for providing a stable comparison vs unstable_remove_if
