@@ -96,7 +96,7 @@ namespace stdext
 	}
 
 	template<class BidirIt, class Val>
-	BidirIt unstable_remove(BidirIt first, BidirIt last, Val v)
+	BidirIt unstable_remove(BidirIt first, BidirIt last, const Val& v)
 	{
 		while (true) {
 			while ((first != last) && (*first == v)) {
