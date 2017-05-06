@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 2.8.4)
 project(sg14)
 
+if(MSVC)
+set(WARNING_FLAGS "/W4 /WX")
+else()
 set(WARNING_FLAGS "-Wall -Wextra -Wfatal-errors -Werror")
+endif()
 
+if(MSVC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} -D_SCL_SECURE_NO_WARNINGS")
+else()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} -std=c++14")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG -fno-rtti -Ofast")
 set(CMAKE_EXE_LINKER_FLAGS "-g")
+endif()
 
 set(SG14_SOURCE_DIRECTORY "../SG14")
 set(SG14_TEST_SOURCE_DIRECTORY "../SG14_test")
