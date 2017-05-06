@@ -103,7 +103,7 @@ static void filter_test()
 
 	assert( buffer.front() == 2.0 );
 
-	constexpr std::array< double, 3 > filter_coefficients = { 0.25, 0.5, 0.25 };
+	constexpr std::array< double, 3 > filter_coefficients = {{ 0.25, 0.5, 0.25 }};
 
 	// In an update loop, interrupt routine or the like
 	buffer.push_back( 7.0 );
