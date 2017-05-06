@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+// Copyright (c) 2017, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -239,8 +239,8 @@ private:
 				{}
 
 			#else
-				// This is a hack around the fact that element_pointer_allocator_type::construct only supports copy construction in C++03 and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor.
-				group(const size_type elements_per_group, stack_group_pointer_type const previous = NULL):
+				// This is a hack around the fact that allocator_type::construct only supports copy construction in C++03 and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor.
+				group(const size_type elements_per_group, stack_group_pointer_type const previous = NULL) PLF_COLONY_NOEXCEPT:
 					elements(NULL),
 					next_group(reinterpret_cast<stack_group_pointer_type>(elements_per_group)), // Guaranteed by the standard to be safe on any platform where size_type bitdepth == pointer bitdepth (ie. all known platforms)
 					previous_group(previous),
@@ -249,7 +249,7 @@ private:
 
 
 				// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++03 for reasons stated above:
-				group(const group &source) PLF_COLONY_NOEXCEPT:
+				group(const group &source):
 					element_pointer_allocator_type(source),
 					elements(PLF_COLONY_ALLOCATE_INITIALIZATION(element_pointer_allocator_type, reinterpret_cast<size_type>(source.next_group), (source.previous_group == NULL) ? 0 : source.previous_group->elements)),
 					next_group(NULL),
@@ -2964,7 +2964,7 @@ public:
 			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 				*this = std::move(temp); // Avoid generating 2nd temporary
 			#else
-				this->swap(temp);
+				swap(temp);
 			#endif
 		}
 	}
@@ -3029,7 +3029,7 @@ public:
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
-			this->swap(temp);
+			swap(temp);
 		#endif
 
 		return *this;
@@ -3115,7 +3115,7 @@ public:
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
-			this->swap(temp);
+			swap(temp);
 		#endif
 
 		min_elements_per_group = original_min_elements;
@@ -3162,7 +3162,7 @@ public:
 			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 				*this = std::move(temp); // Avoid generating 2nd temporary
 			#else
-				this->swap(temp);
+				swap(temp);
 			#endif
 
 			min_elements_per_group = original_min_elements;

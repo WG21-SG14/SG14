@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+// Copyright (c) 2017, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -175,7 +175,7 @@ private:
 
 		#else
 			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++03 and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and performance loss) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor.
-			group(const size_type elements_per_group, group_pointer_type const previous = NULL):
+			group(const size_type elements_per_group, group_pointer_type const previous = NULL) PLF_STACK_NOEXCEPT:
 				elements(NULL),
 				next_group(reinterpret_cast<group_pointer_type>(elements_per_group)),
 				previous_group(previous),
@@ -184,7 +184,7 @@ private:
 
 
 			// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++03 for reasons stated above:
-			group(const group &source) PLF_STACK_NOEXCEPT:
+			group(const group &source):
 				element_allocator_type(source),
 				elements(PLF_STACK_ALLOCATE_INITIALIZATION(element_allocator_type, reinterpret_cast<size_type>(source.next_group), (source.previous_group == NULL) ? 0 : source.previous_group->elements)),
 				next_group(NULL),
@@ -765,7 +765,7 @@ public:
 		#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
-			this->swap(temp);
+			swap(temp);
 		#endif
 
 		return *this;
@@ -870,7 +870,7 @@ public:
 			#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 				*this = std::move(temp); // Avoid generating 2nd temporary
 			#else
-				this->swap(temp);
+				swap(temp);
 			#endif
 		}
 	}
@@ -956,7 +956,7 @@ public:
 	// Remove trailing stack groups (not removed in general 'pop' usage for performance reasons)
 	void trim_trailing_groups() PLF_STACK_NOEXCEPT
 	{
-		if (current_group == NULL)
+		if (current_group == NULL) // ie. stack is empty
 		{
 			return;
 		}
@@ -996,7 +996,7 @@ public:
 		#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
-			this->swap(temp);
+			swap(temp);
 		#endif
 
 		min_elements_per_group = original_min_elements;
@@ -1039,7 +1039,7 @@ public:
 			#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 				*this = std::move(temp); // Avoid generating 2nd temporary
 			#else
-				this->swap(temp);
+				swap(temp);
 			#endif
 
 			min_elements_per_group = original_min_elements;

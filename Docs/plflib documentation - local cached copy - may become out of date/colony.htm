@@ -1918,9 +1918,9 @@ other cases involving unordered data, use colony.</p>
   <li><h4>What are some examples of situations where a colony might improve
     performance?</h4>
     <p>Some ideal situations to use a colony: cellular/atomic simulation,
-    persistent octtree/quadtree, general game entities or destructible-objects
-    in a video game, particle physics, anywhere where objects are being created
-    and destroyed continuously. Also, anywhere where a vector of pointers to
+    persistent octtrees/quadtrees, game entities or destructible-objects in a
+    video game, particle physics, anywhere where objects are being created and
+    destroyed continuously. Also, anywhere where a vector of pointers to
     dynamically-allocated objects or a std::list would typically end up being
     used in order to preserve object references but where order is
     unimportant.</p>
@@ -1928,18 +1928,20 @@ other cases involving unordered data, use colony.</p>
   <li><h4>What situations should you explicitly <i>not</i> use a colony
     for?</h4>
     <p>A colony should not be used as a stack, ie. erasing backwards from the
-    back, and then filling, then erasing from the back, etc. In this case you
-    should use a stack ie. plf::stack, std::vector or std::deque. The reason is
-    that erasing backwards sequentially creates the greatest time complexity
-    for skipfield updates, as does reinserting to the start of a
-    sequentially-erased skipblock (which is what stack usage will entail). This
-    effect is mitigated somewhat if an entire group is erased, in which case it
-    is released to the OS and subsequent insertions will not be updating
-    skipfields but simply pushing to back, but you'd still incur the skipfield
-    update cost during erasure.</p>
-    <p>In general you should avoid erasing sequentially during reverse
-    iteration except where absolutely neccessary - the skipfield format is
-    optimized for forward-iteration and forward sequential erasure.</p>
+    back, and then filling, then erasing from the back, etcetera. In this case
+    you should use a stack-capable container ie. plf::stack, std::vector or
+    std::deque. The reason is that erasing backwards sequentially creates the
+    greatest time complexity for skipfield updates, as does reinserting to the
+    start of a sequentially-erased skipblock (which is what stack usage will
+    entail). This effect is mitigated somewhat if an entire group is erased, in
+    which case it is released to the OS and subsequent insertions will simply
+    be pushing to back without the need to update a skipfield, but you'd still
+    incur the skipfield update cost during erasure. Although in practice the
+    performance difference is small due to the low cost of the operations and
+    the small size of the skipfield, in general you should avoid erasing
+    sequentially during reverse iteration except where neccessary, as the
+    jump-counting skipfield format is optimized for either random erasure or
+    sequential erasure while iterating forwards.</p>
   </li>
   <li><h4>What are the time complexities for general operations?</h4>
 	<p>Insert (single): O(1) amortised unless prior erasures have occurred in theusage lifetime of the colony instance. If prior erasures have occurred,updating the skipfield may require a memmove operation, which creates avariable time complexity depending on the range of skipfield needing to becopied (though in practice this will resolve to a singular raw memory blockcopy in most scenarios). This is O(random) with the range of the random numberbeing between O(1) and O(std::numeric_limits&lt;skipfield_type&gt;::max() - 2).Average time complexity varies based on erasure pattern, but with a randomerasure pattern it's closer to O(1) amortized.</p><p>Insert (multiple): O(N) unless prior erasures have occurred. See
@@ -1966,53 +1968,52 @@ other cases involving unordered data, use colony.</p>
 	advance/next/prev: between O(1) and O(n), depending on current location, end
 	location and state of colony. Average ~O(log N).</p>
   </li>
-  <li><h4>If the time complexities of the insert/erase functions are (kind of)
-    O(random, ranged), why are they still quick?</h4>
-    <p>The skipfield for each group is contiguous and separate from the
-    skipfields for other groups, and so fits into the cache easily (unless the
-    skipfield type is changed); thus any changes to it can occur quickly - time
-    complexity is, actually, no indicator of performance on a modern CPU.</p>
-    <p>Colony now also uses memmove instead of iterative updates for all but
-    one of the insert/erase operations, which again decreases performance cost.
-    In modern implementations, memmove will typically be implemented in memory
-    chunks, which may reduce further the time complexity. There is one
-    situation in erase which does not use memmove, a rarer case where an
-    element is erased and is surrounded on both sides by consecutive erased
-    skipfield nodes. In this case it isn't actually possible to update the
-    skipfield using memmove because the requisite numbers do not already exist
-    in the skipfield and cannot be copied, so it is implemented as a vectorized
-    update instead. But again due to a low amount of branching the actual time
-    taken for the update is quite quick, regardless of the number of nodes that
-    need to be updated.</p>
+  <li><h4>If the time complexities of the insert/erase functions are (mostly)
+    O(random, ranged), why are they still fast?</h4>
+    <p>The time complexities are largely based on the skipfield updates
+    necessary for the jump-counting skipfield pattern. The skipfield for each
+    group is contiguous and separate from the skipfields for other groups, and
+    so fits into the cache easily (unless the skipfield type is large), thus
+    any changes to it can occur quickly - time complexity is no indicator of
+    performance on a modern CPU for anything less than very large amounts of N
+    (or when the type of N is large). The colony implementation uses
+    <code>memmove</code> to modify the skipfield instead of iterative updates
+    for all but one of the insert/erase operations, which decreases performance
+    cost. <code>memmove</code> will typically be implemented as a single raw
+    memory chunk copy. There is one rarer case in erase which does not use
+    <code>memmove</code>, when an element is erased and is surrounded on both
+    sides by consecutive erased elements. In this case it isn't possible to
+    update the skipfield using memmove because the requisite numbers do not
+    exist in the skipfield and therefore cannot be copied, so it is implemented
+    as a vectorized iterative update instead. Again, due to a low amount of
+    branching and the small size of each skipfield the time taken for this
+    update is still small.</p>
   </li>
   <li><h4>Is it similar to a deque?</h4>
     <p>A deque is reasonably dissimilar to a colony - being a double-ended
-    queue, it requires quite a bit of a different internal framework. It
-    typically uses a vector of memory blocks, whereas the colony implementation
-    uses a linked list of memory blocks, essentially. A deque can't technically
-    use a linked list of memory blocks because it will make some random_access
-    iterator operations (eg. + operator) non-O(1). In addition, being a
-    double-ended queue makes having a growth factor for memory blocks
-    problematic because the rules for growth at each end of the queue become
-    difficult to implement in a way which increase performance. And in fact, if
-    you were to be remove memory blocks from within a deque, you could not
-    utilize a growth factor because this would make the "+" iterator operator
-    impossible to implement in O(1) time (as you would not be able to ascertain
-    the size for each memory block without inspecting them all).</p>
+    queue, it requires a different internal framework. It typically uses a
+    vector of memory blocks, whereas the colony implementation uses a linked
+    list of memory blocks, essentially. A deque can't technically use a linked
+    list of memory blocks because it will make some random_access iterator
+    operations (eg. + operator) non-O(1). In addition, being a double-ended
+    queue makes having a growth factor for memory blocks problematic because
+    the rules for growth at each end of the queue become difficult to implement
+    in a way which increase performance for all scenarios without memory
+    bloat.</p>
     <p>A deque and colony have no comparable performance characteristics except
-    for insertion (for a decent deque implementation). Deque erasure
+    for insertion (assuming a good deque implementation). Deque erasure
     performance varies wildly depending on the implementation compared to
     std::vector, but is generally similar to vector erasure performance. A
-    deque also invalidates pointers to subsequent container elements when
-    erasing elements, which a colony does not.</p>
+    deque invalidates pointers to subsequent container elements when erasing
+    elements, which a colony does not.</p>
   </li>
   <li><h4>What are the thread-safe guarantees?</h4>
     <p>Unlike a std::vector, a colony can be read from and written to at the
-    same time, however it cannot be iterated over and written to at the same
-    time. If we look at a (non-concurrent implementation of) std::vector's
-    threadsafe matrix, to see which basic operations can occur at the same
-    time, it reads as follows (please note push_back() is the same as insertion
-    in this regard):</p>
+    same time (assuming different locations for read and write), however it
+    cannot be iterated over and written to at the same time. If we look at a
+    (non-concurrent implementation of) std::vector's threadsafe matrix to see
+    which basic operations can occur at the same time, it reads as follows
+    (please note push_back() is the same as insertion in this regard):</p>
 
     <table border="1" cellspacing="3">
       <tbody>
@@ -2054,12 +2055,12 @@ other cases involving unordered data, use colony.</p>
       </tbody>
     </table>
     <p>In other words, multiple reads and iterations over iterators can happen
-    simultaneously, but the invalidation caused by insertion/push_back and
-    erasure means those operations cannot occur at the same time as anything
-    else.</p>
+    simultaneously, but the potential reallocation and pointer/iterator
+    invalidation caused by insertion/push_back and erasure means those
+    operations cannot occur at the same time as anything else. </p>
     <p>Colony on the other hand does not invalidate pointers/iterators to
     non-erased elements during insertion and erasure, resulting in the
-    following matrix:</p>
+    following matrix: </p>
 
     <table border="1" cellspacing="3">
       <tbody>
@@ -2082,7 +2083,7 @@ other cases involving unordered data, use colony.</p>
           <td>No</td>
           <td>No</td>
           <td>No</td>
-          <td>Mostly</td>
+          <td>Mostly*</td>
         </tr>
         <tr>
           <td>Iteration</td>
@@ -2094,20 +2095,21 @@ other cases involving unordered data, use colony.</p>
         <tr>
           <td>Read</td>
           <td>Yes</td>
-          <td>Mostly</td>
+          <td>Mostly*</td>
           <td>Yes</td>
           <td>Yes</td>
         </tr>
       </tbody>
     </table>
+    <p><span style="font-size: 10pt">* Erasures will not invalidate iterators
+    unless the iterator points to the erased element. </span></p>
     <p>In other words, reads may occur at the same time as insertions and
     erasures (provided that the element being erased is not the element being
     read), multiple reads and iterations may occur at the same time, but
     iterations may not occur at the same time as an erasure or insertion, as
     either of these may change the state of the skipfield which's being
-    iterated over. Erasures will not invalidate iterators unless the iterator
-    points to the erased element. Note that iterators pointing to end() may be
-    invalidated by insertion.</p>
+    iterated over. Note that iterators pointing to end() may be invalidated by
+    insertion.</p>
     <p>So, colony could be considered more inherently threadsafe than a
     (non-concurrent implementation of) std::vector, but still has some areas
     which would require mutexes or atomics to navigate in a multithreaded
@@ -2119,91 +2121,75 @@ other cases involving unordered data, use colony.</p>
         <code>insert()</code> and <code>emplace()</code>, insertion position is
         essentially random unless no erasures have been made, or an equal
         number of erasures and insertions have been made.</li>
-      <li>For architectural reasons, reserve can only reserve a number of
-        elements up to the maximum bit-depth of the skipfield type (65535
-        unless an alternative type is specified in the constructor).</li>
+      <li>For architectural reasons (empty groups cannot be present), reserve
+        can only reserve a number of elements up to the maximum bit-depth of
+        the skipfield type.</li>
+        <li>Due to implementation reasons it is possible to assign (or construct) a iterator from a const_iterator, which is not really good const behaviour (only assigning/constructing a const_iterator from an iterator is good const practice). However preventing this results in errors in all versions of MSVC, so it has been ignored.</li>
     </ol>
   </li>
   <li><h4>Am I better off storing iterators or pointers to colony elements?</h4>
-    <p>My testing so far indicates that storing pointers and then using
+    <p>Testing so far indicates that storing pointers and then using
     <code>get_iterator_from_pointer()</code> when or if you need to do an erase
-    operation on the element being pointed to, is more performant than storing
-    iterators and performing erase directly on the iterator.</p>
+    operation on the element being pointed to, yields better performance than
+    storing iterators and performing erase directly on the iterator. This is
+    simply due to the size of iterators (3 pointers)</p>
   </li>
   <li><h4>Any special-case uses?</h4>
     <p>In the special case where many, many elements are being continually
     erased/inserted in realtime, you might want to experiment with limiting the
     size of your internal memory groups in the constructor. The form of this is
-    as follows:<br>
+    as follows: <br>
     <code>plf::vector&lt;object&gt; a_vector;<br>
-    a_vector.change_group_sizes(500, 5000);</code><br>
+    a_vector.change_group_sizes(500, 5000);</code> <br>
     where the first number is the minimum size of the internal memory groups
     and the second is the maximum size. Note these can be the same size,
     resulting in an unchanging group size for the lifetime of the colony
     (unless <code>change_group_sizes</code> is called again or operator = is
-    called).<br>
-    One reason to do this is that it is slightly slower to pop an element
-    location off the internal memory position recycling stack, than it is to
+    called).</p>
+    <p>One reason to do this is that it is slightly slower to pop an element
+    location off the internal erased-location-recycling stack, than it is to
     insert a new element to the end of the colony (the default behaviour when
     there are no previously-erased elements). If there are any erased elements
     in the colony, the colony will recycle those memory locations, unless the
     entire group is empty, at which point it is freed to memory. So if a group
     size is large and many, many erasures occur but the group is not completely
     emptied, (a) the number of erased element locations in the recycling stack
-    could get very large, resulting in a detriment to performance and (b)
-    iteration performance will suffer. In that scenario you may want to run a
-    benchmark limiting the minimum/maximum sizes of the groups, and tune it
-    until you find optimal usage.</p>
+    could get large and increase memory usage and (b) iteration performance may
+    suffer due to large memory gaps between any two non-erased elements. In
+    that scenario you may want to exeriment with benchmarking and limiting the
+    minimum/maximum sizes of the groups, and find the optimal size for a
+    specific use case.</p>
     <p>Please note that the the fill, range and initializer-list constructors
     can also take group size parameters, making it possible to construct filled
     colonies using custom group sizes.</p>
   </li>
   <li><h4>What is colony's Abstract Data Type (ADT)?</h4>
-    <p>While I am happy to be proven wrong I suspect colony is it's own
-    abstract data type. Some have suggested it is most similar to a multiset or
-    bag, which is probably true, but from my perspective a bag or multiset
-    utilizes key values. Colony does not utilize key values, is searchable and
-    sortable, but does not give the sort of functionality one would find in a
-    bag (for example counting the number of times a specific value occurs).
-    Others have suggested a deque, but actually there are three necessary
-    aspects to colony which make it function as it does, and which define any
-    implementation:</p>
-    <ol>
+    <p>Though I am happy to be proven wrong I suspect colony is it's own
+    abstract data type. While it is similar to a multiset or bag, those utilize
+    key values and are not sortable (by means other than automatically by key
+    value). Colony does not utilize key values, is sortable, and does not
+    provide the sort of functionality one would find in a bag (eg. counting the
+    number of times a specific value occurs). Some have suggested simiarities
+    to deque - but as described earlier the three core aspects of colony
+    are:</p>
+    <ol type="a">
       <li>A multiple-memory-block based allocation pattern which allows for the
         removal of memory blocks when they become empty of elements.</li>
       <li>A skipfield to indicate erasures instead of reallocating elements,
         the iteration of which should typically not necessitate the use of
         branching code.</li>
-      <li>A mechanism for storing erased element locations to allow for reuse
+      <li>A mechanism for recording erased element locations to allow for reuse
         of erased element memory space upon subsequent insertion.</li>
     </ol>
-    <p>In the case of my particular colony implementation I utilize a <a
-    href="chained_group_allocation_pattern.htm">chained-group memory allocation
-    pattern</a> because it appears to have better performance than the
-    alternatives, arguably though this could be any multiple-memory-block
-    allocation strategy. For the skipfield I utilize the <a
-    href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
-    skipfield</a> but if a more efficient skipfield implementation were
-    available for a given platform, that could be used. While it is preferable
-    that any skipfield used not utilize branching code - as a common boolean
-    skipfield does - because of the performance detriment caused by this, it is
-    possible there could be a computer architecture where the cost of branching
-    is much lower. The main necessity is that the skipfield enables O(1) ++ and
-    -- operations (otherwise iterators cannot be valid within the standard).
-    For the stack I am using a reduced internal version of <a
-    href="stack.htm">plf::stack</a> because based upon benchmarks this approach
-    to stacks is more efficient than the current standard library alternatives.
-    But again, if a more efficient alternative were found it could be used
-    instead.</p>
-    <p>If we look at a deque, the only aspect out of those three that it
-    shares, is (1) - utilizing a multiple-memory-block allocation pattern.
-    Which isn't a strong association. If we look at a multiset, an unordered
-    one could be implemented on top of a colony utilizing an additional hash
-    table, and it would be more efficient than the current multiset
-    implementations as shown in the GCC and MSVC benchmarks. But the necessity
-    to add something to make it a multiset, ie. to take and store key values,
-    means colony is probably not a multiset, and probably it's own abstract
-    data type.</p>
+    <p>The only aspect out of these which deque also shares is a
+    multiple-memory-block allocation pattern - not a strong association. As a
+    result, deques do not guarantee pointer validity to non-erased elements
+    post insertion or erasure, as colony does. Similarly if we look at a
+    multiset, an unordered one could be implemented on top of a colony by
+    utilizing a hash table (and would in fact be more efficient than most
+    non-flat implementations) but the fact that there is a necessity to add
+    something to make it a multiset (to take and store key values) means colony
+    is not an multiset. </p>
   </li>
   <li><h4>Exception Guarantees?</h4>
     <p>All operations which allocate memory have strong exception guarantees
@@ -2236,27 +2222,34 @@ other cases involving unordered data, use colony.</p>
     directly. No performance gain was found under any tests when removing the
     copy and move constructors/operators.</p>
   </li>
-  <li><h4>Why must groups be removed when empty?</h4>
-    <p>Two reasons:<br>
-    1. If groups aren't removed then iterator ++ and -- operations become
-    non-O(1) for time complexity, which makes them illegal according to the C++
-    standard. At the moment they are O(1) amortised, typically one update for
-    both skipfield and element pointers, but two if a skipfield jump takes the
-    iterator beyond the bounds of the current group and into the next group.<br>
-    If there are multiple empty groups in a row, ++ iteration essentially
-    becomes O(random) because each group will require an op to check for
-    emptiness and to jump to the next. Essentially you get the same scenario as
-    you do with a boolean skipfield.<br>
-    2. Performance. Iterating over empty groups is slower than them not being
-    present, and pushing to the back of the colony is faster than recycling
-    memory locations. When a group is removed it's recyclable memory locations
-    are also removed from the stack, hence subsequent insertions are also
-    faster.</p>
+  <li><h4><a name="remove_when_empty"></a>Why must groups be removed when
+    empty?</h4>
+    <p>Two reasons:</p>
+    <ol type="a">
+      <li>Standards compliance: if groups aren't removed then <code>++</code>
+        and <code>--</code> iterator operations become O(random) in terms of
+        time complexity, making them non-compliant with the C++ standard. At
+        the moment they are O(1) amortised, typically one update for both
+        skipfield and element pointers, but two if a skipfield jump takes the
+        iterator beyond the bounds of the current group and into the next
+        group. But if empty groups are allowed, there could be anywhere between
+        1 and <code>size_type</code> empty groups between the current element
+        and the next. Essentially you get the same scenario as do when
+        iterating over a boolean skipfield.</li>
+      <li>Performance: iterating over empty groups is slower than them not
+        being present, cache wise - but also if you have to allow for empty
+        groups while iterating, then you have to include a while loop in every
+        iteration operation, increasing cache misses and code size. Lastly,
+        pushing to the back of a colony is faster than recycling memory
+        locations. When a group is removed it's recyclable memory locations are
+        also removed from the stack, hence subsequent insertions are also more
+        likely to be pushed to the back of the colony.</li>
+    </ol>
   </li>
   <li><h4>Why use a stack instead of a free list for erased location
     storage?</h4>
     <p>Two reasons:</p>
-    <ol>
+    <ol type="a">
       <li>Colony elements are not guaranteed to be of sufficient size (32-bit
         on x86, 64-bit or greater on other architectures) to store a pointer.
         For smaller types and 64-bit pointers, a free list union would end up
@@ -2284,14 +2277,15 @@ other cases involving unordered data, use colony.</p>
     notably faster.</p>
   </li>
   <li><h4>Group sizes - what are they based on, how do they expand, etc</h4>
-    <p>Group sizes start from the minimum size defined either by the default (8
-    elements, or larger if the type stored is small) or by the programmer (with
-    a minimum of 3 elements). Subsequent group sizes then increase the <i>total
-    capacity</i> of the colony by a factor of 2 (so, 1st group 8 elements, 2nd
-    8 elements, 3rd 16 elements, 4th 32 elements etcetera) until the maximum
-    group size is reached. The default maximum group size is the maximum
-    possible number that the skipfield bitdepth is capable of representing
-    (std::numeric_limits&lt;Skipfield_type&gt;::max()). By default the
+    <p>Group sizes start from the either the
+    default minimum size (8 elements, larger if the type stored is small) or an
+    amount defined by the programmer (with a minimum of 3 elements). Subsequent
+    group sizes then increase the <i>total capacity</i> of the colony by a
+    factor of 2 (so, 1st group 8 elements, 2nd 8 elements, 3rd 16 elements, 4th
+    32 elements etcetera) until the maximum group size is reached. The default
+    maximum group size is the maximum possible number that the skipfield
+    bitdepth is capable of representing
+    (std::numeric_limits&lt;skipfield_type&gt;::max()). By default the
     skipfield bitdepth is 16 so the maximum size of a group is 65535 elements.
     However the skipfield bitdepth is also a template parameter which can be
     set to any unsigned integer - unsigned char, unsigned int, Uint_64, etc.
@@ -2300,7 +2294,7 @@ other cases involving unordered data, use colony.</p>
     testing due to the balance between memory contiguousness, memory waste and
     the restriction on skipfield update time complexity. Initially the design
     also fitted the use-case of gaming better (as games tend to utilize lower
-    numbers of elements than some other fields), as that was the primary
+    numbers of elements than some other fields), and that was the primary
     development field at the time.</p>
   </li>
   <li><h4>Why store a size member for each group when this can be obtained via
@@ -2317,8 +2311,9 @@ other cases involving unordered data, use colony.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2017-04-16: v3.89 - Minor performance improvement in high-modification scenarios with large numbers of erasures.</li>
   <li>2017-03-28: v3.88 - Correction to emplace. Corrections to default constructor to allow for empty initialization lists. Some standards
-    compliance updates and corrections to noexcept statuses. skipfield_type is now a publicly-accessable member typedef. get_group_sizes() is now available. Allocator-extended copy and move constructors added. get_allocator() added. swap(colony &A, colony &B) is now non-member and non-friend.</li>
+    compliance updates and corrections to noexcept statuses. skipfield_type is now a publicly-accessable member typedef. get_group_sizes() is now available. Allocator-extended copy and move constructors added. get_allocator() added. swap(colony &amp;A, colony &amp;B) is now non-member and non-friend.</li>
   <li>2017-02-08: Update and corrections to benchmark code and test
   results.</li>
   <li>2016-12-10: v3.87 - Optimized and corrected range erase. Documentation

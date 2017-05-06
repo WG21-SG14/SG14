@@ -1,4 +1,4 @@
-plf::nanotimer is a ~nanosecond-precision cross-platform simple timer class (linux/bsd/mac/windows, C++03/C++11).
+plf::nanotimer is a ~microsecond-precision cross-platform simple timer class (linux/bsd/mac/windows, C++03/C++11).
 
 
 Usage is as follows:
@@ -18,12 +18,12 @@ Usage is as follows:
 	results = timer.get_elapsed_ms();
 	std::cout << "Timing: " << results << " milliseconds." << std::endl;
 
-	
+
 	timer.start()
 	plf::microsecond_delay(15); // Delay program for 15 microseconds
 	results = timer.get_elapsed_us();
 	std::cout << "Timing: " << results << " microseconds." << std::endl;
-	
+
 
 
 

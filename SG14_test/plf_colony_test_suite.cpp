@@ -110,6 +110,7 @@ namespace
 
 
 
+#ifdef PLF_VARIADICS_SUPPORT
 	struct perfect_forwarding_test
 	{
 		const bool success;
@@ -125,6 +126,7 @@ namespace
 			: success(false)
 		{}
 	};
+#endif
 }
 
 

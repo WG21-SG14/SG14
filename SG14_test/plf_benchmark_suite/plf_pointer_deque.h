@@ -2,6 +2,7 @@
 #define PLF_POINTER_DEQUE_H
 
 #include <cstring> // for size_t
+#include <deque>
 
 #if (defined(_MSC_VER) && (_MSC_VER > 1600)) || (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define PLF_POINTER_DEQUE_MOVE_SEMANTICS_SUPPORT
