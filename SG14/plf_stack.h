@@ -214,7 +214,23 @@ private:
 
 public:
 
-	explicit stack(const element_allocator_type &alloc = element_allocator_type()):
+	stack():
+		element_allocator_type(element_allocator_type()),
+		current_group(NULL),
+		first_group(NULL),
+		top_element(NULL),
+		start_element(NULL),
+		end_element(NULL),
+		total_number_of_elements(0),
+		min_elements_per_group((sizeof(element_type) * 8 > (sizeof(*this) + sizeof(group)) * 2) ? 8 : (((sizeof(*this) + sizeof(group)) * 2) / sizeof(element_type)) + 1),
+		group_allocator_pair(std::numeric_limits<size_type>::max() / 2)
+	{
+		assert(min_elements_per_group > 2);
+		assert(min_elements_per_group <= group_allocator_pair.max_elements_per_group);
+	}
+	
+
+	explicit stack(const element_allocator_type &alloc):
 		element_allocator_type(alloc),
 		current_group(NULL),
 		first_group(NULL),
@@ -230,8 +246,7 @@ public:
 	}
 
 
-
-	explicit stack(const size_type min_allocation_amount, const size_type max_allocation_amount = (std::numeric_limits<size_type>::max() / 2), const element_allocator_type &alloc = element_allocator_type()):
+	stack(const size_type min_allocation_amount, const size_type max_allocation_amount = (std::numeric_limits<size_type>::max() / 2), const element_allocator_type &alloc = element_allocator_type()):
 		element_allocator_type(alloc),
 		current_group(NULL),
 		first_group(NULL),
@@ -442,6 +457,7 @@ private:
 	}
 
 
+
 	void initialize()
 	{
 		first_group = current_group = PLF_STACK_ALLOCATE(group_allocator_type, group_allocator_pair, 1, 0);
@@ -465,6 +481,7 @@ private:
 		top_element = start_element = first_group->elements;
 		end_element = first_group->end;
 	}
+
 
 
 public:
@@ -1048,7 +1065,7 @@ public:
 
 
 
-	void swap(stack &source) PLF_STACK_NOEXCEPT_SWAP(allocator_type)
+	void swap(stack &source) PLF_STACK_NOEXCEPT_SWAP(element_allocator_type)
 	{
 		#ifdef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 			stack temp(std::move(source));

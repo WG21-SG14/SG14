@@ -2202,22 +2202,9 @@ public:
 	// Initializer-list insert
 
 	#ifdef PLF_COLONY_INITIALIZER_LIST_SUPPORT
-		iterator insert (const std::initializer_list<element_type> element_list)
-		{
-			if (element_list.size() == 0)
-			{
-				return end_iterator;
-			}
-
-			typename std::initializer_list<element_type>::iterator current_element = element_list.begin(), last = element_list.end();
-			const iterator return_iterator = insert(*current_element);
-
-			while(++current_element != last)
-			{
-				insert(*current_element);
-			}
-
-			return return_iterator;
+		inline iterator insert (const std::initializer_list<element_type> element_list)
+		{ // use range insert:
+			return insert(element_list.begin(), element_list.end());
 		}
 	#endif
 
