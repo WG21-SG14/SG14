@@ -19,6 +19,8 @@ endif()
 set(SG14_SOURCE_DIRECTORY "../SG14")
 set(SG14_TEST_SOURCE_DIRECTORY "../SG14_test")
 
+find_package(Threads REQUIRED)
+
 set(SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/main.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/SG14_test.cpp
@@ -35,6 +37,6 @@ add_executable(sg14 ${SOURCE_FILES})
 
 include_directories("${SG14_SOURCE_DIRECTORY}" "${SG14_TEST_SOURCE_DIRECTORY}")
 
-target_link_libraries(sg14)
-# "dl" "pthread" "stdc++" "m")
+target_link_libraries(sg14 "${CMAKE_THREAD_LIBS_INIT}")
+# "dl" "stdc++" "m")
 
