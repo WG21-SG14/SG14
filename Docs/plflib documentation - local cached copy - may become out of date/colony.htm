@@ -255,7 +255,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_28-04-2017.zip">here</a> (26kb zip file) or
+<p>Download <a href="plf_colony_11-05-2017.zip">here</a> (31kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -263,7 +263,7 @@ The colony library is a simple .h header file, to be included with a #include
 command.<br>
 <br>
 In addition if you are interested in benchmarking you can also download the <a
-href="plf_benchmark_suite_8-2-2017.zip">plf benchmark suite</a> (36kb zip
+href="plf_benchmark_suite_06-05-2017.zip">plf benchmark suite</a> (44kb zip
 file), which includes plf::nanotimer.</p>
 
 <h2><a id="functions"></a>Function Descriptions and syntax</h2>
@@ -420,7 +420,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
       <td>Never</td>
     </tr>
     <tr>
-      <td>clear, reinitialize, operator = </td>
+      <td>clear, reinitialize, operator =</td>
       <td>Always</td>
     </tr>
     <tr>
@@ -844,7 +844,7 @@ const_iterator is provided for both C++03 and C++11/14/etc compilers.</p>
   </li>
   <li><code>void shrink_to_fit()</code> 
     <p>Reduces container capacity to the amount necessary to store all
-    currently stored elements. If the total number of elements is larger than
+    currently stored elements, consolidates elements and removes any erased locations. If the total number of elements is larger than
     the maximum group size, the resultant capacity will be equal to
     <code>((total_elements / max_group_size) + 1) * max_group_size</code>
     (rounding down at division). Invalidates all pointers, iterators and
@@ -2311,7 +2311,8 @@ other cases involving unordered data, use colony.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2017-04-16: v3.89 - Minor performance improvement in high-modification scenarios with large numbers of erasures.</li>
+  <li>2017-05-11: v3.90 - Minor optimizations to initializer-list insert and copy constructors. Emplace availability correction for some compilers. Corrections to shrink_to_fit() and reserve() (will not longer go below minimum group size). Minor optimizations to operator = and c++03 swap. Other minor code improvements.</li>
+  <li>2017-05-06: v3.89 - Minor correction to noexcept statuses. Correction to test suite under C++03.</li>
   <li>2017-03-28: v3.88 - Correction to emplace. Corrections to default constructor to allow for empty initialization lists. Some standards
     compliance updates and corrections to noexcept statuses. skipfield_type is now a publicly-accessable member typedef. get_group_sizes() is now available. Allocator-extended copy and move constructors added. get_allocator() added. swap(colony &amp;A, colony &amp;B) is now non-member and non-friend.</li>
   <li>2017-02-08: Update and corrections to benchmark code and test
