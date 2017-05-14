@@ -10,21 +10,22 @@ namespace sg14
 	template <typename T>
 	struct null_popper
 	{
-		void operator()(T&);
+		void operator()(T&) const noexcept;
 	};
 
 	template <typename T>
 	struct default_popper
 	{
-		T operator()(T& t);
+		T operator()(T& t) const;
 	};
 
 	template <typename T>
 	struct copy_popper
 	{
-		copy_popper(T&& t);
-		T operator()(T& t);
-		T copy;
+		explicit copy_popper(T t);
+		T operator()(T& t) const;
+	private:
+		T m_copy;
 	};
 
 	template <typename, bool>
@@ -157,26 +158,27 @@ namespace sg14
 // Sample implementation
 
 template <typename T>
-void sg14::null_popper<T>::operator()(T&)
+void sg14::null_popper<T>::operator()(T&) const noexcept
 {}
 
 template <typename T>
-T sg14::default_popper<T>::operator()(T& t)
+T sg14::default_popper<T>::operator()(T& t) const
 {
 	return std::move(t);
 }
 
 template <typename T>
-sg14::copy_popper<T>::copy_popper(T&& t)
-	: copy(std::move(t))
+sg14::copy_popper<T>::copy_popper(T t)
+	: m_copy(std::move(t))
 {}
 
 template <typename T>
-T sg14::copy_popper<T>::operator()(T& t)
+T sg14::copy_popper<T>::operator()(T& t) const
 {
-	T old = t;
-	t = copy;
-	return t;
+	T old = m_copy;
+	using std::swap;
+	swap(old, t);
+	return old;
 }
 
 template<typename T, class Popper>
