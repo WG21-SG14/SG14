@@ -55,16 +55,18 @@ void sg14_test::unstable_remove_test()
 		return (t1 - t0).count();
 	};
 
-	auto median = [](std::vector<unsigned long>& v)
+	using time_lambda_t = decltype(time(removefn));
+
+	auto median = [](std::vector<time_lambda_t>& v)
 	{
 		auto b = v.begin();
 		auto e = v.end();
 		return *(b + ((e - b) / 2));
 	};
 
-	std::vector<unsigned long> partition; 
-	std::vector<unsigned long> unstable_remove_if;
-	std::vector<unsigned long> remove_if;
+	std::vector<time_lambda_t> partition;
+	std::vector<time_lambda_t> unstable_remove_if;
+	std::vector<time_lambda_t> remove_if;
 
 	partition.reserve(test_runs);
 	unstable_remove_if.reserve(test_runs);
