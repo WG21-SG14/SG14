@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstddef>
 #include <type_traits>
 #include <iterator>
@@ -94,6 +96,9 @@ namespace sg14
 		Popper m_popper;
 	};
 
+	template<typename T, class Popper>
+	void swap(ring_span<T, Popper>&, ring_span<T, Popper>&) noexcept;
+
 	template <typename Ring, bool is_const>
 	class ring_iterator
 	{
@@ -104,6 +109,8 @@ namespace sg14
 		using pointer = typename std::conditional_t<is_const, const value_type, value_type>*;
 		using reference = typename std::conditional_t<is_const, const value_type, value_type>&;
 		using iterator_category = std::random_access_iterator_tag;
+
+		operator ring_iterator<Ring, true>() const noexcept;
 
 		template <bool C>
 		bool operator==(const ring_iterator<Ring, C>& rhs) const noexcept;
@@ -124,18 +131,28 @@ namespace sg14
 		type& operator--() noexcept;
 		type operator--(int) noexcept;
 
-		friend type& operator+=(type& it, int i) noexcept;
-		friend type& operator-=(type& it, int i) noexcept;
+		type& operator+=(std::ptrdiff_t i) noexcept;
+		type& operator-=(std::ptrdiff_t i) noexcept;
+
+                template<bool C>
+                std::ptrdiff_t operator-(const ring_iterator<Ring, C>& rhs) const noexcept;
 
 		// Example implementation
 	private:
 		friend Ring;
+		friend class ring_iterator<Ring, !is_const>;
 		using size_type = typename Ring::size_type;
 		ring_iterator(size_type idx, std::conditional_t<is_const, const Ring, Ring>* rv) noexcept;
 		size_type m_idx;
 		std::conditional_t<is_const, const Ring, Ring>* m_rv;
 	};
-}
+
+	template <typename Ring, bool C>
+	ring_iterator<Ring, C> operator+(ring_iterator<Ring, C> it, std::ptrdiff_t) noexcept;
+
+	template <typename Ring, bool C>
+	ring_iterator<Ring, C> operator-(ring_iterator<Ring, C> it, std::ptrdiff_t) noexcept;
+} // namespace sg14
 
 // Sample implementation
 
@@ -340,6 +357,12 @@ void sg14::ring_span<T, Popper>::increase_size() noexcept
 }
 
 template <typename Ring, bool is_const>
+sg14::ring_iterator<Ring, is_const>::operator sg14::ring_iterator<Ring, true>() const noexcept
+{
+	return sg14::ring_iterator<Ring, true>(m_idx, m_rv);
+}
+
+template <typename Ring, bool is_const>
 template<bool C>
 bool sg14::ring_iterator<Ring, is_const>::operator==(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
 {
@@ -364,21 +387,21 @@ template <typename Ring, bool is_const>
 template<bool C>
 bool sg14::ring_iterator<Ring, is_const>::operator<=(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
 {
-	return (m_idx <= rhs.m_idx) && (m_rv == rhs.m_rv);
+	return !(rhs < *this);
 }
 
 template <typename Ring, bool is_const>
 template<bool C>
 bool sg14::ring_iterator<Ring, is_const>::operator>(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
 {
-	return (m_idx > rhs.m_idx) && (m_rv == rhs.m_rv);
+	return (rhs < *this);
 }
 
 template <typename Ring, bool is_const>
 template<bool C>
 bool sg14::ring_iterator<Ring, is_const>::operator>=(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
 {
-	return (m_idx > rhs.m_idx) && (m_rv == rhs.m_rv);
+	return !(*this < rhs);
 }
 
 template <typename Ring, bool is_const>
@@ -418,17 +441,24 @@ sg14::ring_iterator<Ring, is_const> sg14::ring_iterator<Ring, is_const>::operato
 }
 
 template <typename Ring, bool is_const>
-sg14::ring_iterator<Ring, is_const>& operator+=(sg14::ring_iterator<Ring, is_const>& it, int i) noexcept
+sg14::ring_iterator<Ring, is_const>& sg14::ring_iterator<Ring, is_const>::operator+=(std::ptrdiff_t i) noexcept
 {
-	it.m_idx += i;
-	return it;
+	this->m_idx += i;
+	return *this;
 }
 
 template <typename Ring, bool is_const>
-sg14::ring_iterator<Ring, is_const>& operator-=(sg14::ring_iterator<Ring, is_const>& it, int i) noexcept
+sg14::ring_iterator<Ring, is_const>& sg14::ring_iterator<Ring, is_const>::operator-=(std::ptrdiff_t i) noexcept
 {
-	it.m_idx -= i;
-	return it;
+	this->m_idx -= i;
+	return *this;
+}
+
+template <typename Ring, bool is_const>
+template<bool C>
+std::ptrdiff_t sg14::ring_iterator<Ring, is_const>::operator-(const sg14::ring_iterator<Ring, C>& rhs) const noexcept
+{
+	return static_cast<std::ptrdiff_t>(this->m_idx) - static_cast<std::ptrdiff_t>(rhs.m_idx);
 }
 
 template <typename Ring, bool is_const>
@@ -437,16 +467,26 @@ sg14::ring_iterator<Ring, is_const>::ring_iterator(typename sg14::ring_iterator<
 	, m_rv(rv)
 {}
 
-template <typename Ring, bool is_const>
-sg14::ring_iterator<Ring, is_const> operator+(sg14::ring_iterator<Ring, is_const> it, int i) noexcept
-{
-	it += i;
-	return it;
-}
 
-template <typename Ring, bool is_const>
-sg14::ring_iterator<Ring, is_const> operator-(sg14::ring_iterator<Ring, is_const> it, int i) noexcept
+namespace sg14
 {
-	it -= i;
-	return it;
-}
+	template<typename T, class Popper>
+	void swap(ring_span<T, Popper>& a, ring_span<T, Popper>& b) noexcept
+	{
+		a.swap(b);
+	}
+
+	template <typename Ring, bool C>
+	ring_iterator<Ring, C> operator+(ring_iterator<Ring, C> it, std::ptrdiff_t i) noexcept
+	{
+		it += i;
+		return it;
+	}
+
+	template <typename Ring, bool C>
+	ring_iterator<Ring, C> operator-(ring_iterator<Ring, C> it, std::ptrdiff_t i) noexcept
+	{
+		it -= i;
+		return it;
+	}
+} // namespace sg14
