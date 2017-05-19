@@ -32,6 +32,17 @@ set(SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/transcode_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized.cpp)
 
+if(MSVC)
+set(SG14_IGNORE_UNUSED_PARAMETER "/wd4100")
+else()
+set(SG14_IGNORE_UNUSED_PARAMETER "-Wno-unused-parameter")
+endif()
+set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_stack_test_suite.cpp PROPERTIES
+	COMPILE_FLAGS ${SG14_IGNORE_UNUSED_PARAMETER}
+)
+set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test_suite.cpp PROPERTIES
+	COMPILE_FLAGS ${SG14_IGNORE_UNUSED_PARAMETER}
+)
 
 add_executable(sg14 ${SOURCE_FILES})
 
