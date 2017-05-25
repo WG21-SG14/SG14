@@ -71,13 +71,15 @@
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#endif
-	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - whcih may not be true
+	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#elif __GLIBCXX__ >= 20090421 	// libstdc++ 4.3 and below do not support initializer lists
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		#endif
+	#elif defined(_LIBCPP_VERSION) // No type trait support in libc++ to date
+		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 	#else // Assume type traits and initializer support for non-GCC compilers and standard libraries
 		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		#define PLF_COLONY_TYPE_TRAITS_SUPPORT
@@ -3958,6 +3960,40 @@ public:
 			{
 				PLF_COLONY_CONSTRUCT(element_pointer_allocator_type, erased_locations, element_pointer++, &*current_element);
 			}	
+		
+			#ifdef PLF_TIMSORT_AVAILABLE
+				plf::timsort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
+			#else
+				std::sort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
+			#endif
+	
+			
+			colony new_location;
+			new_location.change_group_sizes(min_elements_per_group, group_allocator_pair.max_elements_per_group);
+			new_location.reserve(static_cast<skipfield_type>((total_number_of_elements > std::numeric_limits<skipfield_type>::max()) ? std::numeric_limits<skipfield_type>::max() : total_number_of_elements));
+			
+			#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && defined(PLF_COLONY_MOVE_SEMANTICS_SUPPORT)
+				if (std::is_move_assignable<element_type>::value)
+				{
+					for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
+					{
+						new_location.insert(std::move(*(*current_element_pointer)));
+					}
+				}
+				else
+			#endif
+			{
+				for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
+				{
+					new_location.insert(*(*current_element_pointer));
+				}
+			}
+
+			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+				*this = std::move(new_location); // avoid generating temporary
+			#else
+				swap(new_location);
+			#endif
 		}
 		catch (...)
 		{
@@ -3974,41 +4010,6 @@ public:
 			PLF_COLONY_DEALLOCATE(element_pointer_allocator_type, erased_locations, element_pointers, total_number_of_elements);
 			throw;
 		}
-		
-		#ifdef PLF_TIMSORT_AVAILABLE
-			plf::timsort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
-		#else
-			std::sort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
-		#endif
-
-		
-		colony new_location;
-		new_location.change_group_sizes(min_elements_per_group, group_allocator_pair.max_elements_per_group);
-		new_location.reserve(static_cast<skipfield_type>((total_number_of_elements > std::numeric_limits<skipfield_type>::max()) ? std::numeric_limits<skipfield_type>::max() : total_number_of_elements));
-		
-		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && defined(PLF_COLONY_MOVE_SEMANTICS_SUPPORT)
-			if (std::is_move_assignable<element_type>::value)
-			{
-				for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
-				{
-					new_location.insert(std::move(*(*current_element_pointer)));
-				}
-			}
-			else
-		#endif
-		{
-			for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
-			{
-				new_location.insert(*(*current_element_pointer));
-			}
-		}
-		
-		
-		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
-			*this = std::move(new_location); // avoid generating temporary
-		#else
-			swap(new_location);
-		#endif
 
 		
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT

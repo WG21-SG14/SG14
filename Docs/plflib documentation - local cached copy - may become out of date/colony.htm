@@ -912,7 +912,7 @@ const_iterator is provided for both C++03 and C++11/14/etc compilers.</p>
   <li><code>void sort();<br>
   template &lt;class comparison_function&gt;<br>
   void sort(comparison_function compare);</code> 
-    <p>Sort the content of the colony. By default this compares the colony content using a less-than operator, unless the user supplies a comparison function (ie. same conditions as std::list's sort).<br>
+    <p>Sort the content of the colony. By default this compares the colony content using a less-than operator, unless the user supplies a comparison function (ie. same conditions as std::list's sort function). Uses std::sort internally but will use plf::timsort if plf_timsort.h is included in the project before plf_colony.h.<br>
     Example: <code
     style="color: brown">// Sort a colony of integers in ascending order:<br>
 	int_colony.sort();<br>
@@ -2321,7 +2321,7 @@ other cases involving unordered data, use colony.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
-  <li>2017-05-21: v3.93 - Added sort(). Colonies can now be sorted as you would with a list, with or without a supplied comparison function (less-than if without). Removed MSVC warnings at level 4, ignoring those which're obviously compiler bugs.</li>
+  <li>2017-05-21: v3.93 - Added sort(). Colonies can now be sorted as you would with a list, with or without a supplied comparison function (less-than if without). Removed MSVC warnings at level 4, ignoring those which're obviously compiler bugs. More support for non-gcc compilers using gcc libraries or libc++.</li>
   <li>2017-05-11: v3.91 - Additional type safety check on stack consolidate. Move assignment now follows C++17 noexcept rule. Correction to missing undef's at end of header.</li>
   <li>2017-05-11: v3.90 - Minor optimizations to initializer-list insert and copy constructors. Emplace availability correction for some compilers. Corrections to shrink_to_fit() and reserve() (will not longer go below minimum group size). Minor optimizations to operator = and c++03 swap. Other minor code improvements.</li>
   <li>2017-05-06: v3.89 - Minor correction to noexcept statuses. Correction to test suite under C++03.</li>

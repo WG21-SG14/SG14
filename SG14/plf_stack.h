@@ -57,22 +57,7 @@
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 	#define PLF_STACK_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
-	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
-		#if __GNUC__ == 4 && __GNUC_MINOR__ >= 4 // 4.3 and below do not support initializer lists
-			#define PLF_STACK_INITIALIZER_LIST_SUPPORT
-		#elif __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_STACK_INITIALIZER_LIST_SUPPORT
-			#define PLF_STACK_TYPE_TRAITS_SUPPORT
-		#endif
-	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - whcih may not be true
-		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_STACK_INITIALIZER_LIST_SUPPORT
-			#define PLF_STACK_TYPE_TRAITS_SUPPORT
-		#elif __GLIBCXX__ >= 20090421 	// libstdc++ 4.3 and below do not support initializer lists
-			#define PLF_STACK_INITIALIZER_LIST_SUPPORT
-		#endif
-	#else // Assume type traits and initializer support for non-GCC compilers and standard libraries
-		#define PLF_STACK_INITIALIZER_LIST_SUPPORT
+	#if (!defined(__GNUC__) || __GNUC__ >= 5) && (defined (__GLIBCXX__) && __GLIBCXX__ >= 20150422) // GCC v4.9 and below do not support std::is_trivially_copyable, libc++ does not support type traits, not assuming type trait support for other std library versions
 		#define PLF_STACK_TYPE_TRAITS_SUPPORT
 	#endif	
 	
