@@ -1,60 +1,40 @@
-#include <vector>
-#include <iostream>
-#include <algorithm>
-
-#include "plf_colony.h"
-
-
 #if defined(_MSC_VER)
-	#define PLF_FORCE_INLINE __forceinline
-
-	#if _MSC_VER < 1600
-		#define PLF_NOEXCEPT throw()
-	#elif _MSC_VER == 1600
+	#if _MSC_VER >= 1600
 		#define PLF_MOVE_SEMANTICS_SUPPORT
-		#define PLF_NOEXCEPT throw()
-	#elif _MSC_VER == 1700
-		#define PLF_TYPE_TRAITS_SUPPORT
-		#define PLF_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_MOVE_SEMANTICS_SUPPORT
-		#define PLF_NOEXCEPT throw()
-	#elif _MSC_VER == 1800
-		#define PLF_TYPE_TRAITS_SUPPORT
-		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+	#endif
+	#if _MSC_VER >= 1800
 		#define PLF_VARIADICS_SUPPORT
-		#define PLF_MOVE_SEMANTICS_SUPPORT
-		#define PLF_NOEXCEPT throw()
-		#define PLF_INITIALIZER_LIST_SUPPORT
-	#elif _MSC_VER >= 1900
-		#define PLF_TYPE_TRAITS_SUPPORT
-		#define PLF_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_VARIADICS_SUPPORT
-		#define PLF_MOVE_SEMANTICS_SUPPORT
-		#define PLF_NOEXCEPT noexcept
 		#define PLF_INITIALIZER_LIST_SUPPORT
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L
-	#define PLF_FORCE_INLINE // note: GCC creates faster code without forcing inline
-
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
-		#if __GNUC__ == 4 && __GNUC_MINOR__ >= 4 // 4.3 and below do not support initializer lists
+		#if __GNUC__ == 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) // 4.3 and below do not support initializer lists
 			#define PLF_INITIALIZER_LIST_SUPPORT
-		#elif __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_INITIALIZER_LIST_SUPPORT
-			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
-	#else // Assume type traits and initializer support for non-GCC compilers
+	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
+		#if __GLIBCXX__ >= 20090421 	// libstdc++ 4.3 and below do not support initializer lists
+			#define PLF_INITIALIZER_LIST_SUPPORT
+		#endif
+	#else // Assume initializer support for non-GCC compilers and standard libraries
 		#define PLF_INITIALIZER_LIST_SUPPORT
-		#define PLF_TYPE_TRAITS_SUPPORT
 	#endif
 
-	#define PLF_ALLOCATOR_TRAITS_SUPPORT
-	#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
+	#define PLF_VARIADICS_SUPPORT
 	#define PLF_MOVE_SEMANTICS_SUPPORT
-	#define PLF_NOEXCEPT noexcept
-#else
-	#define PLF_FORCE_INLINE
-	#define PLF_NOEXCEPT throw()
+#endif
+
+
+
+#include <functional> // std::greater
+#include <vector> // range-insert testing
+#include <iostream>
+#include <algorithm> // std::find
+#include <cstdio> // log redirection
+
+#include "plf_colony.h"
+
+#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+	#include <utility> // std::move
 #endif
 
 
@@ -209,6 +189,9 @@ void plf_colony_test_suite()
 			p_colony2 = p_colony;
 			colony<int *> p_colony3(p_colony);
 			colony<int *> p_colony4(p_colony2, p_colony2.get_allocator());
+			
+			colony<int *>::iterator it1 = p_colony.begin();
+			colony<int *>::const_iterator cit(it1);
 			
 			failpass("Copy test", p_colony2.size() == 400);
 			failpass("Copy construct test", p_colony3.size() == 400);
@@ -500,13 +483,13 @@ void plf_colony_test_suite()
 			}
 
 			failpass("Insert post-erase test", i_colony.size() == 500000);
-			colony<int>::iterator the_iterator = i_colony.begin();
-			i_colony.advance(the_iterator, 250000);
+			colony<int>::iterator it2 = i_colony.begin();
+			i_colony.advance(it2, 250000);
 			
 
-			for (; the_iterator != i_colony.end();)
+			for (; it2 != i_colony.end();)
 			{
-				the_iterator = i_colony.erase(the_iterator);
+				it2 = i_colony.erase(it2);
 			}
 			
 			failpass("Large multi-increment iterator test", i_colony.size() == 250000);
@@ -859,6 +842,57 @@ void plf_colony_test_suite()
 				std::cout << "Pass\n";
 			}
 		}
+
+
+		{
+			title2("Sort tests");
+			
+			colony<int> i_colony;
+			
+			i_colony.reserve(50000);
+
+			for (unsigned int temp = 0; temp != 50000; ++temp)
+			{
+				i_colony.insert(xor_rand() & 65535);
+			}
+			
+			i_colony.sort();
+			
+			bool sorted = true;
+			int previous = 0;
+			
+			for (colony<int>::iterator current = i_colony.begin(); current != i_colony.end(); ++current)
+			{
+				if (previous > *current)
+				{
+					sorted = false;
+					break;
+				}
+				
+				previous = *current;
+			}
+
+			failpass("Less-than sort test", sorted);
+
+			i_colony.sort(std::greater<int>());
+
+			previous = 65536;
+			
+			for (colony<int>::iterator current = i_colony.begin(); current != i_colony.end(); ++current)
+			{
+				if (previous < *current)
+				{
+					sorted = false;
+					break;
+				}
+
+				previous = *current;
+			}
+			
+			failpass("Greater-than sort test", sorted);
+		}			
+
+
 
 		{
 			title2("Different insertion-style tests");

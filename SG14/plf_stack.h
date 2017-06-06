@@ -57,14 +57,10 @@
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 	#define PLF_STACK_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
-	#if defined(__GNUC__) && !defined(__clang__) // If compiler is GCC/G++
-		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_STACK_TYPE_TRAITS_SUPPORT
-		#endif
-	#else // Assume type traits support for non-GCC compilers
+	#if (!defined(__GNUC__) || __GNUC__ >= 5) && (defined (__GLIBCXX__) && __GLIBCXX__ >= 20150422) // GCC v4.9 and below do not support std::is_trivially_copyable, libc++ does not support type traits, not assuming type trait support for other std library versions
 		#define PLF_STACK_TYPE_TRAITS_SUPPORT
-	#endif
-
+	#endif	
+	
 	#define PLF_STACK_ALLOCATOR_TRAITS_SUPPORT
 	#define PLF_STACK_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
 	#define PLF_STACK_MOVE_SEMANTICS_SUPPORT
@@ -162,7 +158,7 @@ private:
 	{
 		const element_pointer_type		elements;
 		group_pointer_type				next_group, previous_group;
-		const element_pointer_type		end; // End is the actual end element of the group, not one-past the end element as it is in colony
+		const element_pointer_type		end; // End is the actual end element of the group, not one-past the end element as it is in list
 
 
 		#ifdef PLF_STACK_VARIADICS_SUPPORT
@@ -197,7 +193,7 @@ private:
 		~group() PLF_STACK_NOEXCEPT
 		{
 			// Null check not necessary (for empty group and copied group as above) as delete will ignore.
-			PLF_STACK_DEALLOCATE(element_allocator_type, (*this), elements, (end - elements) + 1); // Size is calculated from end and elements
+			PLF_STACK_DEALLOCATE(element_allocator_type, (*this), elements, static_cast<size_type>((end - elements) + 1)); // Size is calculated from end and elements
 		}
 	};
 
@@ -949,11 +945,13 @@ public:
 			{
 				return false;
 			}
-			else if (this_pointer == top_element) // end condition
+			
+			if (this_pointer != top_element)
 			{
 				break;
-			}
-			else if (this_pointer++ == this_group->end) // incrementing in the more common case where this is not true - combining the equality test and increment usually compiles into single instruction as opposed to two instructions for the usual way of doing it
+			}	
+			
+			if (this_pointer++ == this_group->end) // incrementing in the more common case where this is not true - combining the equality test and increment usually compiles into single instruction as opposed to two instructions for the usual way of doing it
 			{
 				this_group = this_group->next_group;
 				this_pointer = this_group->elements;
@@ -1113,12 +1111,15 @@ inline void swap (stack<element_type, element_allocator_type> &a, stack<element_
 
 } // plf namespace
 
+#undef PLF_STACK_FORCE_INLINE
 
 #undef PLF_STACK_TYPE_TRAITS_SUPPORT
 #undef PLF_STACK_ALLOCATOR_TRAITS_SUPPORT
 #undef PLF_STACK_VARIADICS_SUPPORT
 #undef PLF_STACK_MOVE_SEMANTICS_SUPPORT
 #undef PLF_STACK_NOEXCEPT
+#undef PLF_STACK_NOEXCEPT_SWAP
+#undef PLF_STACK_NOEXCEPT_MOVE_ASSIGNMENT
 
 #undef PLF_STACK_CONSTRUCT
 #undef PLF_STACK_DESTROY
