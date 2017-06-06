@@ -7,6 +7,7 @@
 #include <future>
 #include <iostream>
 #include <numeric>
+#include <string>
 #include <vector>
 
 static void ring_test()
@@ -151,6 +152,19 @@ static void iterator_regression_test()
 #undef TEST_OP
 }
 
+static void copy_popper_test()
+{
+    std::vector<std::string> v { "quick", "brown", "fox" };
+    sg14::ring_span<std::string, sg14::copy_popper<std::string>> r(v.begin(), v.end(), {"popped"});
+    r.emplace_back("slow");
+    assert((v == std::vector<std::string>{"slow", "brown", "fox"}));
+    r.emplace_back("red");
+    assert((v == std::vector<std::string>{"slow", "red", "fox"}));
+    std::string result = r.pop_front();
+    assert((v == std::vector<std::string>{"popped", "red", "fox"}));
+    assert(result == "slow");
+}
+
 static void reverse_iterator_test()
 {
     std::array<double, 3> A;
@@ -202,5 +216,6 @@ void sg14_test::ring_tests()
     thread_communication_test();
     filter_test();
     iterator_regression_test();
+    copy_popper_test();
     reverse_iterator_test();
 }
