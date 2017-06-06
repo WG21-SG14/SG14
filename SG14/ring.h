@@ -42,6 +42,8 @@ namespace sg14
 		using const_reference = const T&;
 		using iterator = ring_iterator<type, false>;
 		using const_iterator = ring_iterator<type, true>;
+		using reverse_iterator = std::reverse_iterator<iterator>;
+		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 		friend class ring_iterator<type, false>;
 		friend class ring_iterator<type, true>;
@@ -67,10 +69,17 @@ namespace sg14
 
 		iterator begin() noexcept;
 		const_iterator begin() const noexcept;
-		const_iterator cbegin() const noexcept;
 		iterator end() noexcept;
 		const_iterator end() const noexcept;
+
+		const_iterator cbegin() const noexcept;
+		const_reverse_iterator crbegin() const noexcept;
+		reverse_iterator rbegin() noexcept;
+		const_reverse_iterator rbegin() const noexcept;
 		const_iterator cend() const noexcept;
+		const_reverse_iterator crend() const noexcept;
+		reverse_iterator rend() noexcept;
+		const_reverse_iterator rend() const noexcept;
 
 		template<bool b = true, typename = std::enable_if_t<b && std::is_copy_assignable<T>::value>>
 		void push_back(const value_type& from_value) noexcept(std::is_nothrow_copy_assignable<T>::value);
@@ -134,8 +143,8 @@ namespace sg14
 		type& operator+=(std::ptrdiff_t i) noexcept;
 		type& operator-=(std::ptrdiff_t i) noexcept;
 
-                template<bool C>
-                std::ptrdiff_t operator-(const ring_iterator<Ring, C>& rhs) const noexcept;
+		template<bool C>
+		std::ptrdiff_t operator-(const ring_iterator<Ring, C>& rhs) const noexcept;
 
 		// Example implementation
 	private:
@@ -254,21 +263,15 @@ typename sg14::ring_span<T, Popper>::iterator sg14::ring_span<T, Popper>::begin(
 }
 
 template<typename T, class Popper>
-typename sg14::ring_span<T, Popper>::iterator sg14::ring_span<T, Popper>::end() noexcept
-{
-	return iterator(size() + m_front_idx, this);
-}
-
-template<typename T, class Popper>
 typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::begin() const noexcept
 {
 	return const_iterator(m_front_idx, this);
 }
 
 template<typename T, class Popper>
-typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::cbegin() const noexcept
+typename sg14::ring_span<T, Popper>::iterator sg14::ring_span<T, Popper>::end() noexcept
 {
-	return const_iterator(m_front_idx, this);
+	return iterator(size() + m_front_idx, this);
 }
 
 template<typename T, class Popper>
@@ -278,9 +281,51 @@ typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::
 }
 
 template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::cbegin() const noexcept
+{
+	return begin();
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::reverse_iterator sg14::ring_span<T, Popper>::rbegin() noexcept
+{
+	return reverse_iterator(end());
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reverse_iterator sg14::ring_span<T, Popper>::rbegin() const noexcept
+{
+	return const_reverse_iterator(end());
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reverse_iterator sg14::ring_span<T, Popper>::crbegin() const noexcept
+{
+	return const_reverse_iterator(end());
+}
+
+template<typename T, class Popper>
 typename sg14::ring_span<T, Popper>::const_iterator sg14::ring_span<T, Popper>::cend() const noexcept
 {
-	return const_iterator(size() + m_front_idx, this);
+	return end();
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::reverse_iterator sg14::ring_span<T, Popper>::rend() noexcept
+{
+	return reverse_iterator(begin());
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reverse_iterator sg14::ring_span<T, Popper>::rend() const noexcept
+{
+	return const_reverse_iterator(begin());
+}
+
+template<typename T, class Popper>
+typename sg14::ring_span<T, Popper>::const_reverse_iterator sg14::ring_span<T, Popper>::crend() const noexcept
+{
+	return const_reverse_iterator(begin());
 }
 
 template<typename T, class Popper>
