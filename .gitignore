@@ -65,3 +65,9 @@ xcuserdata
 
 # CLion
 cmake/.idea
+/.vs
+/.vs/SG14/v15
+/.vs/slnx.sqlite
+/.vs/SG14/v15/Browse.VC.opendb
+/.vs/SG14/v15/Browse.VC.db
+/.vs/ProjectSettings.json
