@@ -22,7 +22,7 @@ namespace sg14
 	template <typename T>
 	struct copy_popper
 	{
-		explicit copy_popper(T t);
+		copy_popper(T t);
 		T operator()(T& t) const;
 	private:
 		T m_copy;
