@@ -398,7 +398,7 @@ private:
 
 	private:
 
-		void destroy_all_data() 
+		void destroy_all_data()
 		{
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 				if (total_number_of_elements != 0 && !(std::is_trivially_destructible<stack_element_type>::value)) // Avoid iteration for trivially-destructible types eg. POD, structs, classes with ermpty destructor
@@ -406,46 +406,42 @@ private:
 				if (total_number_of_elements != 0)
 			#endif
 			{
-				stack_group_pointer_type previous_group;
-				stack_element_pointer_type past_end;
-
 				while (first_group != current_group)
 				{
-					past_end = first_group->end + 1;
+					const stack_element_pointer_type past_end = first_group->end + 1;
 
 					for (stack_element_pointer_type element_pointer = first_group->elements; element_pointer != past_end; ++element_pointer)
 					{
 						PLF_COLONY_DESTROY(element_pointer_allocator_type, (*this), element_pointer);
 					}
 
-					previous_group = first_group;
-					first_group = first_group->next_group;
-
-					PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, previous_group);
-					PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, previous_group, 1);
+					const stack_group_pointer_type next_group = first_group->next_group;
+					PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, first_group);
+					PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, first_group, 1);
+					first_group = next_group;
 				}
 
 				// Special case for current group:
-				past_end = top_element + 1;
+				const stack_element_pointer_type past_end = top_element + 1;
 
 				for (stack_element_pointer_type element_pointer = start_element; element_pointer != past_end; ++element_pointer)
 				{
 					PLF_COLONY_DESTROY(element_pointer_allocator_type, (*this), element_pointer);
 				}
 
-				first_group = first_group->next_group;
+				first_group = current_group->next_group;
 				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, current_group);
 				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, current_group, 1);
 			}
 
 			total_number_of_elements = 0;
 
-			while (first_group != NULL)
+			while (first_group != NULL) // trim trailing groups:
 			{
-				current_group = first_group;
-				first_group = first_group->next_group;
-				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, current_group);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, current_group, 1);
+				current_group = first_group->next_group;
+				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, first_group);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, first_group, 1);
+				first_group = current_group;
 			}
 		}
 
@@ -568,7 +564,7 @@ private:
 
 
 
-		void clear() 
+		void clear()
 		{
 			destroy_all_data(); // may throw exception if destructor of pointer type throws exception
 			top_element = NULL;
@@ -1529,49 +1525,45 @@ private:
 	#endif
 		{
 			total_number_of_elements = 0;
-
-			group_pointer_type previous_group;
-			element_pointer_type element_pointer = begin_iterator.element_pointer, end_pointer = first_group->last_endpoint;
+			element_pointer_type element_pointer = begin_iterator.element_pointer;
 			skipfield_pointer_type skipfield_pointer = begin_iterator.skipfield_pointer;
 
 			while (true)
 			{
-				PLF_COLONY_DESTROY(element_allocator_type, (*this), element_pointer);
+				const element_pointer_type end_pointer = first_group->last_endpoint;
 
-				++skipfield_pointer;
-				element_pointer += 1 + *skipfield_pointer;
-				skipfield_pointer += *skipfield_pointer;
-
-				if (element_pointer == end_pointer) // ie. beyond end of available data
+				do
 				{
-					previous_group = first_group;
-					first_group = first_group->next_group;
+					PLF_COLONY_DESTROY(element_allocator_type, (*this), element_pointer);
+					++skipfield_pointer;
+					element_pointer += 1 + *skipfield_pointer;
+					skipfield_pointer += *skipfield_pointer;
+				} while(element_pointer != end_pointer); // ie. beyond end of available data
 
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
+				const group_pointer_type next_group = first_group->next_group;
+				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, first_group);
+				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, first_group, 1);
+     			first_group = next_group;
 
-					if (first_group == NULL)
-					{
-						return;
-					}
-
-					end_pointer = first_group->last_endpoint;
-					element_pointer = first_group->elements + *(first_group->skipfield);
-					skipfield_pointer = first_group->skipfield + *(first_group->skipfield);
+				if (next_group == NULL)
+				{
+					return;
 				}
+
+				element_pointer = next_group->elements + *(next_group->skipfield);
+				skipfield_pointer = next_group->skipfield + *(next_group->skipfield);
 			}
 		}
 		else // Avoid iteration for both empty groups and trivially-destructible types eg. POD, structs, classes with empty destructors
 		{
 			// Technically under a type-traits-supporting compiler total_number_of_elements could be non-zero at this point, but since first_group would already be NULL in the case of double-destruction, it's unnecessary to zero total_number_of_elements
-			group_pointer_type previous_group;
 
 			while (first_group != NULL)
 			{
-				previous_group = first_group;
-				first_group = first_group->next_group;
-				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
-				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
+				const group_pointer_type next_group = first_group->next_group;
+				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, first_group);
+				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, first_group, 1);
+				first_group = next_group;
 			}
 		}
 	}
@@ -1600,7 +1592,9 @@ private:
 		begin_iterator.group_pointer = first_group;
 		begin_iterator.element_pointer = first_group->elements;
 		begin_iterator.skipfield_pointer = first_group->skipfield;
-		end_iterator = begin_iterator;
+		end_iterator.group_pointer = first_group;
+		end_iterator.element_pointer = first_group->elements;
+		end_iterator.skipfield_pointer = first_group->skipfield;
 	}
 
 
@@ -1700,7 +1694,7 @@ public:
 					// Explanation of the following optimization: we must avoid testing the left-hand skipfield node if we are already at the beginning of the skipfield, otherwise we create an out-of-bounds memory access.
 					// To avoid this would Normally require a branching test ie. !is_at_start && left-hand-node != 0 (&& and || operations are conditional executation of the right-hand instruction, which causes branching). But instead we subtract 'test' (which is 0 if the skipfield node is at start of skipfield, 1 if not) from the skipfield node.
 					// If not start of skipfield, this means we check to see if left-hand node is == 0 (value * 0).
-					// If at start of skipfield, we perform an unneccesary test to see if the current skipfield node's value (*(skipfield - 0))
+					// If at start of skipfield, we perform an unnecessary test to see if the current skipfield node's value (*(skipfield - 0))
 					// is == it's own value (value * 1). This may seem ridiculous, but it's less costly than branching - and since
 					// node == skipfield_start is almost always going to be false, this needless check is only occasional.
 					const skipfield_type value = *(new_location.skipfield_pointer);
@@ -2013,7 +2007,7 @@ public:
 									*(new_location.skipfield_pointer + 1) = update_count;
 								}
 							}
-	
+
 							*new_location.skipfield_pointer = 0;
 							return new_location;
 						}
@@ -2494,7 +2488,7 @@ private:
 			swap(temp);
 		#endif
 	}
-	
+
 
 public:
 
@@ -2727,10 +2721,13 @@ public:
 				skipfield_type update_count = static_cast<skipfield_type>(end - current_skipfield);
 				
 				*(current_skipfield - node_value) = node_value + update_count; // Either set current node as the start node, or if previous node is part of a skipblock, update that skipblock's start node and join to that skipblock
-				const bool left_node_is_zero = (node_value == 0);
-				node_value += left_node_is_zero; // ie. set node_value to 1 if it was zero
-				current_skipfield += left_node_is_zero; // Update current_skipfield in while loop below, if the previous node was non-zero
-				update_count -= left_node_is_zero;
+
+				if (node_value == 0)
+				{
+					node_value = 1;
+					++current_skipfield;
+					--update_count;
+				}
 
 				// Vectorize the updates:
 				while (update_count >= 4)
@@ -2847,12 +2844,15 @@ public:
 			// Update skipfield:
 			skipfield_type node_value = *(current.skipfield_pointer - (current.group_pointer->skipfield != current.skipfield_pointer)); // Find value of left-hand node - if current node is at start of skipfield, we check the current node instead, which will always be zero.
 			skipfield_type update_count = static_cast<skipfield_type>(iterator2.element_pointer - current.element_pointer);
-			         
+
 			*(current.skipfield_pointer - node_value) = node_value + update_count; // Either set current node as the start node, or if previous node is part of a skipblock, update that skipblock's start node
-			const bool left_node_is_zero = (node_value == 0);
-			node_value += left_node_is_zero; // ie. set node_value to 1 if it was zero
-			current.skipfield_pointer += left_node_is_zero; // Update current_skipfield in while loop below, if the previous node was non-zero
-			update_count -= left_node_is_zero;
+
+			if (node_value == 0)
+			{
+				node_value = 1;
+				++current.skipfield_pointer;
+				--update_count;
+			}
 
 			// Vectorize the updates:
 			while (update_count >= 4)
@@ -2882,7 +2882,7 @@ public:
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 				if (!(std::is_trivially_destructible<element_type>::value)) // This should be removed by the compiler
 			#endif
-			{	
+			{
 				while(current.element_pointer != iterator2.element_pointer)
 				{
 					PLF_COLONY_DESTROY(element_allocator_type, (*this), current.element_pointer);
@@ -3256,7 +3256,7 @@ public:
 						++skipfield_pointer;
 						skipfield_pointer += *skipfield_pointer;
 						--distance;
-						
+
 						if (skipfield_pointer == endpoint)
 						{
 							break;
@@ -3272,11 +3272,11 @@ public:
 					{
 						element_pointer = group_pointer->last_endpoint;
 						return;
-					}	
+					}
 				}
 
 				group_pointer = group_pointer->next_group;
-		
+
 				if (distance == 0)
 				{
 					element_pointer = group_pointer->elements + *(group_pointer->skipfield);
@@ -3305,7 +3305,7 @@ public:
 				else
 				{
 					group_pointer = group_pointer->next_group;
-				}	
+				}
 			}
 
 
@@ -3365,7 +3365,7 @@ public:
 				else
 				{
 					const skipfield_pointer_type beginning_point = group_pointer->skipfield + *(group_pointer->skipfield);
-					
+
 					while(skipfield_pointer != beginning_point)
 					{
 						--skipfield_pointer;
@@ -3381,7 +3381,7 @@ public:
 					if (group_pointer->previous_group == NULL)
 					{
 						element_pointer = group_pointer->elements + *(group_pointer->skipfield); // This is first group, so bound to begin() (just in case final decrement took us before begin())
-						skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield); 
+						skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
 						return;
 					}
 				}
@@ -3597,14 +3597,14 @@ public:
 					if (group_pointer->next_group == NULL) // bound to rbegin()
 					{
 						--skipfield_pointer;
-						element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer; 
+						element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer;
 						skipfield_pointer -= *skipfield_pointer;
 						return;
-					}	
+					}
 				}
 
 				group_pointer = group_pointer->next_group;
-				
+
 				if (distance == 0)
 				{
 					element_pointer = group_pointer->elements + *(group_pointer->skipfield);
@@ -3620,7 +3620,7 @@ public:
 				if (group_pointer->next_group == NULL) // bound to rbegin()
 				{
 					skipfield_pointer = group_pointer->skipfield + (group_pointer->last_endpoint - group_pointer->elements) - 1;
-					element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer; 
+					element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer;
 					skipfield_pointer -= *skipfield_pointer;
 					return;
 				}
@@ -3975,7 +3975,7 @@ public:
 			#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && defined(PLF_COLONY_MOVE_SEMANTICS_SUPPORT)
 				if (std::is_move_assignable<element_type>::value)
 				{
-					for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
+					for (element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
 					{
 						new_location.insert(std::move(*(*current_element_pointer)));
 					}
@@ -3983,7 +3983,7 @@ public:
 				else
 			#endif
 			{
-				for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
+				for (element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
 				{
 					new_location.insert(*(*current_element_pointer));
 				}
@@ -4001,7 +4001,7 @@ public:
 				if (!std::is_trivially_destructible<element_pointer_type>::value)
 			#endif
 			{
-				for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
+				for (element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
 				{
 					PLF_COLONY_DESTROY(element_pointer_allocator_type, erased_locations, current_element_pointer);
 				}
@@ -4011,12 +4011,12 @@ public:
 			throw;
 		}
 
-		
+
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 			if (!std::is_trivially_destructible<element_pointer_type>::value)
 		#endif
 		{
-			for(element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
+			for (element_pointer_type *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
 			{
 				PLF_COLONY_DESTROY(element_pointer_allocator_type, erased_locations, current_element_pointer);
 			}

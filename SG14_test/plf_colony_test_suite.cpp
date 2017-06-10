@@ -30,6 +30,8 @@
 #include <iostream>
 #include <algorithm> // std::find
 #include <cstdio> // log redirection
+#include <cstdlib> // abort
+
 
 #include "plf_colony.h"
 
@@ -40,30 +42,20 @@
 
 namespace
 {
-    void title1(const char *title_text)
-    {
-        std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
-        std::cout << "===========================================" << std::endl << std::endl << std::endl;
-    }
+    void title1(const char *)
+    {}
 
     
-    void title2(const char *title_text)
-    {
-        std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
-    }
+    void title2(const char *)
+    {}
 
     
     void failpass(const char *test_type, bool condition)
     {
-        std::cout << test_type << ": ";
 
-        if (condition)
+        if (!condition)
         {
-            std::cout << "Pass" << std::endl;
-        }
-        else
-        {
-            std::cout << "Fail" << std::endl;
+			std::cout << test_type << ": " << "Fail" << std::endl;
             std::cin.get();
             abort();
         }
@@ -120,6 +112,7 @@ void plf_colony_test_suite()
 
 
 	unsigned int looper = 0;
+	std::cout << "Colony Test Suite running..\n";
 
 
 	while (++looper != 50)
@@ -650,7 +643,7 @@ void plf_colony_test_suite()
 				++counter;
 			}
 
-			failpass("Simply range-erase test 1", counter == 700 && i_colony.size() == 700);
+			failpass("Simple range-erase test 1", counter == 700 && i_colony.size() == 700);
 
 		
 			it1 = it2 = i_colony.begin();
@@ -667,7 +660,7 @@ void plf_colony_test_suite()
 				++counter;
 			}
 
-			failpass("Simply range-erase test 2", counter == 600 && i_colony.size() == 600);
+			failpass("Simple range-erase test 2", counter == 600 && i_colony.size() == 600);
 
 			
 
@@ -788,8 +781,6 @@ void plf_colony_test_suite()
 
 			unsigned int size, range1, range2, internal_loop_counter;
 
-			std::cout << "Fuzz-test range-erase randomly until empty: ";
-
 			for (unsigned int loop_counter = 0; loop_counter != 50; ++loop_counter)
 			{
 				i_colony.clear();
@@ -837,10 +828,7 @@ void plf_colony_test_suite()
 				}
 			}
 
-			if (i_colony.size() == 0)
-			{
-				std::cout << "Pass\n";
-			}
+			failpass("Fuzz-test range-erase randomly until empty", i_colony.size() == 0);
 		}
 
 
@@ -942,8 +930,7 @@ void plf_colony_test_suite()
 		#endif
 	}
 
-	title1("Test Suite PASS - Press ENTER to Exit");
-	cin.get();
+	std::cout << "Colony Test Suite PASS\n";
 }
 
 }

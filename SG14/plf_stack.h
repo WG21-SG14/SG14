@@ -224,7 +224,7 @@ public:
 		assert(min_elements_per_group > 2);
 		assert(min_elements_per_group <= group_allocator_pair.max_elements_per_group);
 	}
-	
+
 
 	explicit stack(const element_allocator_type &alloc):
 		element_allocator_type(alloc),
@@ -289,7 +289,7 @@ private:
 
 			// Handle special case of last group:
 			std::uninitialized_copy(source.start_element, source.top_element + 1, top_element);
-			end_element = top_element += source.top_element - source.start_element; // This should make top_element == the last "pushed" element, rather than the one past it
+			end_element = (top_element += (source.top_element - source.start_element)); // This should make top_element == the last "pushed" element, rather than the one past it
 		}
 		else // uncommon edge case, so not optimising:
 		{
@@ -409,27 +409,23 @@ private:
 			if (total_number_of_elements != 0)
 		#endif
 		{
-			group_pointer_type previous_group;
-			element_pointer_type past_end;
-
 			while (first_group != current_group)
 			{
-				past_end = first_group->end + 1;
+				const element_pointer_type past_end = first_group->end + 1;
 
 				for (element_pointer_type element_pointer = first_group->elements; element_pointer != past_end; ++element_pointer)
 				{
 					PLF_STACK_DESTROY(element_allocator_type, (*this), element_pointer);
 				}
 
-				previous_group = first_group;
-				first_group = first_group->next_group;
-
-				PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, previous_group);
-				PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, previous_group, 1);
+				const group_pointer_type next_group = first_group->next_group;
+				PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, first_group);
+				PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, first_group, 1);
+				first_group = next_group;
 			}
 
 			// Special case for current group:
-			past_end = top_element + 1;
+			const element_pointer_type past_end = top_element + 1;
 
 			for (element_pointer_type element_pointer = start_element; element_pointer != past_end; ++element_pointer)
 			{
@@ -598,7 +594,7 @@ public:
 							#else
 								PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group((total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group));
 							#endif
-						} 
+						}
 						catch (...) 
 						{ 
 							PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
@@ -678,7 +674,7 @@ public:
 							try
 							{ 
 								PLF_STACK_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, (total_number_of_elements < group_allocator_pair.max_elements_per_group) ? total_number_of_elements : group_allocator_pair.max_elements_per_group, current_group);
-							} 
+							}
 							catch (...) 
 							{ 
 								PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
@@ -945,12 +941,12 @@ public:
 			{
 				return false;
 			}
-			
-			if (this_pointer != top_element)
+
+			if (this_pointer == top_element)
 			{
 				break;
-			}	
-			
+			}
+
 			if (this_pointer++ == this_group->end) // incrementing in the more common case where this is not true - combining the equality test and increment usually compiles into single instruction as opposed to two instructions for the usual way of doing it
 			{
 				this_group = this_group->next_group;
@@ -963,7 +959,7 @@ public:
 				rh_pointer = rh_group->elements;
 			}
 		}
-		
+
 		return true;
 	}
 
@@ -984,15 +980,15 @@ public:
 			return;
 		}
 
-		group_pointer_type temp_group = current_group->next_group, temp_group2;
+		group_pointer_type temp_group = current_group->next_group;
 		current_group->next_group = NULL; // Set to NULL regardless of whether it is already NULL (avoids branching). Cuts off rest of groups from this group.
 
 		while (temp_group != NULL)
 		{
-			temp_group2 = temp_group;
-			temp_group = temp_group->next_group;
-			PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, temp_group2);
-			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, temp_group2, 1);
+			const group_pointer_type next_group = temp_group->next_group;
+			PLF_STACK_DESTROY(group_allocator_type, group_allocator_pair, temp_group);
+			PLF_STACK_DEALLOCATE(group_allocator_type, group_allocator_pair, temp_group, 1);
+			temp_group = next_group;
 		}
 	}
 

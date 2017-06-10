@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <cstdio> // log redirection
+#include <cstdlib> // abort
 
 #include "plf_stack.h"
 
@@ -41,36 +42,26 @@
 
 namespace
 {
-    void title1(const char *title_text)
-    {
-        std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
-        std::cout << "===========================================" << std::endl << std::endl << std::endl;
-    }
-    
+	void title1(const char *)
+	{}
 
 
-	void title2(const char *title_text)
+	void title2(const char *)
+	{}
+
+
+	void failpass(const char *test_type, bool condition)
 	{
-		std::cout << std::endl << std::endl << "--- " << title_text << " ---" << std::endl << std::endl;
+
+		if (!condition)
+		{
+			std::cout << test_type << ": " << "Fail" << std::endl;
+			std::cin.get();
+			abort();
+		}
 	}
 
 
-
-    void failpass(const char *test_type, bool condition)
-    {
-        std::cout << test_type << ": ";
-        
-        if (condition)
-        {
-            std::cout << "Pass" << std::endl;
-        }
-        else
-        {
-            std::cout << "Fail" << std::endl;
-            std::cin.get();
-            abort();
-        }
-    }
 
 
 
@@ -125,6 +116,7 @@ void plf_stack_test_suite()
 
 
 	unsigned int looper = 0;
+	std::cout << "plf::stack Test Suite running..\n";
 
 
 	while (++looper != 50)
@@ -217,7 +209,7 @@ void plf_stack_test_suite()
 				}
 			} while (!i_stack.empty());;
 
-			failpass("Randomly pop/push till empty test", i_stack.size() == 0);
+			failpass("Randomly pop/push till empty test", i_stack.empty());
 
 			#ifdef PLF_VARIADICS_SUPPORT
 				i_stack.emplace(20);
@@ -266,8 +258,7 @@ void plf_stack_test_suite()
 		#endif
 	}
 
-	title1("Test Suite PASS - Press ENTER to Exit");
-	cin.get();
+	std::cout << "plf::stack Test Suite PASS\n";
 }
 
 }
