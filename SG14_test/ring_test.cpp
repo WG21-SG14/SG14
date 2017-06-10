@@ -7,6 +7,8 @@
 #include <future>
 #include <iostream>
 #include <numeric>
+#include <string>
+#include <vector>
 
 static void ring_test()
 {
@@ -150,10 +152,70 @@ static void iterator_regression_test()
 #undef TEST_OP
 }
 
+static void copy_popper_test()
+{
+    std::vector<std::string> v { "quick", "brown", "fox" };
+    sg14::ring_span<std::string, sg14::copy_popper<std::string>> r(v.begin(), v.end(), {"popped"});
+    r.emplace_back("slow");
+    assert((v == std::vector<std::string>{"slow", "brown", "fox"}));
+    r.emplace_back("red");
+    assert((v == std::vector<std::string>{"slow", "red", "fox"}));
+    std::string result = r.pop_front();
+    assert((v == std::vector<std::string>{"popped", "red", "fox"}));
+    assert(result == "slow");
+}
+
+static void reverse_iterator_test()
+{
+    std::array<double, 3> A;
+    sg14::ring_span<double> r(A.begin(), A.end());
+    const sg14::ring_span<double> c(A.begin(), A.end());
+
+    r.push_back(1);
+    r.push_back(2);
+    r.push_back(3);
+    r.push_back(4);
+    std::vector<int> v(3);
+
+    std::copy(r.begin(), r.end(), v.begin());
+    assert((v == std::vector<int>{2,3,4}));
+
+    std::copy(r.cbegin(), r.cend(), v.begin());
+    assert((v == std::vector<int>{2,3,4}));
+
+    std::copy(r.rbegin(), r.rend(), v.begin());
+    assert((v == std::vector<int>{4,3,2}));
+
+    std::copy(r.crbegin(), r.crend(), v.begin());
+    assert((v == std::vector<int>{4,3,2}));
+
+    static_assert(std::is_same<decltype(r.begin()), decltype(r)::iterator>::value, "");
+    static_assert(std::is_same<decltype(c.begin()), decltype(r)::const_iterator>::value, "");
+    static_assert(std::is_same<decltype(r.cbegin()), decltype(r)::const_iterator>::value, "");
+    static_assert(std::is_same<decltype(c.cbegin()), decltype(r)::const_iterator>::value, "");
+
+    static_assert(std::is_same<decltype(r.end()), decltype(r)::iterator>::value, "");
+    static_assert(std::is_same<decltype(c.end()), decltype(r)::const_iterator>::value, "");
+    static_assert(std::is_same<decltype(r.cend()), decltype(r)::const_iterator>::value, "");
+    static_assert(std::is_same<decltype(c.cend()), decltype(r)::const_iterator>::value, "");
+
+    static_assert(std::is_same<decltype(r.rbegin()), decltype(r)::reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(c.rbegin()), decltype(r)::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(r.crbegin()), decltype(r)::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(c.crbegin()), decltype(r)::const_reverse_iterator>::value, "");
+
+    static_assert(std::is_same<decltype(r.rend()), decltype(r)::reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(c.rend()), decltype(r)::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(r.crend()), decltype(r)::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(c.crend()), decltype(r)::const_reverse_iterator>::value, "");
+}
+
 void sg14_test::ring_tests()
 {
     ring_test();
     thread_communication_test();
     filter_test();
     iterator_regression_test();
+    copy_popper_test();
+    reverse_iterator_test();
 }
