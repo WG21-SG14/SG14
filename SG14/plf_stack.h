@@ -57,7 +57,15 @@
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 	#define PLF_STACK_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
-	#if (!defined(__GNUC__) || __GNUC__ >= 5) && (defined (__GLIBCXX__) && __GLIBCXX__ >= 20150422) // GCC v4.9 and below do not support std::is_trivially_copyable, libc++ does not support type traits, not assuming type trait support for other std library versions
+	#if defined(__GNUC__)
+		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_STACK_TYPE_TRAITS_SUPPORT
+		#endif		
+	#elif defined (__GLIBCXX__)
+		#if __GLIBCXX__ >= 20150422 // Older stdlibc++ does not support type traits
+			#define PLF_STACK_TYPE_TRAITS_SUPPORT
+		#endif
+	#elif !defined(_LIBCPP_VERSION) // assuming type trait support for other std library types except libc++, No type trait support in libc++ to date
 		#define PLF_STACK_TYPE_TRAITS_SUPPORT
 	#endif	
 	

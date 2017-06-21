@@ -14,7 +14,7 @@
 
 <p>PLF is a collection of library modules for C++. Please click on the links below to
 learn more about the different modules and to download. All
-modules are under a permissive <a href="http://en.wikipedia.org/wiki/Zlib_License">Zlib
+modules (except timsort) are under a permissive <a href="http://en.wikipedia.org/wiki/Zlib_License">Zlib
 license</a> and support C++03/C++11/C++14. Tested compilers include
 Clang 3.61-3.71, GCC 4.6-5.1 (32-bit and 64-bit), MS Visual C++ 2010-2015.</p>
 <br>
@@ -30,9 +30,10 @@ with better performance than standard library containers in a stack context.</p>
 
 <p><a href="nanotimer.htm"><strong>plf::nanotimer</strong></a> - A cross-platform lowest-overhead microsecond-precision timer for simple benchmarking on Linux/BSD/Windows/Mac.</p>
 
+<p><a href="timsort.htm"><strong>plf::timsort</strong></a> - A fork of GFX's <a href="https://github.com/gfx/cpp-TimSort">timsort</a> function - will be used internally by colony (instead of std::sort) if included in the project prior to colony.</p>
+
 <p><a
-href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf"><strong>the jump-counting skipfield pattern</strong></a> (PDF) - A skipfield pattern which avoids
-branching during iteration. Used by colony.</p>
+href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D"><strong>Advanced jump-counting skipfield pattern</strong></a> - A skipfield pattern which avoids branching during iteration. Used by colony.</p>
 <br>
 <br>
 

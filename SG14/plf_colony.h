@@ -29,19 +29,19 @@
 	#if _MSC_VER < 1600
 		#define PLF_COLONY_NOEXCEPT throw()
 		#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) 
-		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) 
+		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
 	#elif _MSC_VER == 1600
 		#define PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		#define PLF_COLONY_NOEXCEPT throw()
 		#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) 
-		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) 
+		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
 	#elif _MSC_VER == 1700
 		#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#define PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		#define PLF_COLONY_NOEXCEPT throw()
 		#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) 
-		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) 
+		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
 	#elif _MSC_VER == 1800
 		#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#define PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
@@ -49,7 +49,7 @@
 		#define PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		#define PLF_COLONY_NOEXCEPT throw()
 		#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) 
-		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) 
+		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
 		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 	#elif _MSC_VER >= 1900
 		#define PLF_COLONY_TYPE_TRAITS_SUPPORT
@@ -71,26 +71,39 @@
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#endif
+
+		#if __GNUC__ >= 6
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
+		#else
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
+		#endif
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
-		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
+		#if __GLIBCXX__ >= 20160111
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
+			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
+		#elif __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#elif __GLIBCXX__ >= 20090421 	// libstdc++ 4.3 and below do not support initializer lists
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		#endif
 	#elif defined(_LIBCPP_VERSION) // No type trait support in libc++ to date
+		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
 		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 	#else // Assume type traits and initializer support for non-GCC compilers and standard libraries
+		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
 		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		#define PLF_COLONY_TYPE_TRAITS_SUPPORT
-	#endif
+	#endif	
 
 	#define PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
 	#define PLF_COLONY_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
 	#define PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 	#define PLF_COLONY_NOEXCEPT noexcept
 	#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
-	#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 #else
 	#define PLF_COLONY_FORCE_INLINE
 	#define PLF_COLONY_NOEXCEPT throw()
@@ -2040,7 +2053,7 @@ public:
 
 private:
 
-	// Internal functions for insert-fill:
+	// Internal functions for fill insert:
 	void group_create(const skipfield_type number_of_elements)
 	{
 		const group_pointer_type next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
@@ -2095,7 +2108,7 @@ private:
 
 public:
 
-	// Fill-insert
+	// Fill insert
 
 	iterator insert(const size_type number_of_elements, const element_type &element)
 	{
@@ -2116,11 +2129,11 @@ public:
 				size_type multiples = (number_of_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
 				const skipfield_type element_remainder = static_cast<const skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
 
-				while (--multiples != 0)
+				do
 				{
 					group_create(group_allocator_pair.max_elements_per_group);
 					group_fill(element, group_allocator_pair.max_elements_per_group);
-				}
+				} while (--multiples != 0);
 
 				if (element_remainder != 0)
 				{
@@ -3163,6 +3176,8 @@ public:
 
 	void swap(colony &source) PLF_COLONY_NOEXCEPT_SWAP(allocator_type)
 	{
+		assert(&source != this);
+
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			colony temp(std::move(source));
 			source = std::move(*this);
@@ -3808,7 +3823,7 @@ public:
 	template <class colony_element_allocator_type, bool is_const>
 	inline typename colony_reverse_iterator<colony_element_allocator_type, is_const>::difference_type distance(const colony_reverse_iterator<colony_element_allocator_type, is_const> &first, const colony_reverse_iterator<colony_element_allocator_type, is_const> &last) const 
 	{
-		return distance(first.the_iterator, last.the_iterator);
+		return distance(last.the_iterator, first.the_iterator);
 	}
 
 

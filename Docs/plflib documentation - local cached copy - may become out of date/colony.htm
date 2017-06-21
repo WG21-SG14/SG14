@@ -32,7 +32,7 @@ high-modification scenarios with unordered data. Specifically it provides
 better performance than other std:: library containers when:</p>
 <ol type="a">
   <li>Insertion order is unimportant,</li>
-  <li>Insertions and erasures to the container are occuring frequently in
+  <li>Insertions and erasures to the container are occurring frequently in
     realtime ie. in performance-critical code, <i><b>and/or</b></i> </li>
   <li>Pointers which point to non-erased container elements must not be
     invalidated by insertion or erasure.</li>
@@ -255,7 +255,7 @@ restrictions:</p>
 
 <h2><a id="download"></a>Download</h2>
 
-<p>Download <a href="plf_colony_11-05-2017.zip">here</a> (31kb zip file) or
+<p>Download <a href="plf_colony_21-06-2017.zip">here</a> (31kb zip file) or
 view the <a
 href="https://github.com/mattreecebentley/plf_colony">repository</a><br>
 <br>
@@ -2211,7 +2211,7 @@ other cases involving unordered data, use colony.</p>
     where exceptions can occur.</p>
     <p>The reason why operator = only has a basic guarantee is they do not
     utilize the copy-swap idiom, as the copy-swap idiom significantly increases
-    the chance of any exception occuring - this is because the most common way
+    the chance of any exception occurring - this is because the most common way
     an exception tends to occur during a copy operation is due to a lack of
     memory space, and the copy-swap idiom doubles the memory requirement for a
     copy operation by constructing the copy before destructing the original
@@ -2244,15 +2244,14 @@ other cases involving unordered data, use colony.</p>
         iterator beyond the bounds of the current group and into the next
         group. But if empty groups are allowed, there could be anywhere between
         1 and <code>size_type</code> empty groups between the current element
-        and the next. Essentially you get the same scenario as do when
-        iterating over a boolean skipfield.</li>
+        and the next. Essentially you get the same scenario as you do when
+        iterating over a boolean skipfield. While it is possible to move these to the back of the colony as trailing groups, and remove their entries from the erased locations stack, this may create performance issues if any of the groups are not at their maximum size (see below).</li>
       <li>Performance: iterating over empty groups is slower than them not
         being present, cache wise - but also if you have to allow for empty
         groups while iterating, then you have to include a while loop in every
-        iteration operation, increasing cache misses and code size. Lastly,
-        pushing to the back of a colony is faster than recycling memory
-        locations. When a group is removed it's recyclable memory locations are
-        also removed from the stack, hence subsequent insertions are also more
+        iteration operation, which increases cache misses and code size. The strategy of removing groups when they become empty also removes (assuming randomized erasure) smaller groups from the colony before larger groups, which has a net result of improving iteration (as with a larger group, more iterations within the group can occur before the end-of-group condition is reached and a transfer to the next group (and subsequent cache miss) occurs). Lastly, pushing to the back of a colony is faster than recycling memory
+        locations as each insertion occurs to a similar memory location and less work is necessary. When a group is removed or moved to the back of the group chain (past end()), it's recyclable memory locations are
+        also removed from memory, hence subsequent insertions are more
         likely to be pushed to the back of the colony.</li>
     </ol>
   </li>
@@ -2260,6 +2259,13 @@ other cases involving unordered data, use colony.</p>
     storage?</h4>
     <p>Two reasons:</p>
     <ol type="a">
+  <li>The most obvious is that unions in C++ (11 or otherwise) do not support
+    object unions in a way that preserves fundamental functionality of the
+    object being unioned (<a
+    href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4567.pdf">n4567</a>,
+    9.5/2). Copy/move assignment/constructors, constructors and destructors
+    would be lost. This makes this approach untenable for non-trivial
+  types.</li>
       <li>Colony elements are not guaranteed to be of sufficient size (32-bit
         on x86, 64-bit or greater on other architectures) to store a pointer.
         For smaller types and 64-bit pointers, a free list union would end up
@@ -2269,7 +2275,7 @@ other cases involving unordered data, use colony.</p>
         storage domains, and I cannot predict their data patterns or usage.</li>
       <li>A free list will likely incur a significant number of cache misses
         and subsequent jitter when a colony memory block is freed to the OS.
-        With a stack the erased locations are in contiguous memory space, so it
+        With a stack the erased locations are contiguous memory blocks, so it
         is extremely fast and cache-friendly to process the stack and remove
         erased locations belonging to the memory block being freed. On the
         other hand with a free list, removing the erased locations involves
@@ -2321,6 +2327,8 @@ other cases involving unordered data, use colony.</p>
 
 <h2><a id="version"></a>Version history</h2>
 <ul>
+  <li>2017-06-21: v3.95 - Corrected support for v5 GCC. Correction to test suite under GCC versions > v5. Correction to distance() for reverse iterators.</li>
+  <li>2017-06-01: v3.94 - Minor optimizations and test suite cleanup.</li>
   <li>2017-05-21: v3.93 - Added sort(). Colonies can now be sorted as you would with a list, with or without a supplied comparison function (less-than if without). Removed MSVC warnings at level 4, ignoring those which're obviously compiler bugs. More support for non-gcc compilers using gcc libraries or libc++.</li>
   <li>2017-05-11: v3.91 - Additional type safety check on stack consolidate. Move assignment now follows C++17 noexcept rule. Correction to missing undef's at end of header.</li>
   <li>2017-05-11: v3.90 - Minor optimizations to initializer-list insert and copy constructors. Emplace availability correction for some compilers. Corrections to shrink_to_fit() and reserve() (will not longer go below minimum group size). Minor optimizations to operator = and c++03 swap. Other minor code improvements.</li>
@@ -2483,7 +2491,7 @@ other cases involving unordered data, use colony.</p>
     to fix issue when plf_stack.h is also used within project separately from
     plf_colony.h. </li>
   <li>2016-02-23: v3.01 - Colony now uses a <a
-    href="http://www.mediafire.com/download/rp54fr14cqt963c/the_jump_counting_skipfield_pattern.pdf">jump-counting
+    href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D">jump-counting
     skipfield</a> instead of a boolean field, which mitigates worst-case
     scenario performance by factors of ten. Iterators now bidirectional (but
     include &gt; &lt; &gt;= and &lt;= operators) instead of random-access, and
