@@ -67,15 +67,15 @@
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if __GNUC__ == 4 && __GNUC_MINOR__ >= 4 // 4.3 and below do not support initializer lists
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
-		#elif __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
+		#elif __GNUC__ == 5 // GCC v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
-		#endif
-
-		#if __GNUC__ >= 6
-			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
-		#else
 			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
+		#elif __GNUC__ >= 6 // C++17 support
+			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
+			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
+			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 		#endif
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 		#if __GLIBCXX__ >= 20160111
@@ -305,7 +305,7 @@ private:
 		struct ebco_pair : stack_group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 		{
 			size_type min_elements_per_group;
-			ebco_pair(const size_type min_elements) : min_elements_per_group(min_elements) {};
+			explicit ebco_pair(const size_type min_elements) : min_elements_per_group(min_elements) {};
 		}						group_allocator_pair;
 
 		friend class colony;
@@ -763,6 +763,8 @@ public:
 
 				return *this;
 			}
+			
+			
 
 			inline colony_iterator & operator = (colony_iterator<colony_allocator_type, !is_const> &&source) PLF_COLONY_NOEXCEPT // Move is a copy in this scenario
 			{
@@ -816,17 +818,31 @@ public:
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
 
-			++skipfield_pointer;
-			element_pointer += 1 + *skipfield_pointer;
-			skipfield_pointer += *skipfield_pointer;
-
-			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
-			{
-				group_pointer = group_pointer->next_group;
-				element_pointer = group_pointer->elements + *(group_pointer->skipfield);
-				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
-			}
-
+			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__haswell__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
+				skipfield_type skip = *(++skipfield_pointer); 
+	
+				if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
+				{
+					group_pointer = group_pointer->next_group;
+					skip = *(group_pointer->skipfield);
+					element_pointer = group_pointer->elements + skip;
+					skipfield_pointer = group_pointer->skipfield;
+				}
+	
+	   			skipfield_pointer += skip;
+			#else
+				const skipfield_type skip = *(++skipfield_pointer);
+				skipfield_pointer += skip;
+	
+				if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
+				{
+					group_pointer = group_pointer->next_group;
+					const skipfield_type first_skip = *(group_pointer->skipfield);
+					element_pointer = group_pointer->elements + first_skip;
+					skipfield_pointer = group_pointer->skipfield + first_skip;
+				}
+			#endif
+			
 			return *this;
 		}
 
@@ -847,8 +863,9 @@ public:
 			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)
 			{
 				group_pointer = group_pointer->next_group;
-				element_pointer = group_pointer->elements + *(group_pointer->skipfield);
-				skipfield_pointer = group_pointer->skipfield + *(group_pointer->skipfield);
+				const skipfield_type first_skip = *(group_pointer->skipfield);
+				element_pointer = group_pointer->elements + first_skip;
+				skipfield_pointer = group_pointer->skipfield + first_skip;
 			}
 		}
 
@@ -863,9 +880,9 @@ public:
 
 			if (element_pointer != group_pointer->elements) // ie. not already at beginning of group
 			{
-				--skipfield_pointer;
-				element_pointer -= 1 + *skipfield_pointer;
-				skipfield_pointer -= *skipfield_pointer;
+				const skipfield_type skip = *(--skipfield_pointer);
+				skipfield_pointer -= skip;
+				element_pointer -= skip + 1;
 
 				if (element_pointer != group_pointer->elements - 1) // ie. iterator was not already at beginning of colony (with some previous consecutive deleted elements), and skipfield does not takes us into the previous group)
 				{
@@ -875,8 +892,9 @@ public:
 
 			group_pointer = group_pointer->previous_group;
 			skipfield_pointer = group_pointer->skipfield + group_pointer->size - 1;
-			element_pointer = (reinterpret_cast<colony::element_pointer_type>(group_pointer->skipfield) - 1) - *skipfield_pointer;
-			skipfield_pointer -= *skipfield_pointer;
+			const skipfield_type skip = *skipfield_pointer;
+			element_pointer = (reinterpret_cast<colony::element_pointer_type>(group_pointer->skipfield) - 1) - skip;
+			skipfield_pointer -= skip;
 
 			return *this;
 		}
@@ -964,7 +982,7 @@ public:
 		#endif
 
 
-		colony_iterator() PLF_COLONY_NOEXCEPT: group_pointer(NULL), element_pointer(NULL), skipfield_pointer(NULL) {}
+		colony_iterator() PLF_COLONY_NOEXCEPT: group_pointer(NULL), element_pointer(NULL), skipfield_pointer(NULL)  {}
 
 
 
@@ -990,7 +1008,7 @@ public:
 		{}
 
 
-  
+
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			// move constructor
 			inline colony_iterator(colony_iterator &&source) PLF_COLONY_NOEXCEPT:
@@ -1090,9 +1108,9 @@ public:
 
 			if (element_pointer != group_pointer->elements) // ie. not already at beginning of group
 			{
-				--skipfield_pointer;
-				element_pointer -= 1 + *skipfield_pointer;
-				skipfield_pointer -= *skipfield_pointer;
+				const skipfield_type skip = *(--skipfield_pointer);
+				skipfield_pointer -= skip;
+				element_pointer -= skip + 1;
 
 				if (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)) // ie. iterator is not == rend()
 				{
@@ -1104,8 +1122,9 @@ public:
 			{
 				group_pointer = group_pointer->previous_group;
 				skipfield_pointer = group_pointer->skipfield + group_pointer->size - 1;
-				element_pointer = (reinterpret_cast<colony::element_pointer_type>(group_pointer->skipfield) - 1) - *skipfield_pointer;
-				skipfield_pointer -= *skipfield_pointer;
+				const skipfield_type skip = *skipfield_pointer;
+				element_pointer = (reinterpret_cast<colony::element_pointer_type>(group_pointer->skipfield) - 1) - skip;
+				skipfield_pointer -= skip;
 			}
 			else // necessary so that reverse_iterator can end up == rend() ie. first_group->elements[-1], if we were already at first element in colony
 			{
@@ -1287,7 +1306,7 @@ private:
 	struct ebco_pair : group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 	{
 		skipfield_type max_elements_per_group;
-		ebco_pair(const skipfield_type max_elements) : max_elements_per_group(max_elements) {};
+		explicit ebco_pair(const skipfield_type max_elements) : max_elements_per_group(max_elements) {};
 	}						group_allocator_pair;
 
 	reduced_stack erased_locations;
@@ -1396,7 +1415,8 @@ public:
 		first_group(NULL),
 		total_number_of_elements(0),
 		min_elements_per_group((min_allocation_amount != 0) ? min_allocation_amount : 
-			(fill_number > max_allocation_amount) ? max_allocation_amount : static_cast<skipfield_type>(fill_number)),
+			(fill_number > max_allocation_amount) ? max_allocation_amount : 
+			(fill_number > 8) ? static_cast<skipfield_type>(fill_number) : 8),
 		group_allocator_pair(max_allocation_amount),
 		erased_locations((min_elements_per_group < 8) ? min_elements_per_group : (min_elements_per_group >> 7) + 8)
 	{
@@ -1435,8 +1455,8 @@ public:
 			first_group(NULL),
 			total_number_of_elements(0),
 			min_elements_per_group((min_allocation_amount != 0) ? min_allocation_amount : 
-				(element_list.size() < 8) ? 8 :
-				(element_list.size() > max_allocation_amount) ? max_allocation_amount : static_cast<skipfield_type>(element_list.size())),
+			(element_list.size() > max_allocation_amount) ? max_allocation_amount : 
+			(element_list.size() > 8) ? static_cast<skipfield_type>(element_list.size()) : 8),
 			group_allocator_pair(max_allocation_amount),
 			erased_locations((min_elements_per_group < 8) ? min_elements_per_group : (min_elements_per_group >> 7) + 8)
 		{
@@ -1548,9 +1568,9 @@ private:
 				do
 				{
 					PLF_COLONY_DESTROY(element_allocator_type, (*this), element_pointer);
-					++skipfield_pointer;
-					element_pointer += 1 + *skipfield_pointer;
-					skipfield_pointer += *skipfield_pointer;
+					const skipfield_type skip = *(++skipfield_pointer);
+					skipfield_pointer += skip;
+					element_pointer += skip + 1;
 				} while(element_pointer != end_pointer); // ie. beyond end of available data
 
 				const group_pointer_type next_group = first_group->next_group;
@@ -2129,11 +2149,11 @@ public:
 				size_type multiples = (number_of_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
 				const skipfield_type element_remainder = static_cast<const skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
 
-				do
+				while (--multiples != 0)
 				{
 					group_create(group_allocator_pair.max_elements_per_group);
 					group_fill(element, group_allocator_pair.max_elements_per_group);
-				} while (--multiples != 0);
+				}
 
 				if (element_remainder != 0)
 				{
@@ -2623,7 +2643,7 @@ public:
 		}
 
 		// else: consolidation of empty groups
-		switch((the_group_pointer->next_group != NULL) | (the_group_pointer != first_group) << 1)
+		switch((the_group_pointer->next_group != NULL) | ((the_group_pointer != first_group) << 1))
 		{
 			case 0: // ie. the_group_pointer == first_group && the_group_pointer->next_group == NULL; only group in colony
 			{
@@ -2719,9 +2739,9 @@ public:
 
         			erased_locations.push(current.element_pointer);
 
-					++current.skipfield_pointer;
-					current.element_pointer += 1 + *current.skipfield_pointer;
-					current.skipfield_pointer += *current.skipfield_pointer;
+					const skipfield_type skip = *(++current.skipfield_pointer);
+					current.skipfield_pointer += skip;
+					current.element_pointer += skip + 1;
 					++number_of_group_erasures;
 				} while (current.skipfield_pointer != end);
 
@@ -2780,9 +2800,9 @@ public:
 					do
 					{
 						PLF_COLONY_DESTROY(element_allocator_type, (*this), current.element_pointer); // Destruct element
-						++current.skipfield_pointer;
-						current.element_pointer += 1 + *current.skipfield_pointer;
-						current.skipfield_pointer += *current.skipfield_pointer;
+						const skipfield_type skip = *(++current.skipfield_pointer);
+						current.skipfield_pointer += skip;
+						current.element_pointer += skip + 1;
 					} while (current.element_pointer != end);
 				}
 
@@ -2899,9 +2919,9 @@ public:
 				while(current.element_pointer != iterator2.element_pointer)
 				{
 					PLF_COLONY_DESTROY(element_allocator_type, (*this), current.element_pointer);
-					++current.skipfield_pointer;
-					current.element_pointer += 1 + *current.skipfield_pointer;
-					current.skipfield_pointer += *current.skipfield_pointer;
+					const skipfield_type skip = *(++current.skipfield_pointer);
+					current.skipfield_pointer += skip;
+					current.element_pointer += skip + 1;
 				}
 			}
 
@@ -3004,7 +3024,7 @@ public:
 
 
 
-	inline void get_group_sizes(skipfield_type &minimum_group_size, skipfield_type &maximum_group_size)
+	inline void get_group_sizes(skipfield_type &minimum_group_size, skipfield_type &maximum_group_size) const PLF_COLONY_NOEXCEPT
 	{
 		minimum_group_size = min_elements_per_group;
 		maximum_group_size = group_allocator_pair.max_elements_per_group;		
@@ -3611,9 +3631,9 @@ public:
 
 					if (group_pointer->next_group == NULL) // bound to rbegin()
 					{
-						--skipfield_pointer;
-						element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer;
-						skipfield_pointer -= *skipfield_pointer;
+						const skipfield_type skip = *(--skipfield_pointer);
+						skipfield_pointer -= skip;
+						element_pointer = (group_pointer->last_endpoint - 1) - skip;
 						return;
 					}
 				}
@@ -3635,8 +3655,9 @@ public:
 				if (group_pointer->next_group == NULL) // bound to rbegin()
 				{
 					skipfield_pointer = group_pointer->skipfield + (group_pointer->last_endpoint - group_pointer->elements) - 1;
-					element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer;
-					skipfield_pointer -= *skipfield_pointer;
+					const skipfield_type skip = *(--skipfield_pointer);
+					skipfield_pointer -= skip;
+					element_pointer = (group_pointer->last_endpoint - 1) - skip;
 					return;
 				}
 				else if ((distance -= group_pointer->number_of_elements) == 0)
@@ -3934,7 +3955,7 @@ private:
 	{
 		comparison_function stored_instance;
 
-		sort_dereferencer(const comparison_function &function_instance):
+		explicit sort_dereferencer(const comparison_function &function_instance):
 			stored_instance(function_instance)
 		{}
 		

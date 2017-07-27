@@ -12,7 +12,6 @@ int main(int, char *[])
     sg14_test::transcode_test();
     sg14_test::ring_tests();
     sg14_test::plf_colony_test_suite();
-    sg14_test::plf_stack_test_suite();
     sg14_test::unstable_remove_test();
     sg14_test::uninitialized();
 
