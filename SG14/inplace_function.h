@@ -101,8 +101,8 @@ public:
 	// Allows for copying from inplace_function object of the same type, but with a smaller buffer
 	// May throw any exception encountered by the constructor when copying the target object
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacityT>
-	inplace_function(const inplace_function<RetT(ArgsT...), OtherCapacityT>& other)
+	template<size_t OtherCapacityT, size_t OtherAlignment>
+	inplace_function(const inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>& other)
 	{
 		this->copy(other);
 	}
@@ -110,8 +110,8 @@ public:
 	// Allows for moving an inplace_function object of the same type, but with a smaller buffer
 	// May throw any exception encountered by the constructor when moving the target object
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacity>
-	inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
+	template<size_t OtherCapacity, size_t OtherAlignment>
+	inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>&& other)
 	{
 		this->move(other);
 	}
@@ -137,8 +137,8 @@ public:
 	// Allows for copy assignment of an inplace_function object of the same type, but with a smaller buffer
 	// If the copy constructor of target object throws, this is left in uninitialized state
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacityT>
-	inplace_function& operator=(const inplace_function<RetT(ArgsT...), OtherCapacityT>& other)
+	template<size_t OtherCapacityT, size_t OtherAlignment>
+	inplace_function& operator=(const inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>& other)
 	{
 		this->clear();
 		this->copy(other);
@@ -148,8 +148,8 @@ public:
 	// Allows for move assignment of an inplace_function object of the same type, but with a smaller buffer
 	// If the move constructor of target object throws, this is left in uninitialized state
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacity>
-	inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity>&& other)
+	template<size_t OtherCapacity, size_t OtherAlignment>
+	inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>&& other)
 	{
 		this->clear();
 		this->move(std::move(other));
@@ -224,10 +224,11 @@ private:
 		m_ManagerFctPtr = nullptr;
 	}
 
-	template<size_t OtherCapacityT>
-	void copy(const inplace_function<RetT(ArgsT...), OtherCapacityT>& other)
+	template<size_t OtherCapacityT, size_t OtherAlignment>
+	void copy(const inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>& other)
 	{
 		static_assert(OtherCapacityT <= CapacityT, "Can't squeeze larger inplace_function into a smaller one");
+		static_assert(AlignmentT % OtherAlignment == 0, "Incompatible alignments");
 
 		if (other.m_ManagerFctPtr)
 			other.m_ManagerFctPtr(data(), other.data(), Operation::Copy);
@@ -244,10 +245,11 @@ private:
 			to = from;
 	}
 
-	template<size_t OtherCapacityT>
-	void move(inplace_function<RetT(ArgsT...), OtherCapacityT>&& other)
+	template<size_t OtherCapacityT, size_t OtherAlignment>
+	void move(inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>&& other)
 	{
 		static_assert(OtherCapacityT <= CapacityT, "Can't squeeze larger inplace_function into a smaller one");
+		static_assert(AlignmentT % OtherAlignment == 0, "Incompatible alignments");
 
 		if (other.m_ManagerFctPtr)
 			other.m_ManagerFctPtr(data(), other.data(), Operation::Move);
