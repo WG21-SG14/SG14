@@ -4,7 +4,6 @@
   <title>Introduction of std::colony to the standard library</title>
   <style type="text/css">
       body {
-         font-size: 14pt;
          font-weight: normal;
          font-style: normal;
 			color: black;
@@ -30,7 +29,6 @@
          text-align: left;
       }
       td {
-         font-size: 14pt;
       }
       /* headings */
 
@@ -132,7 +130,6 @@
       }
       code {
          font-family: Courier New, Courier, monospace;
-         font-size: 12pt;
          padding: 0 0 0 0em;
       }
       ins {
@@ -201,18 +198,16 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
 <p>In a human colony people move into houses, then when they move on their
 houses are filled with other people - assuming limited resources. New houses
-are not built unless necessary, because it's inefficient to do so. But as the colony grows, we'd start building larger and larger houses for efficiency's sake - and if a house became empty it might be demolished and the land cleared to make way for a larger one. Lastly, if we wanted to find people, but had a lot of empty houses in a row, we'd want to avoid checking each and every individual house. For that reason we might use a numbering system that allows us to skip over multiple empty houses in a row.</p>
+are not built unless necessary, because it's inefficient to do so. But as the colony grows, we'd start building larger and larger houses for efficiency's sake - and if a house became empty it might be demolished and the land cleared to make way for a larger one. Lastly, if we wanted to find people, but had a lot of empty houses in a row, we'd want to avoid checking each and every individual house. For that reason we might want to use a numbering system that allows us to skip over multiple empty houses in a row.</p>
 
-<p>That metaphorically lays out the three core aspects of a colony container - erased-element location reuse upon reinsertion, block-based allocation with a growth factor, and jump-counting skipfields. Memory locations of erased elements are marked as empty and 'recycled', with new elements utilizing them upon future insertion, meanwhile being skipped over during iteration. This avoids reallocation upon erasure. New memory blocks are not allocated unless necessary - and when a memory block becomes empty, it is freed to the OS (under certain circumstances it may be retained for performance reasons - see <a href="#clear">clear()</a> and <a href="#erase">erase()</a>). This avoids needless iteration over erased blocks and is one part of enabling O(1) iteration time complexity. The other part is the use of what I've called a ``jump-counting'' skipfield to allow contiguous erased element slots to be skipped during iteration, which also increases iteration performance compared to a boolean skipfield. Lastly, elements in a colony are allocated in memory blocks with a growth factor, enabling pointers to elements to stay valid after insertions and reducing the total number of allocations.</p>
+<p>That metaphorically lays out the three core aspects of a colony container - erased-element location reuse upon reinsertion, block-based allocation with a growth factor, and jump-counting skipfields. Memory locations of erased elements are marked as empty and 'recycled', with new elements utilizing them upon future insertion, meanwhile being skipped over during iteration. This avoids reallocation upon erasure. New memory blocks are not allocated unless necessary - and when a memory block becomes empty, it is freed to the OS (under certain circumstances it may be retained for performance reasons - see <a href="#clear">clear()</a> and <a href="#erase">erase()</a>). This avoids needless iteration over erased blocks and is one part of enabling O(1) iteration time complexity. The other part is the use of what I've called a <a href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D">jump-counting skipfield</a>, to allow contiguous erased element slots to be skipped during iteration, which also increases iteration performance compared to a boolean skipfield. Lastly, elements in a colony are allocated in memory blocks with a growth factor, enabling pointers to elements to stay valid after insertions and reducing the total number of allocations.</p>
 
 <p>Colony is designed to be a higher-performance container for situations where the ratio of
 insertions/erasures to iterations is relatively high. It
 allows only for unordered insertion but is sortable, has fast iteration and
 gives the programmer direct pointer/iterator access to elements without the
 threat of those pointers/iterators being invalidated by subsequent
-insertions or erasure. This is useful for object-oriented scenarios and many other frameworks such as entity component systems.</p>
-
-<p>A colony has some similarities to a 'bag' container, but without id's or element counting. Instead of using id's as lookups for individual elements, the insert function returns an iterator which is valid for the lifetime of the element. The iterator can of course be dereferenced to obtain a pointer to the element, which is also valid for the element's lifetime. Since direct pointer access or iterator access does not have the overhead of id lookup, this is another positive point for colony, performance-wise. Based on the reference implementation (<a
+insertions or erasure. This makes it useful for object-oriented scenarios and many other frameworks such as entity component systems. A colony has some similarities to a ``bag'' container, but without id lookups or element counting. Instead of using id's as lookups for individual elements, the insert function returns an iterator which is valid for the lifetime of the element. The iterator can of course be dereferenced to obtain a pointer to the element, which is also valid for the element's lifetime. Since direct pointer access or iterator access does not have the overhead of id lookup, this is another positive point for colony, performance-wise. Based on the reference implementation (<a
 href="http://www.plflib.org/colony.htm">plf::colony</a>) it has been established that colonies have better overall performance than standard library containers or container modifications when the following are valid:</p>
 <ol type="a">
   <li>Insertion order is unimportant</li>
@@ -248,7 +243,7 @@ comparisons to the unmodified std:: containers, are explored in detail in the
 
 <h2><a name="motivation"></a>II. Motivation and Scope</h2>
 
-<p><i>Note: Throughout this document I will use the term 'link' to denote any form of referencing between elements whether it be via iterators/pointers/indexes/references/id's.</p>
+<p><i>Note: Throughout this document I will use the term 'link' to denote any form of referencing between elements whether it be via iterators/pointers/indexes/references/id's.</i></p>
 
 <p>There are situations where data is heavily interlinked, iterated
 over frequently, and changing often. An example is a typical video game engine. Most games will have a central 'entity' class, regardless of their overall schema. These are 'has a'-style objects rather than 'is a'-style
@@ -410,7 +405,7 @@ fast iteration when compared to boolean skipfields. It stores and modifies
 elements in runs of consecutive erased elements, and during iteration uses
 these numbers to skip over the runs. This avoids the looping
 branch code necessary for iteration with a boolean skipfield - which is slow, but which also cannot be used due to it's O(random) time complexity. It has two variants - a simple and an advanced solution, the latter of which colony uses. The published paper of the advanced version of the jump-counting skipfield pattern is available for viewing here: <a
-href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D">http://rdcu.be/ty6U</a>),
+href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D">http://rdcu.be/ty6U</a>,
 </p>
 
 <h6>Iterative performance after having previously erased 75% of all elements in
@@ -1185,6 +1180,11 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
 	int_colony.sort();<br>
 	// Sort a colony of doubles in descending order:<br>
 	double_colony.sort(std::greater<double>());</code></p>
+  </li>
+  <li><code>void splice(colony &amp;source);</code>
+    <p>Append data from one colony container to the end of another. This operation removes all elements from the source colony. All pointers/iterators to elements within the source and destination containers retain their validity. (note: not currently implemented in reference implementation - will be in future).<br>
+    Example: <code style="color: brown">// Append one colony to the end of another:<br>
+	int_colony.splice(int_colony2);</code></p>
   </li>
     <li><code>colony &amp; operator = (const colony &amp;source)</code>
     <p>Copy the elements from another colony to this colony, clearing this

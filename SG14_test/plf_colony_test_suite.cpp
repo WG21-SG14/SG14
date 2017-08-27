@@ -41,17 +41,8 @@
 
 namespace
 {
-    void title1(const char *)
-    {}
-
-    
-    void title2(const char *)
-    {}
-
-    
-    void failpass(const char *test_type, bool condition)
+    inline void failpass(const char *test_type, bool condition)
     {
-
         if (!condition)
         {
 			std::cout << test_type << ": " << "Fail" << std::endl;
@@ -117,8 +108,8 @@ void plf_colony_test_suite()
 	while (++looper != 50)
 	{
 		{
-			title1("Colony");
-			title2("Test Basics");
+			// title1("Colony");
+			// title2("Test Basics");
 			
 			colony<int *> p_colony;
 			
@@ -129,7 +120,7 @@ void plf_colony_test_suite()
 			
 			failpass("Colony not-empty", !p_colony.empty());
 
-			title2("Iterator tests");
+			// title2("Iterator tests");
 			
 			failpass("Begin() working", **p_colony.begin() == 10);
 			failpass("End() working", p_colony.begin() != p_colony.end());
@@ -341,7 +332,7 @@ void plf_colony_test_suite()
 
 		
 		{
-			title2("Insert and Erase tests");
+			// title2("Insert and Erase tests");
 			
 			colony<int> i_colony;
 
@@ -618,7 +609,7 @@ void plf_colony_test_suite()
 		}
 
 		{
-			title2("Range-erase tests");
+			// title2("Range-erase tests");
 		
 			colony<int> i_colony;
 			
@@ -760,6 +751,14 @@ void plf_colony_test_suite()
 					it = i_colony.erase(it);
 				}
 			}
+
+			if (i_colony.size() < 400)
+			{
+				for (counter = 0; counter != 400; ++counter)
+				{
+					i_colony.insert(counter);
+				}
+			}
 			
 			it1 = i_colony.begin();
 			it2 = i_colony.end();
@@ -774,7 +773,7 @@ void plf_colony_test_suite()
 				++counter;
 			}
 
-			failpass("Range-erase with colony already third-erased, randomizes erasures", counter == 400 && i_colony.size() == 400);
+			failpass("Range-erase with colony already third-erased, randomized erasures", counter == 400 && i_colony.size() == 400);
 
 
 
@@ -832,7 +831,7 @@ void plf_colony_test_suite()
 
 
 		{
-			title2("Sort tests");
+			// title2("Sort tests");
 			
 			colony<int> i_colony;
 			
@@ -882,15 +881,15 @@ void plf_colony_test_suite()
 
 
 		{
-			title2("Different insertion-style tests");
+			// title2("Different insertion-style tests");
 
 			#ifdef PLF_INITIALIZER_LIST_SUPPORT
 				colony<int> i_colony = {1, 2, 3};
+
+				failpass("Initializer-list constructor test", i_colony.size() == 3);
 			#else
 				colony<int> i_colony(3, 1);
 			#endif
-			
-			failpass("Initializer-list constructor test", i_colony.size() == 3);
 			
 			colony<int> i_colony2(i_colony.begin(), i_colony.end());
 			
@@ -914,7 +913,7 @@ void plf_colony_test_suite()
 
 		#ifdef PLF_VARIADICS_SUPPORT
 		{
-			title2("Perfect Forwarding tests");
+			// title2("Perfect Forwarding tests");
 
 			colony<perfect_forwarding_test> pf_colony;
 

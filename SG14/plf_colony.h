@@ -194,17 +194,17 @@ public:
 
 	
 	// Iterator declarations:
-	template <class colony_element_allocator_type, bool is_const> class colony_iterator;
-	typedef colony_iterator<element_allocator_type, false>		iterator;
-	typedef colony_iterator<element_allocator_type, true>		const_iterator;
-	friend class colony_iterator<element_allocator_type, false>; // Using typedef name here would be illegal under C++03 (according to clang)
-	friend class colony_iterator<element_allocator_type, true>;
+	template <bool is_const> class colony_iterator;
+	typedef colony_iterator<false>		iterator;
+	typedef colony_iterator<true>		const_iterator;
+	friend class colony_iterator<false>; // Using typedef name here would be illegal under C++03 (according to clang)
+	friend class colony_iterator<true>;
 
-	template <class r_colony_element_allocator_type, bool r_is_const> class colony_reverse_iterator;
-	typedef colony_reverse_iterator<element_allocator_type, false>	reverse_iterator;
-	typedef colony_reverse_iterator<element_allocator_type, true>	const_reverse_iterator;
-	friend class colony_reverse_iterator<element_allocator_type, false>;
-	friend class colony_reverse_iterator<element_allocator_type, true>;
+	template <bool r_is_const> class colony_reverse_iterator;
+	typedef colony_reverse_iterator<false>	reverse_iterator;
+	typedef colony_reverse_iterator<true>	const_reverse_iterator;
+	friend class colony_reverse_iterator<false>;
+	friend class colony_reverse_iterator<true>;
 
 
 private:
@@ -622,7 +622,7 @@ private:
 	// Colony groups:
 	struct group : private uchar_allocator_type	// Empty base class optimisation - inheriting allocator functions
 	{
-		element_pointer_type				last_endpoint; // the address that is one past the highest cell number that's been used so far in this group - does not change with erase command - is necessary because an iterator cannot access the colony's end_iterator - also used to determine whether erasures have occured in the group by negating 'elements' and comparing with 'number_of_elements' - useful for some functions
+		element_pointer_type				last_endpoint; // the address that is one past the highest cell number that's been used so far in this group - does not change with erase command - is necessary because an iterator cannot access the colony's end_iterator - also used to determine whether erasures have occurred in the group by subtracting 'elements' and comparing with 'number_of_elements' - useful for some functions. Most-used variable in colony use (operator ++, --) so first in struct
 		group_pointer_type					next_group;
 		const element_pointer_type			elements;
 		const skipfield_pointer_type		skipfield; // Now that both the elements and skipfield arrays are allocated contiguously, skipfield pointer also functions as a 'one-past-end' pointer for the elements array
@@ -709,7 +709,7 @@ public:
 
 
 	// Iterators:
-	template <class colony_allocator_type, bool is_const> class colony_iterator
+	template <bool is_const> class colony_iterator
 	{
 	private:
 		group_pointer_type		group_pointer;
@@ -724,8 +724,8 @@ public:
 		typedef typename choose<is_const, typename colony::const_reference, typename colony::reference>::type	reference;
 
 		friend class colony;
-		friend class colony_reverse_iterator<typename colony::allocator_type, false>;
-		friend class colony_reverse_iterator<typename colony::allocator_type, true>;
+		friend class colony_reverse_iterator<false>;
+		friend class colony_reverse_iterator<true>;
 
 
 
@@ -740,7 +740,7 @@ public:
 
 
 
-		inline colony_iterator & operator = (const colony_iterator<colony_allocator_type, !is_const> &source) PLF_COLONY_NOEXCEPT
+		inline colony_iterator & operator = (const colony_iterator<!is_const> &source) PLF_COLONY_NOEXCEPT
 		{
 			group_pointer = source.group_pointer;
 			element_pointer = source.element_pointer;
@@ -766,7 +766,7 @@ public:
 			
 			
 
-			inline colony_iterator & operator = (colony_iterator<colony_allocator_type, !is_const> &&source) PLF_COLONY_NOEXCEPT // Move is a copy in this scenario
+			inline colony_iterator & operator = (colony_iterator<!is_const> &&source) PLF_COLONY_NOEXCEPT // Move is a copy in this scenario
 			{
 				assert (&source != this);
 
@@ -818,9 +818,9 @@ public:
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
 
-			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__haswell__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
+			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
 				skipfield_type skip = *(++skipfield_pointer); 
-	
+
 				if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 				{
 					group_pointer = group_pointer->next_group;
@@ -938,48 +938,45 @@ public:
 
 
 
-		// C++14-specific functionality:
-		#if defined(__cplusplus) && __cplusplus >= 201402L
-			inline PLF_COLONY_FORCE_INLINE bool operator == (const colony_iterator<colony_allocator_type, !is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (element_pointer == rh.element_pointer);
-			}
+		inline PLF_COLONY_FORCE_INLINE bool operator == (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (element_pointer == rh.element_pointer);
+		}
 
 
 
-			inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_iterator<colony_allocator_type, !is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (element_pointer != rh.element_pointer);
-			}
+		inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (element_pointer != rh.element_pointer);
+		}
 
 
 
-			inline bool operator > (const colony_iterator<colony_allocator_type, !is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (((group_pointer == rh.group_pointer) && (element_pointer > rh.element_pointer)) || (group_pointer->group_number > rh.group_pointer->group_number));
-			}
+		inline bool operator > (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (((group_pointer == rh.group_pointer) && (element_pointer > rh.element_pointer)) || (group_pointer->group_number > rh.group_pointer->group_number));
+		}
 
 
 
-			inline bool operator < (const colony_iterator<colony_allocator_type, !is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return rh > *this;
-			}
+		inline bool operator < (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return rh > *this;
+		}
 
 
 
-			inline bool operator >= (const colony_iterator<colony_allocator_type, !is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return !(rh > *this);
-			}
+		inline bool operator >= (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return !(rh > *this);
+		}
 
 
 
-			inline bool operator <= (const colony_iterator<colony_allocator_type, !is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return !(*this > rh);
-			}
-		#endif
+		inline bool operator <= (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return !(*this > rh);
+		}
 
 
 		colony_iterator() PLF_COLONY_NOEXCEPT: group_pointer(NULL), element_pointer(NULL), skipfield_pointer(NULL)  {}
@@ -1001,7 +998,7 @@ public:
 		{}
 
 
-		inline colony_iterator(const colony_iterator<colony_allocator_type, !is_const> &source) PLF_COLONY_NOEXCEPT:
+		inline colony_iterator(const colony_iterator<!is_const> &source) PLF_COLONY_NOEXCEPT:
 			group_pointer(source.group_pointer),
 			element_pointer(source.element_pointer),
 			skipfield_pointer(source.skipfield_pointer)
@@ -1018,7 +1015,7 @@ public:
 			{}
 
 
-			inline colony_iterator(colony_iterator<colony_allocator_type, !is_const> &&source) PLF_COLONY_NOEXCEPT:
+			inline colony_iterator(colony_iterator<!is_const> &&source) PLF_COLONY_NOEXCEPT:
 				group_pointer(std::move(source.group_pointer)),
 				element_pointer(std::move(source.element_pointer)),
 				skipfield_pointer(std::move(source.skipfield_pointer))
@@ -1034,7 +1031,7 @@ public:
 
 	// Reverse iterators:
 
-	template <class r_colony_allocator_type, bool r_is_const> class colony_reverse_iterator
+	template <bool r_is_const> class colony_reverse_iterator
 	{
 	private:
 		iterator the_iterator;
@@ -1199,48 +1196,45 @@ public:
 
 
 
-		// C++14-specific functionality:
-		#if defined(__cplusplus) && __cplusplus >= 201402L
-			inline PLF_COLONY_FORCE_INLINE bool operator == (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (the_iterator == rh.the_iterator);
-			}
+		inline PLF_COLONY_FORCE_INLINE bool operator == (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (the_iterator == rh.the_iterator);
+		}
 
 
 
-			inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (the_iterator != rh.the_iterator);
-			}
+		inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (the_iterator != rh.the_iterator);
+		}
 
 
 
-			inline bool operator > (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (rh.the_iterator > the_iterator);
-			}
+		inline bool operator > (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (rh.the_iterator > the_iterator);
+		}
 
 
 
-			inline bool operator < (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return (the_iterator > rh.the_iterator);
-			}
+		inline bool operator < (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (the_iterator > rh.the_iterator);
+		}
 
 
 
-			inline bool operator >= (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return !(the_iterator > rh.the_iterator);
-			}
+		inline bool operator >= (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return !(the_iterator > rh.the_iterator);
+		}
 
 
 
-			inline bool operator <= (const colony_reverse_iterator<r_colony_allocator_type, !r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-			{
-				return !(rh.the_iterator > the_iterator);
-			}
-		#endif
+		inline bool operator <= (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return !(rh.the_iterator > the_iterator);
+		}
 
 
 
@@ -1315,6 +1309,7 @@ private:
 public:
 
 	// Default constuctor:
+
 	colony():
 		element_allocator_type(element_allocator_type()),
 		first_group(NULL),
@@ -1329,6 +1324,7 @@ public:
 
 
 	// Default constuctor (allocator-extended):
+
 	explicit colony(const element_allocator_type &alloc):
 		element_allocator_type(alloc),
 		first_group(NULL),
@@ -1343,6 +1339,7 @@ public:
 
 
 	// Copy constructor:
+
 	colony(const colony &source):
 		element_allocator_type(source),
 		first_group(NULL),
@@ -1358,6 +1355,7 @@ public:
 
 
    	// Copy constructor (allocator-extended):
+
 	colony(const colony &source, const allocator_type &alloc):
 		element_allocator_type(alloc),
 		first_group(NULL),
@@ -1375,6 +1373,7 @@ public:
 
 	#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		// Move constructor:
+
 		colony(colony &&source) PLF_COLONY_NOEXCEPT:
 			element_allocator_type(source),
 			end_iterator(std::move(source.end_iterator)),
@@ -1390,7 +1389,8 @@ public:
 		}
 		
 		
-		// Move constructor:
+		// Move constructor (allocator-extended):
+
 		colony(colony &&source, const allocator_type &alloc):
 			element_allocator_type(alloc),
 			end_iterator(std::move(source.end_iterator)),
@@ -2074,6 +2074,7 @@ public:
 private:
 
 	// Internal functions for fill insert:
+	
 	void group_create(const skipfield_type number_of_elements)
 	{
 		const group_pointer_type next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
@@ -2257,7 +2258,7 @@ private:
 		// Function: Remove all entries in the stack containing memory locations from the supplied colony group, and incidentally remove unused trailing groups from the stack.
 
 		// Process explanation:
-		// First, remove any trailing unused groups from the stack. These may be present if a stack has pushed then popped a lot, as plf::stack never deallocates.
+		// First, remove any trailing unused groups from the reduced_stack. These may be present if the stack has pushed then popped a lot, as it never deallocates during pop, for performance reasons.
 		// If there're no pointers to memory locations from the supplied colony group within stack groups, preserve those particular stack groups with no alterations in the new chain.
 		// If there are pointers to memory locations from the supplied colony group in any stack group, copy these locations to the new stack group and remove the old group.
 		// If a stack group is at the end of the old stack but is partial, and there have been some copies of memory locations made from old groups (see sentence immediately above this one), copy the locations from this group to the new group and remove it (otherwise you would end up with two partially-full groups at the end of the new chain - a new partially-full group following a partially-full old group). If there're no copies of memory locations (just old groups), then preserve the old end group.
@@ -3229,8 +3230,8 @@ public:
 
 
 	// Advance implementation for iterator and const_iterator:
-	template <class colony_element_allocator_type, bool is_const>
-	void advance(colony_iterator<colony_element_allocator_type, is_const> &it, difference_type distance) const
+	template <bool is_const>
+	void advance(colony_iterator<is_const> &it, difference_type distance) const
 	{
 		// For code simplicity - should hopefully be optimized out by compiler:
 		group_pointer_type &group_pointer = it.group_pointer;
@@ -3475,8 +3476,8 @@ public:
 
 
 	// Advance for reverse_iterator and const_reverse_iterator:
-	template <class colony_element_allocator_type, bool is_const>
-	void advance(colony_reverse_iterator<colony_element_allocator_type, is_const> &it, difference_type distance) const
+	template <bool is_const>
+	void advance(colony_reverse_iterator<is_const> &it, difference_type distance) const
 	{
 		group_pointer_type &group_pointer = it.the_iterator.group_pointer;
 		element_pointer_type &element_pointer = it.the_iterator.element_pointer;
@@ -3703,20 +3704,20 @@ public:
 
 
 	// Next implementations:
-	template <class colony_element_allocator_type, bool is_const>
-	inline colony_iterator<colony_element_allocator_type, is_const> next(const colony_iterator<colony_element_allocator_type, is_const> &it, const typename colony_iterator<colony_element_allocator_type, is_const>::difference_type distance = 1) const
+	template <bool is_const>
+	inline colony_iterator<is_const> next(const colony_iterator<is_const> &it, const typename colony_iterator<is_const>::difference_type distance = 1) const
 	{
-		colony_iterator<colony_element_allocator_type, is_const> return_iterator(it);
+		colony_iterator<is_const> return_iterator(it);
 		advance(return_iterator, distance);
 		return return_iterator;
 	}
         
         
 
-	template <class colony_element_allocator_type, bool is_const>
-	inline colony_reverse_iterator<colony_element_allocator_type, is_const> next(const colony_reverse_iterator<colony_element_allocator_type, is_const> &it, const typename colony_reverse_iterator<colony_element_allocator_type, is_const>::difference_type distance = 1) const
+	template <bool is_const>
+	inline colony_reverse_iterator<is_const> next(const colony_reverse_iterator<is_const> &it, const typename colony_reverse_iterator<is_const>::difference_type distance = 1) const
 	{
-		colony_reverse_iterator<colony_element_allocator_type, is_const> return_iterator(it);
+		colony_reverse_iterator<is_const> return_iterator(it);
 		advance(return_iterator, distance);
 		return return_iterator;
 	}
@@ -3724,20 +3725,20 @@ public:
 
 
 	// Prev implementations:
-	template <class colony_element_allocator_type, bool is_const>
-	inline colony_iterator<colony_element_allocator_type, is_const> prev(const colony_iterator<colony_element_allocator_type, is_const> &it, const typename colony_iterator<colony_element_allocator_type, is_const>::difference_type distance = 1) const
+	template <bool is_const>
+	inline colony_iterator<is_const> prev(const colony_iterator<is_const> &it, const typename colony_iterator<is_const>::difference_type distance = 1) const
 	{
-		colony_iterator<colony_element_allocator_type, is_const> return_iterator(it);
+		colony_iterator<is_const> return_iterator(it);
 		advance(return_iterator, -distance);
 		return return_iterator;
 	}
 
              
              
-	template <class colony_element_allocator_type, bool is_const>
-	inline colony_reverse_iterator<colony_element_allocator_type, is_const> prev(const colony_reverse_iterator<colony_element_allocator_type, is_const> &it, const typename colony_reverse_iterator<colony_element_allocator_type, is_const>::difference_type distance = 1) const
+	template <bool is_const>
+	inline colony_reverse_iterator<is_const> prev(const colony_reverse_iterator<is_const> &it, const typename colony_reverse_iterator<is_const>::difference_type distance = 1) const
 	{
-		colony_reverse_iterator<colony_element_allocator_type, is_const> return_iterator(it);
+		colony_reverse_iterator<is_const> return_iterator(it);
 		advance(return_iterator, -distance);
 		return return_iterator;
 	}
@@ -3746,8 +3747,8 @@ public:
 
 	// distance implementation:
 
-	template <class colony_element_allocator_type, bool is_const>
-	typename colony_iterator<colony_element_allocator_type, is_const>::difference_type distance(const colony_iterator<colony_element_allocator_type, is_const> &first, const colony_iterator<colony_element_allocator_type, is_const> &last) const 
+	template <bool is_const>
+	typename colony_iterator<is_const>::difference_type distance(const colony_iterator<is_const> &first, const colony_iterator<is_const> &last) const 
 	{
 		// Code logic:
 		// If iterators are the same, return 0
@@ -3765,7 +3766,7 @@ public:
 			return 0;
 		}
 
-		typedef colony_iterator<colony_element_allocator_type, is_const> iterator_type;
+		typedef colony_iterator<is_const> iterator_type;
 		typedef typename iterator_type::difference_type diff_type;
 		diff_type distance = 0;
 
@@ -3841,8 +3842,8 @@ public:
 
 
 
-	template <class colony_element_allocator_type, bool is_const>
-	inline typename colony_reverse_iterator<colony_element_allocator_type, is_const>::difference_type distance(const colony_reverse_iterator<colony_element_allocator_type, is_const> &first, const colony_reverse_iterator<colony_element_allocator_type, is_const> &last) const 
+	template <bool is_const>
+	inline typename colony_reverse_iterator<is_const>::difference_type distance(const colony_reverse_iterator<is_const> &first, const colony_reverse_iterator<is_const> &last) const 
 	{
 		return distance(last.the_iterator, first.the_iterator);
 	}
@@ -3874,8 +3875,8 @@ public:
 
 
 
-	template <class colony_element_allocator_type, bool is_const>
-	size_type get_index_from_iterator(const colony_iterator<colony_element_allocator_type, is_const> &the_iterator) const
+	template <bool is_const>
+	size_type get_index_from_iterator(const colony_iterator<is_const> &the_iterator) const
 	{
 		assert(!empty());
 		
@@ -3911,8 +3912,8 @@ public:
 
 
 
-	template <class colony_element_allocator_type, bool is_const>
-	inline size_type get_index_from_reverse_iterator(const colony_reverse_iterator<colony_element_allocator_type, is_const> &rev_iterator) const
+	template <bool is_const>
+	inline size_type get_index_from_reverse_iterator(const colony_reverse_iterator<is_const> &rev_iterator) const
 	{
 		assert(!empty());
 		return get_index_from_iterator(rev_iterator.the_iterator);
