@@ -108,8 +108,8 @@ void plf_colony_test_suite()
 	while (++looper != 50)
 	{
 		{
-			// title1("Colony");
-			// title2("Test Basics");
+			//title1("Colony");
+			//title2("Test Basics");
 			
 			colony<int *> p_colony;
 			
@@ -120,7 +120,7 @@ void plf_colony_test_suite()
 			
 			failpass("Colony not-empty", !p_colony.empty());
 
-			// title2("Iterator tests");
+			//title2("Iterator tests");
 			
 			failpass("Begin() working", **p_colony.begin() == 10);
 			failpass("End() working", p_colony.begin() != p_colony.end());
@@ -332,7 +332,7 @@ void plf_colony_test_suite()
 
 		
 		{
-			// title2("Insert and Erase tests");
+			//title2("Insert and Erase tests");
 			
 			colony<int> i_colony;
 
@@ -609,7 +609,7 @@ void plf_colony_test_suite()
 		}
 
 		{
-			// title2("Range-erase tests");
+			//title2("Range-erase tests");
 		
 			colony<int> i_colony;
 			
@@ -751,7 +751,7 @@ void plf_colony_test_suite()
 					it = i_colony.erase(it);
 				}
 			}
-
+			
 			if (i_colony.size() < 400)
 			{
 				for (counter = 0; counter != 400; ++counter)
@@ -759,7 +759,7 @@ void plf_colony_test_suite()
 					i_colony.insert(counter);
 				}
 			}
-			
+
 			it1 = i_colony.begin();
 			it2 = i_colony.end();
 			
@@ -831,7 +831,7 @@ void plf_colony_test_suite()
 
 
 		{
-			// title2("Sort tests");
+			//title2("Sort tests");
 			
 			colony<int> i_colony;
 			
@@ -881,7 +881,7 @@ void plf_colony_test_suite()
 
 
 		{
-			// title2("Different insertion-style tests");
+			//title2("Different insertion-style tests");
 
 			#ifdef PLF_INITIALIZER_LIST_SUPPORT
 				colony<int> i_colony = {1, 2, 3};
@@ -913,7 +913,7 @@ void plf_colony_test_suite()
 
 		#ifdef PLF_VARIADICS_SUPPORT
 		{
-			// title2("Perfect Forwarding tests");
+			//title2("Perfect Forwarding tests");
 
 			colony<perfect_forwarding_test> pf_colony;
 
@@ -926,8 +926,346 @@ void plf_colony_test_suite()
 			failpass("Perfect forwarding test 2", lvalueref == 1);
 		}
 		#endif
-	}
 
+
+		{
+			//title2("Splice tests");
+			
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 20; ++number)
+				{
+					colony1.insert(number);
+					colony2.insert(number + 20);
+				}
+				
+				colony1.splice(colony2);
+				
+				int check_number = 0;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number++ != *current)
+					{
+						fail = true;
+					}
+				}
+				
+				failpass("Small splice test 1", fail == false);
+			}
+			
+
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100; ++number)
+				{
+					colony1.insert(number);
+					colony2.insert(number + 100);
+				}
+				
+				colony1.splice(colony2);
+				
+				int check_number = 0;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number++ != *current)
+					{
+						fail = true;
+					}
+				}
+				
+				failpass("Small splice test 2", fail == false);
+			}
+			
+			
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100000; ++number)
+				{
+					colony1.insert(number);
+					colony2.insert(number + 100000);
+				}
+				
+				colony1.splice(colony2);
+				
+				int check_number = 0;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number++ != *current)
+					{
+						fail = true;
+					}
+				}
+				
+				failpass("Large splice test 1", fail == false);
+			}
+			
+
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100; ++number)
+				{
+					colony1.insert(number);
+					colony2.insert(number + 100);
+				}
+				
+				
+				for (colony<int>::iterator current = colony2.begin(); current != colony2.end();)
+				{
+					if ((xor_rand() & 3) == 0)
+					{
+						current = colony2.erase(current);
+					}
+					else
+					{
+						++current;
+					}
+				}
+					
+				
+				colony1.splice(colony2);
+				
+				int check_number = -1;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number >= *current)
+					{
+						fail = true;
+					}
+					
+					check_number = *current;
+				}
+				
+				failpass("Erase + splice test 1", fail == false);
+			}
+			
+			
+			
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100; ++number)
+				{
+					colony1.insert(number);
+					colony2.insert(number + 100);
+				}
+				
+
+				
+				for (colony<int>::iterator current = colony2.begin(); current != colony2.end();)
+				{
+					if ((xor_rand() & 3) == 0)
+					{
+						current = colony2.erase(current);
+					}
+					else
+					{
+						++current;
+					}
+				}
+					
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end();)
+				{
+					if ((xor_rand() & 1) == 0)
+					{
+						current = colony1.erase(current);
+					}
+					else
+					{
+						++current;
+					}
+				}
+					
+				
+				colony1.splice(colony2);
+				
+				int check_number = -1;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number >= *current)
+					{
+						fail = true;
+					}
+					
+					check_number = *current;
+				}
+				
+				failpass("Erase + splice test 2", fail == false);
+			}
+
+
+
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100; ++number)
+				{
+					colony1.insert(number + 150);
+				}
+				
+				
+				for(int number = 0; number != 150; ++number)
+				{
+					colony2.insert(number);
+				}
+				
+				
+				colony1.splice(colony2);
+				
+				int check_number = -1;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number >= *current)
+					{
+						fail = true;
+					}
+					
+					check_number = *current;
+				}
+				
+				failpass("Unequal size splice test 1", fail == false);
+			}
+			
+
+			
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100; ++number)
+				{
+					colony1.insert(100 - number);
+				}
+				
+				
+				for(int number = 0; number != 150; ++number)
+				{
+					colony2.insert(250 - number);
+				}
+				
+				
+				colony1.splice(colony2);
+				
+				int check_number = 255;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number < *current)
+					{
+						fail = true;
+					}
+					
+					check_number = *current;
+				}
+				
+				failpass("Unequal size splice test 2", fail == false);
+			}
+			
+			
+			
+			{
+				colony<int> colony1, colony2;
+				
+				for(int number = 0; number != 100000; ++number)
+				{
+					colony1.insert(number + 150000);
+				}
+				
+				
+				for(int number = 0; number != 150000; ++number)
+				{
+					colony2.insert(number);
+				}
+				
+				for (colony<int>::iterator current = colony2.begin(); current != colony2.end();)
+				{
+					if ((xor_rand() & 1) == 0)
+					{
+						current = colony2.erase(current);
+					}
+					else
+					{
+						++current;
+					}
+				}
+					
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end();)
+				{
+					if ((xor_rand() & 1) == 0)
+					{
+						current = colony1.erase(current);
+					}
+					else
+					{
+						++current;
+					}
+				}
+				
+
+				colony1.erase(--(colony1.end()));
+				colony2.erase(--(colony2.end()));
+
+				colony1.splice(colony2);
+				
+				int check_number = -1;
+				bool fail = false;
+				
+				for (colony<int>::iterator current = colony1.begin(); current != colony1.end(); ++current)
+				{
+					if (check_number >= *current)
+					{
+						fail = true;
+					}
+					
+					check_number = *current;
+				}
+				
+				failpass("Large unequal size + erase splice test 1", fail == false);
+
+
+				do
+				{
+					for (colony<int>::iterator current = colony1.begin(); current != colony1.end();)
+					{
+						if ((xor_rand() & 3) == 0)
+						{
+							current = colony1.erase(current);
+						}
+						else if ((xor_rand() & 7) == 0)
+						{
+							colony1.insert(433);
+							++current;
+						}
+						else
+						{
+							++current;
+						}
+					}
+					
+				} while (!colony1.empty());
+				
+				failpass("Post-splice insert-and-erase randomly till-empty test", colony1.size() == 0);
+			}
+		}
+	}
+	
 	std::cout << "Colony Test Suite PASS\n";
 }
 

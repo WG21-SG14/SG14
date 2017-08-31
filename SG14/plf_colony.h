@@ -242,7 +242,7 @@ private:
 	class reduced_stack : private element_pointer_allocator_type  // Empty base class optimisation - inheriting allocator functions
 	{
 	private:
-		typedef element_pointer_type stack_element_type;
+		typedef typename colony::element_pointer_type stack_element_type;
 		struct group; // Forward declaration for typedefs below
 
 		#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
@@ -259,7 +259,7 @@ private:
 		{
 			const stack_element_pointer_type		elements;
 			stack_group_pointer_type				next_group, previous_group;
-			const stack_element_pointer_type		end; // End is the actual end element of the memory block, not one-past the end element as it is in colony
+			const stack_element_pointer_type		end; // End is the actual back element of the memory block, not one-past the back element as it is in colony
 
 
 			#ifdef PLF_COLONY_VARIADICS_SUPPORT
@@ -411,7 +411,7 @@ private:
 
 	private:
 
-		void destroy_all_data()
+		void destroy_all_data() PLF_COLONY_NOEXCEPT
 		{
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 				if (total_number_of_elements != 0 && !(std::is_trivially_destructible<stack_element_type>::value)) // Avoid iteration for trivially-destructible types eg. POD, structs, classes with ermpty destructor
@@ -459,6 +459,7 @@ private:
 		}
 
 
+
 		void initialize(const size_type first_group_size)
 		{
 			first_group = current_group = PLF_COLONY_ALLOCATE(stack_group_allocator_type, group_allocator_pair, 1, 0);
@@ -483,7 +484,9 @@ private:
 		}
 
 
+
 	public:
+
 
 		void push(const stack_element_type the_element)
 		{
@@ -568,7 +571,7 @@ private:
 
 			while (temp_group != NULL)
 			{
-				memory_use += static_cast<size_type>((((temp_group->end + 1) - temp_group->elements) * sizeof(element_pointer_type)) + sizeof(group));
+				memory_use += static_cast<size_type>((((temp_group->end + 1) - temp_group->elements) * sizeof(stack_element_type)) + sizeof(group));
 				temp_group = temp_group->next_group;
 			}
 
@@ -577,9 +580,10 @@ private:
 
 
 
-		void clear()
+		void clear() PLF_COLONY_NOEXCEPT
 		{
-			destroy_all_data(); // may throw exception if destructor of pointer type throws exception
+			destroy_all_data(); 
+			current_group = NULL;
 			top_element = NULL;
 			start_element = NULL;
 			end_element = NULL;
@@ -615,6 +619,164 @@ private:
 				source.group_allocator_pair.min_elements_per_group = swap_min_elements_per_group;
 			#endif
 		}
+
+
+
+		void trim_trailing_groups() PLF_COLONY_NOEXCEPT	// Remove trailing stack groups (not removed in general 'pop' usage in reduced_stack for performance reasons). Used by splice and consolidate_erased_locations
+		{
+			stack_group_pointer_type temp_group = current_group->next_group, temp_group2;
+			current_group->next_group = NULL; // Set to NULL regardless of whether it is already NULL (avoids branching). Cuts off rest of groups from this group.
+
+			while (temp_group != NULL)
+			{
+				temp_group2 = temp_group;
+				temp_group = temp_group->next_group;
+				PLF_COLONY_DESTROY(stack_group_allocator_type, group_allocator_pair, temp_group2);
+				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, group_allocator_pair, temp_group2, 1);
+			}
+		}
+		
+		
+
+		void splice(reduced_stack &source) PLF_COLONY_NOEXCEPT_SWAP(element_pointer_allocator_type)
+		{
+			// Process: if there are unused memory spaces at the end of the last current back group of the chain, fill those up
+			// with elements from the source back group. Then link the destination stack's groups to the source stack's groups.
+			// If the source has more unused memory spaces in the back group than the destination, swap them before processing.
+		
+			if (source.total_number_of_elements == 0)
+			{
+				return;
+			}
+			else if (total_number_of_elements == 0)
+			{
+				#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+					*this = std::move(source);
+				#else
+					destroy_all_data();
+					swap(source);
+				#endif
+	
+				source.current_group = NULL;
+				source.top_element = NULL;
+				source.start_element = NULL;
+				source.end_element = NULL;
+				return;
+			}
+
+
+			// If there's more unused memory at the end of the last group in the destination than the source, swap:
+			if ((end_element - top_element) > (source.end_element - source.top_element))
+			{
+				swap(source);
+			}
+
+			total_number_of_elements += source.total_number_of_elements;
+
+			
+			// Fill up the last group in the destination with pointers from the source:
+			size_type elements_to_be_transferred = static_cast<size_type>(end_element - top_element++);
+			size_type available_to_be_transferred = static_cast<size_type>((source.top_element - source.start_element) + 1); 
+			
+			while (elements_to_be_transferred >= available_to_be_transferred)
+			{
+				// Use the fastest method for moving iterators, while perserving values if allocator provides non-trivial pointers - unused if/else branches will be optimised out by any decent compiler:
+				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+					if (std::is_trivially_copyable<stack_element_type>::value && std::is_trivially_destructible<stack_element_type>::value) // Avoid iteration for trivially-destructible iterators ie. all iterators, unless allocator returns non-trivial pointers
+					{
+						std::memcpy(&*top_element, &*source.start_element, available_to_be_transferred * sizeof(stack_element_type));
+					}
+					#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+						else if (std::is_move_constructible<stack_element_type>::value)
+						{
+							std::uninitialized_copy(std::make_move_iterator(source.start_element), std::make_move_iterator(source.top_element + 1), top_element);
+						}
+					#endif
+					else
+				#endif
+				{
+					std::uninitialized_copy(source.start_element, source.top_element + 1, top_element);
+
+					// The following loop is necessary because the allocator may return non-trivially-destructible pointer types, making iterator a non-trivially-destructible type:
+					for (stack_element_pointer_type element_pointer = source.start_element; element_pointer != source.top_element + 1; ++element_pointer)
+					{
+						PLF_COLONY_DESTROY(element_pointer_allocator_type, source, element_pointer);
+					}
+				}
+
+				top_element += available_to_be_transferred;
+				
+				if (source.current_group == source.first_group)
+				{
+					--top_element;
+					source.clear();
+					return;
+				}
+
+				elements_to_be_transferred -= available_to_be_transferred;
+				source.current_group = source.current_group->previous_group;
+				source.start_element = source.current_group->elements;
+				source.end_element = source.top_element = source.current_group->end;
+				available_to_be_transferred = static_cast<size_type>((source.top_element - source.start_element) + 1);
+			}
+
+			
+			if (elements_to_be_transferred != 0)
+			{
+				const stack_element_pointer_type start = source.top_element - (elements_to_be_transferred - 1);
+
+				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+					if (std::is_trivially_copyable<stack_element_type>::value && std::is_trivially_destructible<stack_element_type>::value) // Avoid iteration for trivially-destructible iterators ie. all iterators, unless allocator returns non-trivial pointers
+					{
+						std::memcpy(&*top_element, &*start, elements_to_be_transferred * sizeof(stack_element_type));
+					}
+					#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+						else if (std::is_move_constructible<stack_element_type>::value)
+						{
+							std::uninitialized_copy(std::make_move_iterator(start), std::make_move_iterator(source.top_element + 1), top_element);
+						}
+					#endif
+					else
+				#endif
+				{
+					std::uninitialized_copy(start, source.top_element + 1, top_element);
+
+					// The following loop is necessary because the allocator may return non-trivially-destructible pointer types, making iterator a non-trivially-destructible type:
+					for (stack_element_pointer_type element_pointer = start; element_pointer != source.top_element + 1; ++element_pointer)
+					{
+						PLF_COLONY_DESTROY(element_pointer_allocator_type, source, element_pointer);
+					}
+				}
+
+				source.top_element = start - 1;
+			}
+
+			// Trim trailing groups on both, link source and destinations groups and remove references to source groups from source:
+			source.trim_trailing_groups();
+	        trim_trailing_groups();
+	        
+
+			current_group->next_group = source.first_group;
+			source.first_group->previous_group = current_group;
+			
+			current_group = source.current_group;
+			top_element = source.top_element;
+			start_element = source.start_element;
+			end_element = source.end_element;
+			
+			// Correct group sizes if necessary:
+			if (source.group_allocator_pair.min_elements_per_group < group_allocator_pair.min_elements_per_group)
+			{
+				group_allocator_pair.min_elements_per_group = source.group_allocator_pair.min_elements_per_group;
+			}	
+			
+			source.current_group = NULL;
+			source.first_group = NULL;
+			source.top_element = NULL;
+			source.start_element = NULL;
+			source.end_element = NULL;
+			source.total_number_of_elements = 0;
+		}	
 	}; // end reduced_stack
 
 
@@ -692,16 +854,16 @@ private:
 
 
 	// Implement const/non-const iterator switching pattern:
-	template <bool flag, class IsTrue, class IsFalse> struct choose;
+	template <bool flag, class is_true, class is_false> struct choose;
 
-	template <class IsTrue, class IsFalse> struct choose<true, IsTrue, IsFalse>
+	template <class is_true, class is_false> struct choose<true, is_true, is_false>
 	{
-		typedef IsTrue type;
+		typedef is_true type;
 	};
 
-	template <class IsTrue, class IsFalse> struct choose<false, IsTrue, IsFalse>
+	template <class is_true, class is_false> struct choose<false, is_true, is_false>
 	{
-		typedef IsFalse type;
+		typedef is_false type;
 	};
 
 
@@ -2272,20 +2434,8 @@ private:
 			typedef typename reduced_stack::stack_group_allocator_type stack_group_allocator_type; // Not used by PLF_COLONY_DESTROY etc when std::allocator_traits not supported
 		#endif
 
-		// Remove trailing stack groups (not removed in general 'pop' usage in reduced_stack for performance reasons)
-		{
-			stack_group_pointer temp_group = erased_locations.current_group->next_group, temp_group2;
-			erased_locations.current_group->next_group = NULL; // Set to NULL regardless of whether it is already NULL (avoids branching). Cuts off rest of groups from this group.
-
-			while (temp_group != NULL)
-			{
-				temp_group2 = temp_group;
-				temp_group = temp_group->next_group;
-				PLF_COLONY_DESTROY(stack_group_allocator_type, erased_locations.group_allocator_pair, temp_group2);
-				PLF_COLONY_DEALLOCATE(stack_group_allocator_type, erased_locations.group_allocator_pair, temp_group2, 1);
-			}
-		}
-
+		erased_locations.trim_trailing_groups();
+		
 		// Determine what the size of the first new group in erased_locations should be, based on the size of the first colony group:
 		const size_type temp_size = (min_elements_per_group < 8) ? min_elements_per_group : (min_elements_per_group >> 7) + 8;
 
@@ -4060,6 +4210,111 @@ public:
 		}
 
 		PLF_COLONY_DEALLOCATE(element_pointer_allocator_type, erased_locations, element_pointers, total_number_of_elements);
+	}
+
+
+
+
+	void splice(colony &source) PLF_COLONY_NOEXCEPT_SWAP(allocator_type)
+	{
+		// Process: if there are unused memory spaces at the end of the last current back group of the chain, convert them
+		// to skipped elements and add the locations to the erased_locations stack. 
+		// Then link the destination stack's groups to the source stack's groups and nullify the source.
+		// If the source has more unused memory spaces in the back group than the destination, swap them before processing to reduce stack usage and iteration skipping.
+
+		assert(&source != this);
+
+		if (source.total_number_of_elements == 0)
+		{
+			return;
+		}
+		else if (total_number_of_elements == 0)
+		{
+			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+				*this = std::move(source);
+			#else
+				swap(source);
+			#endif
+			
+			source.clear();
+
+			return;
+		}
+
+		// If there's more unused element indexes at end of destination, swap with destination to reduce number of skipped elements and reduce content of erased_locations:
+		if ((reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.group_pointer->last_endpoint) > (reinterpret_cast<element_pointer_type>(source.end_iterator.group_pointer->skipfield) - source.end_iterator.group_pointer->last_endpoint))
+		{
+			swap(source);
+		}
+
+		
+		// Correct group sizes if necessary:
+		if (source.min_elements_per_group < min_elements_per_group)
+		{
+			min_elements_per_group = source.min_elements_per_group;
+		}	
+
+		if (source.group_allocator_pair.max_elements_per_group > group_allocator_pair.max_elements_per_group)
+		{
+			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+		}	
+
+		// Add source erased_locations to destination:
+		erased_locations.splice(source.erased_locations);
+		
+		const skipfield_type distance_to_end = static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.group_pointer->last_endpoint);
+		
+		if (distance_to_end != 0) // 0 == edge case
+		{   // Mark unused element indexes from back group as skipped/erased:
+			skipfield_pointer_type current_skipfield_node = end_iterator.group_pointer->skipfield + (end_iterator.group_pointer->last_endpoint - end_iterator.group_pointer->elements);
+			const skipfield_type previous_node_value = *(current_skipfield_node - 1);
+			
+			if (previous_node_value == 0)
+			{
+				*current_skipfield_node = distance_to_end;
+			}
+			else	
+			{
+				*current_skipfield_node = previous_node_value + 1;
+				*(current_skipfield_node - previous_node_value) += distance_to_end;
+			}
+			
+			erased_locations.push(end_iterator.group_pointer->last_endpoint++);
+			skipfield_type current = previous_node_value + 1;
+			const skipfield_pointer_type end_node = current_skipfield_node + distance_to_end - 1;
+	
+			while(current_skipfield_node != end_node)
+			{
+       			erased_locations.push(end_iterator.group_pointer->last_endpoint++);
+				*(++current_skipfield_node) = ++current;
+			}
+		}
+		
+		
+		// Update subsequent group numbers:
+		group_pointer_type current_group = source.first_group;
+		size_type current_group_number = end_iterator.group_pointer->group_number;
+		
+		do
+		{
+			current_group->group_number = ++current_group_number;
+			current_group = current_group->next_group;
+		} while (current_group != NULL);
+
+
+		// Join the destination and source group chains:
+		end_iterator.group_pointer->next_group = source.first_group;
+		source.first_group->previous_group = end_iterator.group_pointer;
+		end_iterator = source.end_iterator;
+		total_number_of_elements += source.total_number_of_elements;;
+		
+		
+		source.end_iterator.group_pointer = NULL;
+		source.end_iterator.element_pointer = NULL;
+		source.end_iterator.skipfield_pointer = NULL;
+		source.begin_iterator = source.end_iterator;
+		source.first_group = NULL;
+		source.total_number_of_elements = 0;
 	}
 
 
