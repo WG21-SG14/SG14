@@ -105,7 +105,7 @@ void plf_colony_test_suite()
 	std::cout << "Colony Test Suite running..\n";
 
 
-	while (++looper != 50)
+	while (++looper != 25)
 	{
 		{
 			//title1("Colony");
