@@ -2326,7 +2326,7 @@ public:
 				}
 			}
 			
-			const skipfield_type group_remainder = (static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) > number_of_elements) ? number_of_elements : static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer);
+			const skipfield_type group_remainder = static_cast<skipfield_type>((static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) > number_of_elements) ? number_of_elements : reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer);
 			
 			if (group_remainder != 0)
 			{
@@ -2337,7 +2337,7 @@ public:
 		}
 		else if (end_iterator.group_pointer->size >= number_of_elements) 
 		{
-			group_fill(element, number_of_elements);
+			group_fill(element, static_cast<skipfield_type>(number_of_elements));
 			end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + number_of_elements;
 			total_number_of_elements = number_of_elements;
 			return;
