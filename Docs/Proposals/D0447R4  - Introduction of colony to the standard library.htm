@@ -163,7 +163,7 @@
 <body>
 Audience: LEWG, SG14<br>
 Document number: D0447R4<br>
-Date: 2017-08-25<br>
+Date: 2017-09-11<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
@@ -962,23 +962,6 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     iterator to location of inserted element. Example:</p>
     <code style="color: brown">plf::colony&lt;unsigned int&gt; i_colony;<br>
     i_colony.insert(23);</code> </li>
-  <li><code>iterator insert (const size_type n, const value_type
-    &amp;val)</code>
-    <p>Inserts <code>n</code> copies of <code>val</code> into the colony. Will
-    insert the element into a previously erased element slot if one exists,
-    otherwise will insert to back of colony. Returns iterator to location of
-    first inserted element. Example:</p>
-    <code style="color: brown">plf::colony&lt;unsigned int&gt; i_colony;<br>
-    i_colony.insert(10, 3);</code> </li>
-  <li><code>template &lt;class InputIterator&gt; iterator insert (const
-    InputIterator &amp;first, const InputIterator &amp;last)</code>
-    <p>Inserts a series of <code>value_type</code> elements from an external
-    source into a colony holding the same <code>value_type</code> (eg. int,
-    float, a particular class, etcetera). Stops inserting once it reaches
-    <code>last</code>. Example:</p>
-    <code style="color: brown">// Insert all contents of colony2 into
-    colony1:<br>
-    colony1.insert(colony2.begin(), colony2.end());</code> </li>
   <li><code>iterator insert(value_type &amp;&amp;element)</code> 
     <p>Moves the element supplied to the colony, using the object's
     move-constructor. Will insert the element in a previously erased element
@@ -989,12 +972,25 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     plf::colony&lt;std::string&gt; data_colony;<br>
     data_colony.insert(std::move(string1));</code> </p>
   </li>
-  <li><code>iterator insert (const std::initializer_list&lt;value_type&gt;
+  <li><code>void insert (const size_type n, const value_type
+    &amp;val)</code>
+    <p>Inserts <code>n</code> copies of <code>val</code> into the colony. Will
+    insert the element into a previously erased element slot if one exists,
+    otherwise will insert to back of colony. Example:</p>
+    <code style="color: brown">plf::colony&lt;unsigned int&gt; i_colony;<br>
+    i_colony.insert(10, 3);</code> </li>
+  <li><code>template &lt;class InputIterator&gt; void insert (const InputIterator &amp;first, const InputIterator &amp;last)</code>
+    <p>Inserts a series of <code>value_type</code> elements from an external
+    source into a colony holding the same <code>value_type</code> (eg. int,
+    float, a particular class, etcetera). Stops inserting once it reaches
+    <code>last</code>. Example:</p>
+    <code style="color: brown">// Insert all contents of colony2 into
+    colony1:<br>
+    colony1.insert(colony2.begin(), colony2.end());</code> </li>
+  <li><code>void insert (const std::initializer_list&lt;value_type&gt;
     &amp;il)</code> 
-    <p>Moves the element supplied to the colony, using the object's
-    move-constructor. Will insert the element in a previously erased element
-    slot if one exists, otherwise will insert to back of colony. Returns
-    iterator to location of inserted element. Example:</p>
+    <p>Copies elements from an initializer list into the colony. Will insert the element in a previously erased element
+    slot if one exists, otherwise will insert to back of colony. Example:</p>
     <p><code style="color: brown">std::initializer_list&lt;int&gt; some_ints =
     {4, 3, 2, 5};<br>
     <br>
@@ -1698,7 +1694,7 @@ the MSVC results.</p>
 
 <h3><a id="revisions"></a>Appendix E - Paper revision history</h3>
 <ul>
-<li>R4: Addition of revision history and review feedback appendices. General rewording. Update of benchmarks to v4 of colony, using max 1000000 N for most benchmarks, and using GCC 7.1 as compiler on a Haswell-core machine. Previous benchmarks also still available at external links. Expansion of initial metaphorical explanation. Cutting of some dead wood. Addition of some more dead wood. Reversion to HTML, benchmarks moved to external URL, based on feedback. Change of font to Times New Roman based on looking at what other papers were using, though I did briefly consider Comic Sans.</li>
+<li>R4: Addition of revision history and review feedback appendices. General rewording. Update of benchmarks to v4 of colony, using max 1000000 N for most benchmarks, and using GCC 7.1 as compiler on a Haswell-core machine. Previous benchmarks also still available at external links. Expansion of initial metaphorical explanation. Cutting of some dead wood. Addition of some more dead wood. Reversion to HTML, benchmarks moved to external URL, based on feedback. Change of font to Times New Roman based on looking at what other papers were using, though I did briefly consider Comic Sans. Change to insert specifications.</li>
 <li>R3: Jonathan Wakely's extensive technical critique has been actioned on, in both documentation and the reference implementation. "Be clearer about what operations this supports, early in the paper." - done (V. Technical Specifications). "Be clear about the O() time of each operation, early in the paper." - done (for main operations V. Technical Specifications). Responses to some other feedbacks included in the foreword.</li>
 <li>R2: Rewording.</li>
 </ol>
