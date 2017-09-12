@@ -741,7 +741,7 @@ private:
 				{
 					std::uninitialized_copy(start, source.top_element + 1, top_element);
 
-					// The following loop is necessary because the allocator may return non-trivially-destructible pointer types, making iterator a non-trivially-destructible type:
+					// The following loop is necessary because the allocator may return non-trivially-destructible pointer types:
 					for (stack_element_pointer_type element_pointer = start; element_pointer != source.top_element + 1; ++element_pointer)
 					{
 						PLF_COLONY_DESTROY(element_pointer_allocator_type, source, element_pointer);
@@ -2284,7 +2284,7 @@ private:
 		} while (end_iterator.element_pointer != fill_end);
 
 		end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
-		end_iterator.group_pointer->number_of_elements = number_of_elements;
+		end_iterator.group_pointer->number_of_elements += number_of_elements;
 	}
 
 
@@ -2293,88 +2293,89 @@ public:
 
 	// Fill insert
 
-	iterator insert(const size_type number_of_elements, const element_type &element)
+	void insert(size_type number_of_elements, const element_type &element)
 	{
 		if (number_of_elements == 0)
 		{
-			return end_iterator;
+			return;
+		}
+		else if (number_of_elements == 1)
+		{
+			insert(element);
+			return;
 		}
 
 		if (first_group == NULL) // Empty colony, no groups created yet
 		{
-			if (number_of_elements > group_allocator_pair.max_elements_per_group)
-			{
-				// Create and fill first group:
-				initialize(group_allocator_pair.max_elements_per_group); // Construct first group
-				group_fill(element, group_allocator_pair.max_elements_per_group);
-
-				// Create and fill all remaining groups:
-				size_type multiples = (number_of_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
-				const skipfield_type element_remainder = static_cast<const skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
-
-				while (--multiples != 0)
-				{
-					group_create(group_allocator_pair.max_elements_per_group);
-					group_fill(element, group_allocator_pair.max_elements_per_group);
-				}
-
-				if (element_remainder != 0)
-				{
-					group_create(group_allocator_pair.max_elements_per_group);
-					group_fill(element, element_remainder);
-				}
-			}
-			else
-			{
-				initialize((number_of_elements < min_elements_per_group) ? min_elements_per_group : static_cast<skipfield_type>(number_of_elements)); // Construct first group
-				group_fill(element, static_cast<skipfield_type>(number_of_elements));
-			}
-
-			end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->number_of_elements;
-			total_number_of_elements += number_of_elements;
-			return begin_iterator;
+			initialize((number_of_elements > group_allocator_pair.max_elements_per_group) ? group_allocator_pair.max_elements_per_group : (number_of_elements < min_elements_per_group) ? min_elements_per_group : static_cast<skipfield_type>(number_of_elements)); // Construct first group
 		}
-		else
+		
+		if (total_number_of_elements != 0) // ie. !(uninitialized colony || reserve has been called on an empty colony, then fill was called)
 		{
-			const iterator return_iterator = insert(element);
-			size_type num_elements = number_of_elements - 1;
-			size_type capacity_available = (reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) + erased_locations.total_number_of_elements;
+			insert(element);
+			--number_of_elements;
 
-			// Use up erased locations and remainder of current group first:
-			while (capacity_available-- != 0 && num_elements-- != 0)
+			// Use up erased locations:
+			while (erased_locations.total_number_of_elements != 0)
 			{
 				insert(element);
-			}
 
-			// If still some left over, create new groups and fill:
-			if (num_elements > group_allocator_pair.max_elements_per_group)
-			{
-				size_type multiples = (num_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
-				const skipfield_type element_remainder = static_cast<const skipfield_type>(num_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
-
-				while (multiples-- != 0)
+				if (--number_of_elements == 0)
 				{
-					group_create(group_allocator_pair.max_elements_per_group);
-					group_fill(element, group_allocator_pair.max_elements_per_group);
-				}
-
-				if (element_remainder != 0)
-				{
-					group_create(group_allocator_pair.max_elements_per_group);
-					group_fill(element, element_remainder);
+					return;
 				}
 			}
-			else if (num_elements > total_number_of_elements)
+			
+			const skipfield_type group_remainder = (static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) > number_of_elements) ? number_of_elements : static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer);
+			
+			if (group_remainder != 0)
 			{
-				group_create(static_cast<skipfield_type>(num_elements));
-				group_fill(element, static_cast<skipfield_type>(num_elements));
+				group_fill(element, group_remainder);
+				total_number_of_elements += group_remainder;
+				number_of_elements -= group_remainder;
 			}
-
-			end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->number_of_elements;
-			total_number_of_elements += num_elements; // Adds the remainder - the insert functions above will already have incremented total_number_of_elements
-
-			return return_iterator;
 		}
+		else if (end_iterator.group_pointer->size >= number_of_elements) 
+		{
+			group_fill(element, number_of_elements);
+			end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + number_of_elements;
+			total_number_of_elements = number_of_elements;
+			return;
+		}
+		else
+		{				
+			group_fill(element, end_iterator.group_pointer->size);
+			total_number_of_elements += end_iterator.group_pointer->size;
+			number_of_elements -= end_iterator.group_pointer->size;
+		}
+
+
+		// If still some left over, create new groups and fill:
+		if (number_of_elements > group_allocator_pair.max_elements_per_group)
+		{
+			size_type multiples = (number_of_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
+			const skipfield_type element_remainder = static_cast<const skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
+
+			while (multiples-- != 0)
+			{
+				group_create(group_allocator_pair.max_elements_per_group);
+				group_fill(element, group_allocator_pair.max_elements_per_group);
+			}
+
+			if (element_remainder != 0)
+			{
+				group_create(group_allocator_pair.max_elements_per_group);
+				group_fill(element, element_remainder);
+			}
+		}
+		else if (number_of_elements != 0)
+		{
+			group_create(static_cast<skipfield_type>((number_of_elements > total_number_of_elements) ? number_of_elements : total_number_of_elements));
+			group_fill(element, static_cast<skipfield_type>(number_of_elements));
+		}
+
+		total_number_of_elements += number_of_elements; // Adds the remainder - the insert functions in the top if/else clauses above will already have incremented total_number_of_elements
+		end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->number_of_elements;
 	}
 
 
@@ -2382,22 +2383,12 @@ public:
 	// Range insert
 
 	template <class iterator_type>
-	iterator insert (const typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, iterator_type>::type first, const iterator_type last)
+	inline void insert (typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, iterator_type>::type first, const iterator_type last)
 	{
-		if (first == last)
+		while (first != last)
 		{
-			return end_iterator;
+			insert(*first++);
 		}
-
-		const iterator return_iterator = insert(*first);
-		iterator_type current_element = first;
-
-		while (++current_element != last)
-		{
-			insert(*current_element);
-		}
-
-		return return_iterator;
 	}
 
 
@@ -2405,9 +2396,9 @@ public:
 	// Initializer-list insert
 
 	#ifdef PLF_COLONY_INITIALIZER_LIST_SUPPORT
-		inline iterator insert (const std::initializer_list<element_type> &element_list)
+		inline void insert (const std::initializer_list<element_type> &element_list)
 		{ // use range insert:
-			return insert(element_list.begin(), element_list.end());
+			insert(element_list.begin(), element_list.end());
 		}
 	#endif
 
@@ -2509,7 +2500,7 @@ private:
 					{
 						std::uninitialized_copy(iterator_pointer - number_to_be_copied, iterator_pointer, destination_begin);
 
-						// The following loop is necessary because the allocator may return non-trivially-destructible pointer types, making iterator a non-trivially-destructible type:
+						// The following loop is necessary because the allocator may return non-trivially-destructible pointer types:
 						for (stack_element_pointer element_pointer = iterator_pointer - number_to_be_copied; element_pointer != iterator_pointer; ++element_pointer)
 						{
 							PLF_COLONY_DESTROY(element_pointer_allocator_type, erased_locations, element_pointer);

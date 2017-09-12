@@ -881,7 +881,7 @@ void plf_colony_test_suite()
 
 
 		{
-			//title2("Different insertion-style tests");
+			// title2("Different insertion-style tests");
 
 			#ifdef PLF_INITIALIZER_LIST_SUPPORT
 				colony<int> i_colony = {1, 2, 3};
@@ -893,7 +893,7 @@ void plf_colony_test_suite()
 			
 			colony<int> i_colony2(i_colony.begin(), i_colony.end());
 			
-			failpass("Range-based constructor test", i_colony2.size() == 3);
+			failpass("Range constructor test", i_colony2.size() == 3);
 			
 			colony<int> i_colony3(5000, 2, 100, 1000);
 			
@@ -907,7 +907,58 @@ void plf_colony_test_suite()
 			
 			i_colony2.insert(some_ints.begin(), some_ints.end());
 			
-			failpass("Fill insertion test", i_colony2.size() == 500503);
+			failpass("Range insertion test", i_colony2.size() == 500503);
+			
+			i_colony3.clear();
+			i_colony2.clear();
+			i_colony2.reserve(50000);
+			i_colony2.insert(60000, 1);
+			
+			int total = 0;
+			
+			for (colony<int>::iterator it = i_colony2.begin(); it != i_colony2.end(); ++it)
+			{
+				total += *it;
+			}
+			
+			failpass("Reserve + fill insert test", i_colony2.size() == 60000 && total == 60000);
+
+
+			i_colony2.clear();
+			i_colony2.reserve(5000);
+			i_colony2.insert(60, 1);
+			
+			total = 0;
+			
+			for (colony<int>::iterator it = i_colony2.begin(); it != i_colony2.end(); ++it)
+			{
+				total += *it;
+			}
+			
+			failpass("Reserve + fill insert test 2", i_colony2.size() == 60 && total == 60);
+
+			i_colony2.insert(6000, 1);
+			
+			total = 0;
+			
+			for (colony<int>::iterator it = i_colony2.begin(); it != i_colony2.end(); ++it)
+			{
+				total += *it;
+			}
+			
+			failpass("Reserve + fill + fill test", i_colony2.size() == 6060 && total == 6060);
+			
+			i_colony2.reserve(18000);
+			i_colony2.insert(6000, 1);
+			
+			total = 0;
+			
+			for (colony<int>::iterator it = i_colony2.begin(); it != i_colony2.end(); ++it)
+			{
+				total += *it;
+			}
+			
+			failpass("Reserve + fill + fill + reserve + fill test", i_colony2.size() == 12060 && total == 12060);
 		}
 
 
