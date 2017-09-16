@@ -1043,9 +1043,8 @@ public:
 			{
 				const skipfield_type skip = *(--skipfield_pointer);
 				skipfield_pointer -= skip;
-				element_pointer -= skip + 1;
 
-				if (element_pointer != group_pointer->elements - 1) // ie. iterator was not already at beginning of colony (with some previous consecutive deleted elements), and skipfield does not takes us into the previous group)
+				if ((element_pointer -= skip + 1) != group_pointer->elements - 1) // ie. iterator was not already at beginning of colony (with some previous consecutive deleted elements), and skipfield does not takes us into the previous group)
 				{
 					return *this;
 				}
@@ -4261,9 +4260,10 @@ public:
 		#endif
 
 
+		colony new_location;
+		
 		try
 		{
-			colony new_location;
 			new_location.change_group_sizes(min_elements_per_group, group_allocator_pair.max_elements_per_group);
 			new_location.reserve(static_cast<skipfield_type>((total_number_of_elements > std::numeric_limits<skipfield_type>::max()) ? std::numeric_limits<skipfield_type>::max() : total_number_of_elements));
 			
