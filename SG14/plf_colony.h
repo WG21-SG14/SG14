@@ -1,6 +1,6 @@
 // Copyright (c) 2017, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
-// Permissive zLib license:
+// zLib license (https://www.zlib.net/zlib_license.html):
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -979,7 +979,7 @@ public:
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
 
-			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
+			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
 				skipfield_type skip = *(++skipfield_pointer); 
 
 				if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
@@ -1798,7 +1798,7 @@ public:
 	{
 		if (end_iterator.element_pointer != NULL)
 		{
-			switch(((erased_locations.total_number_of_elements != 0) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
+			switch((erased_locations.total_number_of_elements << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 			{
 				case 0: // ie. erased_locations is empty and end_iterator is not at end of current final group
 				{
@@ -1816,9 +1816,9 @@ public:
 						++end_iterator.element_pointer; // not postfix incrementing prev statement as it would necessitate a try-catch block to reverse increment if necessary (which would decrease speed by increasing code size)
 					}
 
-					++end_iterator.skipfield_pointer;
-					++(end_iterator.group_pointer->last_endpoint);
+					end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 					++(end_iterator.group_pointer->number_of_elements);
+					++end_iterator.skipfield_pointer;
 					++total_number_of_elements;
 
 					return return_iterator; // return value before incrementing
@@ -1987,7 +1987,7 @@ public:
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
-				switch(((erased_locations.total_number_of_elements != 0) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
+				switch((erased_locations.total_number_of_elements << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 				{
 					case 0: // ie. erased_locations is empty and end_iterator is not at end of current final group
 					{
@@ -2005,9 +2005,9 @@ public:
 							++end_iterator.element_pointer; // not postfix incrementing prev statement as it would necessitate a try-catch block to reverse increment if necessary (which would decrease speed by increasing code size)
 						}
 
-						++end_iterator.skipfield_pointer;
-						++(end_iterator.group_pointer->last_endpoint);
+						end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 						++(end_iterator.group_pointer->number_of_elements);
+						++end_iterator.skipfield_pointer;
 						++total_number_of_elements;
 
 						return return_iterator; // return value before incrementing
@@ -2175,7 +2175,7 @@ public:
 			{
 				if (end_iterator.element_pointer != NULL)
 				{
-					switch(((erased_locations.total_number_of_elements != 0) << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
+					switch((erased_locations.total_number_of_elements << 1) | (end_iterator.element_pointer == reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield)))
 					{
 						case 0:
 						{
@@ -2193,9 +2193,9 @@ public:
 	                            ++end_iterator.element_pointer;
 	      					}
 		                    
-							++end_iterator.skipfield_pointer;
-							++end_iterator.group_pointer->last_endpoint;
+							end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 							++end_iterator.group_pointer->number_of_elements;
+							++end_iterator.skipfield_pointer;
 							++total_number_of_elements;
 							return return_iterator;
 						}
@@ -3103,7 +3103,7 @@ public:
 		// If erasing entire group, 1. Destruct elements (if non-trivial destructor), 2. if no elements left in colony, clear() 3. otherwise reset end_iterator and consolidate_erased_locations if there were some prior erasures in group
 
 
-		if (iterator2.element_pointer != current.group_pointer->last_endpoint || current.element_pointer != current.group_pointer->elements + *(current.group_pointer->skipfield)) // ie. not erasing entire group
+		if (iterator2.element_pointer != end_iterator.element_pointer || current.element_pointer != current.group_pointer->elements + *(current.group_pointer->skipfield)) // ie. not erasing entire group
 		{
 			skipfield_type number_of_group_erasures = 0;
 
@@ -3181,10 +3181,10 @@ public:
 				}
 			}
 
-			// Note: it is not possible that next_group != NULL at this point (if it were, iterator2.element_pointer could not be == last_endpoint - which indicates that it is == end())
 
 			if ((total_number_of_elements -= current.group_pointer->number_of_elements) != 0) // ie. previous_group != NULL
 			{
+				// Note: it is not possible that next_group != NULL at this point (if it were, iterator2 could not be == end_iterator in above if/else)
 				current.group_pointer->previous_group->next_group = NULL;
 				end_iterator.group_pointer = current.group_pointer->previous_group;
 				end_iterator.element_pointer = current.group_pointer->previous_group->last_endpoint;
@@ -3519,10 +3519,10 @@ public:
 			// Special case for initial element pointer and initial group (we don't know how far into the group the element pointer is)
 			if (element_pointer != group_pointer->elements + *(group_pointer->skipfield)) // ie. != first non-erased element in group
 			{
-				if (group_pointer->number_of_elements == static_cast<skipfield_type>(group_pointer->last_endpoint - group_pointer->elements)) // ie. if there are no erasures in the group (using endpoint - elements_start to determine number of elements in group just in case this is the last group of the colony, in which case group->last_endpoint != group->elements + group->size)
+				const difference_type distance_from_end = static_cast<const difference_type>(group_pointer->last_endpoint - element_pointer);
+				
+				if (group_pointer->number_of_elements == static_cast<skipfield_type>(distance_from_end)) // ie. if there are no erasures in the group (using endpoint - elements_start to determine number of elements in group just in case this is the last group of the colony, in which case group->last_endpoint != group->elements + group->size)
 				{
-					const difference_type distance_from_end = static_cast<const difference_type>(group_pointer->last_endpoint - element_pointer);
-
 					if (distance < distance_from_end)
 					{
 						element_pointer += distance;
@@ -3542,7 +3542,7 @@ public:
 				}
 				else
 				{
-					const skipfield_pointer_type endpoint = skipfield_pointer + (group_pointer->last_endpoint - element_pointer);
+					const skipfield_pointer_type endpoint = skipfield_pointer + distance_from_end;
 					
 					while(true)
 					{
@@ -4261,10 +4261,10 @@ public:
 
 
 		colony new_location;
+		new_location.change_group_sizes(min_elements_per_group, group_allocator_pair.max_elements_per_group);
 		
 		try
 		{
-			new_location.change_group_sizes(min_elements_per_group, group_allocator_pair.max_elements_per_group);
 			new_location.reserve(static_cast<skipfield_type>((total_number_of_elements > std::numeric_limits<skipfield_type>::max()) ? std::numeric_limits<skipfield_type>::max() : total_number_of_elements));
 			
 			#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && defined(PLF_COLONY_MOVE_SEMANTICS_SUPPORT)
@@ -4350,7 +4350,7 @@ public:
 		}
 
 		// If there's more unused element indexes at end of destination, swap with source to reduce number of skipped elements and size of erased_locations:
-		if ((reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.group_pointer->last_endpoint) > (reinterpret_cast<element_pointer_type>(source.end_iterator.group_pointer->skipfield) - source.end_iterator.group_pointer->last_endpoint))
+		if ((reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) > (reinterpret_cast<element_pointer_type>(source.end_iterator.group_pointer->skipfield) - source.end_iterator.element_pointer))
 		{
 			swap(source);
 		}
@@ -4370,11 +4370,11 @@ public:
 		// Add source erased_locations to destination:
 		erased_locations.splice(source.erased_locations);
 		
-		const skipfield_type distance_to_end = static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.group_pointer->last_endpoint);
+		const skipfield_type distance_to_end = static_cast<skipfield_type>(reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer);
 		
 		if (distance_to_end != 0) // 0 == edge case
 		{   // Mark unused element indexes from back group as skipped/erased:
-			skipfield_pointer_type current_skipfield_node = end_iterator.group_pointer->skipfield + (end_iterator.group_pointer->last_endpoint - end_iterator.group_pointer->elements);
+			skipfield_pointer_type current_skipfield_node = end_iterator.group_pointer->skipfield + (end_iterator.element_pointer - end_iterator.group_pointer->elements);
 			const skipfield_type previous_node_value = *(current_skipfield_node - 1);
 			
 			if (previous_node_value == 0)
@@ -4387,15 +4387,17 @@ public:
 				*(current_skipfield_node - previous_node_value) += distance_to_end;
 			}
 			
-			erased_locations.push(end_iterator.group_pointer->last_endpoint++);
+			erased_locations.push(end_iterator.element_pointer++);
 			skipfield_type current = previous_node_value + 1;
 			const skipfield_pointer_type end_node = current_skipfield_node + distance_to_end - 1;
 	
 			while(current_skipfield_node != end_node)
 			{
-       			erased_locations.push(end_iterator.group_pointer->last_endpoint++);
+       			erased_locations.push(end_iterator.element_pointer++);
 				*(++current_skipfield_node) = ++current;
 			}
+			
+			end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 		}
 		
 		

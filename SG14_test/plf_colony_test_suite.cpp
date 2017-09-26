@@ -1072,7 +1072,7 @@ void plf_colony_test_suite()
 				
 				for (colony<int>::iterator current = colony2.begin(); current != colony2.end();)
 				{
-					if ((xor_rand() & 3) == 0)
+					if ((xor_rand() & 7) == 0)
 					{
 						current = colony2.erase(current);
 					}
