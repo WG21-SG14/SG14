@@ -97,9 +97,16 @@ namespace
 
 
 
-void sg14_test::uninitialized()
+void sg14_test::uninitialized_test()
 {
 	value();
 	def();
 
 }
+
+#ifdef TEST_MAIN
+int main()
+{
+    sg14_test::uninitialized_test();
+}
+#endif

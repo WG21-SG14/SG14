@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-static void ring_test()
+static void basic_test()
 {
 	std::array<int, 5> A;
 	std::array<int, 5> B;
@@ -210,12 +210,19 @@ static void reverse_iterator_test()
     static_assert(std::is_same<decltype(c.crend()), decltype(r)::const_reverse_iterator>::value, "");
 }
 
-void sg14_test::ring_tests()
+void sg14_test::ring_test()
 {
-    ring_test();
+    basic_test();
     thread_communication_test();
     filter_test();
     iterator_regression_test();
     copy_popper_test();
     reverse_iterator_test();
 }
+
+#ifdef TEST_MAIN
+int main()
+{
+    sg14_test::ring_test();
+}
+#endif
