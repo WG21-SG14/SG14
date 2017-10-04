@@ -92,3 +92,10 @@ void sg14_test::unstable_remove_test()
 	std::cout << "remove_if: " << remove_med << "\n";
 	std::cin.get();
 }
+
+#ifdef TEST_MAIN
+int main()
+{
+    sg14_test::unstable_remove_test();
+}
+#endif

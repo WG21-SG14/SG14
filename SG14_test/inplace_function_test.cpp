@@ -57,3 +57,10 @@ namespace sg14_test
 		std::cout << std::boolalpha << "\nSomeTest " << (func == nullptr) << std::endl;
 	}
 }
+
+#ifdef TEST_MAIN
+int main()
+{
+    sg14_test::inplace_function_test();
+}
+#endif

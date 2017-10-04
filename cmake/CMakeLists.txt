@@ -23,13 +23,13 @@ find_package(Threads REQUIRED)
 
 set(SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/main.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/SG14_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test_suite.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/inplace_function_test.cpp
+    ${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/ring_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/transcode_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized.cpp)
+    ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized_test.cpp
+    ${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
+)
 
 if(MSVC)
 set(SG14_IGNORE_UNUSED_PARAMETER "/wd4100")
@@ -37,7 +37,7 @@ set(SG14_IGNORE_HIDE_PREVIOUS_LOCAL "/wd4456")
 else()
 set(SG14_IGNORE_UNUSED_PARAMETER "-Wno-unused-parameter")
 endif()
-set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test_suite.cpp PROPERTIES
+set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
 	COMPILE_FLAGS "${SG14_IGNORE_UNUSED_PARAMETER} ${SG14_IGNORE_HIDE_PREVIOUS_LOCAL}"
 )
 

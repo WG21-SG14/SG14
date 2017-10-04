@@ -4,11 +4,11 @@
 namespace sg14_test
 {
     void inplace_function_test();
+    void plf_colony_test();
+    void ring_test();
     void transcode_test();
-    void ring_tests();
-    void plf_colony_test_suite();
+    void uninitialized_test();
     void unstable_remove_test();
-    void uninitialized();
 }
 
 #endif

@@ -95,7 +95,7 @@ namespace
 namespace sg14_test
 {
 
-void plf_colony_test_suite()
+void plf_colony_test()
 {
 	using namespace std;
 	using namespace plf;
@@ -1321,3 +1321,10 @@ void plf_colony_test_suite()
 }
 
 }
+
+#ifdef TEST_MAIN
+int main()
+{
+    sg14_test::plf_colony_test();
+}
+#endif

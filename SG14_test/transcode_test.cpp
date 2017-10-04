@@ -39,3 +39,10 @@ void sg14_test::transcode_test()
 	compress_and_encrypt();
 	decrypt_and_decompress();
 }
+
+#ifdef TEST_MAIN
+int main()
+{
+    sg14_test::transcode_test();
+}
+#endif
