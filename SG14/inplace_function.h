@@ -42,21 +42,21 @@ enum class inplace_function_operation
 	Move
 };
 
-template <typename SignatureT, size_t CapacityT = InplaceFunctionDefaultCapacity, size_t AlignmentT = InplaceFunctionDefaultAlignment>
-class alignas(AlignmentT) inplace_function;
+template <typename SignatureT, size_t Capacity = InplaceFunctionDefaultCapacity, size_t Alignment = InplaceFunctionDefaultAlignment>
+class alignas(Alignment) inplace_function;
 
-template <typename RetT, typename... ArgsT, size_t CapacityT, size_t AlignmentT>
-class alignas(AlignmentT) inplace_function<RetT(ArgsT...), CapacityT, AlignmentT>
+template <typename RetT, typename... ArgsT, size_t Capacity, size_t Alignment>
+class alignas(Alignment) inplace_function<RetT(ArgsT...), Capacity, Alignment>
 {
 public:
-	template <typename SignatureT2, std::size_t CapacityT2, std::size_t AlignmentT2>
+	template <typename SignatureT2, size_t Capacity2, size_t Alignment2>
 	friend class inplace_function;
 	
 	// TODO static_assert for misalignment
 	// TODO create free operator overloads, to handle switched arguments
 
 	// Creates and empty inplace_function
-	inplace_function() : m_InvokeFctPtr(&DefaultFunction), m_ManagerFctPtr(nullptr)
+	constexpr inplace_function() noexcept : m_InvokeFctPtr(&DefaultFunction), m_ManagerFctPtr(nullptr)
 	{
 	}
 
@@ -101,8 +101,8 @@ public:
 	// Allows for copying from inplace_function object of the same type, but with a smaller buffer
 	// May throw any exception encountered by the constructor when copying the target object
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacityT, size_t OtherAlignment>
-	inplace_function(const inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>& other)
+	template<size_t OtherCapacity, size_t OtherAlignment>
+	inplace_function(const inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>& other)
 	{
 		this->copy(other);
 	}
@@ -137,8 +137,8 @@ public:
 	// Allows for copy assignment of an inplace_function object of the same type, but with a smaller buffer
 	// If the copy constructor of target object throws, this is left in uninitialized state
 	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacityT, size_t OtherAlignment>
-	inplace_function& operator=(const inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>& other)
+	template<size_t OtherCapacity, size_t OtherAlignment>
+	inplace_function& operator=(const inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>& other)
 	{
 		this->clear();
 		this->copy(other);
@@ -158,7 +158,7 @@ public:
 
 	// Assign a new target
 	// If the copy constructor of target object throws, this is left in uninitialized state
-	template<typename CallableT, class = typename std::enable_if<!std::is_lvalue_reference<CallableT>::value>::type>
+	template<typename CallableT>
 	inplace_function& operator=(const CallableT& target)
 	{
 		this->clear();
@@ -168,8 +168,8 @@ public:
 
 	// Assign a new target by way of moving
 	// If the move constructor of target object throws, this is left in uninitialized state
-	template<typename Callable>
-	inplace_function& operator=(Callable&& target)
+	template<typename CallableT, class = typename std::enable_if<!std::is_lvalue_reference<CallableT>::value>::type>
+	inplace_function& operator=(CallableT&& target)
 	{
 		this->clear();
 		this->set(std::move(target));
@@ -178,20 +178,20 @@ public:
 
 	// Compares this inplace function with a null pointer
 	// Empty functions compare equal, non-empty functions compare unequal
-	bool operator ==(std::nullptr_t)
+	constexpr bool operator ==(std::nullptr_t) noexcept
 	{
 		return !operator bool();
 	}
 
 	// Compares this inplace function with a null pointer
 	// Empty functions compare equal, non-empty functions compare unequal
-	bool operator !=(std::nullptr_t)
+	constexpr bool operator !=(std::nullptr_t) noexcept
 	{
 		return operator bool();
 	}
 
 	// Converts to 'true' if assigned
-	explicit operator bool() const throw()
+	explicit constexpr operator bool() const noexcept
 	{
 		return m_InvokeFctPtr != &DefaultFunction;
 	}
@@ -215,8 +215,8 @@ public:
 	}
 
 private:
-	using BufferType = typename std::aligned_storage<CapacityT, AlignmentT>::type;
-	void clear()
+	using BufferType = typename std::aligned_storage<Capacity, Alignment>::type;
+	void clear() noexcept
 	{
 		m_InvokeFctPtr = &DefaultFunction;
 		if (m_ManagerFctPtr)
@@ -224,11 +224,11 @@ private:
 		m_ManagerFctPtr = nullptr;
 	}
 
-	template<size_t OtherCapacityT, size_t OtherAlignment>
-	void copy(const inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>& other)
+	template<size_t OtherCapacity, size_t OtherAlignment>
+	void copy(const inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>& other)
 	{
-		static_assert(OtherCapacityT <= CapacityT, "Can't squeeze larger inplace_function into a smaller one");
-		static_assert(AlignmentT % OtherAlignment == 0, "Incompatible alignments");
+		static_assert(OtherCapacity <= Capacity, "Can't squeeze larger inplace_function into a smaller one");
+		static_assert(Alignment % OtherAlignment == 0, "Incompatible alignments");
 
 		if (other.m_ManagerFctPtr)
 			other.m_ManagerFctPtr(data(), other.data(), Operation::Copy);
@@ -245,11 +245,11 @@ private:
 			to = from;
 	}
 
-	template<size_t OtherCapacityT, size_t OtherAlignment>
-	void move(inplace_function<RetT(ArgsT...), OtherCapacityT, OtherAlignment>&& other)
+	template<size_t OtherCapacity, size_t OtherAlignment>
+	void move(inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>&& other)
 	{
-		static_assert(OtherCapacityT <= CapacityT, "Can't squeeze larger inplace_function into a smaller one");
-		static_assert(AlignmentT % OtherAlignment == 0, "Incompatible alignments");
+		static_assert(OtherCapacity <= Capacity, "Can't squeeze larger inplace_function into a smaller one");
+		static_assert(Alignment % OtherAlignment == 0, "Incompatible alignments");
 
 		if (other.m_ManagerFctPtr)
 			other.m_ManagerFctPtr(data(), other.data(), Operation::Move);
@@ -258,8 +258,8 @@ private:
 		m_ManagerFctPtr = other.m_ManagerFctPtr;
 	}
 
-	void* data() { return &m_Data; }
-	const void* data() const { return &m_Data; }
+	constexpr void* data() noexcept { return &m_Data; }
+	constexpr const void* data() const noexcept { return &m_Data; }
 
 	using CompatibleFunctionPointer = RetT(*)(ArgsT...);
 	using InvokeFctPtrType = RetT(*)(ArgsT..., const void* thisPtr);
@@ -298,7 +298,7 @@ private:
 	set(const FunctorArgT& ftor)
 	{
 		using FunctorT = typename std::remove_reference<FunctorArgT>::type;
-		static_assert(sizeof(FunctorT) <= CapacityT, "Functor too big to fit in the buffer");
+		static_assert(sizeof(FunctorT) <= Capacity, "Functor too big to fit in the buffer");
 
 		// copy functor into the mem buffer
 		FunctorT* buffer = reinterpret_cast<FunctorT*>(&m_Data);
@@ -315,10 +315,10 @@ private:
 	// enable_if makes sure this is excluded for function references and pointers.
 	template<typename FunctorArgT>
 	typename std::enable_if<!std::is_pointer<FunctorArgT>::value && !std::is_function<FunctorArgT>::value>::type
-		set(FunctorArgT&& ftor)
+	set(FunctorArgT&& ftor)
 	{
 		using FunctorT = typename std::remove_reference<FunctorArgT>::type;
-		static_assert(sizeof(FunctorT) <= CapacityT, "Functor too big to fit in the buffer");
+		static_assert(sizeof(FunctorT) <= Capacity, "Functor too big to fit in the buffer");
 
 		// copy functor into the mem buffer
 		FunctorT* buffer = reinterpret_cast<FunctorT*>(&m_Data);
