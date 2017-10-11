@@ -24,6 +24,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+// TODO: infer size of capture via decltype?
+
 #pragma once
 
 #include <type_traits>
@@ -55,7 +57,7 @@ public:
 	// TODO static_assert for misalignment
 	// TODO create free operator overloads, to handle switched arguments
 
-	// Creates and empty inplace_function
+        // Creates and empty inplace_function
 	constexpr inplace_function() noexcept : m_InvokeFctPtr(&DefaultFunction), m_ManagerFctPtr(nullptr)
 	{
 	}
