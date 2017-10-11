@@ -2,6 +2,8 @@
 #include "../SG14/inplace_function.h"
 #include <cassert>
 
+#TODO add optiver tests!
+
 namespace {
 
 static int copied, moved, called_with;
