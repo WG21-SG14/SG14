@@ -1456,7 +1456,6 @@ private:
 	iterator				end_iterator, begin_iterator;
 	group_pointer_type		first_group;
 	size_type				total_number_of_elements;
-	group_pointer_type 		free_group_list_head;
 	skipfield_type 			min_elements_per_group;
 	struct ebco_pair : group_allocator_type // Packaging the group allocator with least-used member variable, for empty-base-class optimisation
 	{
@@ -1475,7 +1474,6 @@ public:
 		element_allocator_type(element_allocator_type()),
 		first_group(NULL),
 		total_number_of_elements(0),
-		free_group_list_head(NULL),
 		min_elements_per_group((sizeof(element_type) * 8 > (sizeof(*this) + sizeof(group)) * 2) ? 8 : (((sizeof(*this) + sizeof(group)) * 2) / sizeof(element_type)) + 1),
 		group_allocator_pair(std::numeric_limits<skipfield_type>::max()),
 		erased_locations((min_elements_per_group >> 7) + 8)
@@ -1491,7 +1489,6 @@ public:
 		element_allocator_type(alloc),
 		first_group(NULL),
 		total_number_of_elements(0),
-		free_group_list_head(NULL),
 		min_elements_per_group((sizeof(element_type) * 8 > (sizeof(*this) + sizeof(group)) * 2) ? 8 : (((sizeof(*this) + sizeof(group)) * 2) / sizeof(element_type)) + 1),
 		group_allocator_pair(std::numeric_limits<skipfield_type>::max()),
 		erased_locations((min_elements_per_group >> 7) + 8)
@@ -1507,7 +1504,6 @@ public:
 		element_allocator_type(source),
 		first_group(NULL),
 		total_number_of_elements(0),
-		free_group_list_head(NULL),
 		min_elements_per_group(static_cast<skipfield_type>((source.min_elements_per_group > source.total_number_of_elements) ? source.min_elements_per_group : ((source.total_number_of_elements > source.group_allocator_pair.max_elements_per_group) ? source.group_allocator_pair.max_elements_per_group : source.total_number_of_elements))), // Make the first colony group size the greater of min_elements_per_group or total_number_of_elements, so long as total_number_of_elements isn't larger than max_elements_per_group
 		group_allocator_pair(source.group_allocator_pair.max_elements_per_group),
 		erased_locations(static_cast<size_type>(source.erased_locations.group_allocator_pair.min_elements_per_group))
@@ -1524,7 +1520,6 @@ public:
 		element_allocator_type(alloc),
 		first_group(NULL),
 		total_number_of_elements(0),
-		free_group_list_head(NULL),
 		min_elements_per_group(static_cast<skipfield_type>((source.min_elements_per_group > source.total_number_of_elements) ? source.min_elements_per_group : ((source.total_number_of_elements > source.group_allocator_pair.max_elements_per_group) ? source.group_allocator_pair.max_elements_per_group : source.total_number_of_elements))),
 		group_allocator_pair(source.group_allocator_pair.max_elements_per_group),
 		erased_locations(static_cast<size_type>(source.erased_locations.group_allocator_pair.min_elements_per_group))
@@ -1545,7 +1540,6 @@ public:
 			begin_iterator(std::move(source.begin_iterator)),
 			first_group(std::move(source.first_group)),
 			total_number_of_elements(source.total_number_of_elements),
-			free_group_list_head(std::move(source.free_group_list_head)),
 			min_elements_per_group(source.min_elements_per_group),
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group),
 			erased_locations(std::move(source.erased_locations))
@@ -1563,7 +1557,6 @@ public:
 			begin_iterator(std::move(source.begin_iterator)),
 			first_group(std::move(source.first_group)),
 			total_number_of_elements(source.total_number_of_elements),
-			free_group_list_head(std::move(source.free_group_list_head)),
 			min_elements_per_group(source.min_elements_per_group),
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group),
 			erased_locations(std::move(source.erased_locations))
@@ -1581,7 +1574,6 @@ public:
 		element_allocator_type(alloc),
 		first_group(NULL),
 		total_number_of_elements(0),
-		free_group_list_head(NULL),
 		min_elements_per_group((min_allocation_amount != 0) ? min_allocation_amount : 
 			(fill_number > max_allocation_amount) ? max_allocation_amount : 
 			(fill_number > 8) ? static_cast<skipfield_type>(fill_number) : 8),
@@ -1603,7 +1595,6 @@ public:
 		element_allocator_type(alloc),
 		first_group(NULL),
 		total_number_of_elements(0),
-		free_group_list_head(NULL),
 		min_elements_per_group(min_allocation_amount),
 		group_allocator_pair(max_allocation_amount),
 		erased_locations((min_allocation_amount < 8) ? min_allocation_amount : (min_allocation_amount >> 7) + 8)
@@ -1623,7 +1614,6 @@ public:
 			element_allocator_type(alloc),
 			first_group(NULL),
 			total_number_of_elements(0),
-			free_group_list_head(NULL),
 			min_elements_per_group((min_allocation_amount != 0) ? min_allocation_amount : 
 			(element_list.size() > max_allocation_amount) ? max_allocation_amount : 
 			(element_list.size() > 8) ? static_cast<skipfield_type>(element_list.size()) : 8),
@@ -1769,15 +1759,6 @@ private:
 				first_group = next_group;
 			}
 		}
-
-
-		while (free_group_list_head != NULL)
-		{
-			const group_pointer_type next_group = free_group_list_head->next_group;
-			PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, free_group_list_head);
-			PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, free_group_list_head, 1);
-			free_group_list_head = next_group;
-		}
 	}
 
 
@@ -1847,54 +1828,37 @@ public:
 					{
 						group_pointer_type next_group;
 						
-						
-						if (free_group_list_head != NULL)
-						{
-							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), free_group_list_head->elements, std::forward<Arguments>(parameters) ...);
-							next_group = end_iterator.group_pointer->next_group = free_group_list_head;
-							free_group_list_head = free_group_list_head->next_group;
-							
-							next_group->last_endpoint = next_group->elements + 1;
-							next_group->next_group = NULL;
-							next_group->previous_group = end_iterator.group_pointer;
-							next_group->group_number = end_iterator.group_pointer->group_number + 1;
-							next_group->number_of_elements = 1;
-							std::memset(&*(next_group->skipfield), 0, sizeof(skipfield_type) * next_group->size);
-						}
-						else
-						{
-							next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
+						next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 
+						try
+						{
+							PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group, end_iterator.group_pointer);
+						}
+						catch (...)
+						{
+							PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
+							end_iterator.group_pointer->next_group = NULL;
+							throw;
+						}
+
+						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+							if ((!std::is_copy_constructible<element_type>::value || std::is_nothrow_copy_constructible<element_type>::value) && (!std::is_move_constructible<element_type>::value || std::is_nothrow_move_constructible<element_type>::value) && std::is_nothrow_constructible<element_type>::value)
+							{
+								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::forward<Arguments>(parameters) ...);
+							}
+							else
+						#endif
+						{
 							try
 							{
-								PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group, end_iterator.group_pointer);
+								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::forward<Arguments>(parameters) ...);
 							}
 							catch (...)
 							{
+								PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
 								PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
 								end_iterator.group_pointer->next_group = NULL;
 								throw;
-							}
-
-							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-								if ((!std::is_copy_constructible<element_type>::value || std::is_nothrow_copy_constructible<element_type>::value) && (!std::is_move_constructible<element_type>::value || std::is_nothrow_move_constructible<element_type>::value) && std::is_nothrow_constructible<element_type>::value)
-								{
-									PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::forward<Arguments>(parameters) ...);
-								}
-								else
-							#endif
-							{
-								try
-								{
-									PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::forward<Arguments>(parameters) ...);
-								}
-								catch (...)
-								{
-									PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
-									PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
-									end_iterator.group_pointer->next_group = NULL;
-									throw;
-								}
 							}
 						}
 
@@ -2046,53 +2010,37 @@ public:
 						group_pointer_type next_group;
 						
 						
-						if (free_group_list_head != NULL)
+						next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
+
+						try
 						{
-							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), free_group_list_head->elements, element);
-							next_group = end_iterator.group_pointer->next_group = free_group_list_head;
-							free_group_list_head = free_group_list_head->next_group;
-							
-							next_group->last_endpoint = next_group->elements + 1;
-							next_group->next_group = NULL;
-							next_group->previous_group = end_iterator.group_pointer;
-							next_group->group_number = end_iterator.group_pointer->group_number + 1;
-							next_group->number_of_elements = 1;
-							std::memset(&*(next_group->skipfield), 0, sizeof(skipfield_type) * next_group->size);
+							PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group((total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group, end_iterator.group_pointer));
 						}
-						else
+						catch (...)
 						{
-							next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
-	
+							PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
+							end_iterator.group_pointer->next_group = NULL;
+							throw;
+						}
+
+						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+							if (std::is_nothrow_copy_constructible<element_type>::value)
+							{
+								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, element);
+							}
+							else
+						#endif
+						{
 							try
 							{
-								PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group((total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group, end_iterator.group_pointer));
+								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, element);
 							}
 							catch (...)
 							{
+								PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
 								PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
 								end_iterator.group_pointer->next_group = NULL;
 								throw;
-							}
-	
-							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-								if (std::is_nothrow_copy_constructible<element_type>::value)
-								{
-									PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, element);
-								}
-								else
-							#endif
-							{
-								try
-								{
-									PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, element);
-								}
-								catch (...)
-								{
-									PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
-									PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
-									end_iterator.group_pointer->next_group = NULL;
-									throw;
-								}
 							}
 						}
 	
@@ -2248,53 +2196,37 @@ public:
 							group_pointer_type next_group;
 							
 							
-							if (free_group_list_head != NULL)
+							next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
+
+							try
 							{
-								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), free_group_list_head->elements, std::move(element));
-								next_group = end_iterator.group_pointer->next_group = free_group_list_head;
-								free_group_list_head = free_group_list_head->next_group;
-								
-								next_group->last_endpoint = next_group->elements + 1;
-								next_group->next_group = NULL;
-								next_group->previous_group = end_iterator.group_pointer;
-								next_group->group_number = end_iterator.group_pointer->group_number + 1;
-								next_group->number_of_elements = 1;
-								std::memset(&*(next_group->skipfield), 0, sizeof(skipfield_type) * next_group->size);
+								PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group((total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group, end_iterator.group_pointer));
 							}
-							else
+							catch (...)
 							{
-								next_group = end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
-	
+								PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
+								end_iterator.group_pointer->next_group = NULL;
+								throw;
+							}
+
+							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+								if (std::is_nothrow_copy_constructible<element_type>::value)
+								{
+									PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::move(element));
+								}
+								else
+							#endif
+							{
 								try
 								{
-									PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group((total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group, end_iterator.group_pointer));
+									PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::move(element));
 								}
 								catch (...)
 								{
+									PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
 									PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
 									end_iterator.group_pointer->next_group = NULL;
 									throw;
-								}
-	
-								#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-									if (std::is_nothrow_copy_constructible<element_type>::value)
-									{
-										PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::move(element));
-									}
-									else
-								#endif
-								{
-									try
-									{
-										PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), next_group->elements, std::move(element));
-									}
-									catch (...)
-									{
-										PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
-										PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
-										end_iterator.group_pointer->next_group = NULL;
-										throw;
-									}
 								}
 							}
 	
@@ -3001,16 +2933,8 @@ public:
 				update_subsequent_group_numbers(first_group);
 				consolidate_erased_locations(the_group_pointer); // There must be erased_locations for an empty non-final group, no emptiness check is necessary
 
-				if (the_group_pointer->size == group_allocator_pair.max_elements_per_group)
-				{
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
-				}
-				else
-				{
-					the_group_pointer->next_group = free_group_list_head;
-					free_group_list_head = the_group_pointer;
-				}
+				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
+				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
 				begin_iterator.group_pointer = first_group; // note: end iterator only needs to be changed if the deleted group was the final group in the chain ie. not in this case
 				begin_iterator.element_pointer = first_group->elements + *(first_group->skipfield); // If the beginning index has been erased (ie. skipfield != 0), skip to next non-erased element
@@ -3027,16 +2951,8 @@ public:
 				update_subsequent_group_numbers(return_group);
 				consolidate_erased_locations(the_group_pointer); // There must be erased_locations for an empty non-final group, no emptiness check is 
 				
-				if (the_group_pointer->size == group_allocator_pair.max_elements_per_group)
-				{
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
-				}
-				else
-				{
-					the_group_pointer->next_group = free_group_list_head;
-					free_group_list_head = the_group_pointer;
-				}
+				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
+				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
 				// If first element of next group is erased (ie. skipfield != 0), skip to the next non-erased element:
 				return iterator(return_group, return_group->elements + *(return_group->skipfield), return_group->skipfield + *(return_group->skipfield));
@@ -3053,8 +2969,8 @@ public:
 				end_iterator.element_pointer = reinterpret_cast<element_pointer_type>(end_iterator.group_pointer->skipfield);
 				end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + end_iterator.group_pointer->size;
 
-				the_group_pointer->next_group = free_group_list_head;
-				free_group_list_head = the_group_pointer;
+				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group_pointer);
+				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group_pointer, 1);
 
 				return end_iterator;
 			}
@@ -3422,7 +3338,6 @@ public:
 			end_iterator = std::move(source.end_iterator);
 			begin_iterator = std::move(source.begin_iterator);
 			first_group = std::move(source.first_group);
-			free_group_list_head = std::move(source.free_group_list_head);
 			total_number_of_elements = source.total_number_of_elements;
 			min_elements_per_group = source.min_elements_per_group;
 			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
@@ -3430,7 +3345,6 @@ public:
 			erased_locations = std::move(source.erased_locations);
 
 			source.first_group = NULL;
-			source.free_group_list_head = NULL;
 			source.total_number_of_elements = 0; // Nullifying the other data members is unnecessary - technically all can be removed except first_group NULL and total_number_of_elements 0, to allow for clean destructor usage
 			return *this;
 		}
@@ -3544,14 +3458,12 @@ public:
 			const iterator					swap_end_iterator = end_iterator, swap_begin_iterator = begin_iterator;
 			const group_pointer_type		swap_first_group = first_group;
 			const size_type					swap_total_number_of_elements = total_number_of_elements;
-			const group_pointer_type		swap_free_group_list_head = free_group_list_head;
 			const skipfield_type 			swap_min_elements_per_group = min_elements_per_group, swap_max_elements_per_group = group_allocator_pair.max_elements_per_group;
 
 			end_iterator = source.end_iterator;
 			begin_iterator = source.begin_iterator;
 			first_group = source.first_group;
 			total_number_of_elements = source.total_number_of_elements;
-			free_group_list_head = source.free_group_list_head;
 			min_elements_per_group = source.min_elements_per_group;
 			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
 
@@ -3559,7 +3471,6 @@ public:
 			source.begin_iterator = swap_begin_iterator;
 			source.first_group = swap_first_group;
 			source.total_number_of_elements = swap_total_number_of_elements;
-			source.free_group_list_head = swap_free_group_list_head;
 			source.min_elements_per_group = swap_min_elements_per_group;
 			source.group_allocator_pair.max_elements_per_group = swap_max_elements_per_group;
 
@@ -4507,7 +4418,6 @@ public:
 		source.begin_iterator = source.end_iterator;
 		source.first_group = NULL;
 		source.total_number_of_elements = 0;
-		source.destroy_all_data(); // get rid of free_groups
 	}
 
 
