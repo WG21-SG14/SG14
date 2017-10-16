@@ -162,8 +162,8 @@
 </head>
 <body>
 Audience: LEWG, SG14<br>
-Document number: D0447R4<br>
-Date: 2017-09-11<br>
+Document number: P0447R4<br>
+Date: 2017-10-16<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
@@ -184,6 +184,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
       <li><a href="#benchmarks">Reference implementation benchmarks</a></li>
       <li><a href="#faq">Frequently Asked Questions</a></li>
       <li><a href="#responses">Specific responses to previous committee feedback</a></li>
+      <li><a href="#questions">Open questions from the author</a></li>
       <li><a href="#revisions">Paper revision history</a></li>
     </ol>
   </li>
@@ -195,7 +196,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 houses are filled with other people - assuming limited resources. New houses
 are not built unless necessary, because it's inefficient to do so. But as the colony grows, we'd start building larger and larger houses for efficiency's sake - and if a house became empty it might be demolished and the land cleared to make way for a larger one. Lastly, if we wanted to find people, but had a lot of empty houses in a row, we'd want to avoid checking each and every individual house. For that reason we might want to use a numbering system that allows us to skip over multiple empty houses in a row.</p>
 
-<p>That metaphorically lays out the three core aspects of a colony container - erased-element location reuse upon reinsertion, block-based allocation with a growth factor, and jump-counting skipfields. Memory locations of erased elements are marked as empty and 'recycled', with new elements utilizing them upon future insertion, meanwhile being skipped over during iteration. This avoids reallocation upon erasure. New memory blocks are not allocated unless necessary - and when a memory block becomes empty, it is freed to the OS (under certain circumstances it may be retained for performance reasons - see <a href="#clear">clear()</a> and <a href="#erase">erase()</a>). This avoids needless iteration over erased blocks and is one part of enabling O(1) iteration time complexity. The other part is the use of what I've called a <a href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D">jump-counting skipfield</a>, to allow contiguous erased element slots to be skipped during iteration, which also increases iteration performance compared to a boolean skipfield. Lastly, elements in a colony are allocated in memory blocks with a growth factor, enabling pointers to elements to stay valid after insertions and reducing the total number of allocations.</p>
+<p>That metaphorically lays out the three core aspects of a colony container - erased-element location reuse upon reinsertion, block-based allocation with a growth factor, and jump-counting skipfields. Memory locations of erased elements are marked as empty and 'recycled', with new elements utilizing them upon future insertion, meanwhile being skipped over during iteration. This avoids reallocation upon erasure. New memory blocks are not allocated unless necessary - and when a memory block becomes empty, it is freed to the OS (under certain circumstances it may be retained for performance reasons - see <a href="#clear">clear()</a> and <a href="#erase">erase()</a>). This avoids needless iteration over erased blocks and is one part of enabling O(1) iteration time complexity. The other part is the use of what I've called a <a href="http://em.rdcu.be/wf/click?upn=KP7O1RED-2BlD0F9LDqGVeSPyQHezub7M4gGFa4NTPPTU-3D_ih77hK-2FwXUNPXOClzbShNQsKzXRuUomlRdQ1DjaMsrpnUBwwtbFTp5VEo6fdTXEOm5aVQpvVZ28aaMucmOmTG7j6bqKdutLSZ5s-2FvVOpi0U-2BRUm-2BokLgfiyljrkOnlzzohhddyytFQ6xbOHnaSP-2BiryryBzyk0-2FcqHJHqWla0UjauVoYm2aWi5no-2F91Tum6XKjVqwSLtk3SZQBA-2BuYbfglhC7NGb-2F0qoV47pMMnoV-2Fo-3D">jump-counting skipfield</a>, which allows contiguous erased elements to be skipped during iteration and also increases iteration performance compared to a boolean skipfield. Lastly, elements in a colony are allocated in multiple memory blocks, with a growth factor, enabling pointers to elements to stay valid after insertions and reducing the total number of allocations.</p>
 
 <p>Colony is designed to be a higher-performance container for situations where the ratio of
 insertions/erasures to iterations is relatively high. It
@@ -601,7 +602,7 @@ usage lifetime of the colony instance. If prior erasures have occurred,
 updating the skipfield may require a memmove operation, which creates a
 variable time complexity depending on the range of skipfield needing to be
 copied (though in practice this will resolve to a singular raw memory block
-copy in most scenarios). This is O(random) with the range of the random number
+copy in most scenarios, and the performance impact is negligible). This is O(random) with the range of the random number
 being between 1 and std::numeric_limits&lt;Skipfield_Type&gt;::max() - 2 (65534 in most instances).
 Average time complexity varies based on erasure pattern. With a random
 erasure pattern it will be closer to O(1) amortized.</p>
@@ -612,7 +613,7 @@ Insertion(single) for rules in this case.</p>
 <p>Erase (single): If erasures to elements consecutive with the element being
 erased have not occurred, or only consecutive erasures before the element being
 erased have occurred, O(1) amortised. If consecutive erasures after the element
-being erased have occured, updating of the skipfield requires a memmove
+being erased have occurred, updating of the skipfield requires a memmove
 operation or vectorized update of O(N) complexity, where n is the number of
 consecutive erased elements after the element being erased. This is O(random)
 with the range of the random number being between from 1 and
@@ -633,8 +634,8 @@ location and state of colony. Average ~O(log N).</p>
 <h4>Time complexity of other operations</h4>
 
 <p>size(), capacity, max_size(), empty(): O(1)</p>
-<p>shrink_to_fit(), operator =, operator == and != : O(N)</p>
-<p>free_unused_memory(): O(1)</p>
+<p>operator =, operator == and != : O(N)</p>
+<p>shrink_to_fit(): O(1)</p>
 <p>change_group_sizes, change_minimum_group_size, change_maximum_group_size: O(N)</p>
 <p>splice: O(1) amortised</p>
 <p>sort: uses std::sort internally so roughly equivalent to the time complexity of the compiler's std::sort implementation</p>
@@ -651,7 +652,7 @@ location and state of colony. Average ~O(log N).</p>
 <table border="1">
   <tbody>
     <tr>
-      <td>All read-only operations, swap, std::swap, free_unused_memory</td>
+      <td>All read-only operations, swap, std::swap, shrink_to_fit</td>
       <td>Never</td>
     </tr>
     <tr>
@@ -659,7 +660,7 @@ location and state of colony. Average ~O(log N).</p>
       <td>Always</td>
     </tr>
     <tr>
-      <td>reserve, shrink_to_fit</td>
+      <td>reserve</td>
       <td>Only if capacity is changed</td>
     </tr>
     <tr>
@@ -1085,23 +1086,14 @@ iterator in the same colony (ie. closer to the end/beginning of the colony).</p>
     &lt;&lt; std::endl;</code> </p>
   </li>
   <li><code>void shrink_to_fit()</code> 
-    <p>Reduces container capacity to the amount necessary to store all
-    currently stored elements. If the total number of elements is larger than
-    the maximum group size, the resultant capacity will be equal to
-    <code>((total_elements / max_group_size) + 1) * max_group_size</code>
-    (rounding down at division). Invalidates all pointers, iterators and
-    references to elements within the container. <br>
+    <p>Deallocates any unused groups retained during erase() or unused since the last reserve(). This function cannot invalidate iterators or pointers to elements, nor will it necessarily shrink the capacity to match size().<br>
     Example: <code style="color: brown">i_colony.shrink_to_fit();</code> </p>
-  </li>
-  <li><code>void free_unused_memory()</code> 
-    <p>Deallocates any unused groups retained during erase() or unused since the last reserve(). Unlike shrink_to_fit(), this function cannot invalidate iterators or pointers to elements, nor will it shrink the capacity to match size(). Currently not implemented in the reference implementation (waiting on implementation of group retention in erase functionality).<br>
-    Example: <code style="color: brown">i_colony.remove();</code> </p>
   </li>
   <li><code>void reserve(size_type reserve_amount)</code>
     <p>Preallocates memory space sufficient to store the number of elements
     indicated by <code>reserve_amount</code>. In the implementation the maximum size for this number
-    is limited to the maximum group size of the colony and will be truncated if
-    necessary. This restriction will be lifted in a future version.<br>
+    currently is limited to the maximum group size of the colony and will be truncated if
+    necessary. This restriction will be lifted in a future version. This function is useful from a performance perspective when the user is inserting elements singly, but the overall number of insertions is known in advance. By reserving, colony can forgo creating many smaller memory block allocations (due to colony's growth factor) and reserve a single memory block instead.<br>
     Example: <code style="color: brown">i_colony.reserve(15);</code> </p>
   </li>
   <li><a id="clear"></a><code>void clear()</code>
@@ -1679,20 +1671,28 @@ the MSVC results.</p>
 <ol>
 <li><h4>Why not 'bag'? Colony is too selective etcetera, etcetera</h4>
 <p>'bag' is problematic as it's partially synonymous with multiset (and colony is <a href="#adt">not</a> one of those) and partially because it's vague - it doesn't describe how the container works. I have not come up with an alternate name that fits as well, nor has anyone as yet. 'colony' is an intuitive name if you understand the container, and allows for easy conveyance of how it works. The suggestion that the use of the word is selective in terms of it's meaning, is also true for vector, set, 'bag', and many other C++ names. Largely, misgivings appear to stem from unfamiliarity with the term. Non-verbose alternatives which don't lead to incorrect assumptions are always appreciated.</p>
-<p>It is true that 'colony' says more about it's structure than it's usage, however I think it is valuable to understand how colony works, in this case. If someone were to erase an element, then insert a new object, they might be surprised to discover that pointers to the erased element now point to the newly-inserted one, unless they had a basic understanding of how the container works. Also if they inserted an element and subsequently discover the element is at index four in the iterative sequence rather than at the back of the colony, this could be confusing to a newcomer, however it is easily explained via the name metaphor explanation in the introduction of this document. Personally I would rather have 'suitcase' than bag - it's only slightly more silly, and implies object stability, which is what a bag container typically lacks.</p>
+<p>It is true that 'colony' says more about it's structure than it's usage, however I think it is valuable to understand how colony works, in this case. If someone were to erase an element, then insert a new object, they might be surprised to discover that pointers to the erased element may now point to the newly-inserted one, unless they had a basic understanding of how the container works. Also if they inserted an element and subsequently discover the element is at index four in the iterative sequence rather than at the back of the colony, this could be confusing to a newcomer, however it is easily explained via the metaphorical explanation in the introduction of this document. Personally I would rather have 'suitcase' than bag - it's only slightly more silly, and implies location stability, which is what a bag container typically lacks.</p>
 </li>
 <li><h4>"Unordered and no associative lookup, so this only supports use cases where you're going to do something to every element."</h4>
 <p>As noted the container is designed for highly object-oriented situations where you have many elements in different containers referring to many other elements in other containers. This can be done with pointers or iterators in colony (insert returns an iterator which can be dereferenced to get a pointer, pointers can be converted into iterators with the supplied functions  (for erase etc)) and because pointers/iterators stay stable regardless of insertion/erasure, this usage is unproblematic. You could say the pointer is equivalent to a key in this case (but without the overhead). That is the first access pattern, the second is straight iteration over the container, as you say. Secondly, the container does have (typically better than O(N)) advance/next/prev implementations, so elements can be skipped.</p></li>
 <li><h4>"Do we really need the skipfield_type template argument?"</h4>
-<p>If it is possible to relegate this to a constructor argument (I'm not sure how but <a href="https://github.com/jacquelinekay/petra">Petra</a> suggests one approach) I would welcome it, but this argument currently promotes use of the container in heavy-constrained memory environments, and in high-performance small-N collections. Unfortunately it also means <code>operator =</code> and some other functions won't work on colonies of the same type but differing skipfield types. See more explanation in V. Technical Specifications. This is something I am flexible on, as a singular skipfield type will cover the majority of scenarios.</p></li>
+<p>If it is possible to relegate this to a constructor argument (I'm not sure how exactly) I would welcome it, but this argument currently promotes use of the container in heavily-constrained memory environments, and in high-performance small-N collections. Unfortunately it also means <code>operator =</code> and some other functions won't work between colonies of the same type but differing skipfield types. See more explanation in V. Technical Specifications. This is something I am flexible on, as a singular skipfield type will cover the majority of scenarios.</p></li>
 <li><h4>"Prove this is not an allocator"</h4>
-<p>I'm not really sure how to answer this, as I don't see the resemblance, unless you count maps, vectors etc as being allocators also. The only aspect of it which resembles what an allocator might do, is the memory re-use mechanism. However, this could not be used by any container which was not set up specifically to iterate with a skipfield (or which had a non-contiguous iterative mechanism), and so is reasonably specific. I don't claim that the way colony re-uses memory is anything unique, but it necessary to the structure as a whole, which will not function without it, just as it will not function without the jump-counting skipfield pattern or a block-based memory allocation pattern. Each of these is in service of colony's core goals: fast insertion and erasure, reasonable iteration speed and a lack of invalidation of pointers to non-erased elements upon insertion and erasure.</p>
+<p>I'm not really sure how to answer this, as I don't see the resemblance, unless you count maps, vectors etc as being allocators also. The only aspect of it which resembles what an allocator might do, is the memory re-use mechanism. However, this could not be used by any container which was not set up specifically to iterate with a skipfield (or which had a non-contiguous iterative mechanism), and so is reasonably specific. I don't claim that the way colony re-uses memory is anything unique - slot_map also performs this operation - but it <i>is necessary to the structure as a whole</i>, and will not function without it, just as it will not function without the jump-counting skipfield pattern or a block-based memory allocation pattern. Each of these is in service of colony's core goals: fast insertion and erasure, reasonable iteration speed and a lack of invalidation of pointers to non-erased elements upon insertion and erasure.</p>
 </li>
 </ol>
 
 
 
-<h3><a id="revisions"></a>Appendix E - Paper revision history</h3>
+<h3><a id="questions"></a>Appendix E - Open Questions from the author</h3>
+<ol>
+<li>Should "shrink_to_fit()" follow the semantics of vector or deque? Deque shrink_to_fit() is geared more towards freeing unused memory blocks, not invalidating existing pointers-to-elements, whereas vector shrink_to_fit() consolidates all elements into a memory block which exactly fits size(). If we follow the semantics of vector, a secondary "free_unused_memory()" function will be necessary. If we follow deque semantics, we lose optimization strategies for consolidating the colony (see code for shrink_to_fit() in current implementation). Currently this proposal uses deque semantics.</li>
+<li>Should reserve() be implemented at all? Since there is no reallocation upon instantiation of a new memory block, insert is not a costly operation when size == capacity. The main advantage I can see for retaining it is for high-performance/game programming, where allocation operations can be moved to non-timing-critical code.</li>
+<li>Name? I can't come up with a better one. I am more or less resigned to the fact that the eventual name will be 'bag', but I just want to go on record as saying: 'That's terrible. You should not do that.' for the reasons stated above.</li>
+</ol>
+
+
+<h3><a id="revisions"></a>Appendix F - Paper revision history</h3>
 <ul>
 <li>R4: Addition of revision history and review feedback appendices. General rewording. Update of benchmarks to v4 of colony, using max 1000000 N for most benchmarks, and using GCC 7.1 as compiler on a Haswell-core machine. Previous benchmarks also still available at external links. Expansion of initial metaphorical explanation. Cutting of some dead wood. Addition of some more dead wood. Reversion to HTML, benchmarks moved to external URL, based on feedback. Change of font to Times New Roman based on looking at what other papers were using, though I did briefly consider Comic Sans. Change to insert specifications.</li>
 <li>R3: Jonathan Wakely's extensive technical critique has been actioned on, in both documentation and the reference implementation. "Be clearer about what operations this supports, early in the paper." - done (V. Technical Specifications). "Be clear about the O() time of each operation, early in the paper." - done (for main operations V. Technical Specifications). Responses to some other feedbacks included in the foreword.</li>
