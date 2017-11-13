@@ -209,9 +209,9 @@ public:
 	void swap(inplace_function& other)
 	{
 		BufferType tempData;
-		this->move(m_Data, tempData);
-		other.move(other.m_Data, m_Data);
-		this->move(tempData, other.m_Data);
+		this->relocate(m_Data, tempData);
+		other.relocate(other.m_Data, m_Data);
+		this->relocate(tempData, other.m_Data);
 		std::swap(m_InvokeFctPtr, other.m_InvokeFctPtr);
 		std::swap(m_ManagerFctPtr, other.m_ManagerFctPtr);
 	}
@@ -239,12 +239,14 @@ private:
 		m_ManagerFctPtr = other.m_ManagerFctPtr;
 	}
 
-	void move(BufferType& from, BufferType& to)
+	void relocate(BufferType& from, BufferType& to)
 	{
-		if (m_ManagerFctPtr)
-			m_ManagerFctPtr(&from, &to, Operation::Move);
-		else
+		if (m_ManagerFctPtr) {
+			m_ManagerFctPtr(&to, &from, Operation::Move);
+			m_ManagerFctPtr(&from, nullptr, Operation::Destroy);
+		} else {
 			to = from;
+		}
 	}
 
 	template<size_t OtherCapacity, size_t OtherAlignment>
