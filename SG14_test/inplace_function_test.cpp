@@ -111,11 +111,9 @@ void FunctorDestruction()
 {
     AnotherFunctor::mDestructorCalls = 0;
     AnotherFunctor::mConstructorCalls = 0;
-
     {
         AnotherFunctor ftor;
         stdext::inplace_function<int(int), 4> fun(ftor);
-
 
         int r1 = fun(1);
         int r2 = fun(7);
@@ -123,7 +121,18 @@ void FunctorDestruction()
         EXPECT_EQ(1, r1);
         EXPECT_EQ(8, r2);
     }
+    EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 
+    AnotherFunctor::mDestructorCalls = 0;
+    AnotherFunctor::mConstructorCalls = 0;
+    {
+        AnotherFunctor ftor;
+        stdext::inplace_function<int(int), 4> fun(ftor);
+        stdext::inplace_function<int(int), 4> fun2(fun);  // copy-ctor
+        stdext::inplace_function<int(int), 4> fun3(std::move(fun));  // move-ctor
+        fun3 = fun2;  // copy-asgn
+        fun3 = std::move(fun2);  // move-asgn
+    }
     EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 }
 
