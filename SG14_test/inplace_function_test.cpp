@@ -136,6 +136,31 @@ void FunctorDestruction()
     EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 }
 
+void Swapping()
+{
+    AnotherFunctor::mDestructorCalls = 0;
+    AnotherFunctor::mConstructorCalls = 0;
+    {
+        AnotherFunctor ftor;
+        auto lambda = [](int x){ return x + 10; };
+        stdext::inplace_function<int(int), 4> fun(ftor);
+        stdext::inplace_function<int(int), 4> fun2(lambda);
+
+        fun.swap(fun2);  // swap...
+        fun2.swap(fun);  // ...and swap back
+
+        int r1 = fun(1);
+        int r2 = fun(7);
+        EXPECT_EQ(1, r1);
+        EXPECT_EQ(8, r2);
+
+        int r3 = fun2(1);
+        int r4 = fun2(7);
+        EXPECT_EQ(11, r3);
+        EXPECT_EQ(17, r4);
+    }
+    EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
+}
 
 void Copying()
 {
@@ -239,6 +264,7 @@ void sg14_test::inplace_function_test()
     FunctionPointer();
     Lambda();
     Bind();
+    Swapping();
     Copying();
     ContainingStdFuntion();
     SimilarTypeCopy();
