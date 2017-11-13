@@ -48,7 +48,10 @@ double GlobalFunction(const std::string& s, int i)
 
 void FunctionPointer()
 {
-    stdext::inplace_function<double(const std::string&, int), 3> fun(&GlobalFunction);
+    stdext::inplace_function<
+      double(const std::string&, int),
+      sizeof(&GlobalFunction)
+    > fun(&GlobalFunction);
 
     EXPECT_TRUE(bool(fun));
 
@@ -145,11 +148,18 @@ void Copying()
     EXPECT_TRUE(bool(fun1));
     EXPECT_TRUE(bool(fun2));
 
+    stdext::inplace_function<int(), 16> fun3{fun1};
+    EXPECT_EQ(4, sptr.use_count());
+    EXPECT_TRUE(bool(fun1));
+    EXPECT_TRUE(bool(fun3));
+
     // this should call destructor on existing functor
     fun1 = nullptr;
+    fun3 = nullptr;
     EXPECT_EQ(2, sptr.use_count());
     EXPECT_FALSE(bool(fun1));
     EXPECT_TRUE(bool(fun2));
+    EXPECT_FALSE(bool(fun3));
 }
 
 void ContainingStdFuntion()
@@ -178,7 +188,10 @@ void SimilarTypeCopy()
     EXPECT_EQ(1, sptr.use_count());
 
     stdext::inplace_function<int(), 16> fun1 = [sptr]() { return *sptr; };
-    stdext::inplace_function<int(), 17> fun2(fun1); // fun1 is bigger than 17, but we should be smart about it
+
+    // fun1 is smaller than 17, but we should be smart about it
+    stdext::inplace_function<int(), 17> fun2(fun1);
+
     stdext::inplace_function<int(), 18> fun3;
 
     EXPECT_EQ(3, sptr.use_count());
@@ -195,7 +208,7 @@ void SimilarTypeCopy()
     EXPECT_EQ(1, sptr.use_count());
 
     stdext::inplace_function<int(), 17> fun4;
-    fun4 = fun1; // fun1 is bigger than 17, but we should be smart about it
+    fun4 = fun1; // fun1 is smaller than 17, but we should be smart about it
 }
 
 void AssignmentDifferentFunctor()
@@ -286,12 +299,10 @@ void sg14_test::inplace_function_test()
 
     func = nullptr;
     func40 = func;
-#if 0  // TODO: this is a bug (see https://github.com/WG21-SG14/SG14/issues/113)
     assert(!func40);
     assert(!bool(func40));
     assert(func40 == nullptr);
     assert(!(func40 != nullptr));
-#endif
     expected = 0; try { func40(42); } catch (std::bad_function_call&) { expected = 1; } assert(expected == 1);
 }
 
