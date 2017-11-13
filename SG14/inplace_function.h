@@ -69,40 +69,29 @@ template<typename R, typename... Args> struct vtable
   const destructor_ptr_t destructor_ptr;
 
   explicit constexpr vtable() noexcept :
-    invoke_ptr{ static_cast<invoke_ptr_t>(
-      [](storage_ptr_t, Args&&...) -> R
+    invoke_ptr{ [](storage_ptr_t, Args&&...) -> R
       { throw std::bad_function_call(); }
-    )},
-    copy_ptr{ static_cast<copy_ptr_t>(
-      [](storage_ptr_t, storage_ptr_t) noexcept -> void {}
-    )},
-    move_ptr{ static_cast<copy_ptr_t>(
-      [](storage_ptr_t, storage_ptr_t) noexcept -> void {}
-    )},
-    destructor_ptr{static_cast<destructor_ptr_t>(
-      [](storage_ptr_t) noexcept -> void {}
-    )}
+    },
+    copy_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
+    move_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
+    destructor_ptr{ [](storage_ptr_t) noexcept -> void {} }
   {}
 
   template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
-    invoke_ptr{ static_cast<invoke_ptr_t>(
-      [](storage_ptr_t storage_ptr, Args&&... args) -> R
+    invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
 			{ return (*static_cast<C*>(storage_ptr))(
         std::forward<Args>(args)...
       ); }
-		)},
-		copy_ptr{ static_cast<copy_ptr_t>(
-      [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
+		},
+		copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
 		  { new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
-    )},
-    move_ptr{ static_cast<copy_ptr_t>(
-      [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
+    },
+    move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
 		  { new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
-    )},
-		destructor_ptr{ static_cast<destructor_ptr_t>(
-			[](storage_ptr_t storage_ptr) noexcept -> void
+    },
+		destructor_ptr{ [](storage_ptr_t storage_ptr) noexcept -> void
 			{ static_cast<C*>(storage_ptr)->~C(); }
-		)}
+		}
   {}
 
   vtable(const vtable&) = delete;
