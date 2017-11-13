@@ -287,21 +287,24 @@ public:
 	}
 
   template<size_t Cap, size_t Align>
-  operator inplace_function<R(Args...), Cap, Align>() const
+  operator inplace_function<R(Args...), Cap, Align>() const&
   {
     static_assert(detail::is_valid_inplace_dst<
       Cap, Align, Capacity, Alignment
     >::value);
 
-    std::aligned_storage_t<Cap, Align> conv_storage;
-    vtable_ptr_->copy_ptr(
-      std::addressof(conv_storage),
-      std::addressof(storage_)
-    );
-    return {vtable_ptr_, std::move(conv_storage)};
+    return {vtable_ptr_, std::addressof(storage_)};
   }
 
-  // not sure a portable memcopy && conversion solution exists
+  template<size_t Cap, size_t Align>
+  operator inplace_function<R(Args...), Cap, Align>() &&
+  {
+    static_assert(detail::is_valid_inplace_dst<
+      Cap, Align, Capacity, Alignment
+    >::value);
+
+    return {std::addressof(vtable_ptr_), std::addressof(storage_)};
+  }
 
   void swap(inplace_function& other)
   {
@@ -327,9 +330,29 @@ private:
   vtable_ptr_t vtable_ptr_;
   mutable storage_t storage_;
 
-  inplace_function(vtable_ptr_t vtable_ptr, storage_t&& storage) noexcept :
-    vtable_ptr_{vtable_ptr}, storage_{storage}
-  {}
+  inplace_function(
+    vtable_ptr_t vtable_ptr,
+    typename vtable_t::storage_ptr_t storage_ptr
+  ) : vtable_ptr_{vtable_ptr}
+  {
+    vtable_ptr_->copy_ptr(
+      std::addressof(storage_),
+      storage_ptr
+    );
+  }
+
+  inplace_function(
+    vtable_ptr_t* vtable_ptr,
+    typename vtable_t::storage_ptr_t storage_ptr
+  ) : vtable_ptr_{*vtable_ptr}
+  {
+    vtable_ptr_->move_ptr(
+      std::addressof(storage_),
+      storage_ptr
+    );
+
+    *vtable_ptr = detail::empty_vtable_ptr<R, Args...>;
+  }
 };
 
 
