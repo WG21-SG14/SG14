@@ -49,9 +49,9 @@ double GlobalFunction(const std::string& s, int i)
 
 void FunctionPointer()
 {
-    // Compatible function pointers can be stored directly even with no "storage".
+    // Even compatible function pointers require an appropriate amount of "storage".
     using CompatibleFunctionType = std::remove_reference_t<decltype(GlobalFunction)>;
-    stdext::inplace_function<CompatibleFunctionType, 1> fun(&GlobalFunction);
+    stdext::inplace_function<CompatibleFunctionType, sizeof(CompatibleFunctionType*)> fun(&GlobalFunction);
 
     EXPECT_TRUE(bool(fun));
 
