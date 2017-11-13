@@ -79,10 +79,10 @@ template<typename R, typename... Args> struct vtable
 
   template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
     invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
-			{ return (*static_cast<C*>(storage_ptr))(
+      { return (*static_cast<C*>(storage_ptr))(
         std::forward<Args>(args)...
       ); }
-		},
+    },
 		copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
 		  { new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
     },
@@ -104,11 +104,7 @@ template<typename R, typename... Args> struct vtable
 };
 
 template<typename R, typename... Args>
-static const vtable<R, Args...> empty_vtable{};
-
-template<typename R, typename... Args>
-static const auto empty_vtable_ptr =
-std::addressof(empty_vtable<R, Args...>);
+inline constexpr vtable<R, Args...> empty_vtable{};
 
 template<size_t DstCap, size_t DstAlign, size_t SrcCap, size_t SrcAlign>
 struct is_valid_inplace_dst : std::true_type
@@ -150,7 +146,7 @@ public:
   template <typename, size_t, size_t>	friend class inplace_function;
 
   inplace_function() noexcept :
-    vtable_ptr_{detail::empty_vtable_ptr<R, Args...>}
+    vtable_ptr_{std::addressof(detail::empty_vtable<R, Args...>)}
   {}
 
   template<
@@ -186,7 +182,7 @@ public:
   }
 
   inplace_function(std::nullptr_t) noexcept :
-    vtable_ptr_{detail::empty_vtable_ptr<R, Args...>}
+    vtable_ptr_{std::addressof(detail::empty_vtable<R, Args...>)}
   {}
 
   inplace_function(const inplace_function& other) :
@@ -205,13 +201,13 @@ public:
       std::addressof(storage_),
       std::addressof(other.storage_)
     );
-    other.vtable_ptr_ = detail::empty_vtable_ptr<R, Args...>;
+    other.vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
   }
 
   inplace_function& operator= (std::nullptr_t) noexcept
   {
     vtable_ptr_->destructor_ptr(std::addressof(storage_));
-    vtable_ptr_ = detail::empty_vtable_ptr<R, Args...>;
+    vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
     return *this;
   }
 
@@ -242,7 +238,7 @@ public:
         std::addressof(other.storage_)
       );
 
-      other.vtable_ptr_ = detail::empty_vtable_ptr<R, Args...>;
+      other.vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
     }
     return *this;
   }
@@ -272,7 +268,7 @@ public:
 
   explicit constexpr operator bool() const noexcept
 	{
-	  return vtable_ptr_ != detail::empty_vtable_ptr<R, Args...>;
+	  return vtable_ptr_ != std::addressof(detail::empty_vtable<R, Args...>);
 	}
 
   template<size_t Cap, size_t Align>
@@ -340,7 +336,7 @@ private:
       storage_ptr
     );
 
-    *vtable_ptr = detail::empty_vtable_ptr<R, Args...>;
+    *vtable_ptr = std::addressof(detail::empty_vtable<R, Args...>);
   }
 };
 
