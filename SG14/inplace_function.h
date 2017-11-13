@@ -201,6 +201,8 @@ public:
       std::addressof(storage_),
       std::addressof(other.storage_)
     );
+
+    //vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
     other.vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
   }
 
@@ -238,6 +240,7 @@ public:
         std::addressof(other.storage_)
       );
 
+      //vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
       other.vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
     }
     return *this;
@@ -300,9 +303,9 @@ public:
       std::addressof(tmp),
       std::addressof(storage_)
     );
-    vtable_ptr_->move_ptr(
-      std::addressof(other.storage_),
-      std::addressof(storage_)
+    other.vtable_ptr_->move_ptr(
+      std::addressof(storage_),
+      std::addressof(other.storage_)
     );
     vtable_ptr_->move_ptr(
       std::addressof(other.storage_),
