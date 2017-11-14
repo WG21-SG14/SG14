@@ -201,9 +201,6 @@ public:
       std::addressof(storage_),
       std::addressof(other.storage_)
     );
-
-    //vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
-    other.vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
   }
 
   inplace_function& operator= (std::nullptr_t) noexcept
@@ -239,9 +236,6 @@ public:
         std::addressof(storage_),
         std::addressof(other.storage_)
       );
-
-      //vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
-      other.vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
     }
     return *this;
   }
