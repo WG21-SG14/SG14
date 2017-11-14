@@ -83,8 +83,8 @@ template<typename R, typename... Args> struct vtable
         std::forward<Args>(args)...
       ); }
     },
-		copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
-		  {
+    copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
+      {
         if constexpr (std::is_trivially_copy_constructible<C>::value)
           std::memcpy(dst_ptr, src_ptr, sizeof(C));
         else
@@ -92,20 +92,20 @@ template<typename R, typename... Args> struct vtable
       }
     },
     move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
-		  {
+      {
         if constexpr (std::is_trivially_move_constructible<C>::value)
           std::memcpy(dst_ptr, src_ptr, sizeof(C));
         else
           new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) };
       }
     },
-		destructor_ptr{ []([[maybe_unused]] storage_ptr_t storage_ptr)
+    destructor_ptr{ []([[maybe_unused]] storage_ptr_t storage_ptr)
       noexcept -> void
-			{
+      {
         if constexpr (!std::is_trivially_destructible<C>::value)
           static_cast<C*>(storage_ptr)->~C();
       }
-		}
+    }
   {}
 
   vtable(const vtable&) = delete;
@@ -272,14 +272,14 @@ public:
   }
 
   constexpr bool operator!= (std::nullptr_t) const noexcept
-	{
-		return operator bool();
-	}
+  {
+    return operator bool();
+  }
 
   explicit constexpr operator bool() const noexcept
-	{
-	  return vtable_ptr_ != std::addressof(detail::empty_vtable<R, Args...>);
-	}
+  {
+    return vtable_ptr_ != std::addressof(detail::empty_vtable<R, Args...>);
+  }
 
   template<size_t Cap, size_t Align>
   operator inplace_function<R(Args...), Cap, Align>() const&
