@@ -31,6 +31,7 @@
 #include <type_traits>
 #include <utility>
 #include <functional>
+#include <cstring>
 
 namespace stdext
 {
@@ -59,13 +60,12 @@ template<typename R, typename... Args> struct vtable
   using storage_ptr_t = void*;
 
   using invoke_ptr_t = R(*)(storage_ptr_t, Args&&...);
-  using copy_ptr_t = void(*)(storage_ptr_t, storage_ptr_t);
-	using move_ptr_t = void(*)(storage_ptr_t, storage_ptr_t);
+  using process_ptr_t = void(*)(storage_ptr_t, storage_ptr_t);
 	using destructor_ptr_t = void(*)(storage_ptr_t);
 
   const invoke_ptr_t invoke_ptr;
-  const copy_ptr_t copy_ptr;
-  const move_ptr_t move_ptr;
+  const process_ptr_t copy_ptr;
+  const process_ptr_t move_ptr;
   const destructor_ptr_t destructor_ptr;
 
   explicit constexpr vtable() noexcept :
@@ -84,13 +84,27 @@ template<typename R, typename... Args> struct vtable
       ); }
     },
 		copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
-		  { new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
+		  {
+        if constexpr (std::is_trivially_copy_constructible<C>::value)
+          std::memcpy(dst_ptr, src_ptr, sizeof(C));
+        else
+          new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) };
+      }
     },
     move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
-		  { new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
+		  {
+        if constexpr (std::is_trivially_move_constructible<C>::value)
+          std::memcpy(dst_ptr, src_ptr, sizeof(C));
+        else
+          new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) };
+      }
     },
-		destructor_ptr{ [](storage_ptr_t storage_ptr) noexcept -> void
-			{ static_cast<C*>(storage_ptr)->~C(); }
+		destructor_ptr{ []([[maybe_unused]] storage_ptr_t storage_ptr)
+      noexcept -> void
+			{
+        if constexpr (!std::is_trivially_destructible<C>::value)
+          static_cast<C*>(storage_ptr)->~C();
+      }
 		}
   {}
 
@@ -159,10 +173,9 @@ public:
   >
   inplace_function(T&& closure)
   {
-    // C++17
-    //static_assert(std::is_invocable_r<R, C, Args...>::value,
-    //  "Function closure has to be invocable"
-    //);
+    static_assert(std::is_invocable_r<R, C, Args...>::value,
+      "Function closure has to be invocable"
+    );
 
     static_assert(std::is_copy_constructible<C>::value,
       "Constructing function with move only type is invalid"
@@ -297,14 +310,20 @@ public:
       std::addressof(tmp),
       std::addressof(storage_)
     );
+    vtable_ptr_->destructor_ptr(std::addressof(storage_));
+
     other.vtable_ptr_->move_ptr(
       std::addressof(storage_),
       std::addressof(other.storage_)
     );
+    other.vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
+
     vtable_ptr_->move_ptr(
       std::addressof(other.storage_),
       std::addressof(tmp)
     );
+    vtable_ptr_->destructor_ptr(std::addressof(tmp));
+
     std::swap(vtable_ptr_, other.vtable_ptr_);
   }
 
@@ -336,6 +355,5 @@ private:
     *vtable_ptr = std::addressof(detail::empty_vtable<R, Args...>);
   }
 };
-
 
 } // namespace stdext
