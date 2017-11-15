@@ -29,340 +29,331 @@
 #pragma once
 
 #include <type_traits>
+#include <utility>
 #include <functional>
+#include <cstring>
 
 namespace stdext
 {
 
-constexpr size_t InplaceFunctionDefaultCapacity = 32;
-constexpr size_t InplaceFunctionDefaultAlignment = 16;
-
-enum class inplace_function_operation
+namespace detail
 {
-	Destroy,
-	Copy,
-	Move
+
+static constexpr size_t InplaceFunctionDefaultCapacity = 32;
+
+using default_storage_t = std::aligned_storage_t<
+  InplaceFunctionDefaultCapacity
+>;
+
+static constexpr size_t InplaceFunctionDefaultAlignment = std::alignment_of<
+  default_storage_t
+>::value;
+
+
+template<typename T> struct wrapper
+{
+  using type = T;
 };
 
-template <typename SignatureT, size_t Capacity = InplaceFunctionDefaultCapacity, size_t Alignment = InplaceFunctionDefaultAlignment>
-class alignas(Alignment) inplace_function;
+template<typename R, typename... Args> struct vtable
+{
+  using storage_ptr_t = void*;
 
-template <typename RetT, typename... ArgsT, size_t Capacity, size_t Alignment>
-class alignas(Alignment) inplace_function<RetT(ArgsT...), Capacity, Alignment>
+  using invoke_ptr_t = R(*)(storage_ptr_t, Args&&...);
+  using process_ptr_t = void(*)(storage_ptr_t, storage_ptr_t);
+	using destructor_ptr_t = void(*)(storage_ptr_t);
+
+  const invoke_ptr_t invoke_ptr;
+  const process_ptr_t copy_ptr;
+  const process_ptr_t move_ptr;
+  const destructor_ptr_t destructor_ptr;
+
+  explicit constexpr vtable() noexcept :
+    invoke_ptr{ [](storage_ptr_t, Args&&...) -> R
+      { throw std::bad_function_call(); }
+    },
+    copy_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
+    move_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
+    destructor_ptr{ [](storage_ptr_t) noexcept -> void {} }
+  {}
+
+  template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
+    invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
+      { return (*static_cast<C*>(storage_ptr))(
+        std::forward<Args>(args)...
+      ); }
+    },
+    copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
+      {
+        if constexpr (std::is_trivially_copy_constructible<C>::value)
+          std::memcpy(dst_ptr, src_ptr, sizeof(C));
+        else
+          new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) };
+      }
+    },
+    move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
+      {
+        if constexpr (std::is_trivially_move_constructible<C>::value)
+          std::memcpy(dst_ptr, src_ptr, sizeof(C));
+        else
+          new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) };
+      }
+    },
+    destructor_ptr{ []([[maybe_unused]] storage_ptr_t storage_ptr)
+      noexcept -> void
+      {
+        if constexpr (!std::is_trivially_destructible<C>::value)
+          static_cast<C*>(storage_ptr)->~C();
+      }
+    }
+  {}
+
+  vtable(const vtable&) = delete;
+  vtable(vtable&&) = delete;
+
+  vtable& operator= (const vtable&) = delete;
+  vtable& operator= (vtable&&) = delete;
+
+  ~vtable() = default;
+};
+
+template<typename R, typename... Args>
+inline constexpr vtable<R, Args...> empty_vtable{};
+
+template<size_t DstCap, size_t DstAlign, size_t SrcCap, size_t SrcAlign>
+struct is_valid_inplace_dst : std::true_type
+{
+  static_assert(DstCap >= SrcCap,
+    "Can't squeeze larger inplace_function into a smaller one"
+  );
+
+  static_assert(DstAlign % SrcAlign == 0,
+    "Incompatible inplace_function alignments"
+  );
+};
+
+} // namespace detail
+
+template<
+  typename,
+  size_t Capacity = detail::InplaceFunctionDefaultCapacity,
+  size_t Alignment = detail::InplaceFunctionDefaultAlignment
+>
+class inplace_function; // unspecified
+
+template<
+  typename R,
+  typename... Args,
+  size_t Capacity,
+  size_t Alignment
+>
+class inplace_function<R(Args...), Capacity, Alignment>
 {
 public:
-	template <typename SignatureT2, size_t Capacity2, size_t Alignment2>
-	friend class inplace_function;
-	
-	// TODO static_assert for misalignment
-	// TODO create free operator overloads, to handle switched arguments
+  using capacity = std::integral_constant<size_t, Capacity>;
+  using alignment = std::integral_constant<size_t, Alignment>;
 
-        // Creates and empty inplace_function
-	constexpr inplace_function() noexcept : m_InvokeFctPtr(&DefaultFunction), m_ManagerFctPtr(nullptr)
-	{
-	}
+  using storage_t = std::aligned_storage_t<Capacity, Alignment>;
+  using vtable_t = detail::vtable<R, Args...>;
+  using vtable_ptr_t = const vtable_t*;
 
-	// Destroys the inplace_function. If the stored callable is valid, it is destroyed also
-	~inplace_function()
-	{
-		this->clear();
-	}
+  template <typename, size_t, size_t>	friend class inplace_function;
 
-	// Creates an implace function, copying the target of other within the internal buffer
-	// If the callable is larger than the internal buffer, a compile-time error is issued
-	// May throw any exception encountered by the constructor when copying the target object
-	template<typename CallableT>
-	inplace_function(const CallableT& c)
-	{
-		this->set(c);
-	}
+  inplace_function() noexcept :
+    vtable_ptr_{std::addressof(detail::empty_vtable<R, Args...>)}
+  {}
 
-	// Moves the target of an implace function, storing the callable within the internal buffer
-	// If the callable is larger than the internal buffer, a compile-time error is issued
-	// May throw any exception encountered by the constructor when moving the target object
-	template<typename CallableT, class = typename std::enable_if<!std::is_lvalue_reference<CallableT>::value>::type>
-	inplace_function(CallableT&& c)
-	{
-		this->set(std::move(c));
-	}
+  template<
+    typename T,
+    typename C = std::decay_t<T>,
+    typename = std::enable_if_t<
+      !(std::is_same<C, inplace_function>::value
+      || std::is_convertible<C, inplace_function>::value)
+    >
+  >
+  inplace_function(T&& closure)
+  {
+    static_assert(std::is_invocable_r<R, C, Args...>::value,
+      "Function closure has to be invocable"
+    );
 
-	// Copy construct an implace_function, storing a copy of other’s target internally
-	// May throw any exception encountered by the constructor when copying the target object
-	inplace_function(const inplace_function& other)
-	{
-		this->copy(other);
-	}
+    static_assert(std::is_copy_constructible<C>::value,
+      "Constructing function with move only type is invalid"
+    );
 
-	// Move construct an implace_function, moving the other’s target to this inplace_function’s internal buffer
-	// May throw any exception encountered by the constructor when moving the target object
-	inplace_function(inplace_function&& other)
-	{
-		this->move(std::move(other));
-	}
+    static_assert(sizeof(C) <= Capacity, "Inplace function closure too large");
 
-	// Allows for copying from inplace_function object of the same type, but with a smaller buffer
-	// May throw any exception encountered by the constructor when copying the target object
-	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacity, size_t OtherAlignment>
-	inplace_function(const inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>& other)
-	{
-		this->copy(other);
-	}
+    static_assert(
+      Alignment % std::alignment_of<C>::value == 0,
+      "Incompatible function closure alignment"
+    );
 
-	// Allows for moving an inplace_function object of the same type, but with a smaller buffer
-	// May throw any exception encountered by the constructor when moving the target object
-	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacity, size_t OtherAlignment>
-	inplace_function(inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>&& other)
-	{
-		this->move(other);
-	}
+    static const vtable_t vt{detail::wrapper<C>{}};
+    vtable_ptr_ = std::addressof(vt);
 
-	// Assigns a copy of other’s target
-	// May throw any exception encountered by the assignment operator when copying the target object
-	inplace_function& operator=(const inplace_function& other)
-	{
-		this->clear();
-		this->copy(other);
-		return *this;
-	}
+    new (std::addressof(storage_)) C{std::forward<C>(closure)};
+  }
 
-	// Assigns the other’s target by way of moving
-	// May throw any exception encountered by the assignment operator when moving the target object
-	inplace_function& operator=(inplace_function&& other)
-	{
-		this->clear();
-		this->move(std::move(other));
-		return *this;
-	}
+  inplace_function(std::nullptr_t) noexcept :
+    vtable_ptr_{std::addressof(detail::empty_vtable<R, Args...>)}
+  {}
 
-	// Allows for copy assignment of an inplace_function object of the same type, but with a smaller buffer
-	// If the copy constructor of target object throws, this is left in uninitialized state
-	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacity, size_t OtherAlignment>
-	inplace_function& operator=(const inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>& other)
-	{
-		this->clear();
-		this->copy(other);
-		return *this;
-	}
+  inplace_function(const inplace_function& other) :
+    vtable_ptr_{other.vtable_ptr_}
+  {
+    vtable_ptr_->copy_ptr(
+      std::addressof(storage_),
+      std::addressof(other.storage_)
+    );
+  }
 
-	// Allows for move assignment of an inplace_function object of the same type, but with a smaller buffer
-	// If the move constructor of target object throws, this is left in uninitialized state
-	// If OtherCapacity is greater than Capacity, a compile-time error is issued
-	template<size_t OtherCapacity, size_t OtherAlignment>
-	inplace_function& operator=(inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>&& other)
-	{
-		this->clear();
-		this->move(std::move(other));
-		return *this;
-	}
+  inplace_function(inplace_function&& other) :
+    vtable_ptr_{other.vtable_ptr_}
+  {
+    vtable_ptr_->move_ptr(
+      std::addressof(storage_),
+      std::addressof(other.storage_)
+    );
+  }
 
-	// Assign a new target
-	// If the copy constructor of target object throws, this is left in uninitialized state
-	template<typename CallableT>
-	inplace_function& operator=(const CallableT& target)
-	{
-		this->clear();
-		this->set(target);
-		return *this;
-	}
+  inplace_function& operator= (std::nullptr_t) noexcept
+  {
+    vtable_ptr_->destructor_ptr(std::addressof(storage_));
+    vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
+    return *this;
+  }
 
-	// Assign a new target by way of moving
-	// If the move constructor of target object throws, this is left in uninitialized state
-	template<typename CallableT, class = typename std::enable_if<!std::is_lvalue_reference<CallableT>::value>::type>
-	inplace_function& operator=(CallableT&& target)
-	{
-		this->clear();
-		this->set(std::move(target));
-		return *this;
-	}
+  inplace_function& operator= (const inplace_function& other)
+  {
+    if(this != std::addressof(other))
+    {
+      vtable_ptr_->destructor_ptr(std::addressof(storage_));
 
-	// Compares this inplace function with a null pointer
-	// Empty functions compare equal, non-empty functions compare unequal
-	constexpr bool operator ==(std::nullptr_t) noexcept
-	{
-		return !operator bool();
-	}
+      vtable_ptr_ = other.vtable_ptr_;
+      vtable_ptr_->copy_ptr(
+        std::addressof(storage_),
+        std::addressof(other.storage_)
+      );
+    }
+    return *this;
+  }
 
-	// Compares this inplace function with a null pointer
-	// Empty functions compare equal, non-empty functions compare unequal
-	constexpr bool operator !=(std::nullptr_t) noexcept
-	{
-		return operator bool();
-	}
+  inplace_function& operator= (inplace_function&& other)
+  {
+    if(this != std::addressof(other))
+    {
+      vtable_ptr_->destructor_ptr(std::addressof(storage_));
 
-	// Converts to 'true' if assigned
-	explicit constexpr operator bool() const noexcept
-	{
-		return m_InvokeFctPtr != &DefaultFunction;
-	}
+      vtable_ptr_ = other.vtable_ptr_;
+      vtable_ptr_->move_ptr(
+        std::addressof(storage_),
+        std::addressof(other.storage_)
+      );
+    }
+    return *this;
+  }
 
-	// Invokes the target
-	// Throws std::bad_function_call if not assigned
-	RetT operator () (ArgsT... args) const
-	{
-		return m_InvokeFctPtr(std::forward<ArgsT>(args)..., data());
-	}
+  ~inplace_function()
+  {
+    vtable_ptr_->destructor_ptr(std::addressof(storage_));
+  }
 
-	// Swaps two targets
-	void swap(inplace_function& other)
-	{
-		BufferType tempData;
-		this->move(m_Data, tempData);
-		other.move(other.m_Data, m_Data);
-		this->move(tempData, other.m_Data);
-		std::swap(m_InvokeFctPtr, other.m_InvokeFctPtr);
-		std::swap(m_ManagerFctPtr, other.m_ManagerFctPtr);
-	}
+  R operator() (Args... args) const
+  {
+    return vtable_ptr_->invoke_ptr(
+      std::addressof(storage_),
+      std::forward<Args>(args)...
+    );
+  }
+
+  constexpr bool operator== (std::nullptr_t) const noexcept
+  {
+    return !operator bool();
+  }
+
+  constexpr bool operator!= (std::nullptr_t) const noexcept
+  {
+    return operator bool();
+  }
+
+  explicit constexpr operator bool() const noexcept
+  {
+    return vtable_ptr_ != std::addressof(detail::empty_vtable<R, Args...>);
+  }
+
+  template<size_t Cap, size_t Align>
+  operator inplace_function<R(Args...), Cap, Align>() const&
+  {
+    static_assert(detail::is_valid_inplace_dst<
+      Cap, Align, Capacity, Alignment
+    >::value);
+
+    return {vtable_ptr_, std::addressof(storage_)};
+  }
+
+  template<size_t Cap, size_t Align>
+  operator inplace_function<R(Args...), Cap, Align>() &&
+  {
+    static_assert(detail::is_valid_inplace_dst<
+      Cap, Align, Capacity, Alignment
+    >::value);
+
+    return {std::addressof(vtable_ptr_), std::addressof(storage_)};
+  }
+
+  void swap(inplace_function& other)
+  {
+    if (this == std::addressof(other)) return;
+
+    storage_t tmp;
+    vtable_ptr_->move_ptr(
+      std::addressof(tmp),
+      std::addressof(storage_)
+    );
+    vtable_ptr_->destructor_ptr(std::addressof(storage_));
+
+    other.vtable_ptr_->move_ptr(
+      std::addressof(storage_),
+      std::addressof(other.storage_)
+    );
+    other.vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
+
+    vtable_ptr_->move_ptr(
+      std::addressof(other.storage_),
+      std::addressof(tmp)
+    );
+    vtable_ptr_->destructor_ptr(std::addressof(tmp));
+
+    std::swap(vtable_ptr_, other.vtable_ptr_);
+  }
 
 private:
-	using BufferType = typename std::aligned_storage<Capacity, Alignment>::type;
-	void clear() noexcept
-	{
-		m_InvokeFctPtr = &DefaultFunction;
-		if (m_ManagerFctPtr)
-			m_ManagerFctPtr(data(), nullptr, Operation::Destroy);
-		m_ManagerFctPtr = nullptr;
-	}
+  vtable_ptr_t vtable_ptr_;
+  mutable storage_t storage_;
 
-	template<size_t OtherCapacity, size_t OtherAlignment>
-	void copy(const inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>& other)
-	{
-		static_assert(OtherCapacity <= Capacity, "Can't squeeze larger inplace_function into a smaller one");
-		static_assert(Alignment % OtherAlignment == 0, "Incompatible alignments");
+  inplace_function(
+    vtable_ptr_t vtable_ptr,
+    typename vtable_t::storage_ptr_t storage_ptr
+  ) : vtable_ptr_{vtable_ptr}
+  {
+    vtable_ptr_->copy_ptr(
+      std::addressof(storage_),
+      storage_ptr
+    );
+  }
 
-		if (other.m_ManagerFctPtr)
-			other.m_ManagerFctPtr(data(), other.data(), Operation::Copy);
+  inplace_function(
+    vtable_ptr_t* vtable_ptr,
+    typename vtable_t::storage_ptr_t storage_ptr
+  ) : vtable_ptr_{*vtable_ptr}
+  {
+    vtable_ptr_->move_ptr(
+      std::addressof(storage_),
+      storage_ptr
+    );
 
-		m_InvokeFctPtr = other.m_InvokeFctPtr;
-		m_ManagerFctPtr = other.m_ManagerFctPtr;
-	}
-
-	void move(BufferType& from, BufferType& to)
-	{
-		if (m_ManagerFctPtr)
-			m_ManagerFctPtr(&from, &to, Operation::Move);
-		else
-			to = from;
-	}
-
-	template<size_t OtherCapacity, size_t OtherAlignment>
-	void move(inplace_function<RetT(ArgsT...), OtherCapacity, OtherAlignment>&& other)
-	{
-		static_assert(OtherCapacity <= Capacity, "Can't squeeze larger inplace_function into a smaller one");
-		static_assert(Alignment % OtherAlignment == 0, "Incompatible alignments");
-
-		if (other.m_ManagerFctPtr)
-			other.m_ManagerFctPtr(data(), other.data(), Operation::Move);
-
-		m_InvokeFctPtr = other.m_InvokeFctPtr;
-		m_ManagerFctPtr = other.m_ManagerFctPtr;
-	}
-
-	constexpr void* data() noexcept { return &m_Data; }
-	constexpr const void* data() const noexcept { return &m_Data; }
-
-	using CompatibleFunctionPointer = RetT(*)(ArgsT...);
-	using InvokeFctPtrType = RetT(*)(ArgsT..., const void* thisPtr);
-	using Operation = inplace_function_operation;
-	using ManagerFctPtrType = void(*) (void* thisPtr, const void* fromPtr, Operation);
-
-	InvokeFctPtrType m_InvokeFctPtr;
-	ManagerFctPtrType m_ManagerFctPtr;
-
-	BufferType m_Data;
-
-	static RetT DefaultFunction(ArgsT..., const void*)
-	{
-		throw std::bad_function_call();
-	}
-
-	void set(std::nullptr_t)
-	{
-		m_ManagerFctPtr = nullptr;
-		m_InvokeFctPtr = &DefaultFunction;
-	}
-
-	// For function pointers
-	void set(CompatibleFunctionPointer ptr)
-	{
-		// this is dodgy, and - according to standard - undefined behaviour. But it works
-		// see: http://stackoverflow.com/questions/559581/casting-a-function-pointer-to-another-type
-		m_ManagerFctPtr = nullptr;
-		m_InvokeFctPtr = reinterpret_cast<InvokeFctPtrType>(ptr);
-	}
-
-	// Set - for functors
-	// enable_if makes sure this is excluded for function references and pointers.
-	template<typename FunctorArgT>
-	typename std::enable_if<!std::is_pointer<FunctorArgT>::value && !std::is_function<FunctorArgT>::value>::type
-	set(const FunctorArgT& ftor)
-	{
-		using FunctorT = typename std::remove_reference<FunctorArgT>::type;
-		static_assert(sizeof(FunctorT) <= Capacity, "Functor too big to fit in the buffer");
-
-		// copy functor into the mem buffer
-		FunctorT* buffer = reinterpret_cast<FunctorT*>(&m_Data);
-		new (buffer) FunctorT(ftor);
-
-		// generate destructor, copy-constructor and move-constructor
-		m_ManagerFctPtr = &manage<FunctorT>;
-
-		// generate entry call
-		m_InvokeFctPtr = &invoke<FunctorT>;
-	}
-
-	// Set - for functors
-	// enable_if makes sure this is excluded for function references and pointers.
-	template<typename FunctorArgT>
-	typename std::enable_if<!std::is_pointer<FunctorArgT>::value && !std::is_function<FunctorArgT>::value>::type
-	set(FunctorArgT&& ftor)
-	{
-		using FunctorT = typename std::remove_reference<FunctorArgT>::type;
-		static_assert(sizeof(FunctorT) <= Capacity, "Functor too big to fit in the buffer");
-
-		// copy functor into the mem buffer
-		FunctorT* buffer = reinterpret_cast<FunctorT*>(&m_Data);
-		new (buffer) FunctorT(std::move(ftor));
-
-		// generate destructor, copy-constructor and move-constructor
-		m_ManagerFctPtr = &manage<FunctorT>;
-
-		// generate entry call
-		m_InvokeFctPtr = &invoke<FunctorT>;
-	}
-
-	template <typename FunctorT>
-	static RetT invoke(ArgsT... args, const void* dataPtr)
-	{
-		FunctorT* functor = (FunctorT*)const_cast<void*>(dataPtr);
-		return (*functor)(std::forward<ArgsT>(args)...);
-	}
-
-	template <typename FunctorT>
-	static void manage(void* dataPtr, const void* fromPtr, Operation op)
-	{
-		FunctorT* thisFunctor = reinterpret_cast<FunctorT*>(dataPtr);
-		switch (op)
-		{
-		case Operation::Destroy:
-			thisFunctor->~FunctorT();
-			break;
-		case Operation::Copy:
-			{
-				const FunctorT* source = (const FunctorT*)const_cast<void*>(fromPtr);
-				new (thisFunctor) FunctorT(*source);
-				break;
-			}
-		case Operation::Move:
-			{
-				FunctorT* source = (FunctorT*)fromPtr;
-				new (thisFunctor) FunctorT(std::move(*source));
-				break;
-			}
-		}
-	}
+    *vtable_ptr = std::addressof(detail::empty_vtable<R, Args...>);
+  }
 };
 
-}
+} // namespace stdext
