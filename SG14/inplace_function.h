@@ -31,7 +31,6 @@
 #include <type_traits>
 #include <utility>
 #include <functional>
-#include <cstring>
 
 namespace stdext
 {
@@ -78,26 +77,19 @@ template<typename R, typename... Args> struct vtable
   {}
 
   template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
-    invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
+    invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args)
+      noexcept(std::is_nothrow_invocable<C, Args...>::value) -> R
       { return (*static_cast<C*>(storage_ptr))(
         std::forward<Args>(args)...
       ); }
     },
-    copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
-      {
-        if constexpr (std::is_trivially_copy_constructible<C>::value)
-          std::memcpy(dst_ptr, src_ptr, sizeof(C));
-        else
-          new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) };
-      }
+    copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
+      noexcept(std::is_nothrow_copy_constructible<C>::value) -> void
+      { new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
     },
-    move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
-      {
-        if constexpr (std::is_trivially_move_constructible<C>::value)
-          std::memcpy(dst_ptr, src_ptr, sizeof(C));
-        else
-          new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) };
-      }
+    move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
+      noexcept(std::is_nothrow_move_constructible<C>::value) -> void
+      { new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
     },
     destructor_ptr{ []([[maybe_unused]] storage_ptr_t storage_ptr)
       noexcept -> void
@@ -191,7 +183,7 @@ public:
     static const vtable_t vt{detail::wrapper<C>{}};
     vtable_ptr_ = std::addressof(vt);
 
-    new (std::addressof(storage_)) C{std::forward<C>(closure)};
+    new (std::addressof(storage_)) C{std::forward<T>(closure)};
   }
 
   inplace_function(std::nullptr_t) noexcept :
@@ -288,7 +280,7 @@ public:
       Cap, Align, Capacity, Alignment
     >::value);
 
-    return {vtable_ptr_, std::addressof(storage_)};
+    return {vtable_ptr_, vtable_ptr_->copy_ptr, std::addressof(storage_)};
   }
 
   template<size_t Cap, size_t Align>
@@ -298,7 +290,7 @@ public:
       Cap, Align, Capacity, Alignment
     >::value);
 
-    return {std::addressof(vtable_ptr_), std::addressof(storage_)};
+    return {vtable_ptr_, vtable_ptr_->move_ptr, std::addressof(storage_)};
   }
 
   void swap(inplace_function& other)
@@ -333,26 +325,11 @@ private:
 
   inplace_function(
     vtable_ptr_t vtable_ptr,
+    typename vtable_t::process_ptr_t process_ptr,
     typename vtable_t::storage_ptr_t storage_ptr
   ) : vtable_ptr_{vtable_ptr}
   {
-    vtable_ptr_->copy_ptr(
-      std::addressof(storage_),
-      storage_ptr
-    );
-  }
-
-  inplace_function(
-    vtable_ptr_t* vtable_ptr,
-    typename vtable_t::storage_ptr_t storage_ptr
-  ) : vtable_ptr_{*vtable_ptr}
-  {
-    vtable_ptr_->move_ptr(
-      std::addressof(storage_),
-      storage_ptr
-    );
-
-    *vtable_ptr = std::addressof(detail::empty_vtable<R, Args...>);
+    process_ptr(std::addressof(storage_), storage_ptr);
   }
 };
 
