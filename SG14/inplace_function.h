@@ -78,7 +78,7 @@ template<typename R, typename... Args> struct vtable
 
   template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
     invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args)
-      noexcept(std::is_nothrow_invocable<C, Args...>::value) -> R
+      noexcept(noexcept(std::declval<C>()(args...))) -> R
       { return (*static_cast<C*>(storage_ptr))(
         std::forward<Args>(args)...
       ); }
@@ -91,12 +91,9 @@ template<typename R, typename... Args> struct vtable
       noexcept(std::is_nothrow_move_constructible<C>::value) -> void
       { new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
     },
-    destructor_ptr{ []([[maybe_unused]] storage_ptr_t storage_ptr)
+    destructor_ptr{ [](storage_ptr_t storage_ptr)
       noexcept -> void
-      {
-        if constexpr (!std::is_trivially_destructible<C>::value)
-          static_cast<C*>(storage_ptr)->~C();
-      }
+      { static_cast<C*>(storage_ptr)->~C(); }
     }
   {}
 
@@ -165,9 +162,10 @@ public:
   >
   inplace_function(T&& closure)
   {
-    static_assert(std::is_invocable_r<R, C, Args...>::value,
-      "Function closure has to be invocable"
-    );
+    // C++17
+    //static_assert(std::is_invocable_r<R, C, Args...>::value,
+    //  "Function closure has to be invocable"
+    //);
 
     static_assert(std::is_copy_constructible<C>::value,
       "Constructing function with move only type is invalid"
