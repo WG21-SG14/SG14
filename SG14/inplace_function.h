@@ -103,7 +103,10 @@ template<typename R, typename... Args> struct vtable
 };
 
 template<typename R, typename... Args>
-inline constexpr vtable<R, Args...> empty_vtable{};
+#if __cplusplus >= 201703L
+inline constexpr
+#endif
+vtable<R, Args...> empty_vtable{};
 
 template<size_t DstCap, size_t DstAlign, size_t SrcCap, size_t SrcAlign>
 struct is_valid_inplace_dst : std::true_type
@@ -272,7 +275,7 @@ public:
     {
         static_assert(detail::is_valid_inplace_dst<
             Cap, Align, Capacity, Alignment
-        >::value);
+        >::value, "conversion not allowed");
 
         return {vtable_ptr_, vtable_ptr_->copy_ptr, std::addressof(storage_)};
     }
@@ -282,7 +285,7 @@ public:
     {
         static_assert(detail::is_valid_inplace_dst<
             Cap, Align, Capacity, Alignment
-        >::value);
+        >::value, "conversion not allowed");
 
         return {vtable_ptr_, vtable_ptr_->move_ptr, std::addressof(storage_)};
     }
