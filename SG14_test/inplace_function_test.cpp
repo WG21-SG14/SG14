@@ -3,6 +3,7 @@
 #include <cassert>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 namespace {
 
@@ -48,7 +49,9 @@ double GlobalFunction(const std::string& s, int i)
 
 void FunctionPointer()
 {
-    stdext::inplace_function<double(const std::string&, int), 3> fun(&GlobalFunction);
+    // Compatible function pointers can be stored directly even with no "storage".
+    using CompatibleFunctionType = std::remove_reference_t<decltype(GlobalFunction)>;
+    stdext::inplace_function<CompatibleFunctionType, 1> fun(&GlobalFunction);
 
     EXPECT_TRUE(bool(fun));
 
