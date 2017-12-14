@@ -324,12 +324,10 @@ void sg14_test::inplace_function_test()
 
     func = nullptr;
     func40 = func;
-#if 0  // TODO: this is a bug (see https://github.com/WG21-SG14/SG14/issues/113)
     assert(!func40);
     assert(!bool(func40));
     assert(func40 == nullptr);
     assert(!(func40 != nullptr));
-#endif
     expected = 0; try { func40(42); } catch (std::bad_function_call&) { expected = 1; } assert(expected == 1);
 }
 
