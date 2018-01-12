@@ -36,15 +36,6 @@ namespace detail {
 
 static constexpr size_t InplaceFunctionDefaultCapacity = 32;
 
-using default_storage_t = std::aligned_storage_t<
-    InplaceFunctionDefaultCapacity
->;
-
-static constexpr size_t InplaceFunctionDefaultAlignment = std::alignment_of<
-    default_storage_t
->::value;
-
-
 template<typename T> struct wrapper
 {
     using type = T;
@@ -123,9 +114,9 @@ struct is_valid_inplace_dst : std::true_type
 } // namespace detail
 
 template<
-    typename,
+    typename Signature,
     size_t Capacity = detail::InplaceFunctionDefaultCapacity,
-    size_t Alignment = detail::InplaceFunctionDefaultAlignment
+    size_t Alignment = std::alignment_of<std::aligned_storage_t<Capacity>>::value
 >
 class inplace_function; // unspecified
 

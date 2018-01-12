@@ -283,6 +283,14 @@ void sg14_test::inplace_function_test()
     //static_assert(std::is_swappable<IPF&>::value, "");  // C++17
     static_assert(std::is_nothrow_destructible<IPF>::value, "");
 
+    constexpr int alignof_ptr = std::alignment_of<void*>::value;
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 1> >::value == std::max(1, alignof_ptr), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 2> >::value == std::max(2, alignof_ptr), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 4> >::value == std::max(4, alignof_ptr), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 8> >::value == std::max(8, alignof_ptr), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 16> >::value == std::max(16, alignof_ptr), "");
+    static_assert(sizeof( stdext::inplace_function<void(int), sizeof(void*)> ) == 2 * sizeof(void*), "");
+
     IPF func;
     assert(!func);
     assert(!bool(func));
