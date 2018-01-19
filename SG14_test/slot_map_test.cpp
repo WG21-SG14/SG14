@@ -22,7 +22,7 @@ struct key_11_5_t {  // C++17 only
     uint8_t generation : 5;
 };
 
-#if __cplusplus < 201701
+#if __cplusplus < 201703L
 template<int I, class K> auto get(const K& k) { return get(k, std::integral_constant<int, I>{}); }
 template<int I, class K> auto& get(K& k) { return get(k, std::integral_constant<int, I>{}); }
 
@@ -30,7 +30,7 @@ const uint16_t& get(const key_16_8_t& k, std::integral_constant<int, 0>) { retur
 const uint8_t& get(const key_16_8_t& k, std::integral_constant<int, 1>) { return k.generation; }
 uint16_t& get(key_16_8_t& k, std::integral_constant<int, 0>) { return k.index; }
 uint8_t& get(key_16_8_t& k, std::integral_constant<int, 1>) { return k.generation; }
-#endif
+#endif // __cplusplus < 201703L
 } // namespace TestKey
 
 namespace TestContainer {
@@ -352,7 +352,7 @@ static void TypedefTests()
         static_assert(std::is_same<typename SM::size_type, unsigned>::value, "");
         static_assert(std::is_same<typename SM::value_type, int>::value, "");
     }
-#if __cplusplus >= 201701
+#if __cplusplus >= 201703L
     if (true) {
         using SM = stdext::slot_map<double, TestKey::key_11_5_t>;
         static_assert(std::is_same<typename SM::key_type, TestKey::key_11_5_t>::value, "");
@@ -371,7 +371,7 @@ static void TypedefTests()
         static_assert(std::is_same<typename SM::size_type, std::vector<double>::size_type>::value, "");
         static_assert(std::is_same<typename SM::value_type, double>::value, "");
     }
-#endif // __cplusplus >= 201701
+#endif // __cplusplus >= 201703L
 }
 
 void sg14_test::slot_map_test()
@@ -394,7 +394,7 @@ void sg14_test::slot_map_test()
     EraseInLoopTest<slot_map_2>();
     EraseRangeTest<slot_map_2>();
 
-#if __cplusplus >= 201701
+#if __cplusplus >= 201703L
     // Test slot_map with a custom key type (C++17 destructuring).
     using slot_map_3 = stdext::slot_map<int, TestKey::key_11_5_t>;
     BasicTests<slot_map_3>(42, 37);
@@ -402,7 +402,7 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_3>([i=3]() mutable { return ++i; });
     EraseInLoopTest<slot_map_3>();
     EraseRangeTest<slot_map_3>();
-#endif // __cplusplus >= 201701
+#endif // __cplusplus >= 201703L
 
     // Test slot_map with a custom (but standard and random-access) container type.
     using slot_map_4 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::deque>;

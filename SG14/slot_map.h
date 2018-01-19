@@ -44,7 +44,7 @@ template<
 >
 class slot_map
 {
-#if __cplusplus >= 201700
+#if __cplusplus >= 201703L
     static constexpr auto get_index(const Key& k) { const auto& [idx, gen] = k; return idx; }
     static constexpr auto get_generation(const Key& k) { const auto& [idx, gen] = k; return gen; }
     template<class Integral> static constexpr void set_index(Key& k, Integral value) { auto& [idx, gen] = k; idx = value; }
