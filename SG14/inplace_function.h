@@ -152,20 +152,21 @@ public:
     >
     inplace_function(T&& closure)
     {
-        // C++17
-        //static_assert(std::is_invocable_r<R, C, Args...>::value,
-        //    "Function closure has to be invocable"
-        //);
-
+#if __cplusplus >= 201703L
+        static_assert(std::is_invocable_r<R, C, Args...>::value,
+            "inplace_function cannot be constructed from non-callable type"
+        );
+#endif
         static_assert(std::is_copy_constructible<C>::value,
-            "Constructing function with move only type is invalid"
+            "inplace_function cannot be constructed from non-copyable type"
         );
 
-        static_assert(sizeof(C) <= Capacity, "Inplace function closure too large");
+        static_assert(sizeof(C) <= Capacity,
+            "inplace_function cannot be constructed from object with this (large) size"
+        );
 
-        static_assert(
-            Alignment % std::alignment_of<C>::value == 0,
-            "Incompatible function closure alignment"
+        static_assert(Alignment % std::alignment_of<C>::value == 0,
+            "inplace_function cannot be constructed from object with this (large) alignment"
         );
 
         static const vtable_t vt{inplace_function_detail::wrapper<C>{}};

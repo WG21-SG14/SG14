@@ -280,7 +280,11 @@ void sg14_test::inplace_function_test()
     static_assert(std::is_move_constructible<IPF>::value, "");
     static_assert(std::is_copy_assignable<IPF>::value, "");
     static_assert(std::is_move_assignable<IPF>::value, "");
-    //static_assert(std::is_swappable<IPF&>::value, "");  // C++17
+#if __cplusplus >= 201703L
+    static_assert(std::is_swappable<IPF&>::value, "");
+    static_assert(std::is_invocable<const IPF&, int>::value, "");
+    static_assert(std::is_invocable_r<void, const IPF&, int>::value, "");
+#endif
     static_assert(std::is_nothrow_destructible<IPF>::value, "");
 
     constexpr int alignof_ptr = std::alignment_of<void*>::value;
@@ -319,8 +323,10 @@ void sg14_test::inplace_function_test()
     static_assert(std::is_assignable<IPF40&, IPF&&>::value, "");  // TODO: nothrow
     //static_assert(!std::is_assignable<IPF&, const IPF40&>::value, "");
     //static_assert(!std::is_assignable<IPF&, IPF40&&>::value, "");
-    // static_assert(!std::is_swappable_with<IPF40&, IPF&>::value, ""); // C++17
-    // static_assert(!std::is_swappable_with<IPF&, IPF40&>::value, ""); // C++17
+#if __cplusplus >= 201703L
+    static_assert(!std::is_swappable_with<IPF40&, IPF&>::value, "");
+    static_assert(!std::is_swappable_with<IPF&, IPF40&>::value, "");
+#endif
     static_assert(std::is_nothrow_destructible<IPF40>::value, "");
 
     IPF40 func40;
