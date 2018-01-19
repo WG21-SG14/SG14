@@ -1,5 +1,5 @@
 #include "SG14_test.h"
-#include "../SG14/inplace_function.h"
+#include "inplace_function.h"
 #include <cassert>
 #include <memory>
 #include <string>
@@ -260,6 +260,22 @@ void AssignmentDifferentFunctor()
     EXPECT_EQ(4, calls);
 }
 
+template<size_t Cap>
+constexpr size_t expected_alignment_for_capacity()
+{
+    constexpr size_t alignof_ptr = std::alignment_of<void*>::value;
+    constexpr size_t alignof_cap = std::alignment_of<std::aligned_storage_t<Cap>>::value;
+#define MIN(a,b) (a < b ? a : b)
+#define MAX(a,b) (a > b ? a : b)
+#if defined(__GLIBCXX__)  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
+    return MAX(MIN(Cap, alignof_cap), alignof_ptr);
+#else  // other STLs
+    return MAX(alignof_cap, alignof_ptr);
+#endif
+#undef MAX
+#undef MIN
+}
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -287,12 +303,13 @@ void sg14_test::inplace_function_test()
 #endif
     static_assert(std::is_nothrow_destructible<IPF>::value, "");
 
-    constexpr int alignof_ptr = std::alignment_of<void*>::value;
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 1> >::value == std::max(1, alignof_ptr), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 2> >::value == std::max(2, alignof_ptr), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 4> >::value == std::max(4, alignof_ptr), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 8> >::value == std::max(8, alignof_ptr), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 16> >::value == std::max(16, alignof_ptr), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 1> >::value == expected_alignment_for_capacity<1>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 2> >::value == expected_alignment_for_capacity<2>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 4> >::value == expected_alignment_for_capacity<4>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 8> >::value == expected_alignment_for_capacity<8>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 16> >::value == expected_alignment_for_capacity<16>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 32> >::value == expected_alignment_for_capacity<32>(), "");
+
     static_assert(sizeof( stdext::inplace_function<void(int), sizeof(void*)> ) == 2 * sizeof(void*), "");
 
     IPF func;

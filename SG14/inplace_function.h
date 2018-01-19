@@ -36,6 +36,35 @@ namespace inplace_function_detail {
 
 static constexpr size_t InplaceFunctionDefaultCapacity = 32;
 
+#if defined(__GLIBCXX__)  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
+template<size_t Cap>
+union aligned_storage_helper {
+    struct double1 { double a; };
+    struct double4 { double a[4]; };
+    template<class T> using maybe = std::conditional_t<(Cap >= sizeof(T)), T, char>;
+    char real_data[Cap];
+    maybe<int> a;
+    maybe<long> b;
+    maybe<long long> c;
+    maybe<void*> d;
+    maybe<void(*)()> e;
+    maybe<double1> f;
+    maybe<double4> g;
+    maybe<long double> h;
+};
+
+template<size_t Cap, size_t Align = std::alignment_of<aligned_storage_helper<Cap>>::value>
+struct aligned_storage {
+    using type = std::aligned_storage_t<Cap, Align>;
+};
+
+template<size_t Cap, size_t Align = std::alignment_of<aligned_storage_helper<Cap>>::value>
+using aligned_storage_t = typename aligned_storage<Cap, Align>::type;
+#else
+using std::aligned_storage;
+using std::aligned_storage_t;
+#endif
+
 template<typename T> struct wrapper
 {
     using type = T;
@@ -116,7 +145,7 @@ struct is_valid_inplace_dst : std::true_type
 template<
     typename Signature,
     size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
-    size_t Alignment = std::alignment_of<std::aligned_storage_t<Capacity>>::value
+    size_t Alignment = std::alignment_of<inplace_function_detail::aligned_storage_t<Capacity>>::value
 >
 class inplace_function; // unspecified
 
@@ -132,7 +161,7 @@ public:
     using capacity = std::integral_constant<size_t, Capacity>;
     using alignment = std::integral_constant<size_t, Alignment>;
 
-    using storage_t = std::aligned_storage_t<Capacity, Alignment>;
+    using storage_t = inplace_function_detail::aligned_storage_t<Capacity, Alignment>;
     using vtable_t = inplace_function_detail::vtable<R, Args...>;
     using vtable_ptr_t = const vtable_t*;
 
