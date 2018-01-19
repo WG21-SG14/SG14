@@ -1,8 +1,11 @@
 #include "SG14_test.h"
-#include "../SG14/slot_map.h"
+#include "slot_map.h"
 #include <assert.h>
 #include <inttypes.h>
 #include <algorithm>
+#include <deque>
+#include <forward_list>
+#include <list>
 #include <iterator>
 #include <memory>
 #include <random>
@@ -14,7 +17,7 @@ struct key_16_8_t {
     uint16_t index;
     uint8_t generation;
 };
-struct key_11_5_t {
+struct key_11_5_t {  // C++17 only
     uint16_t index : 11;
     uint8_t generation : 5;
 };
@@ -46,11 +49,18 @@ struct Vector {
     using const_reverse_iterator = std::reverse_iterator<const T*>;
 
     Vector() = default;
+    template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
     Vector(const Vector& rhs) { *this = rhs; }
+    Vector(Vector&& rhs) { *this = std::move(rhs); }
+    template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
     void operator=(const Vector& rhs) {
         size_ = rhs.size_;
         data_ = std::make_unique<T[]>(size_);
         std::copy(rhs.begin(), rhs.end(), data_.get());
+    }
+    void operator=(Vector&& rhs) {
+        size_ = rhs.size_;
+        data_ = std::move(rhs.data_);
     }
     unsigned size() const { return size_; }
     T *begin() { return data_.get(); }
@@ -63,12 +73,13 @@ struct Vector {
         size_ -= 1;
         data_ = std::move(p);
     }
-    void emplace_back(T t) {
+    template<class U, class = std::enable_if_t<std::is_same<U, T>::value>>
+    void emplace_back(U t) {
         auto p = std::make_unique<T[]>(size_ + 1);
         std::move(begin(), end(), p.get());
         size_ += 1;
         data_ = std::move(p);
-        *(end() - 1) = t;
+        *(end() - 1) = std::move(t);
     }
     friend void swap(Vector& a, Vector& b) {
         Vector t = std::move(a);
@@ -81,6 +92,19 @@ private:
 };
 
 } // namespace TestContainer
+
+template<class T_>
+struct Monad {
+    using T = T_;
+    static T value_of(const T& i) { return i; }
+    template<class U> static T from_value(const U& v) { return static_cast<T>(v); }
+};
+template<class T_>
+struct Monad<std::unique_ptr<T_>> {
+    using T = std::unique_ptr<T_>;
+    static T_ value_of(const T& ptr) { return *ptr; }
+    template<class U> static T from_value(const U& v) { return std::make_unique<T_>(v); }
+};
 
 template<class T, class Key, template<class...> class Container>
 void print_slot_map(const stdext::slot_map<T, Key, Container>& sm)
@@ -102,22 +126,25 @@ void print_slot_map(const stdext::slot_map<T, Key, Container>& sm)
 }
 
 
+template<class T, class U = std::conditional_t<std::is_copy_constructible<T>::value, const T&, T&&>>
+static U move_if_necessary(T& value) { return static_cast<U>(value); }
+
 template<class SM, class T>
 static void BasicTests(T t1, T t2)
 {
     SM sm;
     assert(sm.empty());
     assert(sm.size() == 0);
-    SM sm2 = sm;
-    assert(sm.empty());
-    assert(sm.size() == 0);
-    auto k1 = sm.insert(t1);
-    auto k2 = sm.insert(t2);
+    SM sm2 = move_if_necessary(sm);
+    assert(sm2.empty());
+    assert(sm2.size() == 0);
+    auto k1 = sm.insert(std::move(t1));
+    auto k2 = sm.insert(move_if_necessary(t2));
     assert(!sm.empty());
     assert(sm.size() == 2);
-    assert(sm.begin() + 2 == sm.end());
+    assert(std::next(sm.begin(), 2) == sm.end());
     assert(sm.find(k1) == sm.begin());
-    assert(sm.find(k2) == sm.begin() + 1);
+    assert(sm.find(k2) == std::next(sm.begin()));
     assert(sm2.empty());
     assert(sm2.size() == 0);
     auto num_removed = sm.erase(k1);
@@ -134,15 +161,14 @@ static void BasicTests(T t1, T t2)
     assert(sm2.erase(k1) == 0);  // erase an expired key
 }
 
-template<class SM, class T>
-static void FullContainerStressTest(T t)
+template<class SM, class TGen>
+static void FullContainerStressTest(TGen t)
 {
     const int total = 1000;
     SM sm;
     std::vector<typename SM::key_type> keys;
     for (int i=0; i < total; ++i) {
-        auto k = sm.insert(t);
-        t += 1;
+        auto k = sm.insert(t());
         keys.push_back(k);
     }
     assert(sm.size() == total);
@@ -193,14 +219,15 @@ static void InsertEraseStressTest(TGen t)
 template<class SM>
 static void EraseInLoopTest()
 {
+    using T = typename SM::mapped_type;
     SM sm;
     for (int i=0; i < 100; ++i) {
-        sm.insert(i);
+        sm.insert(Monad<T>::from_value(i));
     }
     int total = 0;
     for (auto it = sm.begin(); it != sm.end(); /*nothing*/) {
-        total += *it;
-        if (*it > 50) {
+        total += Monad<T>::value_of(*it);
+        if (Monad<T>::value_of(*it) > 50) {
             it = sm.erase(it);
         } else {
             ++it;
@@ -209,7 +236,7 @@ static void EraseInLoopTest()
     assert(total == 4950);
     int total2 = 0;
     for (auto&& elt : sm) {
-        total2 += elt;
+        total2 += Monad<T>::value_of(elt);
     }
     assert(total2 == 1275);
 }
@@ -217,21 +244,22 @@ static void EraseInLoopTest()
 template<class SM>
 static void EraseRangeTest()
 {
+    using T = typename SM::mapped_type;
     SM sm;
     auto test = [&](int N, int first, int last) {
         sm.erase(sm.begin(), sm.end());
         int expected_total = 0;
         for (int i=0; i < N; ++i) {
             expected_total += i;
-            sm.insert(i);
+            sm.insert(Monad<T>::from_value(i));
         }
-        for (auto it = sm.begin() + first; it != sm.begin() + last; ++it) {
-            expected_total -= *it;
+        for (auto it = std::next(sm.begin(), first); it != std::next(sm.begin(), last); ++it) {
+            expected_total -= Monad<T>::value_of(*it);
         }
-        sm.erase(sm.begin() + first, sm.begin() + last);
+        sm.erase(std::next(sm.begin(), first), std::next(sm.begin(), last));
         int actual_total = 0;
         for (auto it = sm.begin(); it != sm.end(); ++it) {
-            actual_total += *it;
+            actual_total += Monad<T>::value_of(*it);
         }
         return (actual_total == expected_total);
     };
@@ -375,7 +403,80 @@ void sg14_test::slot_map_test()
     EraseInLoopTest<slot_map_3>();
     EraseRangeTest<slot_map_3>();
 #endif // __cplusplus >= 201703L
+
+    // Test slot_map with a custom (but standard and random-access) container type.
+    using slot_map_4 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::deque>;
+    BasicTests<slot_map_4>(415, 315);
+    FullContainerStressTest<slot_map_4>([]() { return 37; });
+    InsertEraseStressTest<slot_map_4>([i=7]() mutable { return ++i; });
+    EraseInLoopTest<slot_map_4>();
+    EraseRangeTest<slot_map_4>();
+
+    // Test slot_map with a custom (non-standard, random-access) container type.
+    using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
+    BasicTests<slot_map_5>(415, 315);
+    FullContainerStressTest<slot_map_5>([]() { return 37; });
+    InsertEraseStressTest<slot_map_5>([i=7]() mutable { return ++i; });
+    EraseInLoopTest<slot_map_5>();
+    EraseRangeTest<slot_map_5>();
+
+    // Test slot_map with a custom (standard, bidirectional-access) container type.
+    using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
+    BasicTests<slot_map_6>(415, 315);
+    FullContainerStressTest<slot_map_6>([]() { return 37; });
+    InsertEraseStressTest<slot_map_6>([i=7]() mutable { return ++i; });
+    EraseInLoopTest<slot_map_6>();
+    EraseRangeTest<slot_map_6>();
+
+    // Test slot_map with a move-only value_type.
+    // Sadly, standard containers do not propagate move-only-ness, so we must use our custom Vector instead.
+    using slot_map_7 = stdext::slot_map<std::unique_ptr<int>, std::pair<unsigned, int>, TestContainer::Vector>;
+    static_assert(std::is_move_constructible<slot_map_7>::value, "");
+    static_assert(std::is_move_assignable<slot_map_7>::value, "");
+    static_assert(not std::is_copy_constructible<slot_map_7>::value, "");
+    static_assert(not std::is_copy_assignable<slot_map_7>::value, "");
+    BasicTests<slot_map_7>(std::make_unique<int>(1), std::make_unique<int>(2));
+    FullContainerStressTest<slot_map_7>([]() { return std::make_unique<int>(1); });
+    InsertEraseStressTest<slot_map_7>([i=7]() mutable { return std::make_unique<int>(++i); });
+    EraseInLoopTest<slot_map_7>();
+    EraseRangeTest<slot_map_7>();
 }
+
+#if defined(__cpp_concepts)
+template<template<class...> class Ctr, class T = int>
+concept bool SlotMapContainer =
+    requires(Ctr<T> c, const Ctr<T> cc, T t) {
+        { Ctr<T>{} };  // default constructible, destructible
+        { Ctr<T>(cc) };  // copy constructible
+        { Ctr<T>(static_cast<Ctr<T>&&>(c)) };  // move constructible
+        { c = cc };  // copy assignable
+        { c = static_cast<Ctr<T>&&>(c) };  // move assignable
+        typename Ctr<T>::value_type;
+        typename Ctr<T>::size_type;
+        typename Ctr<T>::reference;
+        typename Ctr<T>::const_reference;
+        typename Ctr<T>::pointer;
+        typename Ctr<T>::const_pointer;
+        typename Ctr<T>::iterator;
+        typename Ctr<T>::const_iterator;
+        typename Ctr<T>::reverse_iterator;
+        typename Ctr<T>::const_reverse_iterator;
+        { c.emplace_back(t) };
+        { c.pop_back() };
+        { c.begin() } -> typename Ctr<T>::iterator;
+        { c.end() } -> typename Ctr<T>::iterator;
+        { cc.size() } -> typename Ctr<T>::size_type;
+        { cc.begin() } -> typename Ctr<T>::const_iterator;
+        { cc.end() } -> typename Ctr<T>::const_iterator;
+        { std::next(c.begin()) } -> typename Ctr<T>::iterator;
+        { std::next(cc.begin()) } -> typename Ctr<T>::const_iterator;
+    };
+static_assert(SlotMapContainer<std::vector>);
+static_assert(SlotMapContainer<std::deque>);
+static_assert(SlotMapContainer<std::list>);
+static_assert(not SlotMapContainer<std::forward_list>);
+static_assert(not SlotMapContainer<std::pair>);
+#endif  // defined(__cpp_concepts)
 
 #ifdef TEST_MAIN
 int main()
