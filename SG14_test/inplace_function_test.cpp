@@ -189,7 +189,7 @@ void Copying()
     EXPECT_TRUE(bool(fun2));
 }
 
-void ContainingStdFuntion()
+void ContainingStdFunction()
 {
     // build a big closure, bigger than 32 bytes
     uint64_t offset1 = 1234;
@@ -260,6 +260,74 @@ void AssignmentDifferentFunctor()
     EXPECT_EQ(4, calls);
 }
 
+struct ThrowingFunctor {
+    static int countdown;
+    static int constructed;
+    static int destructed;
+    static int called;
+    static void reset(int k) {
+        countdown = k;
+        constructed = 0;
+        destructed = 0;
+        called = 0;
+    }
+    static void check_countdown() {
+        if (countdown > 0 && --countdown == 0) {
+            throw 42;
+        }
+    }
+    ThrowingFunctor() { check_countdown(); ++constructed; }
+    ThrowingFunctor(const ThrowingFunctor&) {
+        check_countdown();
+        ++constructed;
+    }
+    ThrowingFunctor(ThrowingFunctor&&) noexcept { ++constructed; }
+    ThrowingFunctor& operator=(const ThrowingFunctor&) = delete;
+    ThrowingFunctor& operator=(ThrowingFunctor&&) = delete;
+    ~ThrowingFunctor() noexcept { ++destructed; }
+    void operator()() const { ++called; }
+};
+int ThrowingFunctor::countdown = 0;
+int ThrowingFunctor::constructed = 0;
+int ThrowingFunctor::destructed = 0;
+int ThrowingFunctor::called = 0;
+
+static void test_exception_safety()
+{
+    using IPF = stdext::inplace_function<void(), sizeof(ThrowingFunctor)>;
+    ThrowingFunctor tf;
+    EXPECT_EQ(ThrowingFunctor::constructed, 1);
+    EXPECT_EQ(ThrowingFunctor::destructed, 0);
+    EXPECT_EQ(ThrowingFunctor::called, 0);
+    bool caught;
+
+    // Copy-construction from a ThrowingFunctor might throw.
+    try { tf.reset(1); caught = false; IPF a(tf); } catch (int) { caught = true; }
+    EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 0) && (tf.destructed == 0));
+    try { tf.reset(2); caught = false; IPF a(tf); } catch (int) { caught = true; }
+    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 1) && (tf.destructed == 1));
+
+    // Copy-construction from an IPF (containing a ThrowingFunctor) might throw.
+    try { tf.reset(2); caught = false; IPF a(tf); IPF b(a); } catch (int) { caught = true; }
+    EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 1) && (tf.destructed == 1));
+    try { tf.reset(3); caught = false; IPF a(tf); IPF b(a); } catch (int) { caught = true; }
+    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+
+    // Move-construction and destruction should be assumed not to throw.
+    try { tf.reset(1); caught = false; IPF a(std::move(tf)); IPF b(std::move(a)); } catch (int) { caught = true; }
+    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+
+    // The assignment operators are implemented as "construct an IPF, then move from it"; so, one copy and one move of the ThrowingFunctor.
+    try { tf.reset(1); caught = false; IPF a; a = tf; } catch (int) { caught = true; }
+    EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 0) && (tf.destructed == 0));
+    try { tf.reset(2); caught = false; IPF a; a = tf; } catch (int) { caught = true; }
+    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+
+    // The assignment operators are implemented as "construct an IPF, then move from it"; so, two moves of the ThrowingFunctor.
+    try { tf.reset(1); caught = false; IPF a; a = std::move(tf); } catch (int) { caught = true; }
+    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+}
+
 template<size_t Cap>
 constexpr size_t expected_alignment_for_capacity()
 {
@@ -276,6 +344,17 @@ constexpr size_t expected_alignment_for_capacity()
 #undef MIN
 }
 
+static void test_struct_layout()
+{
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 1> >::value == expected_alignment_for_capacity<1>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 2> >::value == expected_alignment_for_capacity<2>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 4> >::value == expected_alignment_for_capacity<4>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 8> >::value == expected_alignment_for_capacity<8>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 16> >::value == expected_alignment_for_capacity<16>(), "");
+    static_assert(std::alignment_of< stdext::inplace_function<void(int), 32> >::value == expected_alignment_for_capacity<32>(), "");
+    static_assert(sizeof( stdext::inplace_function<void(int), sizeof(void*)> ) == 2 * sizeof(void*), "");
+}
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -285,7 +364,7 @@ void sg14_test::inplace_function_test()
     Bind();
     Swapping();
     Copying();
-    ContainingStdFuntion();
+    ContainingStdFunction();
     SimilarTypeCopy();
     FunctorDestruction();
 
@@ -303,14 +382,7 @@ void sg14_test::inplace_function_test()
 #endif
     static_assert(std::is_nothrow_destructible<IPF>::value, "");
 
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 1> >::value == expected_alignment_for_capacity<1>(), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 2> >::value == expected_alignment_for_capacity<2>(), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 4> >::value == expected_alignment_for_capacity<4>(), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 8> >::value == expected_alignment_for_capacity<8>(), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 16> >::value == expected_alignment_for_capacity<16>(), "");
-    static_assert(std::alignment_of< stdext::inplace_function<void(int), 32> >::value == expected_alignment_for_capacity<32>(), "");
-
-    static_assert(sizeof( stdext::inplace_function<void(int), sizeof(void*)> ) == 2 * sizeof(void*), "");
+    test_struct_layout();
 
     IPF func;
     assert(!func);
@@ -360,6 +432,8 @@ void sg14_test::inplace_function_test()
     assert(func40 == nullptr);
     assert(!(func40 != nullptr));
     expected = 0; try { func40(42); } catch (std::bad_function_call&) { expected = 1; } assert(expected == 1);
+
+    test_exception_safety();
 }
 
 #ifdef TEST_MAIN
