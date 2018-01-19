@@ -32,7 +32,7 @@
 
 namespace stdext {
 
-namespace detail {
+namespace inplace_function_detail {
 
 static constexpr size_t InplaceFunctionDefaultCapacity = 32;
 
@@ -111,11 +111,11 @@ struct is_valid_inplace_dst : std::true_type
     );
 };
 
-} // namespace detail
+} // namespace inplace_function_detail
 
 template<
     typename Signature,
-    size_t Capacity = detail::InplaceFunctionDefaultCapacity,
+    size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
     size_t Alignment = std::alignment_of<std::aligned_storage_t<Capacity>>::value
 >
 class inplace_function; // unspecified
@@ -133,13 +133,13 @@ public:
     using alignment = std::integral_constant<size_t, Alignment>;
 
     using storage_t = std::aligned_storage_t<Capacity, Alignment>;
-    using vtable_t = detail::vtable<R, Args...>;
+    using vtable_t = inplace_function_detail::vtable<R, Args...>;
     using vtable_ptr_t = const vtable_t*;
 
     template <typename, size_t, size_t>	friend class inplace_function;
 
     inplace_function() noexcept :
-        vtable_ptr_{std::addressof(detail::empty_vtable<R, Args...>)}
+        vtable_ptr_{std::addressof(inplace_function_detail::empty_vtable<R, Args...>)}
     {}
 
     template<
@@ -168,14 +168,14 @@ public:
             "Incompatible function closure alignment"
         );
 
-        static const vtable_t vt{detail::wrapper<C>{}};
+        static const vtable_t vt{inplace_function_detail::wrapper<C>{}};
         vtable_ptr_ = std::addressof(vt);
 
         new (std::addressof(storage_)) C{std::forward<T>(closure)};
     }
 
     inplace_function(std::nullptr_t) noexcept :
-        vtable_ptr_{std::addressof(detail::empty_vtable<R, Args...>)}
+        vtable_ptr_{std::addressof(inplace_function_detail::empty_vtable<R, Args...>)}
     {}
 
     inplace_function(const inplace_function& other) :
@@ -199,7 +199,7 @@ public:
     inplace_function& operator= (std::nullptr_t) noexcept
     {
         vtable_ptr_->destructor_ptr(std::addressof(storage_));
-        vtable_ptr_ = std::addressof(detail::empty_vtable<R, Args...>);
+        vtable_ptr_ = std::addressof(inplace_function_detail::empty_vtable<R, Args...>);
         return *this;
     }
 
@@ -258,13 +258,13 @@ public:
 
     explicit constexpr operator bool() const noexcept
     {
-        return vtable_ptr_ != std::addressof(detail::empty_vtable<R, Args...>);
+        return vtable_ptr_ != std::addressof(inplace_function_detail::empty_vtable<R, Args...>);
     }
 
     template<size_t Cap, size_t Align>
     operator inplace_function<R(Args...), Cap, Align>() const&
     {
-        static_assert(detail::is_valid_inplace_dst<
+        static_assert(inplace_function_detail::is_valid_inplace_dst<
             Cap, Align, Capacity, Alignment
         >::value, "conversion not allowed");
 
@@ -274,7 +274,7 @@ public:
     template<size_t Cap, size_t Align>
     operator inplace_function<R(Args...), Cap, Align>() &&
     {
-        static_assert(detail::is_valid_inplace_dst<
+        static_assert(inplace_function_detail::is_valid_inplace_dst<
             Cap, Align, Capacity, Alignment
         >::value, "conversion not allowed");
 
