@@ -26,6 +26,7 @@ set(SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/inplace_function_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/ring_test.cpp
+    ${SG14_TEST_SOURCE_DIRECTORY}/slot_map_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/transcode_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
