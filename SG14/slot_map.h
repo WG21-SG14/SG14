@@ -177,13 +177,14 @@ public:
     constexpr size_type size() const                  { return values_.size(); }
     // constexpr size_type max_size() const; TODO, NO SEMANTICS
     constexpr size_type capacity() const              { return values_.capacity(); }
-    constexpr void reserve(size_type n)               { values_.reserve(n); }
+    constexpr void reserve(size_type n)               { values_.reserve(n); reserve_slots(n); }
 
     // Functions for accessing and modifying the capacity of the slots container.
     // These are beneficial as allocating more slots than values will cause the
     // generation counter increases to be more evenly distributed across the slots.
+    // TODO [ajo]: The above comment is false, at least for this implementation.
     //
-    constexpr void reserve_slots(size_type n);
+    constexpr void reserve_slots(size_type n)  { slots_.reserve(n); reverse_map_.reserve(n); }
     constexpr size_type capacity_slots() const { return slots_.capacity(); }
 
     // These operations have O(1) time and space complexity.
@@ -279,7 +280,7 @@ private:
         auto slot_index = std::distance(slots_.begin(), slot_iter);
         auto value_index = get_index(*slot_iter);
         auto value_iter = std::next(values_.begin(), value_index);
-        auto value_back_iter = std::next(values_.begin(), values_.size() - 1);
+        auto value_back_iter = std::prev(values_.end());
         if (value_iter != value_back_iter) {
             auto slot_back_iter = slot_iter_from_value_iter(value_back_iter);
             *value_iter = std::move(*value_back_iter);
