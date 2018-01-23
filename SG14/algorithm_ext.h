@@ -1,5 +1,10 @@
 #pragma once
 
+#include <algorithm>
+#include <iterator>
+#include <memory>
+#include <utility>
+
 namespace stdext
 {
 	template<class ForwardIterator>
