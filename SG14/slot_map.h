@@ -37,6 +37,28 @@
 
 namespace stdext {
 
+namespace slot_map_detail {
+
+template<size_t I> struct priority_tag : public priority_tag<I-1> {};
+template<> struct priority_tag<0> {};
+
+template<class Ctr, class SizeType>
+inline auto reserve_if_possible(Ctr&, SizeType, priority_tag<0>) -> void {}
+
+template<class Ctr, class SizeType>
+inline auto reserve_if_possible(Ctr& ctr, SizeType n, priority_tag<1>) -> decltype(void(ctr.reserve(n)))
+{
+    ctr.reserve(n);
+}
+
+template<class Ctr, class SizeType>
+inline void reserve_if_possible(Ctr& ctr, const SizeType& n)
+{
+    slot_map_detail::reserve_if_possible(ctr, n, priority_tag<1>{});
+}
+
+} // namespace slot_map_detail
+
 template<
     class T,
     class Key = std::pair<unsigned, unsigned>,
@@ -176,16 +198,32 @@ public:
     constexpr bool empty() const                      { return values_.size() == 0; }
     constexpr size_type size() const                  { return values_.size(); }
     // constexpr size_type max_size() const; TODO, NO SEMANTICS
-    constexpr size_type capacity() const              { return values_.capacity(); }
-    constexpr void reserve(size_type n)               { values_.reserve(n); reserve_slots(n); }
 
-    // Functions for accessing and modifying the capacity of the slots container.
+    constexpr void reserve(size_type n) {
+        slot_map_detail::reserve_if_possible(values_, n);
+        slot_map_detail::reserve_if_possible(reverse_map_, n);
+        reserve_slots(n);
+    }
+
+    template<class C = Container<T>, class = decltype(std::declval<const C&>().capacity())>
+    constexpr size_type capacity() const {
+        return values_.capacity();
+    }
+
+    // Functions for accessing and modifying the size of the slots container.
     // These are beneficial as allocating more slots than values will cause the
     // generation counter increases to be more evenly distributed across the slots.
     // TODO [ajo]: The above comment is false, at least for this implementation.
     //
-    constexpr void reserve_slots(size_type n)  { slots_.reserve(n); reverse_map_.reserve(n); }
-    constexpr size_type capacity_slots() const { return slots_.capacity(); }
+    constexpr void reserve_slots(size_type n) {
+        slot_map_detail::reserve_if_possible(slots_, n);
+        while (slots_.size() < n) {
+            auto idx = next_available_slot_index_;
+            next_available_slot_index_ = slots_.size();
+            slots_.emplace_back(key_type{idx, key_generation_type{}});
+        }
+    }
+    constexpr size_type slot_count() const { return slots_.size(); }
 
     // These operations have O(1) time and space complexity.
     // When size() == capacity() an allocation is required

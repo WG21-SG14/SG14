@@ -278,6 +278,51 @@ static void EraseRangeTest()
     }
 }
 
+template<class SM>
+static void ReserveTest()
+{
+    using T = typename SM::mapped_type;
+    SM sm;
+    auto k = sm.emplace(Monad<T>::from_value(1));
+    (void)k;
+    assert(sm.size() == 1);
+
+    auto original_cap = sm.slot_count();
+    static_assert(std::is_same<decltype(original_cap), typename SM::size_type>::value, "");
+    assert(original_cap >= 1);
+
+    sm.reserve_slots(original_cap + 3);
+    assert(sm.slot_count() >= original_cap + 3);
+    assert(sm.size() == 1);
+
+    sm.emplace(Monad<T>::from_value(2));
+    sm.emplace(Monad<T>::from_value(3));
+    sm.emplace(Monad<T>::from_value(4));
+    assert(sm.size() == 4);
+}
+
+template<class SM, class = decltype(std::declval<const SM&>().capacity())>
+static void VerifyCapacityExists(bool expected)
+{
+    assert(expected);
+    SM sm;
+    auto n = sm.capacity();
+    static_assert(std::is_same<decltype(n), typename SM::size_type>::value, "");
+    assert(n == 0);
+    sm.reserve(100);
+    assert(sm.capacity() >= 100);
+    assert(sm.slot_count() >= 100);
+}
+
+template<class SM, class Bool>
+void VerifyCapacityExists(Bool expected)
+{
+    assert(not expected);
+    SM sm;
+    sm.reserve(100);
+    assert(sm.slot_count() >= 100);
+}
+
 static void TypedefTests()
 {
     if (true) {
@@ -385,6 +430,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_1>([i=3]() mutable { return ++i; });
     EraseInLoopTest<slot_map_1>();
     EraseRangeTest<slot_map_1>();
+    ReserveTest<slot_map_1>();
+    VerifyCapacityExists<slot_map_1>(true);
 
     // Test slot_map with a custom key type (C++14 destructuring).
     using slot_map_2 = stdext::slot_map<unsigned long, TestKey::key_16_8_t>;
@@ -393,6 +440,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_2>([i=5]() mutable { return ++i; });
     EraseInLoopTest<slot_map_2>();
     EraseRangeTest<slot_map_2>();
+    ReserveTest<slot_map_2>();
+    VerifyCapacityExists<slot_map_2>(true);
 
 #if __cplusplus >= 201703L
     // Test slot_map with a custom key type (C++17 destructuring).
@@ -402,6 +451,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_3>([i=3]() mutable { return ++i; });
     EraseInLoopTest<slot_map_3>();
     EraseRangeTest<slot_map_3>();
+    ReserveTest<slot_map_3>();
+    VerifyCapacityExists<slot_map_3>(true);
 #endif // __cplusplus >= 201703L
 
     // Test slot_map with a custom (but standard and random-access) container type.
@@ -411,6 +462,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_4>([i=7]() mutable { return ++i; });
     EraseInLoopTest<slot_map_4>();
     EraseRangeTest<slot_map_4>();
+    ReserveTest<slot_map_4>();
+    VerifyCapacityExists<slot_map_4>(false);
 
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
@@ -419,6 +472,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_5>([i=7]() mutable { return ++i; });
     EraseInLoopTest<slot_map_5>();
     EraseRangeTest<slot_map_5>();
+    ReserveTest<slot_map_5>();
+    VerifyCapacityExists<slot_map_5>(false);
 
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
@@ -427,6 +482,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_6>([i=7]() mutable { return ++i; });
     EraseInLoopTest<slot_map_6>();
     EraseRangeTest<slot_map_6>();
+    ReserveTest<slot_map_6>();
+    VerifyCapacityExists<slot_map_6>(false);
 
     // Test slot_map with a move-only value_type.
     // Sadly, standard containers do not propagate move-only-ness, so we must use our custom Vector instead.
@@ -440,6 +497,8 @@ void sg14_test::slot_map_test()
     InsertEraseStressTest<slot_map_7>([i=7]() mutable { return std::make_unique<int>(++i); });
     EraseInLoopTest<slot_map_7>();
     EraseRangeTest<slot_map_7>();
+    ReserveTest<slot_map_7>();
+    VerifyCapacityExists<slot_map_7>(false);
 }
 
 #if defined(__cpp_concepts)
