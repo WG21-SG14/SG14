@@ -355,6 +355,26 @@ static void test_struct_layout()
     static_assert(sizeof( stdext::inplace_function<void(int), sizeof(void*)> ) == 2 * sizeof(void*), "");
 }
 
+static void test_nullptr()
+{
+    using IPF = stdext::inplace_function<void()>;
+    auto nil = nullptr;
+    const auto cnil = nullptr;
+
+    IPF f;                    assert(not bool(f));
+    f = nullptr;              assert(not bool(f));
+    f = IPF(nullptr);         assert(not bool(f));
+    f = IPF();                assert(not bool(f));
+    f = IPF{};                assert(not bool(f));
+    f = {};                   assert(not bool(f));
+    f = nil;                  assert(not bool(f));
+    f = IPF(nil);             assert(not bool(f));
+    f = IPF(std::move(nil));  assert(not bool(f));
+    f = cnil;                 assert(not bool(f));
+    f = IPF(cnil);            assert(not bool(f));
+    f = IPF(std::move(cnil)); assert(not bool(f));
+}
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -434,6 +454,7 @@ void sg14_test::inplace_function_test()
     expected = 0; try { func40(42); } catch (std::bad_function_call&) { expected = 1; } assert(expected == 1);
 
     test_exception_safety();
+    test_nullptr();
 }
 
 #ifdef TEST_MAIN
