@@ -8,18 +8,24 @@
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
+		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.3 and below do not support initializer lists
+			#define PLF_COLONY_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
+		#endif
 		#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) // 4.3 and below do not support initializer lists
 			#define PLF_INITIALIZER_LIST_SUPPORT
 		#endif
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
+		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
+			#define PLF_COLONY_VARIADICS_SUPPORT
+		#endif
 		#if __GLIBCXX__ >= 20090421 	// libstdc++ 4.3 and below do not support initializer lists
 			#define PLF_INITIALIZER_LIST_SUPPORT
 		#endif
-	#else // Assume initializer support for non-GCC compilers and standard libraries - may not be accurate
+	#else // Assume initializer/variadics support for non-GCC compilers and standard libraries - may not be accurate
+		#define PLF_VARIADICS_SUPPORT
 		#define PLF_INITIALIZER_LIST_SUPPORT
 	#endif
 
-	#define PLF_VARIADICS_SUPPORT
 	#define PLF_MOVE_SEMANTICS_SUPPORT
 #endif
 
@@ -51,6 +57,14 @@ namespace
         }
     }
 
+	void title1(const char *title_text)
+	{
+	}
+
+	void title2(const char *title_text)
+	{
+	}
+
 
 	// Fast xorshift+128 random number generator function (original: https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/)
 	unsigned int xor_rand()
@@ -77,14 +91,14 @@ namespace
 	{
 		const bool success;
 
-		perfect_forwarding_test(int&& perfect1, int& perfect2)
+		perfect_forwarding_test(int&& /*perfect1*/, int& perfect2)
 			: success(true)
 		{
 			perfect2 = 1;
 		}
 
 		template <typename T, typename U>
-		perfect_forwarding_test(T&& imperfect1, U&& imperfect2)
+		perfect_forwarding_test(T&& /*imperfect1*/, U&& /*imperfect2*/)
 			: success(false)
 		{}
 	};
@@ -108,8 +122,8 @@ void plf_colony_test()
 	while (++looper != 25)
 	{
 		{
-			//title1("Colony");
-			//title2("Test Basics");
+			title1("Colony");
+			title2("Test Basics");
 			
 			colony<int *> p_colony;
 			
@@ -120,7 +134,7 @@ void plf_colony_test()
 			
 			failpass("Colony not-empty", !p_colony.empty());
 
-			//title2("Iterator tests");
+			title2("Iterator tests");
 			
 			failpass("Begin() working", **p_colony.begin() == 10);
 			failpass("End() working", p_colony.begin() != p_colony.end());
@@ -332,7 +346,7 @@ void plf_colony_test()
 
 		
 		{
-			//title2("Insert and Erase tests");
+			title2("Insert and Erase tests");
 			
 			colony<int> i_colony;
 
@@ -341,7 +355,7 @@ void plf_colony_test()
 				i_colony.insert(temp);
 			}
 			
-			
+
 			failpass("Size after insert test", i_colony.size() == 500000);
 
 
@@ -609,7 +623,7 @@ void plf_colony_test()
 		}
 
 		{
-			//title2("Range-erase tests");
+			title2("Range-erase tests");
 		
 			colony<int> i_colony;
 			
@@ -831,7 +845,7 @@ void plf_colony_test()
 
 
 		{
-			//title2("Sort tests");
+			title2("Sort tests");
 			
 			colony<int> i_colony;
 			
@@ -881,7 +895,7 @@ void plf_colony_test()
 
 
 		{
-			// title2("Different insertion-style tests");
+			title2("Different insertion-style tests");
 
 			#ifdef PLF_INITIALIZER_LIST_SUPPORT
 				colony<int> i_colony = {1, 2, 3};
@@ -959,12 +973,14 @@ void plf_colony_test()
 			}
 			
 			failpass("Reserve + fill + fill + reserve + fill test", i_colony2.size() == 12060 && total == 12060);
+
+			
 		}
 
 
 		#ifdef PLF_VARIADICS_SUPPORT
 		{
-			//title2("Perfect Forwarding tests");
+			title2("Perfect Forwarding tests");
 
 			colony<perfect_forwarding_test> pf_colony;
 
@@ -980,7 +996,7 @@ void plf_colony_test()
 
 
 		{
-			//title2("Splice tests");
+			title2("Splice tests");
 			
 			{
 				colony<int> colony1, colony2;
@@ -1081,7 +1097,7 @@ void plf_colony_test()
 						++current;
 					}
 				}
-					
+
 				
 				colony1.splice(colony2);
 				
@@ -1235,11 +1251,11 @@ void plf_colony_test()
 				
 				for(int number = 0; number != 100000; ++number)
 				{
-					colony1.insert(number + 150000);
+					colony1.insert(number + 200000);
 				}
 				
 				
-				for(int number = 0; number != 150000; ++number)
+				for(int number = 0; number != 200000; ++number)
 				{
 					colony2.insert(number);
 				}
@@ -1273,7 +1289,7 @@ void plf_colony_test()
 				colony1.erase(--(colony1.end()));
 				colony2.erase(--(colony2.end()));
 
-				colony1.splice(colony2);
+				colony1.splice(colony2); // splice should swap the order at this point due to differences in numbers of unused elements at end of final group in each colony
 				
 				int check_number = -1;
 				bool fail = false;
@@ -1283,6 +1299,7 @@ void plf_colony_test()
 					if (check_number >= *current)
 					{
 						fail = true;
+						break;
 					}
 					
 					check_number = *current;
