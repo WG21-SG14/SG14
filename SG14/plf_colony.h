@@ -984,7 +984,7 @@ public:
 	 	assert(std::numeric_limits<skipfield_type>::is_integer & !std::numeric_limits<skipfield_type>::is_signed); // skipfield type must be of unsigned integer type (uchar, ushort, uint etc)
 
 		#ifndef PLF_COLONY_ALIGNMENT_SUPPORT
-			assert(sizeof(element_type) >= sizeof(skipfield_type)); // eg. under C++03, aligned_storage is not available, so skipfield type must be larger or equal to element type size, otherwise element free lists will not work correctly. So if you're storing chars, for example, and using the default skipfield type (unsigned short), the compiler will flag you with this assert. Change your skipfield type to be unsigned char, or change your storage type to unsigned short or larger, and you'll be fine.
+			assert(sizeof(element_type) >= sizeof(skipfield_type)); // eg. under C++03, aligned_storage is not available, so skipfield type must be larger or equal to element type size, otherwise element free lists will not work correctly. So if you're storing chars, for example, and using the default skipfield type (unsigned short), the compiler will flag you with this assert. Change your skipfield type to be unsigned char, or change your storage type to unsigned short or larger, or use C++11 and above and you'll be fine.
 		#endif
 	}
 
@@ -1049,9 +1049,9 @@ private:
 
 	inline void blank() PLF_COLONY_NOEXCEPT
 	{
-		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && (defined(__GNUC__) && !defined(__clang__)) && !(defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__))
-			// this is faster under gcc if CPU is core2 and below:
-			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == 0) // if all pointer types are trivial, and NULL is (almost always) zero, we can just nuke it with memset:
+		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && !(defined(__GNUC__) && ((defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)))
+			// this is faster under gcc if CPU is core2 and below, faster on MSVC/clang in-general:
+			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == 0) // if all pointer types are trivial, and NULL is (almost always) zero, we can just nuke it from orbit with memset:
 			{
 				std::memset(this, 0, offsetof(colony, pointer_allocator_pair));
 			}
@@ -3329,8 +3329,8 @@ public:
 		// Otherwise, find which iterator is later in colony, copy that to iterator2. Copy the lower to iterator1.
 		// If they are not pointing to elements in the same group, process the intermediate groups and add distances,
 		// skipping manual incrementation in all but the initial and final groups.
-		// In the initial and final groups, manual incrementation must be used to calculate distance, if there are prior erasures in those groups.
-		// If there are no prior erasures in either of those groups, we can use pointer arithmetic to calculate the distances.
+		// In the initial and final groups, manual incrementation must be used to calculate distance, if there have been no prior erasures in those groups.
+		// If there are no prior erasures in either of those groups, we can use pointer arithmetic to calculate the distances for those groups.
 
 
 		assert(!(first.group_pointer == NULL) && !(last.group_pointer == NULL));  // Check that they are initialized
