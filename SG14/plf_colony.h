@@ -104,6 +104,8 @@
 			#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 		#endif
 		#if __GLIBCXX__ >= 20160111
+			#define PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_COLONY_NOEXCEPT noexcept
 			#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 			#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
 		#elif __GLIBCXX__ >= 20120322
@@ -907,7 +909,7 @@ public:
 
 
 
-		colony_reverse_iterator (const typename colony::iterator &source) PLF_COLONY_NOEXCEPT:
+		explicit colony_reverse_iterator (const typename colony::iterator &source) PLF_COLONY_NOEXCEPT:
 			it(source)
 		{}
 
@@ -1051,7 +1053,7 @@ private:
 	{
 		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && !(defined(__GNUC__) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)))
 			// this is faster under gcc if CPU is core2 and below, faster on MSVC/clang in-general:
-			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == 0) // if all pointer types are trivial, and NULL is (almost always) zero, we can just nuke it from orbit with memset:
+			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == reinterpret_cast<void *>(0)) // if all pointer types are trivial, and NULL is (almost always) zero, we can just nuke it from orbit with memset:
 			{
 				std::memset(this, 0, offsetof(colony, pointer_allocator_pair));
 			}
