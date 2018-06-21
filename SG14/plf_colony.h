@@ -181,10 +181,10 @@
 
 #include <algorithm> // std::sort and std::fill_n
 
-#include <cstring>	// memset, memcpy, memmove
+#include <cstring>	// memset, memmove
 #include <cassert>	// assert
 #include <limits>  // std::numeric_limits
-#include <memory>	// std::uninitialized_copy, std::allocator
+#include <memory>	// std::allocator
 #include <iterator> // std::bidirectional_iterator_tag
 
 
@@ -207,7 +207,7 @@ namespace plf
 
 
 template <class element_type, class element_allocator_type = std::allocator<element_type>, typename element_skipfield_type = unsigned short > class colony : private element_allocator_type  // Empty base class optimisation - inheriting allocator functions
-// Note: unsigned short is equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, > or < 16-bit integer in case where platform doesn't support 16-bit types
+// Note: unsigned short is equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, greater-than-16-bit integer in case where platform doesn't support 16-bit types
 {
 public:
 	// Standard container typedefs:
@@ -218,14 +218,14 @@ public:
 	#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
 		typedef typename std::aligned_storage<sizeof(element_type), (alignof(element_type) > sizeof(element_skipfield_type) ? alignof(element_type) : sizeof(element_skipfield_type))>::type	aligned_element_type;
 	#else
-		typedef element_type																						aligned_element_type;
+		typedef element_type																				aligned_element_type;
 	#endif
 
 	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
 		typedef typename std::allocator_traits<element_allocator_type>::size_type							size_type;
 		typedef typename std::allocator_traits<element_allocator_type>::difference_type 					difference_type;
-		typedef element_type &																								reference;
-		typedef const element_type &																						const_reference;
+		typedef element_type &																				reference;
+		typedef const element_type &																		const_reference;
 		typedef typename std::allocator_traits<element_allocator_type>::pointer 							pointer;
 		typedef typename std::allocator_traits<element_allocator_type>::const_pointer						const_pointer;
 	#else
@@ -239,13 +239,13 @@ public:
 
 
 	// Iterator declarations:
-	template <bool is_const> class colony_iterator;
+	template <bool is_const> class		colony_iterator;
 	typedef colony_iterator<false>		iterator;
 	typedef colony_iterator<true>		const_iterator;
 	friend class colony_iterator<false>; // Using above typedef name here is illegal under C++03
 	friend class colony_iterator<true>;
 
-	template <bool r_is_const> class colony_reverse_iterator;
+	template <bool r_is_const> class		colony_reverse_iterator;
 	typedef colony_reverse_iterator<false>	reverse_iterator;
 	typedef colony_reverse_iterator<true>	const_reverse_iterator;
 	friend class colony_reverse_iterator<false>;
@@ -261,7 +261,7 @@ private:
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<aligned_element_type>	aligned_element_allocator_type;
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<group>				group_allocator_type;
 		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<skipfield_type>		skipfield_allocator_type;
-		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<unsigned char>		uchar_allocator_type; // Using uchar as the generic allocator type, as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas, for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
+		typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<unsigned char>		uchar_allocator_type; // Using uchar as the generic allocator type, as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
 
 		typedef typename std::allocator_traits<aligned_element_allocator_type>::pointer		aligned_pointer_type; // Different typedef to 'pointer' - this is a pointer to the overaligned element type, not the original element type
 		typedef typename std::allocator_traits<group_allocator_type>::pointer 				group_pointer_type;
@@ -286,9 +286,9 @@ private:
 
 
 	// Colony groups:
-	struct group : private uchar_allocator_type	// Empty base class optimisation - inheriting allocator functions
+	struct group : private uchar_allocator_type	// Empty base class optimisation (EBCO) - inheriting allocator functions
 	{
-		aligned_pointer_type					last_endpoint; // the address that is one past the highest cell number that's been used so far in this group - does not change with erase command - is necessary because an iterator cannot access the colony's end_iterator. Most-used variable in colony use (operator ++, --) so first in struct
+		aligned_pointer_type					last_endpoint; // the address that is one past the highest cell number that's been used so far in this group - does not change with erase command but may change with insert (if no previously-erased locations are available) - is necessary because an iterator cannot access the colony's end_iterator. Most-used variable in colony use (operator ++, --) so first in struct
 		group_pointer_type					next_group; // Next group in the intrusive list of all groups. NULL if no next group
 		const aligned_pointer_type			elements; // Element storage
 		const skipfield_pointer_type		skipfield; // Skipfield storage. The element and skipfield arrays are allocated contiguously, hence the skipfield pointer also functions as a 'one-past-end' pointer for the elements array. There will always be one additional skipfield node allocated compared to the number of elements. This is to ensure a faster ++ iterator operation (fewer checks are required when this is present). The extra node is unused and always zero, but checked, and not having it will result in out-of-bounds memory errors.
@@ -302,7 +302,7 @@ private:
 
 		#ifdef PLF_COLONY_VARIADICS_SUPPORT
 			group(const skipfield_type elements_per_group, group_pointer_type const previous = NULL):
-				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + ((elements_per_group + 1) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is simply initialised to element's base value initially */
+				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + ((elements_per_group + 1) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is only initialised to element's base value initially, then incremented by one below */
 				next_group(NULL),
 				elements(last_endpoint++),
 				skipfield(reinterpret_cast<skipfield_pointer_type>(elements + elements_per_group)),
@@ -1367,18 +1367,18 @@ public:
 					const iterator return_iterator = end_iterator; /* Make copy for return before modifying end_iterator */
 
 					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if (std::is_nothrow_copy_constructible<element_type>::value)
+						if (std::is_nothrow_copy_constructible<element_type>::value) // For no good reason this compiles to faster code under GCC 7.3
 						{
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), element);
+							end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 						}
 						else
 					#endif
 					{
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer), element);
-						++end_iterator.element_pointer; // not postfix incrementing prev statement as it would necessitate a try-catch block to reverse increment if necessary (which would decrease speed by increasing code size)
+						end_iterator.group_pointer->last_endpoint = ++end_iterator.element_pointer; // Shift the addition to the second operation, avoiding problems if an exception is thrown during construction
 					}
 
-					end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 					++(end_iterator.group_pointer->number_of_elements);
 					++end_iterator.skipfield_pointer;
 					++total_number_of_elements;
@@ -1553,18 +1553,18 @@ public:
 						const iterator return_iterator = end_iterator;
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_move_constructible<element_type>::value)
+							if (std::is_nothrow_copy_constructible<element_type>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::move(element));
+								end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 							}
 							else
 						#endif
 						{
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer), std::move(element));
-							++end_iterator.element_pointer;
+							end_iterator.group_pointer->last_endpoint = ++end_iterator.element_pointer;
 						}
-
-						end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
+	
 						++(end_iterator.group_pointer->number_of_elements);
 						++end_iterator.skipfield_pointer;
 						++total_number_of_elements;
@@ -1728,15 +1728,15 @@ public:
 							if (std::is_nothrow_constructible<element_type, arguments ...>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::forward<arguments>(parameters)...);
+								end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 							}
 							else
 						#endif
 						{
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer), std::forward<arguments>(parameters)...);
-							++end_iterator.element_pointer;
+							end_iterator.group_pointer->last_endpoint = ++end_iterator.element_pointer;
 						}
 
-						end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
 						++(end_iterator.group_pointer->number_of_elements);
 						++end_iterator.skipfield_pointer;
 						++total_number_of_elements;
@@ -2722,9 +2722,7 @@ public:
 			return false;
 		}
 
-		iterator rh_iterator = rh.begin_iterator;
-
-		for (iterator lh_iterator = begin_iterator; lh_iterator != end_iterator;)
+		for (iterator lh_iterator = begin_iterator, rh_iterator = rh.begin_iterator; lh_iterator != end_iterator;)
 		{
 			if (*rh_iterator++ != *lh_iterator++)
 			{

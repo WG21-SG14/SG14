@@ -305,27 +305,27 @@ static void test_exception_safety()
     try { tf.reset(1); caught = false; IPF a(tf); } catch (int) { caught = true; }
     EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 0) && (tf.destructed == 0));
     try { tf.reset(2); caught = false; IPF a(tf); } catch (int) { caught = true; }
-    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 1) && (tf.destructed == 1));
+    EXPECT_TRUE((!caught) && (tf.countdown == 1) && (tf.constructed == 1) && (tf.destructed == 1));
 
     // Copy-construction from an IPF (containing a ThrowingFunctor) might throw.
     try { tf.reset(2); caught = false; IPF a(tf); IPF b(a); } catch (int) { caught = true; }
     EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 1) && (tf.destructed == 1));
     try { tf.reset(3); caught = false; IPF a(tf); IPF b(a); } catch (int) { caught = true; }
-    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+    EXPECT_TRUE((!caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
 
     // Move-construction and destruction should be assumed not to throw.
     try { tf.reset(1); caught = false; IPF a(std::move(tf)); IPF b(std::move(a)); } catch (int) { caught = true; }
-    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+    EXPECT_TRUE((!caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
 
     // The assignment operators are implemented as "construct an IPF, then move from it"; so, one copy and one move of the ThrowingFunctor.
     try { tf.reset(1); caught = false; IPF a; a = tf; } catch (int) { caught = true; }
     EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 0) && (tf.destructed == 0));
     try { tf.reset(2); caught = false; IPF a; a = tf; } catch (int) { caught = true; }
-    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+    EXPECT_TRUE((!caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
 
     // The assignment operators are implemented as "construct an IPF, then move from it"; so, two moves of the ThrowingFunctor.
     try { tf.reset(1); caught = false; IPF a; a = std::move(tf); } catch (int) { caught = true; }
-    EXPECT_TRUE((not caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+    EXPECT_TRUE((!caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
 }
 
 template<size_t Cap>
@@ -361,18 +361,18 @@ static void test_nullptr()
     auto nil = nullptr;
     const auto cnil = nullptr;
 
-    IPF f;                    assert(not bool(f));
-    f = nullptr;              assert(not bool(f));
-    f = IPF(nullptr);         assert(not bool(f));
-    f = IPF();                assert(not bool(f));
-    f = IPF{};                assert(not bool(f));
-    f = {};                   assert(not bool(f));
-    f = nil;                  assert(not bool(f));
-    f = IPF(nil);             assert(not bool(f));
-    f = IPF(std::move(nil));  assert(not bool(f));
-    f = cnil;                 assert(not bool(f));
-    f = IPF(cnil);            assert(not bool(f));
-    f = IPF(std::move(cnil)); assert(not bool(f));
+    IPF f;                    assert(! bool(f));
+    f = nullptr;              assert(! bool(f));
+    f = IPF(nullptr);         assert(! bool(f));
+    f = IPF();                assert(! bool(f));
+    f = IPF{};                assert(! bool(f));
+    f = {};                   assert(! bool(f));
+    f = nil;                  assert(! bool(f));
+    f = IPF(nil);             assert(! bool(f));
+    f = IPF(std::move(nil));  assert(! bool(f));
+    f = cnil;                 assert(! bool(f));
+    f = IPF(cnil);            assert(! bool(f));
+    f = IPF(std::move(cnil)); assert(! bool(f));
 }
 
 void sg14_test::inplace_function_test()

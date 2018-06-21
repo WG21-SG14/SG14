@@ -52,7 +52,7 @@ class slot_map
 #else
     static constexpr auto get_index(const Key& k) { using std::get; return get<0>(k); }
     static constexpr auto get_generation(const Key& k) { using std::get; return get<1>(k); }
-    template<class Integral> static constexpr void set_index(Key& k, Integral value) { using std::get; get<0>(k) = value; }
+    template<class Integral> static constexpr void set_index(Key& k, Integral value) { using std::get; get<0>(k) = static_cast<unsigned int>(value); }
     static constexpr void increment_generation(Key& k) { using std::get; ++get<1>(k); }
 #endif
 
@@ -286,14 +286,14 @@ private:
             *value_iter = std::move(*value_back_iter);
             this->set_index(*slot_back_iter, value_index);
             auto reverse_map_iter = std::next(reverse_map_.begin(), value_index);
-            *reverse_map_iter = std::distance(slots_.begin(), slot_back_iter);
+            *reverse_map_iter = static_cast<key_size_type>(std::distance(slots_.begin(), slot_back_iter));
         }
         values_.pop_back();
         reverse_map_.pop_back();
         // Expire this key.
         this->set_index(*slot_iter, next_available_slot_index_);
         this->increment_generation(*slot_iter);
-        next_available_slot_index_ = slot_index;
+        next_available_slot_index_ = static_cast<key_size_type>(slot_index);
         return std::next(values_.begin(), value_index);
     }
 

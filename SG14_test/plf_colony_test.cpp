@@ -1,32 +1,119 @@
 #if defined(_MSC_VER)
-	#if _MSC_VER >= 1600
+	#define PLF_FORCE_INLINE __forceinline
+
+	#if _MSC_VER < 1600
+		#define PLF_NOEXCEPT throw()
+		#define PLF_NOEXCEPT_SWAP(the_allocator)
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
+	#elif _MSC_VER == 1600
 		#define PLF_MOVE_SEMANTICS_SUPPORT
-	#endif
-	#if _MSC_VER >= 1800
+		#define PLF_NOEXCEPT throw()
+		#define PLF_NOEXCEPT_SWAP(the_allocator)
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
+	#elif _MSC_VER == 1700
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT throw()
+		#define PLF_NOEXCEPT_SWAP(the_allocator)
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
+	#elif _MSC_VER == 1800
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT throw()
+		#define PLF_NOEXCEPT_SWAP(the_allocator)
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
+		#define PLF_INITIALIZER_LIST_SUPPORT
+	#elif _MSC_VER >= 1900
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF_NOEXCEPT noexcept
+		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 		#define PLF_INITIALIZER_LIST_SUPPORT
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L
+	#define PLF_FORCE_INLINE // note: GCC creates faster code without forcing inline
+
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
-		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.3 and below do not support initializer lists
-			#define PLF_COLONY_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
+		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.2 and below do not support variadic templates
+			#define PLF_VARIADICS_SUPPORT
 		#endif
-		#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) // 4.3 and below do not support initializer lists
+		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) || __GNUC__ > 4 // 4.3 and below do not support initializer lists
 			#define PLF_INITIALIZER_LIST_SUPPORT
 		#endif
+		#if (__GNUC__ == 4 && __GNUC_MINOR__ < 6) || __GNUC__ < 4
+			#define PLF_NOEXCEPT throw()
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
+			#define PLF_NOEXCEPT_SWAP(the_allocator)
+		#elif __GNUC__ < 6
+			#define PLF_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
+			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
+		#else // C++17 support
+			#define PLF_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
+		#endif
+		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#endif
+		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_TYPE_TRAITS_SUPPORT
+		#endif
+
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
-			#define PLF_COLONY_VARIADICS_SUPPORT
+			#define PLF_VARIADICS_SUPPORT
 		#endif
 		#if __GLIBCXX__ >= 20090421 	// libstdc++ 4.3 and below do not support initializer lists
 			#define PLF_INITIALIZER_LIST_SUPPORT
 		#endif
-	#else // Assume initializer/variadics support for non-GCC compilers and standard libraries - may not be accurate
+		#if __GLIBCXX__ >= 20160111
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
+		#elif __GLIBCXX__ >= 20120322
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept
+			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
+		#else
+			#define PLF_NOEXCEPT throw()
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
+			#define PLF_NOEXCEPT_SWAP(the_allocator)
+		#endif
+		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
+			#define PLF_TYPE_TRAITS_SUPPORT
+		#endif
+	#elif defined(_LIBCPP_VERSION) // No type trait support in libc++ to date
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_INITIALIZER_LIST_SUPPORT
+		#define PLF_NOEXCEPT noexcept
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal:value)
+		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
+	#else // Assume type traits and initializer support for non-GCC compilers and standard libraries
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_VARIADICS_SUPPORT
+		#define PLF_INITIALIZER_LIST_SUPPORT
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_NOEXCEPT noexcept
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal:value)
+		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
 	#endif
 
 	#define PLF_MOVE_SEMANTICS_SUPPORT
+#else
+	#define PLF_FORCE_INLINE
+	#define PLF_NOEXCEPT throw()
+	#define PLF_NOEXCEPT_SWAP(the_allocator)
+	#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
 #endif
 
 
@@ -73,14 +160,14 @@ namespace
 		static unsigned int y = 362436069;
 		static unsigned int z = 521288629;
 		static unsigned int w = 88675123;
-		
-		const unsigned int t = x ^ (x << 11); 
-	
+
+		const unsigned int t = x ^ (x << 11);
+
 		// Rotate the static values (w rotation in return statement):
 		x = y;
 		y = z;
 		z = w;
-	   
+
 		return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
 	}
 

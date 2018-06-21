@@ -62,7 +62,7 @@ struct Vector {
         size_ = rhs.size_;
         data_ = std::move(rhs.data_);
     }
-    unsigned size() const { return size_; }
+    unsigned size() const { return static_cast<unsigned int>(size_); }
     T *begin() { return data_.get(); }
     T *end() { return data_.get() + size_; }
     const T *begin() const { return data_.get(); }
@@ -433,8 +433,8 @@ void sg14_test::slot_map_test()
     using slot_map_7 = stdext::slot_map<std::unique_ptr<int>, std::pair<unsigned, int>, TestContainer::Vector>;
     static_assert(std::is_move_constructible<slot_map_7>::value, "");
     static_assert(std::is_move_assignable<slot_map_7>::value, "");
-    static_assert(not std::is_copy_constructible<slot_map_7>::value, "");
-    static_assert(not std::is_copy_assignable<slot_map_7>::value, "");
+    static_assert(! std::is_copy_constructible<slot_map_7>::value, "");
+    static_assert(! std::is_copy_assignable<slot_map_7>::value, "");
     BasicTests<slot_map_7>(std::make_unique<int>(1), std::make_unique<int>(2));
     FullContainerStressTest<slot_map_7>([]() { return std::make_unique<int>(1); });
     InsertEraseStressTest<slot_map_7>([i=7]() mutable { return std::make_unique<int>(++i); });
