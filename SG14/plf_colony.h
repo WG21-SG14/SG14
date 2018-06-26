@@ -207,7 +207,7 @@ namespace plf
 
 
 template <class element_type, class element_allocator_type = std::allocator<element_type>, typename element_skipfield_type = unsigned short > class colony : private element_allocator_type  // Empty base class optimisation - inheriting allocator functions
-// Note: unsigned short is equivalent to uint_least16_t ie. Using 16-bit integer in best-case scenario, greater-than-16-bit integer in case where platform doesn't support 16-bit types
+// Note: unsigned short is equivalent to uint_least16_t ie. Using 16-bit unsigned integer in best-case scenario, greater-than-16-bit unsigned integer where platform doesn't support 16-bit types
 {
 public:
 	// Standard container typedefs:
@@ -288,7 +288,7 @@ private:
 	// Colony groups:
 	struct group : private uchar_allocator_type	// Empty base class optimisation (EBCO) - inheriting allocator functions
 	{
-		aligned_pointer_type					last_endpoint; // the address that is one past the highest cell number that's been used so far in this group - does not change with erase command but may change with insert (if no previously-erased locations are available) - is necessary because an iterator cannot access the colony's end_iterator. Most-used variable in colony use (operator ++, --) so first in struct
+		aligned_pointer_type					last_endpoint; // The address that is one past the highest cell number that's been used so far in this group - does not change with erase command but may change with insert (if no previously-erased locations are available) - is necessary because an iterator cannot access the colony's end_iterator. Most-used variable in colony use (operator ++, --) so first in struct
 		group_pointer_type					next_group; // Next group in the intrusive list of all groups. NULL if no next group
 		const aligned_pointer_type			elements; // Element storage
 		const skipfield_pointer_type		skipfield; // Skipfield storage. The element and skipfield arrays are allocated contiguously, hence the skipfield pointer also functions as a 'one-past-end' pointer for the elements array. There will always be one additional skipfield node allocated compared to the number of elements. This is to ensure a faster ++ iterator operation (fewer checks are required when this is present). The extra node is unused and always zero, but checked, and not having it will result in out-of-bounds memory errors.
@@ -3541,7 +3541,7 @@ private:
 		sort_dereferencer() PLF_COLONY_NOEXCEPT
 		{}
 
-		bool operator() (const pointer first, const pointer second) const
+		bool operator() (const pointer first, const pointer second)
 		{
 			return stored_instance(*first, *second);
 		}
