@@ -5,6 +5,10 @@
 #include <string>
 #include <type_traits>
 
+#define EXPECT_EQ(val1, val2) assert(val1 == val2)
+#define EXPECT_TRUE(val) assert(val)
+#define EXPECT_FALSE(val) assert(!val)
+
 namespace {
 
 static int copied, moved, called_with;
@@ -31,10 +35,6 @@ void Foo(int i)
 }
 
 } // anonymous namespace
-
-#define EXPECT_EQ(val1, val2) assert(val1 == val2)
-#define EXPECT_TRUE(val) assert(val)
-#define EXPECT_FALSE(val) assert(!val)
 
 std::string gLastS;
 int gLastI = 0;
@@ -375,6 +375,29 @@ static void test_nullptr()
     f = IPF(std::move(cnil)); assert(! bool(f));
 }
 
+struct oon_functor {
+    int dummy;
+
+    oon_functor(int i) : dummy(i) {}
+    int operator()(int i) { return i + dummy; }
+
+    void *operator new (size_t, void *p) {
+        EXPECT_TRUE(false);  // class-specific "new" should not be called
+        return p;
+    }
+};
+
+static void test_overloaded_operator_new()
+{
+    using IPF = stdext::inplace_function<int(int), 8>;
+    oon_functor oon(42);
+    IPF fun = oon;
+    IPF fun2;
+    fun2 = oon;
+    fun = fun2;
+    EXPECT_EQ(43, fun(1));
+}
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -455,6 +478,7 @@ void sg14_test::inplace_function_test()
 
     test_exception_safety();
     test_nullptr();
+    test_overloaded_operator_new();
 }
 
 #ifdef TEST_MAIN

@@ -101,11 +101,11 @@ template<typename R, typename... Args> struct vtable
         },
         copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
             noexcept(std::is_nothrow_copy_constructible<C>::value) -> void
-            { new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
+            { ::new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
         },
         move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
             noexcept(std::is_nothrow_move_constructible<C>::value) -> void
-            { new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
+            { ::new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
         },
         destructor_ptr{ [](storage_ptr_t storage_ptr)
             noexcept -> void
@@ -201,7 +201,7 @@ public:
         static const vtable_t vt{inplace_function_detail::wrapper<C>{}};
         vtable_ptr_ = std::addressof(vt);
 
-        new (std::addressof(storage_)) C{std::forward<T>(closure)};
+        ::new (std::addressof(storage_)) C{std::forward<T>(closure)};
     }
 
     inplace_function(std::nullptr_t) noexcept :
