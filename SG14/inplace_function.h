@@ -337,6 +337,11 @@ public:
         std::swap(vtable_ptr_, other.vtable_ptr_);
     }
 
+    friend void swap(inplace_function& lhs, inplace_function& rhs)
+    {
+        lhs.swap(rhs);
+    }
+
 private:
     vtable_ptr_t vtable_ptr_;
     mutable storage_t storage_;
