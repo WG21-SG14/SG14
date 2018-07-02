@@ -80,7 +80,7 @@ template<typename R, typename... Args> struct vtable
 
     const invoke_ptr_t invoke_ptr;
     const process_ptr_t copy_ptr;
-    const process_ptr_t move_ptr;
+    const process_ptr_t relocate_ptr;
     const destructor_ptr_t destructor_ptr;
 
     explicit constexpr vtable() noexcept :
@@ -88,7 +88,7 @@ template<typename R, typename... Args> struct vtable
             { throw std::bad_function_call(); }
         },
         copy_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
-        move_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
+        relocate_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
         destructor_ptr{ [](storage_ptr_t) noexcept -> void {} }
     {}
 
@@ -103,13 +103,16 @@ template<typename R, typename... Args> struct vtable
             noexcept(std::is_nothrow_copy_constructible<C>::value) -> void
             { ::new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
         },
-        move_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
+        relocate_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
             noexcept(std::is_nothrow_move_constructible<C>::value) -> void
-            { ::new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) }; }
+            {
+                ::new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) };
+                static_cast<C*>(src_ptr)->~C();
+            }
         },
-        destructor_ptr{ [](storage_ptr_t storage_ptr)
+        destructor_ptr{ [](storage_ptr_t src_ptr)
             noexcept -> void
-            { static_cast<C*>(storage_ptr)->~C(); }
+            { static_cast<C*>(src_ptr)->~C(); }
         }
     {}
 
@@ -218,9 +221,9 @@ public:
     }
 
     inplace_function(inplace_function&& other) :
-        vtable_ptr_{other.vtable_ptr_}
+        vtable_ptr_{std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>))}
     {
-        vtable_ptr_->move_ptr(
+        vtable_ptr_->relocate_ptr(
             std::addressof(storage_),
             std::addressof(other.storage_)
         );
@@ -254,8 +257,8 @@ public:
         {
             vtable_ptr_->destructor_ptr(std::addressof(storage_));
 
-            vtable_ptr_ = other.vtable_ptr_;
-            vtable_ptr_->move_ptr(
+            vtable_ptr_ = std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>));
+            vtable_ptr_->relocate_ptr(
                 std::addressof(storage_),
                 std::addressof(other.storage_)
             );
@@ -308,7 +311,9 @@ public:
             Cap, Align, Capacity, Alignment
         >::value, "conversion not allowed");
 
-        return {vtable_ptr_, vtable_ptr_->move_ptr, std::addressof(storage_)};
+        auto vtable_ptr = std::exchange(vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>));
+
+        return {vtable_ptr, vtable_ptr->relocate_ptr, std::addressof(storage_)};
     }
 
     void swap(inplace_function& other)
@@ -316,23 +321,20 @@ public:
         if (this == std::addressof(other)) return;
 
         storage_t tmp;
-        vtable_ptr_->move_ptr(
+        vtable_ptr_->relocate_ptr(
             std::addressof(tmp),
             std::addressof(storage_)
         );
-        vtable_ptr_->destructor_ptr(std::addressof(storage_));
 
-        other.vtable_ptr_->move_ptr(
+        other.vtable_ptr_->relocate_ptr(
             std::addressof(storage_),
             std::addressof(other.storage_)
         );
-        other.vtable_ptr_->destructor_ptr(std::addressof(other.storage_));
 
-        vtable_ptr_->move_ptr(
+        vtable_ptr_->relocate_ptr(
             std::addressof(other.storage_),
             std::addressof(tmp)
         );
-        vtable_ptr_->destructor_ptr(std::addressof(tmp));
 
         std::swap(vtable_ptr_, other.vtable_ptr_);
     }
