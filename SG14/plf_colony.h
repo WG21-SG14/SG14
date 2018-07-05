@@ -1053,9 +1053,9 @@ private:
 	{
 		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && !(defined(__GNUC__) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)))
 			// this is faster under gcc if CPU is core2 and below, faster on MSVC/clang in-general:
-			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == reinterpret_cast<void *>(0)) // if all pointer types are trivial, and NULL is (almost always) zero, we can just nuke it from orbit with memset:
+			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == reinterpret_cast<void *>(0)) // if all pointer types are trivial, and NULL is zero, we can just nuke it from orbit with memset:
 			{
-				std::memset(this, 0, offsetof(colony, pointer_allocator_pair));
+				std::memset(reinterpret_cast<void *>(this), 0, offsetof(colony, pointer_allocator_pair));
 			}
 			else
 		#endif
@@ -1407,7 +1407,7 @@ public:
 					}
 
 					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if (std::is_nothrow_move_constructible<element_type>::value)
+						if (std::is_nothrow_copy_constructible<element_type>::value)
 						{
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(next_group.elements), element);
 						}
@@ -1462,9 +1462,9 @@ public:
 					// Code logic for next section:
 					// ============================
 					// check whether location we are restoring to has a skipfield node before or after which is erased
-					// if it has only a node before which is erased (ie. at end of erasure block), update the prime erasure point
-					// if it only has a node after it which is erased, (ie. this is the prime erasure point), change next node to prime erasure point and update all subsequent erasure points (ie. decrement by 1)
-					// if it has both a node before and after which is erased (ie. is in middle of erasure block), do both of the above
+					// if only the node to the left is skipped (ie. current node is at end of skipblock), update the start node of that skipblock
+					// if only the node to the right is skipped (ie. current node is the start node of a skipblock to the right), change next node to be the start node of the skipblock and update all subsequent nodes (decrement each by 1)
+					// if both left and right nodes are skipped (ie. current node is in middle of skipblock), do both of the above
 
 					// Explanation of the following optimization: we must avoid testing the left-hand skipfield node if we are already at the beginning of the skipfield, otherwise we create an out-of-bounds memory access.
 					// To avoid this would Normally require a branching test ie. !is_at_start && left-hand-node != 0 (&& and || operations are conditional executation of the right-hand instruction, which causes branching). But instead we subtract 'test' (which is 0 if the skipfield node is at start of skipfield, 1 if not) from the skipfield node.
@@ -1542,7 +1542,7 @@ public:
 
 
 	#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
-		iterator insert(element_type &&element) // Both the move-insert and emplace functions are near-identical to the regular insert function, the the exception of the element construction method.
+		iterator insert(element_type &&element) // The move-insert function is near-identical to the regular insert function, with the exception of the element construction method and is_nothrow tests.
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
@@ -1553,7 +1553,7 @@ public:
 						const iterator return_iterator = end_iterator;
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_copy_constructible<element_type>::value)
+							if (std::is_nothrow_move_constructible<element_type>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::move(element));
 								end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
@@ -1564,7 +1564,7 @@ public:
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer), std::move(element));
 							end_iterator.group_pointer->last_endpoint = ++end_iterator.element_pointer;
 						}
-	
+
 						++(end_iterator.group_pointer->number_of_elements);
 						++end_iterator.skipfield_pointer;
 						++total_number_of_elements;
@@ -1593,7 +1593,7 @@ public:
 						}
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_constructible<element_type>::value)
+							if (std::is_nothrow_move_constructible<element_type>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(next_group.elements), std::move(element));
 							}
@@ -1684,7 +1684,7 @@ public:
 				initialize(pointer_allocator_pair.min_elements_per_group);
 
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-					if (std::is_nothrow_copy_constructible<element_type>::value)
+					if (std::is_nothrow_move_constructible<element_type>::value)
 					{
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::move(element));
 					}
@@ -1714,7 +1714,7 @@ public:
 
 	#ifdef PLF_COLONY_VARIADICS_SUPPORT
 		template<typename... arguments>
-		iterator emplace(arguments &&... parameters)
+		iterator emplace(arguments &&... parameters) // The emplace function is near-identical to the regular insert function, with the exception of the element construction method, lack of VARIADICS support checks and is_nothrow tests.
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
@@ -1761,7 +1761,7 @@ public:
 						}
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_constructible<element_type>::value)
+							if (std::is_nothrow_constructible<element_type, arguments ...>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(next_group.elements), std::forward<arguments>(parameters)...);
 							}
@@ -2122,8 +2122,8 @@ private:
 
 public:
 
-	// must return iterator in case the group which the iterator is within becomes empty after the erasure and is thereby removed from the colony chain, making the prior iterator invalid and unusable:
-	iterator erase(const const_iterator &it) 	// if uninitialized/invalid iterator supplied, function could generate an exception
+	// must return iterator to subsequent non-erased element (or end()), in case the group containing the element which the iterator points to becomes empty after the erasure, and is thereafter removed from the colony chain, making the current iterator invalid and unusable in a ++ operation:
+	iterator erase(const const_iterator &it) // if uninitialized/invalid iterator supplied, function could generate an exception
 	{
 		assert(!empty());
 		const group_pointer_type group_pointer = it.group_pointer;
@@ -2153,10 +2153,10 @@ public:
 
 			// Code logic for following section:
 			// ---------------------------------
-			// If current skipfield node has no erased node on either side, continue as usual
-			// If node has erased node before it, add 1 to prev node value and set current node and start node of the skipblock to this.
-			// If node has erased node after it but none before it, make this node the start node of the skipblock and update subsequent nodes
-			// If node has erased nodes before and after it, set current node to left node + 1, then update all nodes after  the current node - effectively removing start node of the right-hand skipblock
+			// If current skipfield node has no skipped node on either side, continue as usual
+			// If node only has skipped node on left, set current node and start node of the skipblock to left node value + 1.
+			// If node only has skipped node on right, make this node the start node of the skipblock and update subsequent nodes.
+			// If node has skipped nodes on left and right, set current node to left node + 1, then update all nodes after the current node (add 1 per node from the current node's value)
 
 			iterator return_iterator;
 
@@ -2171,7 +2171,7 @@ public:
 			{
 				case 0: // no consecutive erased elements
 				{
-					*it.skipfield_pointer = 1; // solo erase point
+					*it.skipfield_pointer = 1; // solo skipped node
 
 					return_iterator.group_pointer = group_pointer;
 					return_iterator.element_pointer = it.element_pointer + 1;
@@ -3331,7 +3331,6 @@ public:
 		// skipping manual incrementation in all but the initial and final groups.
 		// In the initial and final groups, manual incrementation must be used to calculate distance, if there have been no prior erasures in those groups.
 		// If there are no prior erasures in either of those groups, we can use pointer arithmetic to calculate the distances for those groups.
-
 
 		assert(!(first.group_pointer == NULL) && !(last.group_pointer == NULL));  // Check that they are initialized
 

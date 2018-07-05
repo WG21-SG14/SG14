@@ -189,6 +189,20 @@ namespace
 			: success(false)
 		{}
 	};
+
+
+	struct small_struct
+	{
+		double *empty_field_1;
+		double unused_number;
+		unsigned int empty_field2;
+		double *empty_field_3;
+		int number;
+		unsigned int empty_field4;
+
+		small_struct(const int num) PLF_NOEXCEPT: number(num) {};
+	};
+
 #endif
 }
 
@@ -1079,6 +1093,26 @@ void plf_colony_test()
 			failpass("Perfect forwarding test", (*pf_colony.begin()).success);
 			failpass("Perfect forwarding test 2", lvalueref == 1);
 		}
+		{
+			title2("Basic emplace test");
+
+			colony<small_struct> ss_colony;
+			int total1 = 0, total2 = 0;
+
+			for (int counter = 0; counter != 100; ++counter)
+			{
+				ss_colony.emplace(counter);
+				total1 += counter;
+			}
+			
+			for (colony<small_struct>::iterator it = ss_colony.begin(); it != ss_colony.end(); ++it)
+			{
+				total2 += it->number;
+			}
+
+			failpass("Basic emplace test", total1 == total2);
+			failpass("Basic emplace test 2", ss_colony.size() == 100);
+		}
 		#endif
 
 
@@ -1419,8 +1453,8 @@ void plf_colony_test()
 				failpass("Post-splice insert-and-erase randomly till-empty test", colony1.size() == 0);
 			}
 		}
-	}
-	
+	 }
+
 	std::cout << "Colony Test Suite PASS\n";
 }
 
