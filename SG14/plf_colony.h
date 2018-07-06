@@ -493,7 +493,7 @@ public:
 			assert(group_pointer != NULL); // covers uninitialised colony_iterator
 			assert(!(element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)); // Assert that iterator is not already at end()
 
-			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
+			#if (defined(__GNUC__) && !defined(__clang__)) && (defined(__icelake_client__) || defined(__icelake_server__) || defined(__cannonlake__) || defined(__skylake_avx512__) || defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)) // faster under gcc on core i processors post-westmere
 				skipfield_type skip = *(++skipfield_pointer);
 
 				if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
@@ -1051,7 +1051,7 @@ private:
 
 	inline void blank() PLF_COLONY_NOEXCEPT
 	{
-		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && !(defined(__GNUC__) && (defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)))
+		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && !(defined(__GNUC__) && (defined(__icelake_client__) || defined(__icelake_server__) || defined(__cannonlake__) || defined(__skylake_avx512__) || defined(__haswell__) || defined(__skylake__) || defined(__silvermont__) || defined(__sandybridge__) || defined(__ivybridge__) || defined(__broadwell__)))
 			// this is faster under gcc if CPU is core2 and below, faster on MSVC/clang in-general:
 			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value && NULL == reinterpret_cast<void *>(0)) // if all pointer types are trivial, and NULL is zero, we can just nuke it from orbit with memset:
 			{
@@ -1461,7 +1461,7 @@ public:
 
 					// Code logic for next section:
 					// ============================
-					// check whether location we are restoring to has a skipfield node before or after which is erased
+					// Check whether element location we are reusing has a skipfield node before or after which is skipped (erased)
 					// if only the node to the left is skipped (ie. current node is at end of skipblock), update the start node of that skipblock
 					// if only the node to the right is skipped (ie. current node is the start node of a skipblock to the right), change next node to be the start node of the skipblock and update all subsequent nodes (decrement each by 1)
 					// if both left and right nodes are skipped (ie. current node is in middle of skipblock), do both of the above
@@ -1714,7 +1714,7 @@ public:
 
 	#ifdef PLF_COLONY_VARIADICS_SUPPORT
 		template<typename... arguments>
-		iterator emplace(arguments &&... parameters) // The emplace function is near-identical to the regular insert function, with the exception of the element construction method, lack of VARIADICS support checks and is_nothrow tests.
+		iterator emplace(arguments &&... parameters) // The emplace function is near-identical to the regular insert function, with the exception of the element construction method, removal of internal VARIADICS support checks, and change to is_nothrow tests.
 		{
 			if (end_iterator.element_pointer != NULL)
 			{
@@ -3790,29 +3790,41 @@ public:
 	{
 		assert(&source != this);
 
-		// The below is faster than doing a move-swap, by a significant margin:
-		const iterator						swap_end_iterator = end_iterator, swap_begin_iterator = begin_iterator;
-		const group_pointer_type		swap_first_group = first_group, swap_groups_with_erasures_list_head = groups_with_erasures_list_head;
-		const size_type					swap_total_number_of_elements = total_number_of_elements, swap_total_capacity = total_capacity;
-		const skipfield_type 			swap_min_elements_per_group = pointer_allocator_pair.min_elements_per_group, swap_max_elements_per_group = group_allocator_pair.max_elements_per_group;
+		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value) // if all pointer types are trivial we can just copy using memcpy - much faster
+			{
+				char temp[sizeof(colony)];
+				std::memcpy(reinterpret_cast<void *>(&temp), reinterpret_cast<void *>(this), sizeof(colony));
+				std::memcpy(reinterpret_cast<void *>(this), reinterpret_cast<void *>(&source), sizeof(colony));
+				std::memcpy(reinterpret_cast<void *>(&source), reinterpret_cast<void *>(&temp), sizeof(colony));
+			}
+			else
+		#endif
+		{
+			// The below is faster than doing a move-swap, by a significant margin:
+			const iterator						swap_end_iterator = end_iterator, swap_begin_iterator = begin_iterator;
+			const group_pointer_type		swap_first_group = first_group, swap_groups_with_erasures_list_head = groups_with_erasures_list_head;
+			const size_type					swap_total_number_of_elements = total_number_of_elements, swap_total_capacity = total_capacity;
+			const skipfield_type 			swap_min_elements_per_group = pointer_allocator_pair.min_elements_per_group, swap_max_elements_per_group = group_allocator_pair.max_elements_per_group;
 
-		end_iterator = source.end_iterator;
-		begin_iterator = source.begin_iterator;
-		first_group = source.first_group;
-		groups_with_erasures_list_head = source.groups_with_erasures_list_head;
-		total_number_of_elements = source.total_number_of_elements;
-		total_capacity = source.total_capacity;
-		pointer_allocator_pair.min_elements_per_group = source.pointer_allocator_pair.min_elements_per_group;
-		group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+			end_iterator = source.end_iterator;
+			begin_iterator = source.begin_iterator;
+			first_group = source.first_group;
+			groups_with_erasures_list_head = source.groups_with_erasures_list_head;
+			total_number_of_elements = source.total_number_of_elements;
+			total_capacity = source.total_capacity;
+			pointer_allocator_pair.min_elements_per_group = source.pointer_allocator_pair.min_elements_per_group;
+			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
 
-		source.end_iterator = swap_end_iterator;
-		source.begin_iterator = swap_begin_iterator;
-		source.first_group = swap_first_group;
-		source.groups_with_erasures_list_head = swap_groups_with_erasures_list_head;
-		source.total_number_of_elements = swap_total_number_of_elements;
-		source.total_capacity = swap_total_capacity;
-		source.pointer_allocator_pair.min_elements_per_group = swap_min_elements_per_group;
-		source.group_allocator_pair.max_elements_per_group = swap_max_elements_per_group;
+			source.end_iterator = swap_end_iterator;
+			source.begin_iterator = swap_begin_iterator;
+			source.first_group = swap_first_group;
+			source.groups_with_erasures_list_head = swap_groups_with_erasures_list_head;
+			source.total_number_of_elements = swap_total_number_of_elements;
+			source.total_capacity = swap_total_capacity;
+			source.pointer_allocator_pair.min_elements_per_group = swap_min_elements_per_group;
+			source.group_allocator_pair.max_elements_per_group = swap_max_elements_per_group;
+		}
 	}
 
 };	// colony
