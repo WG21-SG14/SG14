@@ -119,7 +119,6 @@
 
 #include <functional> // std::greater
 #include <vector> // range-insert testing
-#include <iostream>
 #include <algorithm> // std::find
 #include <cstdio> // log redirection
 #include <cstdlib> // abort
@@ -134,12 +133,13 @@
 
 namespace
 {
+
     inline void failpass(const char *test_type, bool condition)
     {
         if (!condition)
         {
-			std::cout << test_type << ": " << "Fail" << std::endl;
-            std::cin.get();
+				printf("%s: Fail\n", test_type);
+				getchar();
             abort();
         }
     }
@@ -217,7 +217,7 @@ void plf_colony_test()
 
 
 	unsigned int looper = 0;
-	std::cout << "Colony Test Suite running..\n";
+	printf("Colony Test Suite running..\n");
 
 
 	while (++looper != 25)
@@ -225,21 +225,21 @@ void plf_colony_test()
 		{
 			title1("Colony");
 			title2("Test Basics");
-			
+
 			colony<int *> p_colony;
-			
+
 			failpass("Colony empty", p_colony.empty());
-			
+
 			int ten = 10;
 			p_colony.insert(&ten);
-			
+
 			failpass("Colony not-empty", !p_colony.empty());
 
 			title2("Iterator tests");
-			
+
 			failpass("Begin() working", **p_colony.begin() == 10);
 			failpass("End() working", p_colony.begin() != p_colony.end());
-			
+
 
 			p_colony.clear();
 
@@ -926,9 +926,9 @@ void plf_colony_test()
 
 					if (i_colony.size() != counter)
 					{
-						std::cout << "Fail. loop counter: " << loop_counter << ", internal_loop_counter: " << internal_loop_counter << "." << std::endl;
-						std::cin.get(); 
-						abort(); 
+						printf("Fuzz-test range-erase randomly Fail: loop counter: %u, , internal_loop_counter: %u.\n", loop_counter, internal_loop_counter);
+						getchar(); 
+						abort();
 					}
 					
 					if (i_colony.size() > 2)
@@ -1116,6 +1116,47 @@ void plf_colony_test()
 		#endif
 
 
+		{
+			title2("Misc function tests");
+			
+			colony<int> colony1;
+			colony1.change_group_sizes(50, 100);
+			
+			colony1.insert(27);
+			
+			failpass("Change_group_sizes min-size test", colony1.capacity() == 50);
+			
+			for (int counter = 0; counter != 100; ++counter)
+			{
+				colony1.insert(counter);
+			}
+			
+			failpass("Change_group_sizes max-size test", colony1.capacity() == 200);
+			
+			colony1.reinitialize(200, 2000);
+			
+			colony1.insert(27);
+			
+			failpass("Reinitialize min-size test", colony1.capacity() == 200);
+			
+			for (int counter = 0; counter != 3300; ++counter)
+			{
+				colony1.insert(counter);
+			}
+
+			failpass("Reinitialize max-size test", colony1.capacity() == 5200);			
+
+			colony1.change_group_sizes(500, 500);
+			
+			failpass("Change_group_sizes resize test", colony1.capacity() == 3500);
+			
+			colony1.change_minimum_group_size(200);
+			colony1.change_maximum_group_size(200);
+			
+			failpass("Change_maximum_group_size resize test", colony1.capacity() == 3400);
+			
+		}
+		
 		{
 			title2("Splice tests");
 			
@@ -1453,9 +1494,9 @@ void plf_colony_test()
 				failpass("Post-splice insert-and-erase randomly till-empty test", colony1.size() == 0);
 			}
 		}
-	 }
+	}
 
-	std::cout << "Colony Test Suite PASS\n";
+	printf("Colony Test Suite PASS\n");
 }
 
 }
