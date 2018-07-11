@@ -45,8 +45,6 @@ struct Vector {
     using size_type = unsigned;
     using iterator = T*;
     using const_iterator = const T*;
-    using reverse_iterator = std::reverse_iterator<T*>;
-    using const_reverse_iterator = std::reverse_iterator<const T*>;
 
     Vector() = default;
     template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
@@ -347,8 +345,6 @@ static void TypedefTests()
         static_assert(std::is_same<typename SM::const_pointer, const int*>::value, "");
         static_assert(std::is_same<typename SM::iterator, TestContainer::Vector<int>::iterator>::value, "");
         static_assert(std::is_same<typename SM::const_iterator, TestContainer::Vector<int>::const_iterator>::value, "");
-        static_assert(std::is_same<typename SM::reverse_iterator, TestContainer::Vector<int>::reverse_iterator>::value, "");
-        static_assert(std::is_same<typename SM::const_reverse_iterator, TestContainer::Vector<int>::const_reverse_iterator>::value, "");
         static_assert(std::is_same<typename SM::size_type, unsigned>::value, "");
         static_assert(std::is_same<typename SM::value_type, int>::value, "");
     }
@@ -374,12 +370,39 @@ static void TypedefTests()
 #endif // __cplusplus >= 201703L
 }
 
+template<class SM, class = decltype(std::declval<SM&>().rbegin())>
+void VerifyRbeginExists(bool expected)
+{
+    assert(expected);
+    SM sm;
+    auto r1 = sm.rbegin();
+    auto r2 = sm.rend();
+    auto cr1 = sm.crbegin();
+    auto cr2 = sm.crend();
+    assert(r1 == r2);
+    assert(cr1 == cr2);
+    static_assert(std::is_same<decltype(r1), typename SM::reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(r2), typename SM::reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(cr1), typename SM::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(cr2), typename SM::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<typename SM::reverse_iterator, typename SM::container_type::reverse_iterator>::value, "");
+    static_assert(std::is_same<typename SM::const_reverse_iterator, typename SM::container_type::const_reverse_iterator>::value, "");
+}
+
+template<class SM, class Bool>
+void VerifyRbeginExists(Bool expected)
+{
+    assert(not expected);
+
+}
+
 void sg14_test::slot_map_test()
 {
     TypedefTests();
 
     // Test the most basic slot_map.
     using slot_map_1 = stdext::slot_map<int>;
+    VerifyRbeginExists<slot_map_1>(true);
     BasicTests<slot_map_1>(42, 37);
     FullContainerStressTest<slot_map_1>([]() { return 1; });
     InsertEraseStressTest<slot_map_1>([i=3]() mutable { return ++i; });
@@ -388,6 +411,7 @@ void sg14_test::slot_map_test()
 
     // Test slot_map with a custom key type (C++14 destructuring).
     using slot_map_2 = stdext::slot_map<unsigned long, TestKey::key_16_8_t>;
+    VerifyRbeginExists<slot_map_2>(true);
     BasicTests<slot_map_2>(425, 375);
     FullContainerStressTest<slot_map_2>([]() { return 42; });
     InsertEraseStressTest<slot_map_2>([i=5]() mutable { return ++i; });
@@ -397,6 +421,7 @@ void sg14_test::slot_map_test()
 #if __cplusplus >= 201703L
     // Test slot_map with a custom key type (C++17 destructuring).
     using slot_map_3 = stdext::slot_map<int, TestKey::key_11_5_t>;
+    VerifyRbeginExists<slot_map_3>(true);
     BasicTests<slot_map_3>(42, 37);
     FullContainerStressTest<slot_map_3>([]() { return 42; });
     InsertEraseStressTest<slot_map_3>([i=3]() mutable { return ++i; });
@@ -406,6 +431,7 @@ void sg14_test::slot_map_test()
 
     // Test slot_map with a custom (but standard and random-access) container type.
     using slot_map_4 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::deque>;
+    VerifyRbeginExists<slot_map_4>(true);
     BasicTests<slot_map_4>(415, 315);
     FullContainerStressTest<slot_map_4>([]() { return 37; });
     InsertEraseStressTest<slot_map_4>([i=7]() mutable { return ++i; });
@@ -414,6 +440,7 @@ void sg14_test::slot_map_test()
 
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
+    VerifyRbeginExists<slot_map_5>(false);
     BasicTests<slot_map_5>(415, 315);
     FullContainerStressTest<slot_map_5>([]() { return 37; });
     InsertEraseStressTest<slot_map_5>([i=7]() mutable { return ++i; });
@@ -422,6 +449,7 @@ void sg14_test::slot_map_test()
 
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
+    VerifyRbeginExists<slot_map_6>(true);
     BasicTests<slot_map_6>(415, 315);
     FullContainerStressTest<slot_map_6>([]() { return 37; });
     InsertEraseStressTest<slot_map_6>([i=7]() mutable { return ++i; });
@@ -431,6 +459,7 @@ void sg14_test::slot_map_test()
     // Test slot_map with a move-only value_type.
     // Sadly, standard containers do not propagate move-only-ness, so we must use our custom Vector instead.
     using slot_map_7 = stdext::slot_map<std::unique_ptr<int>, std::pair<unsigned, int>, TestContainer::Vector>;
+    VerifyRbeginExists<slot_map_7>(false);
     static_assert(std::is_move_constructible<slot_map_7>::value, "");
     static_assert(std::is_move_assignable<slot_map_7>::value, "");
     static_assert(! std::is_copy_constructible<slot_map_7>::value, "");
@@ -459,8 +488,6 @@ concept bool SlotMapContainer =
         typename Ctr<T>::const_pointer;
         typename Ctr<T>::iterator;
         typename Ctr<T>::const_iterator;
-        typename Ctr<T>::reverse_iterator;
-        typename Ctr<T>::const_reverse_iterator;
         { c.emplace_back(t) };
         { c.pop_back() };
         { c.begin() } -> typename Ctr<T>::iterator;

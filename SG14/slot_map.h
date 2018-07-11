@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -37,12 +38,45 @@
 
 namespace stdext {
 
+namespace slot_map_detail {
+
+template<class T> using iterator_category_t = typename std::iterator_traits<T>::iterator_category;
+template<class T> struct is_bidirectional_iterator : std::is_convertible<iterator_category_t<T>, std::bidirectional_iterator_tag> {};
+
+template<class...> using void_t = void;
+template<class T, class=void> struct has_reverse_iterators : std::false_type {};
+template<class T> struct has_reverse_iterators<T, void_t<typename T::reverse_iterator, typename T::const_reverse_iterator>> : std::true_type {};
+
+template<class CRTP, class ContainerT, bool Reversible>
+struct reverse_iterator_methods {};
+
+template<class CRTP, class ContainerT>
+struct reverse_iterator_methods<CRTP, ContainerT, true> {
+    using container_type = ContainerT;
+    using reverse_iterator = typename container_type::reverse_iterator;
+    using const_reverse_iterator = typename container_type::const_reverse_iterator;
+
+    // All begin() and end() variations have O(1) time and space complexity.
+    //
+    constexpr reverse_iterator rbegin()                { return values().rbegin(); }
+    constexpr reverse_iterator rend()                  { return values().rend(); }
+    constexpr const_reverse_iterator rbegin() const    { return values().rbegin(); }
+    constexpr const_reverse_iterator rend() const      { return values().rend(); }
+    constexpr const_reverse_iterator crbegin() const   { return values().rbegin(); }
+    constexpr const_reverse_iterator crend() const     { return values().rend(); }
+private:
+    ContainerT& values() { return static_cast<CRTP*>(this)->values_; }
+    const ContainerT& values() const { return static_cast<const CRTP*>(this)->values_; }
+};
+
+} // namespace slot_map_detail
+
 template<
     class T,
     class Key = std::pair<unsigned, unsigned>,
     template<class...> class Container = std::vector
 >
-class slot_map
+class slot_map : public slot_map_detail::reverse_iterator_methods<slot_map<T, Key, Container>, Container<T>, slot_map_detail::has_reverse_iterators<Container<T>>::value>
 {
 #if __cplusplus >= 201703L
     static constexpr auto get_index(const Key& k) { const auto& [idx, gen] = k; return idx; }
@@ -58,6 +92,8 @@ class slot_map
 
     using slot_iterator = typename Container<Key>::iterator;
 
+    template<class, class, bool> friend struct slot_map_detail::reverse_iterator_methods;
+
 public:
     using key_type = Key;
     using mapped_type = T;
@@ -72,13 +108,12 @@ public:
     using const_pointer = typename container_type::const_pointer;
     using iterator = typename container_type::iterator;
     using const_iterator = typename container_type::const_iterator;
-    using reverse_iterator = typename container_type::reverse_iterator;
-    using const_reverse_iterator = typename container_type::const_reverse_iterator;
 
     using size_type = typename container_type::size_type;
     using value_type = typename container_type::value_type;
 
     static_assert(std::is_same<value_type, mapped_type>::value, "Container<T>::value_type must be identical to T");
+    static_assert(slot_map_detail::is_bidirectional_iterator<iterator>::value, "Container<T> must have bidirectional iterators");
 
     constexpr slot_map() = default;
     constexpr slot_map(const slot_map&) = default;
@@ -160,12 +195,6 @@ public:
     constexpr const_iterator end() const               { return values_.end(); }
     constexpr const_iterator cbegin() const            { return values_.begin(); }
     constexpr const_iterator cend() const              { return values_.end(); }
-    constexpr reverse_iterator rbegin()                { return values_.rbegin(); }
-    constexpr reverse_iterator rend()                  { return values_.rend(); }
-    constexpr const_reverse_iterator rbegin() const    { return values_.rbegin(); }
-    constexpr const_reverse_iterator rend() const      { return values_.rend(); }
-    constexpr const_reverse_iterator crbegin() const   { return values_.rbegin(); }
-    constexpr const_reverse_iterator crend() const     { return values_.rend(); }
 
     // Functions for checking the size and capacity of the adapted container
     // have the same complexity as the adapted container.
