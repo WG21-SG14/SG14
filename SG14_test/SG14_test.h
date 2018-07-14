@@ -7,6 +7,7 @@ namespace sg14_test
     void plf_colony_test();
     void ring_test();
     void slot_map_test();
+    void structured_binding_traits_test();
     void transcode_test();
     void uninitialized_test();
     void unstable_remove_test();
