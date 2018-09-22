@@ -71,3 +71,4 @@ cmake/.idea
 /.vs/SG14/v15/Browse.VC.opendb
 /.vs/SG14/v15/Browse.VC.db
 /.vs/ProjectSettings.json
+/build/

@@ -11,3 +11,16 @@ A library for Study Group 14 of Working Group 21 (C++)
 
 https://groups.google.com/a/isocpp.org/forum/?fromgroups=#!forum/sg14 for more information
 
+## Build Instructions
+Clone the repo. Navigate to the folder in your favorite terminal.
+
+`mkdir build && cd build`
+
+### Windows
+`cmake .. -A x64 && cmake --build . && bin\sg14_tests.exe`
+
+### Unixes
+`cmake .. && cmake --build . && ./bin/sg14_tests`
+
+### Alternatively
+`cd SG14_test && g++ -std=c++14 -DTEST_MAIN -I../SG14 whatever_test.cpp && ./a.out`
