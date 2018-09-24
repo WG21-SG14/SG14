@@ -278,6 +278,40 @@ public:
         return 1;
     }
 
+    template<class Pred>
+    constexpr iterator partition(const Pred& pred) {
+        iterator it = this->begin();
+        iterator jt = this->end();
+        if (it == jt) return it;
+        while (true) {
+            --jt;
+            if (it == jt) return it;
+            while (pred(*it)) {
+                ++it;
+                if (it == jt) return it;
+            }
+            while (!pred(*jt)) {
+                --jt;
+                if (it == jt) return it;
+            }
+            // Swap *it and *jt in the underlying container,
+            // but then fix up their keys so they don't appear to move.
+            auto it_value_index = std::distance(values_.begin(), it);
+            auto it_reversemap_iter = std::next(reverse_map_.begin(), it_value_index);
+            auto it_slot_iter = std::next(slots_.begin(), *it_reversemap_iter);
+            auto jt_value_index = std::distance(values_.begin(), jt);
+            auto jt_reversemap_iter = std::next(reverse_map_.begin(), jt_value_index);
+            auto jt_slot_iter = std::next(slots_.begin(), *jt_reversemap_iter);
+
+            using std::swap;
+            swap(*it, *jt);
+            swap(*it_slot_iter, *jt_slot_iter);
+            swap(*it_reversemap_iter, *jt_reversemap_iter);
+            ++it;
+            if (it == jt) return it;
+        }
+    }
+
     // clear() has O(n) time complexity and O(1) space complexity.
     // It also has semantics differing from erase(begin(), end())
     // in that it also resets the generation counter of every slot
