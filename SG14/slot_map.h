@@ -47,12 +47,12 @@ class slot_map
 #if __cplusplus >= 201703L
     static constexpr auto get_index(const Key& k) { const auto& [idx, gen] = k; return idx; }
     static constexpr auto get_generation(const Key& k) { const auto& [idx, gen] = k; return gen; }
-    template<class Integral> static constexpr void set_index(Key& k, Integral value) { auto& [idx, gen] = k; idx = value; }
+    template<class Integral> static constexpr void set_index(Key& k, Integral value) { auto& [idx, gen] = k; idx = static_cast<key_size_type>(value); }
     static constexpr void increment_generation(Key& k) { auto& [idx, gen] = k; ++gen; }
 #else
     static constexpr auto get_index(const Key& k) { using std::get; return get<0>(k); }
     static constexpr auto get_generation(const Key& k) { using std::get; return get<1>(k); }
-    template<class Integral> static constexpr void set_index(Key& k, Integral value) { using std::get; get<0>(k) = static_cast<unsigned int>(value); }
+    template<class Integral> static constexpr void set_index(Key& k, Integral value) { using std::get; get<0>(k) = static_cast<key_size_type>(value); }
     static constexpr void increment_generation(Key& k) { using std::get; ++get<1>(k); }
 #endif
 
