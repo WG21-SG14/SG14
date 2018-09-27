@@ -186,7 +186,7 @@
 #include <limits>  // std::numeric_limits
 #include <memory>	// std::allocator
 #include <iterator> // std::bidirectional_iterator_tag
-
+#include <cstddef>
 
 #ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 	#include <type_traits> // std::is_trivially_destructible, etc
@@ -2623,7 +2623,7 @@ public:
 		pointer_allocator_pair.min_elements_per_group = min_allocation_amount;
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
 
-		if (first_group != NULL && (first_group->size < min_allocation_amount || end_iterator.group_pointer->size > max_allocation_amount))
+		if (first_group != NULL && ((first_group->size < min_allocation_amount) || (end_iterator.group_pointer->size > max_allocation_amount)))
 		{
 			consolidate();
 		}
