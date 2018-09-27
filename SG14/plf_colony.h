@@ -181,12 +181,12 @@
 
 #include <algorithm> // std::sort and std::fill_n
 
-#include <cstring>	// memset, memmove
 #include <cassert>	// assert
+#include <cstddef>
+#include <cstring>	// memset, memmove
+#include <iterator> // std::bidirectional_iterator_tag
 #include <limits>  // std::numeric_limits
 #include <memory>	// std::allocator
-#include <iterator> // std::bidirectional_iterator_tag
-#include <cstddef>
 
 #ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 	#include <type_traits> // std::is_trivially_destructible, etc
@@ -2594,7 +2594,7 @@ public:
 
 	inline size_type max_size() const PLF_COLONY_NOEXCEPT
 	{
-		return element_allocator_type::max_size();
+		return std::allocator_traits<element_allocator_type>::max_size({});
 	}
 
 
