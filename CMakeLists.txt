@@ -72,9 +72,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME})
-	target_compile_options(${TEST_NAME} PRIVATE /Zc:__cplusplus /permissive- /W4)# /WX) temporarily allow warnings
+	target_compile_options(${TEST_NAME} PRIVATE /Zc:__cplusplus /permissive- /W4 /WX)
 	add_definitions(-DNOMINMAX -D_SCL_SECURE_NO_WARNINGS)
 	set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
-		COMPILE_FLAGS "/wd4100 /wd4456"
+		COMPILE_FLAGS "/wd4100 /wd4456 /wd4127"
 	)
 endif()
