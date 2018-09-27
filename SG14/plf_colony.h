@@ -182,10 +182,10 @@
 #include <algorithm> // std::sort and std::fill_n
 
 #include <cassert>	// assert
-#include <cstddef>
+#include <cstddef>  // offsetof
 #include <cstring>	// memset, memmove
 #include <iterator> // std::bidirectional_iterator_tag
-#include <limits>  // std::numeric_limits
+#include <limits>   // std::numeric_limits
 #include <memory>	// std::allocator
 
 #ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
