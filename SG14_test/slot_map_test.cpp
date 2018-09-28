@@ -473,6 +473,42 @@ static void GenerationsDontSkipTest()
 #endif
 }
 
+template<class SM>
+static void IndexesAreUsedEvenlyTest()
+{
+    using T = typename SM::mapped_type;
+    SM sm;
+    auto k1 = sm.emplace(Monad<T>::from_value(1));
+    auto k2 = sm.emplace(Monad<T>::from_value(2));
+    int original_cap = sm.slot_count();
+    for (int i=2; i < original_cap; ++i) {
+        sm.emplace(Monad<T>::from_value(i));
+    }
+    assert(sm.size() == sm.slot_count());
+
+    sm.erase(k1);
+    sm.erase(k2);
+    assert(sm.size() == sm.slot_count() - 2);
+
+    // There are now two slots available.
+    // So consecutive insertions should prefer to
+    // use different slots, rather than sticking to
+    // just one slot and bumping its generation count.
+    k1 = sm.emplace(Monad<T>::from_value(1));
+    sm.erase(k1);
+    k2 = sm.emplace(Monad<T>::from_value(2));
+    sm.erase(k2);
+
+#if __cplusplus < 201703L
+    using std::get;
+    assert(get<0>(k2) != get<0>(k1));
+#else
+    auto [idx1, gen1] = k1;
+    auto [idx2, gen2] = k2;
+    assert(idx2 != idx1);
+#endif
+}
+
 void sg14_test::slot_map_test()
 {
     TypedefTests();
@@ -488,6 +524,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_1>();
     VerifyCapacityExists<slot_map_1>(true);
     GenerationsDontSkipTest<slot_map_1>();
+    IndexesAreUsedEvenlyTest<slot_map_1>();
 
     // Test slot_map with a custom key type (C++14 destructuring).
     using slot_map_2 = stdext::slot_map<unsigned long, TestKey::key_16_8_t>;
@@ -500,6 +537,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_2>();
     VerifyCapacityExists<slot_map_2>(true);
     GenerationsDontSkipTest<slot_map_2>();
+    IndexesAreUsedEvenlyTest<slot_map_2>();
 
 #if __cplusplus >= 201703L
     // Test slot_map with a custom key type (C++17 destructuring).
@@ -513,6 +551,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_3>();
     VerifyCapacityExists<slot_map_3>(true);
     GenerationsDontSkipTest<slot_map_3>();
+    IndexesAreUsedEvenlyTest<slot_map_3>();
 #endif // __cplusplus >= 201703L
 
     // Test slot_map with a custom (but standard and random-access) container type.
@@ -526,6 +565,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_4>();
     VerifyCapacityExists<slot_map_4>(false);
     GenerationsDontSkipTest<slot_map_4>();
+    IndexesAreUsedEvenlyTest<slot_map_4>();
 
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
@@ -538,6 +578,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_5>();
     VerifyCapacityExists<slot_map_5>(false);
     GenerationsDontSkipTest<slot_map_5>();
+    IndexesAreUsedEvenlyTest<slot_map_5>();
 
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
@@ -550,6 +591,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_6>();
     VerifyCapacityExists<slot_map_6>(false);
     GenerationsDontSkipTest<slot_map_6>();
+    IndexesAreUsedEvenlyTest<slot_map_6>();
 
     // Test slot_map with a move-only value_type.
     // Sadly, standard containers do not propagate move-only-ness, so we must use our custom Vector instead.
@@ -567,6 +609,7 @@ void sg14_test::slot_map_test()
     ReserveTest<slot_map_7>();
     VerifyCapacityExists<slot_map_7>(false);
     GenerationsDontSkipTest<slot_map_7>();
+    IndexesAreUsedEvenlyTest<slot_map_7>();
 }
 
 #if defined(__cpp_concepts)

@@ -217,14 +217,19 @@ public:
     // Functions for accessing and modifying the size of the slots container.
     // These are beneficial as allocating more slots than values will cause the
     // generation counter increases to be more evenly distributed across the slots.
-    // TODO [ajo]: The above comment is false, at least for this implementation.
     //
     constexpr void reserve_slots(size_type n) {
         slot_map_detail::reserve_if_possible(slots_, n);
-        while (slots_.size() < n) {
-            auto idx = next_available_slot_index_;
-            next_available_slot_index_ = static_cast<key_index_type>(slots_.size());
-            slots_.emplace_back(key_type{idx, key_generation_type{}});
+        key_index_type original_num_slots = static_cast<key_index_type>(slots_.size());
+        if (original_num_slots < n) {
+            slots_.emplace_back(key_type{next_available_slot_index_, key_generation_type{}});
+            key_index_type last_new_slot = original_num_slots;
+            --n;
+            while (last_new_slot != n) {
+                slots_.emplace_back(key_type{last_new_slot, key_generation_type{}});
+                ++last_new_slot;
+            }
+            next_available_slot_index_ = last_new_slot;
         }
     }
     constexpr size_type slot_count() const { return slots_.size(); }
@@ -243,9 +248,15 @@ public:
         if (next_available_slot_index_ == slots_.size()) {
             auto idx = next_available_slot_index_; ++idx;
             slots_.emplace_back(key_type{idx, key_generation_type{}});  // make a new slot
+            last_available_slot_index_ = idx;
         }
         auto slot_iter = std::next(slots_.begin(), next_available_slot_index_);
-        next_available_slot_index_ = this->get_index(*slot_iter);
+        if (next_available_slot_index_ == last_available_slot_index_) {
+            next_available_slot_index_ = static_cast<key_index_type>(slots_.size());
+            last_available_slot_index_ = next_available_slot_index_;
+        } else {
+            next_available_slot_index_ = this->get_index(*slot_iter);
+        }
         this->set_index(*slot_iter, value_pos);
         key_type result = *slot_iter;
         this->set_index(result, std::distance(slots_.begin(), slot_iter));
@@ -292,6 +303,7 @@ public:
         values_.clear();
         reverse_map_.clear();
         next_available_slot_index_ = key_index_type{};
+        last_available_slot_index_ = key_index_type{};
     }
 
     // swap is not mentioned in P0661r1 but it should be.
@@ -301,6 +313,7 @@ public:
         swap(values_, rhs.values_);
         swap(reverse_map_, rhs.reverse_map_);
         swap(next_available_slot_index_, rhs.next_available_slot_index_);
+        swap(last_available_slot_index_, rhs.last_available_slot_index_);
     }
 
 protected:
@@ -332,9 +345,15 @@ private:
         values_.pop_back();
         reverse_map_.pop_back();
         // Expire this key.
-        this->set_index(*slot_iter, next_available_slot_index_);
+        if (next_available_slot_index_ == slots_.size()) {
+            next_available_slot_index_ = static_cast<key_index_type>(slot_index);
+            last_available_slot_index_ = static_cast<key_index_type>(slot_index);
+        } else {
+            auto last_slot_iter = std::next(slots_.begin(), last_available_slot_index_);
+            this->set_index(*last_slot_iter, slot_index);
+            last_available_slot_index_ = static_cast<key_index_type>(slot_index);
+        }
         this->increment_generation(*slot_iter);
-        next_available_slot_index_ = static_cast<key_index_type>(slot_index);
         return std::next(values_.begin(), value_index);
     }
 
@@ -342,6 +361,14 @@ private:
     Container<key_index_type> reverse_map_;  // exactly size() entries
     Container<mapped_type> values_;  // exactly size() entries
     key_index_type next_available_slot_index_{};
+    key_index_type last_available_slot_index_{};
+
+    // Class invariant:
+    // Either next_available_slot_index_ == last_available_slot_index_ == slots_.size(),
+    // or else 0 <= next_available_slot_index_ < slots_.size() and the "key" of that slot
+    // entry points to the subsequent available slot, and so on, until reaching
+    // last_available_slot_index_ (which might equal next_available_slot_index_ if there
+    // is only one available slot at the moment).
 };
 
 template<class T, class Key, template<class...> class Container>
