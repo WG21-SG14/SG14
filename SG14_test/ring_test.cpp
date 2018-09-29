@@ -3,9 +3,9 @@
 #include "ring.h"
 
 #include <array>
-#include <mutex>
 #include <future>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -167,27 +167,27 @@ static void copy_popper_test()
 
 static void reverse_iterator_test()
 {
-    std::array<double, 3> A;
-    sg14::ring_span<double> r(A.begin(), A.end());
-    const sg14::ring_span<double> c(A.begin(), A.end());
+    std::array<int, 3> A;
+    sg14::ring_span<int> r(A.begin(), A.end());
+    const sg14::ring_span<int> c(A.begin(), A.end());
 
     r.push_back(1);
     r.push_back(2);
     r.push_back(3);
     r.push_back(4);
-    std::vector<int> v(3);
+    std::vector<double> v(3);
 
     std::copy(r.begin(), r.end(), v.begin());
-    assert((v == std::vector<int>{2,3,4}));
+    assert((v == std::vector<double>{2,3,4}));
 
     std::copy(r.cbegin(), r.cend(), v.begin());
-    assert((v == std::vector<int>{2,3,4}));
+    assert((v == std::vector<double>{2,3,4}));
 
     std::copy(r.rbegin(), r.rend(), v.begin());
-    assert((v == std::vector<int>{4,3,2}));
+    assert((v == std::vector<double>{4,3,2}));
 
     std::copy(r.crbegin(), r.crend(), v.begin());
-    assert((v == std::vector<int>{4,3,2}));
+    assert((v == std::vector<double>{4,3,2}));
 
     static_assert(std::is_same<decltype(r.begin()), decltype(r)::iterator>::value, "");
     static_assert(std::is_same<decltype(c.begin()), decltype(r)::const_iterator>::value, "");
@@ -226,3 +226,4 @@ int main()
     sg14_test::ring_test();
 }
 #endif
+
