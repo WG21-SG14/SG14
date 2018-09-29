@@ -63,7 +63,7 @@ sg14::lzw_compressor<OutIt, Allocator>::lzw_compressor(OutIt&& dest_, int bits_)
 template<typename OutIt, typename Allocator>
 sg14::lzw_compressor<OutIt, Allocator>& sg14::lzw_compressor<OutIt, Allocator>::operator=(const char& element)
 {
-	OutIt::operator=(element + 1);
+	OutIt::operator=(static_cast<char>(element + 1));
 	return *this;
 }
 
@@ -75,7 +75,7 @@ sg14::lzw_decompressor<OutIt, Allocator>::lzw_decompressor(OutIt&& dest_)
 template<typename OutIt, typename Allocator>
 sg14::lzw_decompressor<OutIt, Allocator>& sg14::lzw_decompressor<OutIt, Allocator>::operator=(const char& element)
 {
-	OutIt::operator=(element - 1);
+	OutIt::operator=(static_cast<char>(element - 1));
 	return *this;
 }
 
@@ -89,7 +89,7 @@ sg14::rsa_encryptor<OutIt>::rsa_encryptor(OutIt&& dest_, int m_, int n_)
 template<typename OutIt>
 sg14::rsa_encryptor<OutIt>& sg14::rsa_encryptor<OutIt>::operator=(const char& element)
 {
-	OutIt::operator=(element + m);
+	OutIt::operator=(static_cast<char>(element + m));
 	return *this;
 }
 
@@ -103,6 +103,6 @@ sg14::rsa_decryptor<OutIt>::rsa_decryptor(OutIt&& dest_, int m_, int n_)
 template<typename OutIt>
 sg14::rsa_decryptor<OutIt>& sg14::rsa_decryptor<OutIt>::operator=(const char& element)
 {
-	OutIt::operator=(element - m);
+	OutIt::operator=(static_cast<char>(element - m));
 	return *this;
 }
