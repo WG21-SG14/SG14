@@ -119,12 +119,11 @@
 #endif
 
 
-
-#include <functional> // std::greater
-#include <vector> // range-insert testing
 #include <algorithm> // std::find
 #include <cstdio> // log redirection, printf
 #include <cstdlib> // abort
+#include <functional> // std::greater
+#include <vector> // range-insert testing
 
 #ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -146,11 +145,11 @@ namespace
         }
     }
 
-	void title1(const char *title_text)
+	void title1(const char *)
 	{
 	}
 
-	void title2(const char *title_text)
+	void title2(const char *)
 	{
 	}
 

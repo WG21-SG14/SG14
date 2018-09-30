@@ -61,12 +61,9 @@ target_include_directories(${TEST_NAME} PRIVATE "${SG14_TEST_SOURCE_DIRECTORY}")
 
 # Compile options
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wfatal-errors -Werror)
-	set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
-		COMPILE_FLAGS "-Wno-unused-parameter"
-	)
+	target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wfatal-errors -Werror)
+	target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
 	set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
 		COMPILE_FLAGS "-Wno-unused-parameter"
 	)
@@ -80,6 +77,5 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	target_compile_options(${TEST_NAME} PRIVATE /Zc:__cplusplus /permissive- /W4 /WX)
 	add_definitions(-DNOMINMAX -D_SCL_SECURE_NO_WARNINGS)
 	set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
-		COMPILE_FLAGS "/wd4100 /wd4456 /wd4127"
-	)
+		COMPILE_FLAGS "/wd4127") # Disable conditional expression is constant, use if constexpr
 endif()
