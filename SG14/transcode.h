@@ -106,3 +106,4 @@ sg14::rsa_decryptor<OutIt>& sg14::rsa_decryptor<OutIt>::operator=(const char& el
 	OutIt::operator=(static_cast<char>(element - m));
 	return *this;
 }
+
