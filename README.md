@@ -1,4 +1,6 @@
 # SG14
+[![Build Status](https://travis-ci.org/WG21-SG14/SG14.svg?branch=master)](https://travis-ci.org/WG21-SG14/SG14)
+
 A library for Study Group 14 of Working Group 21 (C++)
 
 /docs - Documentation for implementations without proposals, or supplementary documentation which does not easily fit within a proposal.
