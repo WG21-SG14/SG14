@@ -1,5 +1,6 @@
 # SG14
 [![Build Status](https://travis-ci.org/WG21-SG14/SG14.svg?branch=master)](https://travis-ci.org/WG21-SG14/SG14)
+[![Build status](https://ci.appveyor.com/api/projects/status/5naglxxc9y13lisr?svg=true)](https://ci.appveyor.com/project/p-groarke/sg14)
 
 A library for Study Group 14 of Working Group 21 (C++)
 
