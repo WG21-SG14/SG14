@@ -181,7 +181,7 @@
 
 #include <algorithm> // std::sort and std::fill_n
 
-#include <cstring>	// memset
+#include <cstring>	// memset, memcpy
 #include <cassert>	// assert
 #include <limits>  // std::numeric_limits
 #include <memory>	// std::allocator
@@ -2866,13 +2866,22 @@ public:
 			assert (&source != this);
 			destroy_all_data();
 
-			end_iterator = std::move(source.end_iterator);
-			begin_iterator = std::move(source.begin_iterator);
-			groups_with_erasures_list_head = source.groups_with_erasures_list_head;
-			total_number_of_elements = source.total_number_of_elements;
-			total_capacity = source.total_capacity;
-			pointer_allocator_pair.min_elements_per_group = source.pointer_allocator_pair.min_elements_per_group;
-			group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+				if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value)
+				{
+					std::memcpy(static_cast<void *>(this), &source, sizeof(colony));
+				}
+				else
+			#endif
+			{
+				end_iterator = std::move(source.end_iterator);
+				begin_iterator = std::move(source.begin_iterator);
+				groups_with_erasures_list_head = source.groups_with_erasures_list_head;
+				total_number_of_elements = source.total_number_of_elements;
+				total_capacity = source.total_capacity;
+				pointer_allocator_pair.min_elements_per_group = source.pointer_allocator_pair.min_elements_per_group;
+				group_allocator_pair.max_elements_per_group = source.group_allocator_pair.max_elements_per_group;
+			}
 
 			source.blank();
 			return *this;
@@ -3947,9 +3956,9 @@ public:
 			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value) // if all pointer types are trivial we can just copy using memcpy - avoids constructors/destructors etc and is faster
 			{
 				char temp[sizeof(colony)];
-				std::memcpy(&temp, reinterpret_cast<void *>(this), sizeof(colony));
-				std::memcpy(reinterpret_cast<void *>(this), reinterpret_cast<void *>(&source), sizeof(colony));
-				std::memcpy(reinterpret_cast<void *>(&source), &temp, sizeof(colony));
+				std::memcpy(&temp, static_cast<void *>(this), sizeof(colony));
+				std::memcpy(static_cast<void *>(this), static_cast<void *>(&source), sizeof(colony));
+				std::memcpy(static_cast<void *>(&source), &temp, sizeof(colony));
 			}
 			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT // If pointer types are not trivial, moving them is probably going to be more efficient than copying them below
 				else if (std::is_move_assignable<group_pointer_type>::value && std::is_move_assignable<aligned_pointer_type>::value && std::is_move_assignable<skipfield_pointer_type>::value && std::is_move_constructible<group_pointer_type>::value && std::is_move_constructible<aligned_pointer_type>::value && std::is_move_constructible<skipfield_pointer_type>::value)
