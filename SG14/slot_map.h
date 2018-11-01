@@ -219,7 +219,7 @@ public:
         slot_map_detail::reserve_if_possible(slots_, n);
         while (slots_.size() < n) {
             auto idx = next_available_slot_index_;
-            next_available_slot_index_ = slots_.size();
+            next_available_slot_index_ = static_cast<stdext::slot_map<int, std::pair<unsigned int, unsigned int>, std::vector>::key_size_type>(slots_.size());
             slots_.emplace_back(key_type{idx, key_generation_type{}});
         }
     }
