@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #define EXPECT_EQ(val1, val2) assert(val1 == val2)
 #define EXPECT_TRUE(val) assert(val)
@@ -398,6 +399,18 @@ static void test_overloaded_operator_new()
     EXPECT_EQ(43, fun(1));
 }
 
+void test_move_construction_is_noexcept()
+{
+    using IPF = stdext::inplace_function<void(int), sizeof(Functor)>;
+    std::vector<IPF> vec;
+    vec.push_back(Functor());
+    copied = 0;
+    moved = 0;
+    vec.reserve(vec.capacity() + 1);
+    EXPECT_EQ(0, copied);
+    EXPECT_EQ(1, moved);
+}
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -479,6 +492,7 @@ void sg14_test::inplace_function_test()
     test_exception_safety();
     test_nullptr();
     test_overloaded_operator_new();
+    test_move_construction_is_noexcept();
 }
 
 #ifdef TEST_MAIN

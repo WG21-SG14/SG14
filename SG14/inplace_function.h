@@ -104,7 +104,7 @@ template<typename R, typename... Args> struct vtable
             { ::new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
         },
         relocate_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr)
-            noexcept(std::is_nothrow_move_constructible<C>::value) -> void
+            noexcept -> void
             {
                 ::new (dst_ptr) C{ std::move(*static_cast<C*>(src_ptr)) };
                 static_cast<C*>(src_ptr)->~C();
@@ -220,7 +220,7 @@ public:
         );
     }
 
-    inplace_function(inplace_function&& other) :
+    inplace_function(inplace_function&& other) noexcept :
         vtable_ptr_{std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>))}
     {
         vtable_ptr_->relocate_ptr(
@@ -251,7 +251,7 @@ public:
         return *this;
     }
 
-    inplace_function& operator= (inplace_function&& other)
+    inplace_function& operator= (inplace_function&& other) noexcept
     {
         if(this != std::addressof(other))
         {
@@ -305,7 +305,7 @@ public:
     }
 
     template<size_t Cap, size_t Align>
-    operator inplace_function<R(Args...), Cap, Align>() &&
+    operator inplace_function<R(Args...), Cap, Align>() && noexcept
     {
         static_assert(inplace_function_detail::is_valid_inplace_dst<
             Cap, Align, Capacity, Alignment
@@ -316,7 +316,7 @@ public:
         return {vtable_ptr, vtable_ptr->relocate_ptr, std::addressof(storage_)};
     }
 
-    void swap(inplace_function& other)
+    void swap(inplace_function& other) noexcept
     {
         if (this == std::addressof(other)) return;
 
@@ -339,7 +339,7 @@ public:
         std::swap(vtable_ptr_, other.vtable_ptr_);
     }
 
-    friend void swap(inplace_function& lhs, inplace_function& rhs)
+    friend void swap(inplace_function& lhs, inplace_function& rhs) noexcept
     {
         lhs.swap(rhs);
     }
