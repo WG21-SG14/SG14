@@ -189,7 +189,7 @@
 
 
 #ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-	#include <cstddef> // offsetof, used in blank function
+	#include <cstddef> // offsetof, used in blank()
 	#include <type_traits> // std::is_trivially_destructible, etc
 #endif
 
@@ -2763,7 +2763,11 @@ public:
 
 	inline size_type max_size() const PLF_COLONY_NOEXCEPT
 	{
-		return element_allocator_type::max_size();
+		#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
+      	return std::allocator_traits<element_allocator_type>::max_size(*this);
+		#else
+      	return element_allocator_type::max_size();
+      #endif
 	}
 
 
