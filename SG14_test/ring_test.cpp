@@ -3,9 +3,6 @@
 #include "ring.h"
 
 #include <array>
-#include <future>
-#include <iostream>
-#include <mutex>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -50,47 +47,6 @@ static void basic_test()
 	assert(Q5.size() == 5);
 	assert(Q5.front() == 6);
 	assert(Q5.back() == 10);
-
-	puts("Ring test completed.\n");
-}
-
-static void thread_communication_test()
-{
-	std::array<int, 10> A;
-	sg14::ring_span<int> buffer(std::begin(A), std::end(A));
-	std::mutex m;
-	std::condition_variable cv;
-
-	puts("Ring example: thread communication.\nEnter some numbers, enter -1 to quit.\n");
-
-	auto ci = std::async(std::launch::async, [&]()
-	{
-		int val = 0;
-		do
-		{
-			std::cin >> val;
-			{
-				std::lock_guard<std::mutex> lg(m);
-				buffer.push_back(val);
-				cv.notify_one();
-			}
-		} while (val != -1);
-	});
-
-	auto po = std::async(std::launch::async, [&]()
-	{
-		int val = 0;
-		do
-		{
-			std::unique_lock<std::mutex> lk(m);
-			cv.wait(lk);
-			val = buffer.front();
-			std::cout << val << std::endl;
-			buffer.pop_front();
-			lk.unlock();
-		} while (val != -1);
-		puts("Ring example completed.\n");
-	});
 }
 
 static void filter_test()
@@ -111,7 +67,6 @@ static void filter_test()
 	buffer.push_back( 7.0 );
 
 	assert( std::inner_product( buffer.begin(), buffer.end(), filter_coefficients.begin(), 0.0 ) == 5.0 );
-	puts( "Filter example completed.\n" );
 }
 
 static void iterator_regression_test()
@@ -213,7 +168,6 @@ static void reverse_iterator_test()
 void sg14_test::ring_test()
 {
     basic_test();
-    thread_communication_test();
     filter_test();
     iterator_regression_test();
     copy_popper_test();
