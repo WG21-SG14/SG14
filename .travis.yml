@@ -1,0 +1,133 @@
+language: cpp
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      brew upgrade cmake;
+      brew install cmake;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      eval "${MATRIX_EVAL}";
+      DEPS_DIR="${TRAVIS_BUILD_DIR}/deps";
+      mkdir ${DEPS_DIR} && cd ${DEPS_DIR};
+      CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.tar.gz";
+      mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake;
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH};
+      cd ..;
+    fi
+
+matrix:
+  include:
+    - os: osx
+      osx_image: xcode9.2
+      env:
+        - CONFIG=Release
+
+    - os: osx
+      osx_image: xcode9.2
+      env:
+        - CONFIG=Debug
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5 && CONFIG=Debug"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5 && CONFIG=Release"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6 && CONFIG=Debug"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6 && CONFIG=Release"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && CONFIG=Debug"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && CONFIG=Release"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - g++-8
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && CONFIG=Debug"
+
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - g++-8
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && CONFIG=Release"
+
+script:
+  - mkdir build && cd build && cmake .. && cmake --build . && ./bin/sg14_tests
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always
