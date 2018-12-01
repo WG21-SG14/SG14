@@ -1,0 +1,15 @@
+image:
+  - Visual Studio 2017
+platform:
+  - x64
+configuration:
+  - Debug
+  - Release
+clone_folder: c:\projects\sg14
+before_build:
+  - cmd: cd c:\projects\sg14 & mkdir build & cd build & cmake .. -A x64"
+build:
+  project: c:\projects\sg14\build\sg14.sln
+  parallel: true
+test_script:
+  - cmd: c:\projects\sg14\build\bin\sg14_tests.exe
