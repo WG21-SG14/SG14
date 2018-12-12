@@ -152,6 +152,10 @@ public:
         return value_iter;
     }
     constexpr const_iterator find(const key_type& key) const {
+        auto slot_index = get_index(key);
+        if (slot_index >= slots_.size()) {
+            return end();
+        }
         auto slot_iter = std::next(slots_.begin(), get_index(key));
         if (get_generation(*slot_iter) != get_generation(key)) {
             return end();
