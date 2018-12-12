@@ -419,9 +419,26 @@ static void TypedefTests()
 #endif // __cplusplus >= 201703L
 }
 
+void BoundsCheckingTest()
+{
+    stdext::slot_map<int> sm;
+    const auto& csm = sm;
+
+    sm.emplace(1);
+    stdext::slot_map<int>::key_type k = sm.emplace(2);
+    sm.clear();
+
+    stdext::slot_map<int>::iterator it = sm.find(k);
+    assert(it == sm.end());
+
+    stdext::slot_map<int>::const_iterator cit = csm.find(k);
+    assert(cit == sm.end());
+}
+
 void sg14_test::slot_map_test()
 {
     TypedefTests();
+    BoundsCheckingTest();
 
     // Test the most basic slot_map.
     using slot_map_1 = stdext::slot_map<int>;
