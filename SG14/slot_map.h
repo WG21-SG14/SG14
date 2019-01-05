@@ -295,13 +295,12 @@ public:
         swap(next_available_slot_index_, rhs.next_available_slot_index_);
     }
 
-protected:
     // These accessors are not part of P0661R2 but are "modernized" versions
     // of the protected interface of std::priority_queue, std::stack, etc.
-    constexpr Container<mapped_type>& c() & noexcept { return values_; }
-    constexpr const Container<mapped_type>& c() const& noexcept { return values_; }
-    constexpr Container<mapped_type>&& c() && noexcept { return std::move(values_); }
-    constexpr const Container<mapped_type>&& c() const&& noexcept { return std::move(values_); }
+    constexpr Container<mapped_type>& container() & noexcept { return values_; }
+    constexpr const Container<mapped_type>& container() const& noexcept { return values_; }
+    constexpr Container<mapped_type>&& container() && noexcept { return std::move(values_); }
+    constexpr const Container<mapped_type>&& container() const&& noexcept { return std::move(values_); }
 
 private:
     constexpr slot_iterator slot_iter_from_value_iter(const_iterator value_iter) {
