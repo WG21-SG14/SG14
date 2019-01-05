@@ -86,6 +86,24 @@ struct Vector {
         a = std::move(b);
         b = std::move(t);
     }
+    iterator erase(const_iterator first, const_iterator last) {
+        assert(first <= last && "vector erase iterator outside range");
+        size_t delta = last - first;
+        iterator data_beg = &data_[first - begin()];
+        if (delta == 0) {
+            return data_beg;
+        }
+        iterator data_end = data_beg + delta;
+        iterator it = data_beg;
+        while (it != data_end) {
+            it->~T();
+            ++it;
+        }
+        iterator new_end = end() - delta;
+        std::swap_ranges(data_beg, data_end, new_end);
+        size_ -= delta;
+        return begin() + size_;
+    }
 private:
     size_t size_ = 0;
     std::unique_ptr<T[]> data_ = nullptr;

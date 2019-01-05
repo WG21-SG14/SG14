@@ -114,11 +114,7 @@ public:
     // O(1) time and space complexity.
     //
     constexpr reference at(const key_type& key) {
-        auto value_iter = this->find(key);
-        if (value_iter == this->end()) {
-            SLOT_MAP_THROW_EXCEPTION(std::out_of_range, "at");
-        }
-        return *value_iter;
+        return const_cast<reference>(static_cast<const slot_map*>(this)->at(key));
     }
     constexpr const_reference at(const key_type& key) const {
         auto value_iter = this->find(key);
@@ -132,24 +128,20 @@ public:
     // If the check fails it is undefined behavior.
     // O(1) time and space complexity.
     //
-    constexpr reference operator[](const key_type& key)              { return *find_unchecked(key); }
-    constexpr const_reference operator[](const key_type& key) const  { return *find_unchecked(key); }
+    constexpr reference operator[](const key_type& key) {
+        return const_cast<reference>(static_cast<const slot_map*>(this)->operator [](key));
+    }
+    constexpr const_reference operator[](const key_type& key) const {
+        return *find_unchecked(key);
+    }
 
     // The find() functions have generation counter checking.
     // If the check fails, the result of end() is returned.
     // O(1) time and space complexity.
     //
     constexpr iterator find(const key_type& key) {
-        auto slot_index = get_index(key);
-        if (slot_index >= slots_.size()) {
-            return end();
-        }
-        auto slot_iter = std::next(slots_.begin(), slot_index);
-        if (get_generation(*slot_iter) != get_generation(key)) {
-            return end();
-        }
-        auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
-        return value_iter;
+        const_iterator it = static_cast<const slot_map*>(this)->find(key);
+        return values_.erase(it, it);
     }
     constexpr const_iterator find(const key_type& key) const {
         auto slot_index = get_index(key);
@@ -168,9 +160,8 @@ public:
     // O(1) time and space complexity.
     //
     constexpr iterator find_unchecked(const key_type& key) {
-        auto slot_iter = std::next(slots_.begin(), get_index(key));
-        auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
-        return value_iter;
+        const_iterator it = static_cast<const slot_map*>(this)->find_unchecked(key);
+        return values_.erase(it, it);
     }
     constexpr const_iterator find_unchecked(const key_type& key) const {
         auto slot_iter = std::next(slots_.begin(), get_index(key));
