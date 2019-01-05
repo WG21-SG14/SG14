@@ -1,12 +1,12 @@
 #include "SG14_test.h"
 #include "slot_map.h"
-#include <assert.h>
-#include <inttypes.h>
 #include <algorithm>
+#include <assert.h>
 #include <deque>
 #include <forward_list>
-#include <list>
+#include <inttypes.h>
 #include <iterator>
+#include <list>
 #include <memory>
 #include <random>
 #include <type_traits>
