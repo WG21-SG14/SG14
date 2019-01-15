@@ -18,6 +18,14 @@ before_install:
 
 matrix:
   include:
+    - os: windows
+      env:
+        - CONFIG=Release
+
+    - os: windows
+      env:
+        - CONFIG=Debug
+
     - os: osx
       osx_image: xcode9.2
       env:

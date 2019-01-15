@@ -36,7 +36,9 @@ namespace inplace_function_detail {
 
 static constexpr size_t InplaceFunctionDefaultCapacity = 32;
 
-#if defined(__GLIBCXX__)  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
+#if defined(__GLIBCXX__) || defined(_MSVC_STL_VERSION)
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
+// MSVC 32-bit has the same bug.
 template<size_t Cap>
 union aligned_storage_helper {
     struct double1 { double a; };
@@ -60,9 +62,13 @@ struct aligned_storage {
 
 template<size_t Cap, size_t Align = std::alignment_of<aligned_storage_helper<Cap>>::value>
 using aligned_storage_t = typename aligned_storage<Cap, Align>::type;
+static_assert(sizeof(aligned_storage_t<sizeof(void*)>) == sizeof(void*), "A");
+static_assert(alignof(aligned_storage_t<sizeof(void*)>) == alignof(void*), "B");
 #else
 using std::aligned_storage;
 using std::aligned_storage_t;
+static_assert(sizeof(std::aligned_storage_t<sizeof(void*)>) == sizeof(void*), "C");
+static_assert(alignof(std::aligned_storage_t<sizeof(void*)>) == alignof(void*), "D");
 #endif
 
 template<typename T> struct wrapper
