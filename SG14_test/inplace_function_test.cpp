@@ -336,11 +336,7 @@ constexpr size_t expected_alignment_for_capacity()
     constexpr size_t alignof_cap = std::alignment_of<std::aligned_storage_t<Cap>>::value;
 #define MIN(a,b) (a < b ? a : b)
 #define MAX(a,b) (a > b ? a : b)
-#if defined(__GLIBCXX__)  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
     return MAX(MIN(Cap, alignof_cap), alignof_ptr);
-#else  // other STLs
-    return MAX(alignof_cap, alignof_ptr);
-#endif
 #undef MAX
 #undef MIN
 }
