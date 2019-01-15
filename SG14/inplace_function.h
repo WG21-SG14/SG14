@@ -36,9 +36,10 @@ namespace inplace_function_detail {
 
 static constexpr size_t InplaceFunctionDefaultCapacity = 32;
 
-#if defined(__GLIBCXX__) || defined(_MSVC_STL_VERSION)
+#ifndef SG14_USE_STD_ALIGNED_STORAGE
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
 // MSVC 32-bit has the same bug.
+// libc++ and MSVC 64-bit seem to work fine right now, but why run the risk?
 template<size_t Cap>
 union aligned_storage_helper {
     struct double1 { double a; };
@@ -55,12 +56,12 @@ union aligned_storage_helper {
     maybe<long double> h;
 };
 
-template<size_t Cap, size_t Align = std::alignment_of<aligned_storage_helper<Cap>>::value>
+template<size_t Cap, size_t Align = alignof(aligned_storage_helper<Cap>)>
 struct aligned_storage {
     using type = std::aligned_storage_t<Cap, Align>;
 };
 
-template<size_t Cap, size_t Align = std::alignment_of<aligned_storage_helper<Cap>>::value>
+template<size_t Cap, size_t Align = alignof(aligned_storage_helper<Cap>)>
 using aligned_storage_t = typename aligned_storage<Cap, Align>::type;
 static_assert(sizeof(aligned_storage_t<sizeof(void*)>) == sizeof(void*), "A");
 static_assert(alignof(aligned_storage_t<sizeof(void*)>) == alignof(void*), "B");
@@ -154,7 +155,7 @@ struct is_valid_inplace_dst : std::true_type
 template<
     typename Signature,
     size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
-    size_t Alignment = std::alignment_of<inplace_function_detail::aligned_storage_t<Capacity>>::value
+    size_t Alignment = alignof(inplace_function_detail::aligned_storage_t<Capacity>)
 >
 class inplace_function; // unspecified
 
@@ -203,7 +204,7 @@ public:
             "inplace_function cannot be constructed from object with this (large) size"
         );
 
-        static_assert(Alignment % std::alignment_of<C>::value == 0,
+        static_assert(Alignment % alignof(C) == 0,
             "inplace_function cannot be constructed from object with this (large) alignment"
         );
 
