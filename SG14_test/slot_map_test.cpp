@@ -317,7 +317,7 @@ static void VerifyCapacityExists(bool expected)
 template<class SM, class Bool>
 void VerifyCapacityExists(Bool expected)
 {
-    assert(not expected);
+    assert(!expected);
     SM sm;
     sm.reserve(100);
     assert(sm.slot_count() >= 100);

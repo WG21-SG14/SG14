@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+// Copyright (c) 2019, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // zLib license (https://www.zlib.net/zlib_license.html):
 // This software is provided 'as-is', without any express or implied
@@ -124,15 +124,19 @@
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#endif
-	#elif defined(_LIBCPP_VERSION) // No type trait support in libc++ to date
+	#elif defined(_LIBCPP_VERSION)
 		#define PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_COLONY_ALIGNMENT_SUPPORT
 		#define PLF_COLONY_VARIADICS_SUPPORT
 		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
+		#define PLF_COLONY_ALIGNMENT_SUPPORT
 		#define PLF_COLONY_NOEXCEPT noexcept
 		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 		#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) noexcept
-	#else // Assume type traits and initializer support for non-GCC compilers and standard libraries
+
+		#if !(defined(_LIBCPP_CXX03_LANG) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES))
+			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
+		#endif
+	#else // Assume type traits and initializer support for other compilers and standard libraries
 		#define PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_COLONY_ALIGNMENT_SUPPORT
 		#define PLF_COLONY_VARIADICS_SUPPORT
@@ -3226,7 +3230,7 @@ public:
 			}
 		}
 
-		return; // Only distance == 0 reaches here
+		// Only distance == 0 reaches here
 	}
 
 
@@ -3749,8 +3753,8 @@ public:
 		}
 
 		// Now, sort the pointers by the values they point to:
-		#ifdef PLF_TIMSORT_AVAILABLE
-			plf::timsort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
+		#ifdef GFX_TIMSORT_HPP
+			gfx::timsort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
 		#else
 			std::sort(element_pointers, element_pointers + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
 		#endif

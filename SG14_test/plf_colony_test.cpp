@@ -218,9 +218,7 @@ void plf_colony_test()
 
 
 	unsigned int looper = 0;
-	printf("Colony Test Suite running..\n");
-
-
+	
 	while (++looper != 25)
 	{
 		{
@@ -1606,8 +1604,6 @@ void plf_colony_test()
 			}
 		}
 	}
-
-	printf("Colony Test Suite PASS\n");
 }
 
 }
