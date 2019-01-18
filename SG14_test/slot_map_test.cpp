@@ -1,26 +1,36 @@
 #include "SG14_test.h"
 #include "slot_map.h"
-#include <assert.h>
-#include <inttypes.h>
 #include <algorithm>
+#include <assert.h>
 #include <deque>
 #include <forward_list>
-#include <list>
+#include <inttypes.h>
 #include <iterator>
+#include <list>
 #include <memory>
 #include <random>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace TestKey {
 struct key_16_8_t {
     uint16_t index;
     uint8_t generation;
+    friend bool operator==(key_16_8_t lhs, key_16_8_t rhs);
 };
+bool operator==(key_16_8_t lhs, key_16_8_t rhs) {
+    return lhs.index == rhs.index && lhs.generation == rhs.generation;
+}
+
 struct key_11_5_t {  // C++17 only
     uint16_t index : 11;
     uint8_t generation : 5;
+    friend bool operator==(key_11_5_t lhs, key_11_5_t rhs);
 };
+bool operator==(key_11_5_t lhs, key_11_5_t rhs) {
+    return lhs.index == rhs.index && lhs.generation == rhs.generation;
+}
 
 #if __cplusplus < 201703L
 template<int I, class K> auto get(const K& k) { return get(k, std::integral_constant<int, I>{}); }
@@ -83,7 +93,7 @@ struct Vector {
     }
     void clear() {
         size_ = 0;
-        data_ = nullptr;
+        data_ = std::make_unique<T[]>(size_);
     }
     friend void swap(Vector& a, Vector& b) {
         Vector t = std::move(a);
@@ -147,25 +157,44 @@ static void BasicTests(T t1, T t2)
     assert(!sm.empty());
     assert(sm.size() == 2);
     assert(std::next(sm.begin(), 2) == sm.end());
+
     assert(sm.find(k1) == sm.begin());
+    assert(sm.find_unchecked(k1) == sm.begin());
+    assert(sm[k1] == *sm.begin());
+    assert(sm.at(k1) == *sm.begin());
+    assert(sm.at_unchecked(k1) == *sm.begin());
+
     assert(sm.find(k2) == std::next(sm.begin()));
+    assert(sm.find_unchecked(k2) == std::next(sm.begin()));
+    assert(sm[k2] == *std::next(sm.begin()));
+    assert(sm.at(k2) == *std::next(sm.begin()));
+    assert(sm.at_unchecked(k2) == *std::next(sm.begin()));
+
     assert(sm2.empty());
     assert(sm2.size() == 0);
     auto num_removed = sm.erase(k1);
     assert(num_removed == 1);
     assert(sm.size() == 1);
+
     assert(sm.find(k1) == sm.end());  // find an expired key
     try { (void)sm.at(k1); assert(false); } catch (const std::out_of_range&) {}
     assert(sm.find(k2) == sm.begin());  // find a non-expired key
     assert(sm.at(k2) == *sm.begin());
     assert(sm.find_unchecked(k2) == sm.begin());
     assert(sm[k2] == *sm.begin());
+
     assert(sm.erase(k1) == 0);  // erase an expired key
     sm.swap(sm2);
     assert(sm.empty());
     assert(sm2.size() == 1);
+
     assert(sm2.find(k1) == sm2.end());  // find an expired key
     assert(sm2.find(k2) == sm2.begin());  // find a non-expired key
+    assert(sm2.find_unchecked(k2) == sm2.begin());  // find a non-expired key
+    assert(sm2[k2] == *sm2.begin());  // find a non-expired key
+    assert(sm2.at(k2) == *sm2.begin());  // find a non-expired key
+    assert(sm2.at_unchecked(k2) == *sm2.begin());  // find a non-expired key
+
     assert(sm2.erase(k1) == 0);  // erase an expired key
 }
 
@@ -446,6 +475,49 @@ void BoundsCheckingTest()
     assert(cit == sm.end());
 }
 
+template <class SM>
+static void KeyFindTest()
+{
+    using T = typename SM::mapped_type;
+    using key_t = typename SM::key_type;
+    SM sm;
+    std::vector<key_t> keys;
+
+    for (int i = 0; i < 10; ++i) {
+        keys.push_back(sm.insert(Monad<T>::from_value(i)));
+    }
+
+    for (int i = 0; i < 9; ++i) {
+      assert(sm.key(sm.begin()) == keys.front());
+      sm.erase(keys.front());
+      assert(sm.key(sm.begin()) == keys.back());
+      std::swap(keys.front(), keys.back());
+      keys.pop_back();
+    }
+    sm.clear();
+    keys.clear();
+
+    for (int i = 0; i < 10; ++i) {
+        keys.push_back(sm.insert(Monad<T>::from_value(i)));
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        auto it = std::find_if(sm.begin(), sm.end(), [&](const auto& j) {
+            return static_cast<int>(Monad<T>::value_of(j)) == i;
+        });
+        assert(sm.key(it) == keys[i]);
+    }
+    sm.clear();
+    keys.clear();
+
+    for (int i = 0; i < 10; ++i) {
+        key_t id = sm.insert(Monad<T>::from_value(i));
+        assert(sm.key(sm.begin()) == id);
+        sm.erase(id);
+    }
+
+}
+
 void sg14_test::slot_map_test()
 {
     TypedefTests();
@@ -460,6 +532,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_1>();
     ReserveTest<slot_map_1>();
     VerifyCapacityExists<slot_map_1>(true);
+    KeyFindTest<slot_map_1>();
 
     // Test slot_map with a custom key type (C++14 destructuring).
     using slot_map_2 = stdext::slot_map<unsigned long, TestKey::key_16_8_t>;
@@ -471,6 +544,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_2>();
     ReserveTest<slot_map_2>();
     VerifyCapacityExists<slot_map_2>(true);
+    KeyFindTest<slot_map_2>();
 
 #if __cplusplus >= 201703L
     // Test slot_map with a custom key type (C++17 destructuring).
@@ -483,6 +557,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_3>();
     ReserveTest<slot_map_3>();
     VerifyCapacityExists<slot_map_3>(true);
+    KeyFindTest<slot_map_3>();
 #endif // __cplusplus >= 201703L
 
     // Test slot_map with a custom (but standard and random-access) container type.
@@ -495,6 +570,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_4>();
     ReserveTest<slot_map_4>();
     VerifyCapacityExists<slot_map_4>(false);
+    KeyFindTest<slot_map_4>();
 
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
@@ -506,6 +582,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_5>();
     ReserveTest<slot_map_5>();
     VerifyCapacityExists<slot_map_5>(false);
+    KeyFindTest<slot_map_5>();
 
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
@@ -517,6 +594,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_6>();
     ReserveTest<slot_map_6>();
     VerifyCapacityExists<slot_map_6>(false);
+    KeyFindTest<slot_map_6>();
 
     // Test slot_map with a move-only value_type.
     // Sadly, standard containers do not propagate move-only-ness, so we must use our custom Vector instead.
@@ -533,6 +611,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_7>();
     ReserveTest<slot_map_7>();
     VerifyCapacityExists<slot_map_7>(false);
+    KeyFindTest<slot_map_7>();
 }
 
 #if defined(__cpp_concepts)

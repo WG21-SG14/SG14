@@ -128,12 +128,38 @@ public:
         return *value_iter;
     }
 
-    // The bracket operator[] has a generation counter check.
+    // The at_unchecked() function has no checks whatsoever
+    // and does not throw.
+    // O(1) time and space complexity.
+    //
+    constexpr reference at_unchecked(const key_type& key) {
+        return *find_unchecked(key);
+    }
+    constexpr const_reference at_unchecked(const key_type& key) const {
+        return *find_unchecked(key);
+    }
+
+    // The bracket operator[] has a generation counter check
+    // and does not throw.
     // If the check fails it is undefined behavior.
     // O(1) time and space complexity.
     //
-    constexpr reference operator[](const key_type& key)              { return *find_unchecked(key); }
-    constexpr const_reference operator[](const key_type& key) const  { return *find_unchecked(key); }
+    constexpr reference operator[](const key_type& key) {
+        auto slot_iter = std::next(slots_.begin(), get_index(key));
+        if (get_generation(*slot_iter) != get_generation(key)) {
+            return *end();
+        }
+        auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
+        return *value_iter;
+    }
+    constexpr const_reference operator[](const key_type& key) const {
+        auto slot_iter = std::next(slots_.begin(), get_index(key));
+        if (get_generation(*slot_iter) != get_generation(key)) {
+            return *end();
+        }
+        auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
+        return *value_iter;
+    }
 
     // The find() functions have generation counter checking.
     // If the check fails, the result of end() is returned.
@@ -302,6 +328,16 @@ public:
         swap(values_, rhs.values_);
         swap(reverse_map_, rhs.reverse_map_);
         swap(next_available_slot_index_, rhs.next_available_slot_index_);
+    }
+
+    // O(1) time and space complexity.
+    //
+    constexpr key_type key(const_iterator value_iter) const {
+        auto value_index = std::distance(const_iterator(values_.begin()), value_iter);
+        auto slot_index = *std::next(reverse_map_.begin(), value_index);
+        auto slot_it = std::next(slots_.begin(), slot_index);
+        auto generation = get_generation(*slot_it);
+        return key_type{ slot_index, generation };
     }
 
 protected:
