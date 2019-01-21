@@ -165,8 +165,8 @@ code {
 
 <body>
 Audience: LEWG, SG14, WG21<br>
-Document number: D0447R6<br>
-Date: 2019-01-14<br>
+Document number: P0447R6<br>
+Date: 2019-01-21<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
@@ -190,8 +190,8 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
       <li><a href="#responses">Specific responses to previous committee
         feedback</a></li>
       <li><a href="#sg14gameengine">Typical game engine requirements</a></li>
+      <li><a href="#questions">Questions for reviewers</a></li>
       <li><a href="#revisions">Paper revision history</a></li>
-      <li><a href="#questions">Open questions from the author</a></li>
     </ol>
   </li>
 </ol>
@@ -275,18 +275,18 @@ Most games will have a central generic 'entity' or 'actor' class, regardless of
 their overall schema (an entity class does not imply an <a
 href="https://en.wikipedia.org/wiki/Entity-component-system">ECS</a>).
 Entity/actor objects tend to be 'has a'-style objects rather than 'is a'-style
-objects, which they reference other shared resources like sprites, sounds and
-so on. Those shared resources are typically located in separate
+objects, which link to, rather than contain, shared resources like sprites,
+sounds and so on. Those shared resources are usually located in separate
 containers/arrays so that they can re-used by multiple entities. Entities are
-in turn referenced by other structures within a game engine such as
+in turn referenced by other structures within a game engine, such as
 quadtrees/octrees, level structures, and so on.</p>
 
 <p>Entities may be erased at any time (for example, a wall gets destroyed and
 no longer is required to be processed by the game's engine, so is erased) and
-new entities may be inserted (for example, a new enemy is spawned). While this
-is all happening the links between entities, resources and superstructures such
-as levels and quadtrees, must stay valid in order for the game to run. The
-order of the entities and resources themselves within the containers is, in the
+new entities nserted (for example, a new enemy is spawned). While this is all
+happening the links between entities, resources and superstructures such as
+levels and quadtrees, must stay valid in order for the game to run. The order
+of the entities and resources themselves within the containers is, in the
 context of a game, typically unimportant, so an unordered container is okay.</p>
 
 <p>Unfortunately the container with the best iteration performance in the
