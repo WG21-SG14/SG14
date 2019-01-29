@@ -418,6 +418,10 @@ void plf_colony_test()
 				p_colony2 = std::move(p_colony);
 				failpass("Move test", p_colony2.size() == 400);
 
+				p_colony.insert(&ten);
+
+				failpass("Insert to post-moved-colony test", p_colony.size() == 1);
+
 				colony<int *> p_colony5(p_colony2);
 				colony<int *> p_colony6(std::move(p_colony5), p_colony2.get_allocator());
 				
