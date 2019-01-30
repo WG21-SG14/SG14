@@ -2348,7 +2348,7 @@ public:
 				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, group_pointer);
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, group_pointer, 1);
 
-				begin_iterator.group_pointer = begin_iterator.group_pointer; // note: end iterator only needs to be changed if the deleted group was the final group in the chain ie. not in this case
+				// note: end iterator only needs to be changed if the deleted group was the final group in the chain ie. not in this case
 				begin_iterator.element_pointer = begin_iterator.group_pointer->elements + *(begin_iterator.group_pointer->skipfield); // If the beginning index has been erased (ie. skipfield != 0), skip to next non-erased element
 				begin_iterator.skipfield_pointer = begin_iterator.group_pointer->skipfield + *(begin_iterator.group_pointer->skipfield);
 
