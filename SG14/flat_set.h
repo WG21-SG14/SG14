@@ -105,11 +105,11 @@ constexpr sorted_unique_t sorted_unique {};
 template<
     class Key,
     class Compare = std::less<Key>,
-    class Container = std::vector<Key>
+    class KeyContainer = std::vector<Key>
 >
 class flat_set {
-    static_assert(flatset_detail::is_random_access_iterator<typename Container::iterator>::value, "");
-    static_assert(std::is_same<Key, typename Container::value_type>::value, "");
+    static_assert(flatset_detail::is_random_access_iterator<typename KeyContainer::iterator>::value, "");
+    static_assert(std::is_same<Key, typename KeyContainer::value_type>::value, "");
 public:
     using key_type = Key;
     using key_compare = Compare;
@@ -117,20 +117,20 @@ public:
     using value_compare = Compare;
     using reference = Key&;
     using const_reference = const Key&;
-    using size_type = size_t; // TODO: this should be Container::size_type
-    using difference_type = ptrdiff_t; // TODO: this should be Container::difference_type
-    using iterator = typename Container::iterator;
-    using const_iterator = typename Container::const_iterator;
+    using size_type = size_t; // TODO: this should be KeyContainer::size_type
+    using difference_type = ptrdiff_t; // TODO: this should be KeyContainer::difference_type
+    using iterator = typename KeyContainer::iterator;
+    using const_iterator = typename KeyContainer::const_iterator;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-    using container_type = Container;
+    using container_type = KeyContainer;
 
 // =========================================================== CONSTRUCTORS
 // This is all one massive overload set!
 
     flat_set() : flat_set(Compare()) {}
 
-    explicit flat_set(Container ctr)
+    explicit flat_set(KeyContainer ctr)
         : c_(std::move(ctr)), compare_()
     {
         std::sort(std::begin(c_), std::end(c_), compare_);
@@ -138,9 +138,9 @@ public:
 
     // TODO: surely this should be using uses-allocator construction
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
-    flat_set(Container ctr, const Alloc& a)
-        : flat_set(Container(std::move(ctr), a)) {}
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
+    flat_set(KeyContainer ctr, const Alloc& a)
+        : flat_set(KeyContainer(std::move(ctr), a)) {}
 
     template<class Range,
              std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value, int> = 0>
@@ -148,40 +148,40 @@ public:
         : flat_set(std::begin(cont), std::end(cont), Compare()) {}
 
     template<class Range, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value && std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value && std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(const Range& cont, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), Compare(), a) {}
 
     // TODO: eliminate move-constructions of Compare() in many places
-    flat_set(stdext::sorted_unique_t, Container ctr)
+    flat_set(stdext::sorted_unique_t, KeyContainer ctr)
         : c_(std::move(ctr)), compare_(Compare()) {}
 
     // TODO: surely this should be using uses-allocator construction
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
-    flat_set(stdext::sorted_unique_t sorted_unique, Container ctr, const Alloc& a)
-        : flat_set(sorted_unique, Container(std::move(ctr), a)) {}
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
+    flat_set(stdext::sorted_unique_t sorted_unique, KeyContainer ctr, const Alloc& a)
+        : flat_set(sorted_unique, KeyContainer(std::move(ctr), a)) {}
 
     template<class Range>
     flat_set(stdext::sorted_unique_t sorted_unique, const Range& cont)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare()) {}
 
     template<class Range, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value && std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value && std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(stdext::sorted_unique_t sorted_unique, const Range& cont, const Alloc& a)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare(), a) {}
 
-    // TODO: eliminate move-constructions of Container() in many places
+    // TODO: eliminate move-constructions of KeyContainer() in many places
     explicit flat_set(const key_compare& comp)
-        : c_(Container()), compare_(comp) {}
+        : c_(KeyContainer()), compare_(comp) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(const Compare& comp, const Alloc& a)
-        : c_(flatset_detail::make_obj_using_allocator<Container>(a)), compare_(comp) {}
+        : c_(flatset_detail::make_obj_using_allocator<KeyContainer>(a)), compare_(comp) {}
 
     template<class Alloc,
-             std::enable_if_t<std::uses_allocator_v<Container, Alloc>, int> = 0>
+             std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>, int> = 0>
     explicit flat_set(const Alloc& a)
         : flat_set(Compare(), a) {}
 
@@ -193,11 +193,11 @@ public:
         std::sort(std::begin(c_), std::end(c_), compare_);
     }
 
-    // TODO: this constructor should conditionally use Container's iterator-pair constructor
+    // TODO: this constructor should conditionally use KeyContainer's iterator-pair constructor
     template<class InputIterator, class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(InputIterator first, InputIterator last, const Compare& comp, const Alloc& a)
-        : c_(flatset_detail::make_obj_using_allocator<Container>(a)), compare_(comp)
+        : c_(flatset_detail::make_obj_using_allocator<KeyContainer>(a)), compare_(comp)
     {
         while (first != last) {
             c_.insert(c_.end(), *first);
@@ -207,7 +207,7 @@ public:
     }
 
     template<class InputIterator, class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(InputIterator first, InputIterator last, const Alloc& a)
         : flat_set(first, last, Compare(), a) {}
 
@@ -215,12 +215,12 @@ public:
     flat_set(stdext::sorted_unique_t, InputIterator first, InputIterator last, const Compare& comp = Compare())
         : c_(first, last), compare_(comp) {}
 
-    // TODO: this constructor should conditionally use Container's iterator-pair constructor
+    // TODO: this constructor should conditionally use KeyContainer's iterator-pair constructor
     template<class InputIterator, class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(stdext::sorted_unique_t, InputIterator first, InputIterator last,
              const Compare& comp, const Alloc& a)
-        : c_(flatset_detail::make_obj_using_allocator<Container>(a)), compare_(comp)
+        : c_(flatset_detail::make_obj_using_allocator<KeyContainer>(a)), compare_(comp)
     {
         while (first != last) {
             c_.insert(c_.end(), *first);
@@ -229,17 +229,17 @@ public:
     }
 
     template<class InputIterator, class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(stdext::sorted_unique_t sorted_unique, InputIterator first, InputIterator last, const Alloc& a)
         : flat_set(sorted_unique, first, last, Compare(), a) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(flat_set&& m, const Alloc& a)
         : c_(std::move(m.c_), a), compare_(std::move(m.compare_)) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(const flat_set& m, const Alloc& a)
         : c_(m.c_, a), compare_(m.compare_) {}
 
@@ -247,12 +247,12 @@ public:
         : flat_set(il, comp) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(std::initializer_list<Key>&& il, const Compare& comp, const Alloc& a)
         : flat_set(il, comp, a) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(std::initializer_list<Key>&& il, const Alloc& a)
         : flat_set(il, Compare(), a) {}
 
@@ -260,12 +260,12 @@ public:
         : flat_set(sorted_unique, il, comp) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(stdext::sorted_unique_t sorted_unique, std::initializer_list<Key>&& il, const Compare& comp, const Alloc& a)
         : flat_set(sorted_unique, il, comp, a) {}
 
     template<class Alloc,
-             class = std::enable_if_t<std::uses_allocator_v<Container, Alloc>>>
+             class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
     flat_set(stdext::sorted_unique_t sorted_unique, std::initializer_list<Key>&& il, const Alloc& a)
         : flat_set(sorted_unique, il, Compare(), a) {}
 
@@ -376,13 +376,13 @@ public:
     }
 
     // TODO: as specified, this function fails to preserve the allocator, and has UB for std::pmr containers
-    Container extract() && {
-        Container temp;
+    KeyContainer extract() && {
+        KeyContainer temp;
         temp.swap(c_);
         return temp;
     }
 
-    void replace(Container&& ctr) {
+    void replace(KeyContainer&& ctr) {
         c_ = std::move(ctr);
     }
 
@@ -408,9 +408,9 @@ public:
         c_.erase(first, last);
     }
 
-    template<class Container_ = Container,
+    template<class KeyContainer_ = KeyContainer,
              // TODO: this is insane
-             class = std::enable_if_t<std::is_nothrow_swappable_v<Container_> && std::is_nothrow_swappable_v<Compare>>>
+             class = std::enable_if_t<std::is_nothrow_swappable_v<KeyContainer_> && std::is_nothrow_swappable_v<Compare>>>
     void swap(flat_set& m) noexcept {
         using std::swap;
         swap(c_, m.c_);
@@ -541,51 +541,51 @@ public:
     }
 
 private:
-    Container c_;
+    KeyContainer c_;
     Compare compare_;
 };
 
 // TODO: all six comparison operators should be invisible friends
-template<class Key, class Compare, class Container>
-bool operator==(const flat_set<Key, Compare, Container>& x, const flat_set<Key, Compare, Container>& y)
+template<class Key, class Compare, class KeyContainer>
+bool operator==(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Key, Compare, KeyContainer>& y)
 {
     return std::equal(x.begin(), x.end(), y.begin(), y.end());
 }
 
-template<class Key, class Compare, class Container>
-bool operator!=(const flat_set<Key, Compare, Container>& x, const flat_set<Key, Compare, Container>& y)
+template<class Key, class Compare, class KeyContainer>
+bool operator!=(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Key, Compare, KeyContainer>& y)
 {
     return !(x == y);
 }
 
-template<class Key, class Compare, class Container>
-bool operator<(const flat_set<Key, Compare, Container>& x, const flat_set<Key, Compare, Container>& y)
+template<class Key, class Compare, class KeyContainer>
+bool operator<(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Key, Compare, KeyContainer>& y)
 {
     return std::lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
 }
 
-template<class Key, class Compare, class Container>
-bool operator>(const flat_set<Key, Compare, Container>& x, const flat_set<Key, Compare, Container>& y)
+template<class Key, class Compare, class KeyContainer>
+bool operator>(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Key, Compare, KeyContainer>& y)
 {
     return (y < x);
 }
 
-template<class Key, class Compare, class Container>
-bool operator<=(const flat_set<Key, Compare, Container>& x, const flat_set<Key, Compare, Container>& y)
+template<class Key, class Compare, class KeyContainer>
+bool operator<=(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Key, Compare, KeyContainer>& y)
 {
     return !(y < x);
 }
 
-template<class Key, class Compare, class Container>
-bool operator>=(const flat_set<Key, Compare, Container>& x, const flat_set<Key, Compare, Container>& y)
+template<class Key, class Compare, class KeyContainer>
+bool operator>=(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Key, Compare, KeyContainer>& y)
 {
     return !(x < y);
 }
 
-template<class Key, class Compare, class Container,
+template<class Key, class Compare, class KeyContainer,
          // TODO: this is insane
-         class = std::enable_if_t<std::is_nothrow_swappable_v<Container> && std::is_nothrow_swappable_v<Compare>>>
-void swap(flat_set<Key, Compare, Container>& x, flat_set<Key, Compare, Container>& y) noexcept
+         class = std::enable_if_t<std::is_nothrow_swappable_v<KeyContainer> && std::is_nothrow_swappable_v<Compare>>>
+void swap(flat_set<Key, Compare, KeyContainer>& x, flat_set<Key, Compare, KeyContainer>& y) noexcept
 {
     return x.swap(y);
 }
