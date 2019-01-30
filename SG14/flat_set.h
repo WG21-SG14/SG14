@@ -386,7 +386,6 @@ public:
         c_ = std::move(ctr);
     }
 
-    // TODO: this overload should not exist
     iterator erase(iterator position) {
         return c_.erase(position);
     }
