@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <deque>
 #include <functional>
+#if __has_include(<memory_resource>)
+#include <memory_resource>
+#endif
 #include <string>
 
 namespace {
@@ -38,6 +41,28 @@ static void AmbiguousEraseTest()
     assert(fs.size() == 1);
     fs.erase(fs.cbegin());                // calls erase(const_iterator)
     assert(fs.size() == 0);
+}
+
+static void ExtractDoesntSwapTest()
+{
+#if defined(__cpp_lib_memory_resource)
+    // This test fails if extract() is implemented in terms of swap().
+    {
+        std::pmr::monotonic_buffer_resource mr;
+        std::pmr::polymorphic_allocator<int> a(&mr);
+        stdext::flat_set<int, std::less<>, std::pmr::vector<int>> fs({1, 2}, a);
+        std::pmr::vector<int> v = std::move(fs).extract();
+        assert(v.get_allocator() == a);
+    }
+#endif
+
+    // Sanity-check with std::allocator, even though this can't fail.
+    {
+        std::allocator<int> a;
+        stdext::flat_set<int, std::less<>, std::vector<int>> fs({1, 2}, a);
+        std::vector<int> v = std::move(fs).extract();
+        assert(v.get_allocator() == a);
+    }
 }
 
 template<class FS>
@@ -88,6 +113,7 @@ static void ConstructionTest()
 void sg14_test::flat_set_test()
 {
     AmbiguousEraseTest();
+    ExtractDoesntSwapTest();
 
     // Test the most basic flat_set.
     {

@@ -409,9 +409,7 @@ public:
 
     // TODO: as specified, this function fails to preserve the allocator, and has UB for std::pmr containers
     KeyContainer extract() && {
-        KeyContainer temp;
-        temp.swap(c_);
-        return temp;
+        return std::move(c_);
     }
 
     void replace(KeyContainer&& ctr) {
