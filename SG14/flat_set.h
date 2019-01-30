@@ -142,14 +142,14 @@ public:
     flat_set(KeyContainer ctr, const Alloc& a)
         : flat_set(KeyContainer(std::move(ctr), a)) {}
 
-    template<class Range,
-             std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value, int> = 0>
-    explicit flat_set(const Range& cont)
+    template<class Container,
+             std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value, int> = 0>
+    explicit flat_set(const Container& cont)
         : flat_set(std::begin(cont), std::end(cont), Compare()) {}
 
-    template<class Range, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value && std::uses_allocator_v<KeyContainer, Alloc>>>
-    flat_set(const Range& cont, const Alloc& a)
+    template<class Container, class Alloc,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator_v<KeyContainer, Alloc>>>
+    flat_set(const Container& cont, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), Compare(), a) {}
 
     // TODO: eliminate move-constructions of Compare() in many places
@@ -162,13 +162,13 @@ public:
     flat_set(stdext::sorted_unique_t sorted_unique, KeyContainer ctr, const Alloc& a)
         : flat_set(sorted_unique, KeyContainer(std::move(ctr), a)) {}
 
-    template<class Range>
-    flat_set(stdext::sorted_unique_t sorted_unique, const Range& cont)
+    template<class Container>
+    flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare()) {}
 
-    template<class Range, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Range&>::value && std::uses_allocator_v<KeyContainer, Alloc>>>
-    flat_set(stdext::sorted_unique_t sorted_unique, const Range& cont, const Alloc& a)
+    template<class Container, class Alloc,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator_v<KeyContainer, Alloc>>>
+    flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont, const Alloc& a)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare(), a) {}
 
     // TODO: eliminate move-constructions of KeyContainer() in many places
@@ -593,23 +593,23 @@ void swap(flat_set<Key, Compare, KeyContainer>& x, flat_set<Key, Compare, KeyCon
 #if defined(__cpp_deduction_guides)
 
 // TODO: this deduction guide should maybe be constrained by qualifies_as_range
-template<class Range>
-flat_set(Range)
-    -> flat_set<flatset_detail::cont_value_type<Range>>;
+template<class Container>
+flat_set(Container)
+    -> flat_set<flatset_detail::cont_value_type<Container>>;
 
-template<class Range, class Alloc,
+template<class Container, class Alloc,
          class = std::enable_if_t<flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(Range, Alloc)
-    -> flat_set<flatset_detail::cont_value_type<Range>>;
+flat_set(Container, Alloc)
+    -> flat_set<flatset_detail::cont_value_type<Container>>;
 
-template<class Range>
-flat_set(sorted_unique_t, Range)
-    -> flat_set<flatset_detail::cont_value_type<Range>>;
+template<class Container>
+flat_set(sorted_unique_t, Container)
+    -> flat_set<flatset_detail::cont_value_type<Container>>;
 
-template<class Range, class Alloc,
+template<class Container, class Alloc,
          class = std::enable_if_t<flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(sorted_unique_t, Range, Alloc)
-    -> flat_set<flatset_detail::cont_value_type<Range>>;
+flat_set(sorted_unique_t, Container, Alloc)
+    -> flat_set<flatset_detail::cont_value_type<Container>>;
 
 template<class InputIterator, class Compare = std::less<flatset_detail::iter_value_type<InputIterator>>,
          class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value && !flatset_detail::qualifies_as_allocator<Compare>::value>>
