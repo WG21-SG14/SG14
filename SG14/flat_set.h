@@ -623,7 +623,7 @@ flat_set(InputIterator, InputIterator, Compare, Alloc)
 
 template<class InputIterator, class Alloc,
          class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value && flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(InputIterator, InputIterator, Alloc)
+flat_set(InputIterator, InputIterator, Alloc, int=0/*to please MSVC*/)
     -> flat_set<flatset_detail::iter_value_type<InputIterator>>;
 
 #endif
