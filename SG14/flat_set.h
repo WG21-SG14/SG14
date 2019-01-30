@@ -152,9 +152,8 @@ public:
     flat_set(const Container& cont, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), Compare(), a) {}
 
-    // TODO: eliminate move-constructions of Compare() in many places
     flat_set(stdext::sorted_unique_t, KeyContainer ctr)
-        : c_(std::move(ctr)), compare_(Compare()) {}
+        : c_(std::move(ctr)), compare_() {}
 
     // TODO: surely this should be using uses-allocator construction
     template<class Alloc,
@@ -171,9 +170,8 @@ public:
     flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont, const Alloc& a)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare(), a) {}
 
-    // TODO: eliminate move-constructions of KeyContainer() in many places
     explicit flat_set(const key_compare& comp)
-        : c_(KeyContainer()), compare_(comp) {}
+        : c_(), compare_(comp) {}
 
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator_v<KeyContainer, Alloc>>>
