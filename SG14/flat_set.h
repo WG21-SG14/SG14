@@ -29,6 +29,7 @@
 // This is an implementation of the proposed "std::flat_set" as specified in
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1222r1.pdf
 
+#include <stddef.h>
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -40,8 +41,8 @@ namespace stdext {
 namespace flatset_detail {
     template<class T, class = void> struct qualifies_as_range : std::false_type {};
     template<class T> struct qualifies_as_range<T, decltype(
-        void(std::begin( std::declval<T()>()() )),
-        void(std::end( std::declval<T()>()() ))
+        std::begin( std::declval<T()>()() ), void(),
+        std::end( std::declval<T()>()() ), void()
     )> : std::true_type {};
 
     template<class It>
