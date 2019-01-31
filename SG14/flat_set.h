@@ -99,7 +99,7 @@ namespace flatset_detail {
     >> : std::true_type {};
 
     template<class It>
-    using qualifies_as_input_iterator = std::bool_constant<!std::is_integral<It>::value>;
+    using qualifies_as_input_iterator = std::integral_constant<bool, !std::is_integral<It>::value>;
 
 } // namespace flatset_detail
 
