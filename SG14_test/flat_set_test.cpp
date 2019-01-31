@@ -65,6 +65,27 @@ static void ExtractDoesntSwapTest()
     }
 }
 
+static void VectorBoolSanityTest()
+{
+    using FS = stdext::flat_set<bool>;
+    FS fs;
+    auto it_inserted = fs.emplace(true);
+    assert(it_inserted.second);
+    auto it = it_inserted.first;
+    assert(it == fs.begin());
+    assert(fs.size() == 1);
+    it = fs.emplace_hint(it, false);
+    assert(it == fs.begin());
+    assert(fs.size() == 2);
+    auto count = fs.erase(false);
+    assert(count == 1);
+    assert(fs.size() == 1);
+    it = fs.erase(fs.begin());
+    assert(fs.empty());
+    assert(it == fs.begin());
+    assert(it == fs.end());
+}
+
 template<class FS>
 static void ConstructionTest()
 {
@@ -114,6 +135,7 @@ void sg14_test::flat_set_test()
 {
     AmbiguousEraseTest();
     ExtractDoesntSwapTest();
+    VectorBoolSanityTest();
 
     // Test the most basic flat_set.
     {
