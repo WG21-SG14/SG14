@@ -419,10 +419,11 @@ public:
         c_.erase(first, last);
     }
 
-    template<class KeyContainer_ = KeyContainer,
-             // TODO: this is insane
-             class = std::enable_if_t<std::is_nothrow_swappable<KeyContainer_>::value && std::is_nothrow_swappable<Compare>::value>>
-    void swap(flat_set& m) noexcept {
+    void swap(flat_set& m) noexcept
+#if defined(__cpp_lib_is_swappable)
+        (std::is_nothrow_swappable<KeyContainer>::value && std::is_nothrow_swappable<Compare>::value)
+#endif
+    {
         using std::swap;
         swap(c_, m.c_);
         swap(compare_, m.compare_);
@@ -593,10 +594,8 @@ bool operator>=(const flat_set<Key, Compare, KeyContainer>& x, const flat_set<Ke
     return !(x < y);
 }
 
-template<class Key, class Compare, class KeyContainer,
-         // TODO: this is insane
-         class = std::enable_if_t<std::is_nothrow_swappable<KeyContainer>::value && std::is_nothrow_swappable<Compare>::value>>
-void swap(flat_set<Key, Compare, KeyContainer>& x, flat_set<Key, Compare, KeyContainer>& y) noexcept
+template<class Key, class Compare, class KeyContainer>
+void swap(flat_set<Key, Compare, KeyContainer>& x, flat_set<Key, Compare, KeyContainer>& y) noexcept(noexcept(x.swap(y)))
 {
     return x.swap(y);
 }
