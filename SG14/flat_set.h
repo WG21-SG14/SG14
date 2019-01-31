@@ -50,24 +50,35 @@ namespace flatset_detail {
         std::random_access_iterator_tag
     >;
 
+    template<int I> struct priority_tag : priority_tag<I-1> {};
+    template<> struct priority_tag<0> {};
+
     // As proposed in P0591R4. Guaranteed copy elision makes this do the right thing.
+    template<class T, class Alloc, class... Args, class = std::enable_if_t<
+        std::uses_allocator<T, Alloc>::value && std::is_constructible<T, std::allocator_arg_t, const Alloc&, Args&&...>::value
+    >>
+    T make_obj_using_allocator_(priority_tag<3>, const Alloc& alloc, Args&&... args) {
+        return T(std::allocator_arg, alloc, static_cast<Args&&>(args)...);
+    }
+    template<class T, class Alloc, class... Args, class = std::enable_if_t<
+        std::uses_allocator<T, Alloc>::value && std::is_constructible<T, Args&&..., const Alloc&>::value
+    >>
+    T make_obj_using_allocator_(priority_tag<2>, const Alloc& alloc, Args&&... args) {
+        return T(static_cast<Args&&>(args)..., alloc);
+    }
+    template<class T, class Alloc, class... Args, class = std::enable_if_t<
+        !std::uses_allocator<T, Alloc>::value && std::is_constructible<T, Args&&...>::value
+    >>
+    T make_obj_using_allocator_(priority_tag<1>, const Alloc&, Args&&... args) {
+        return T(static_cast<Args&&>(args)...);
+    }
+    template<class T, class Alloc, class... Args>
+    T make_obj_using_allocator_(priority_tag<0>, const Alloc&, Args&&...) {
+        static_assert(sizeof(T)==0, "this request for uses-allocator construction is ill-formed");
+    }
     template <class T, class Alloc, class... Args>
     T make_obj_using_allocator(const Alloc& alloc, Args&&... args) {
-        if constexpr (std::uses_allocator<T, Alloc>::value) {
-            if constexpr (std::is_constructible<T, std::allocator_arg_t, const Alloc&, Args&&...>::value) {
-                return T(std::allocator_arg, alloc, static_cast<Args&&>(args)...);
-            } else if constexpr (std::is_constructible<T, Args&&..., const Alloc&>::value) {
-                return T(static_cast<Args&&>(args)..., alloc);
-            } else {
-                static_assert(sizeof(T)==0, "this request for uses-allocator construction is ill-formed");
-            }
-        } else {
-            if constexpr (std::is_constructible<T, Args&&...>::value) {
-                return T(static_cast<Args&&>(args)...);
-            } else {
-                static_assert(sizeof(T)==0, "this request for uses-allocator construction is ill-formed");
-            }
-        }
+        return make_obj_using_allocator_<T>(priority_tag<3>(), alloc, static_cast<Args&&>(args)...);
     }
 
     template<class Container>
