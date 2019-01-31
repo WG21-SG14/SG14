@@ -40,6 +40,51 @@ static void AmbiguousEraseTest()
     assert(fs.size() == 0);
 }
 
+template<class FS>
+static void ConstructionTest()
+{
+    static_assert(std::is_same<int, typename FS::key_type>::value, "");
+    static_assert(std::is_same<int, typename FS::value_type>::value, "");
+    using Compare = typename FS::key_compare;
+    std::vector<int> vec = {1, 3, 5};
+    if (true) {
+        FS fs;  // default constructor
+    }
+    for (auto&& fs : {
+        FS(vec),
+        FS({1, 3, 5}),
+        FS(vec.begin(), vec.end()),
+        FS(vec.rbegin(), vec.rend()),
+        FS(vec, Compare()),
+        FS({1, 3, 5}, Compare()),
+        FS(vec.begin(), vec.end(), Compare()),
+        FS(vec.rbegin(), vec.rend(), Compare()),
+    }) {
+        auto cmp = fs.key_comp();
+        assert(std::is_sorted(fs.begin(), fs.end(), cmp));
+        assert(fs.find(0) == fs.end());
+        assert(fs.find(1) != fs.end());
+        assert(fs.find(2) == fs.end());
+        assert(fs.find(3) != fs.end());
+        assert(fs.find(4) == fs.end());
+        assert(fs.find(5) != fs.end());
+        assert(fs.find(6) == fs.end());
+    }
+    if (std::is_sorted(vec.begin(), vec.end(), Compare())) {
+        for (auto&& fs : {
+            FS(stdext::sorted_unique, vec),
+            FS(stdext::sorted_unique, vec.begin(), vec.end()),
+            FS(stdext::sorted_unique, {1, 3, 5}),
+            FS(stdext::sorted_unique, vec, Compare()),
+            FS(stdext::sorted_unique, vec.begin(), vec.end(), Compare()),
+            FS(stdext::sorted_unique, {1, 3, 5}, Compare()),
+        }) {
+            auto cmp = fs.key_comp();
+            assert(std::is_sorted(fs.begin(), fs.end(), cmp));
+        }
+    }
+}
+
 void sg14_test::flat_set_test()
 {
     AmbiguousEraseTest();
@@ -47,26 +92,34 @@ void sg14_test::flat_set_test()
     // Test the most basic flat_set.
     {
         using FS = stdext::flat_set<int>;
-        FS fs;
+        ConstructionTest<FS>();
     }
 
     // Test a custom comparator.
     {
         using FS = stdext::flat_set<int, std::greater<int>>;
-        FS fs;
+        ConstructionTest<FS>();
     }
 
     // Test a transparent comparator.
     {
         using FS = stdext::flat_set<int, std::greater<>>;
-        FS fs;
+        ConstructionTest<FS>();
     }
 
     // Test a custom container.
     {
         using FS = stdext::flat_set<int, std::less<int>, std::deque<int>>;
-        FS fs;
+        ConstructionTest<FS>();
     }
+
+#if defined(__cpp_lib_memory_resource)
+    // Test a pmr container.
+    {
+        using FS = stdext::flat_set<int, std::less<int>, std::pmr::vector<int>>;
+        ConstructionTest<FS>();
+    }
+#endif
 }
 
 #ifdef TEST_MAIN

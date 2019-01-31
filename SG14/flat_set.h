@@ -160,10 +160,20 @@ public:
     explicit flat_set(const Container& cont)
         : flat_set(std::begin(cont), std::end(cont), Compare()) {}
 
+    template<class Container,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>>
+    flat_set(const Container& cont, const Compare& comp)
+        : flat_set(std::begin(cont), std::end(cont), comp) {}
+
     template<class Container, class Alloc,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(const Container& cont, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), Compare(), a) {}
+
+    template<class Container, class Alloc,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
+    flat_set(const Container& cont, const Compare& comp, const Alloc& a)
+        : flat_set(std::begin(cont), std::end(cont), comp, a) {}
 
     flat_set(stdext::sorted_unique_t, KeyContainer ctr)
         : c_(std::move(ctr)), compare_() {}
@@ -179,10 +189,20 @@ public:
     flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare()) {}
 
+    template<class Container,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>>
+    flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont, const Compare& comp)
+        : flat_set(sorted_unique, std::begin(cont), std::end(cont), comp) {}
+
     template<class Container, class Alloc,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont, const Alloc& a)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare(), a) {}
+
+    template<class Container, class Alloc,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
+    flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont, const Compare& comp, const Alloc& a)
+        : flat_set(sorted_unique, std::begin(cont), std::end(cont), comp, a) {}
 
     explicit flat_set(const Compare& comp)
         : c_(), compare_(comp) {}
