@@ -325,7 +325,10 @@ public:
     const_reverse_iterator crbegin() const noexcept { return std::crbegin(c_); }
     const_reverse_iterator crend() const noexcept { return std::crend(c_); }
 
-    [[nodiscard]] bool empty() const noexcept { return c_.empty(); }
+#if __cplusplus >= 201703L
+    [[nodiscard]]
+#endif
+    bool empty() const noexcept { return c_.empty(); }
     size_type size() const noexcept { return c_.size(); }
     size_type max_size() const noexcept { return c_.max_size(); }
 
