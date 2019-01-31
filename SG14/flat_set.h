@@ -29,6 +29,7 @@
 // This is an implementation of the proposed "std::flat_set" as specified in
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1222r1.pdf
 
+#include <algorithm>
 #include <functional>
 #include <initializer_list>
 #include <iterator>
