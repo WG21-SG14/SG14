@@ -162,7 +162,8 @@ public:
     flat_set(stdext::sorted_unique_t sorted_unique, KeyContainer ctr, const Alloc& a)
         : flat_set(sorted_unique, KeyContainer(std::move(ctr), a)) {}
 
-    template<class Container>
+    template<class Container,
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>>
     flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare()) {}
 
@@ -171,7 +172,7 @@ public:
     flat_set(stdext::sorted_unique_t sorted_unique, const Container& cont, const Alloc& a)
         : flat_set(sorted_unique, std::begin(cont), std::end(cont), Compare(), a) {}
 
-    explicit flat_set(const key_compare& comp)
+    explicit flat_set(const Compare& comp)
         : c_(), compare_(comp) {}
 
     template<class Alloc,
@@ -591,37 +592,47 @@ void swap(flat_set<Key, Compare, KeyContainer>& x, flat_set<Key, Compare, KeyCon
 #if defined(__cpp_deduction_guides)
 
 // TODO: this deduction guide should maybe be constrained by qualifies_as_range
-template<class Container>
+template<class Container,
+         class = std::enable_if_t<!flatset_detail::qualifies_as_allocator<Container>::value>>
 flat_set(Container)
     -> flat_set<flatset_detail::cont_value_type<Container>>;
 
-template<class Container, class Alloc,
-         class = std::enable_if_t<flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(Container, Alloc)
+template<class Container, class Allocator,
+         class = std::enable_if_t<!flatset_detail::qualifies_as_allocator<Container>::value &&
+                                  flatset_detail::qualifies_as_allocator<Allocator>::value &&
+                                  std::uses_allocator_v<Container, Allocator>>>
+flat_set(Container, Allocator)
     -> flat_set<flatset_detail::cont_value_type<Container>>;
 
-template<class Container>
+template<class Container,
+         class = std::enable_if_t<!flatset_detail::qualifies_as_allocator<Container>::value>>
 flat_set(sorted_unique_t, Container)
     -> flat_set<flatset_detail::cont_value_type<Container>>;
 
-template<class Container, class Alloc,
-         class = std::enable_if_t<flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(sorted_unique_t, Container, Alloc)
+template<class Container, class Allocator,
+         class = std::enable_if_t<!flatset_detail::qualifies_as_allocator<Container>::value &&
+                                  flatset_detail::qualifies_as_allocator<Allocator>::value &&
+                                  std::uses_allocator_v<Container, Allocator>>>
+flat_set(sorted_unique_t, Container, Allocator)
     -> flat_set<flatset_detail::cont_value_type<Container>>;
 
 template<class InputIterator, class Compare = std::less<flatset_detail::iter_value_type<InputIterator>>,
-         class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value && !flatset_detail::qualifies_as_allocator<Compare>::value>>
+         class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value &&
+                                  !flatset_detail::qualifies_as_allocator<Compare>::value>>
 flat_set(InputIterator, InputIterator, Compare = Compare())
     -> flat_set<flatset_detail::iter_value_type<InputIterator>, Compare>;
 
-template<class InputIterator, class Compare, class Alloc,
-         class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value && !flatset_detail::qualifies_as_allocator<Compare>::value && flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(InputIterator, InputIterator, Compare, Alloc)
+template<class InputIterator, class Compare, class Allocator,
+         class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value &&
+                                  !flatset_detail::qualifies_as_allocator<Compare>::value &&
+                                  flatset_detail::qualifies_as_allocator<Allocator>::value>>
+flat_set(InputIterator, InputIterator, Compare, Allocator)
     -> flat_set<flatset_detail::iter_value_type<InputIterator>, Compare>;
 
-template<class InputIterator, class Alloc,
-         class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value && flatset_detail::qualifies_as_allocator<Alloc>::value>>
-flat_set(InputIterator, InputIterator, Alloc, int=0/*to please MSVC*/)
+template<class InputIterator, class Allocator,
+         class = std::enable_if_t<flatset_detail::qualifies_as_input_iterator<InputIterator>::value &&
+                                  flatset_detail::qualifies_as_allocator<Allocator>::value>>
+flat_set(InputIterator, InputIterator, Allocator, int=0/*to please MSVC*/)
     -> flat_set<flatset_detail::iter_value_type<InputIterator>>;
 
 #endif
