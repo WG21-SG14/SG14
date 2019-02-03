@@ -26,6 +26,24 @@ private:
     std::string s_;
 };
 
+struct InstrumentedWidget {
+    static int move_ctors, copy_ctors;
+    InstrumentedWidget(const char *s) : s_(s) {}
+    InstrumentedWidget(InstrumentedWidget&& o) : s_(std::move(o.s_)) { move_ctors += 1; }
+    InstrumentedWidget(const InstrumentedWidget& o) : s_(o.s_) { copy_ctors += 1; }
+    InstrumentedWidget& operator=(InstrumentedWidget&&) = default;
+    InstrumentedWidget& operator=(const InstrumentedWidget&) = default;
+
+    friend bool operator<(const InstrumentedWidget& a, const InstrumentedWidget& b) {
+        return a.s_ < b.s_;
+    }
+
+private:
+    std::string s_;
+};
+int InstrumentedWidget::move_ctors = 0;
+int InstrumentedWidget::copy_ctors = 0;
+
 } // anonymous namespace
 
 static void AmbiguousEraseTest()
@@ -84,6 +102,43 @@ static void VectorBoolSanityTest()
     assert(fs.empty());
     assert(it == fs.begin());
     assert(it == fs.end());
+}
+
+static void MoveOperationsPilferOwnership()
+{
+    using FS = stdext::flat_set<InstrumentedWidget>;
+    InstrumentedWidget::move_ctors = 0;
+    InstrumentedWidget::copy_ctors = 0;
+    FS fs;
+    fs.insert(InstrumentedWidget("abc"));
+    assert(InstrumentedWidget::move_ctors == 1);
+    assert(InstrumentedWidget::copy_ctors == 0);
+
+    fs.emplace(InstrumentedWidget("def")); fs.erase("def");  // poor man's reserve()
+    InstrumentedWidget::copy_ctors = 0;
+    InstrumentedWidget::move_ctors = 0;
+
+    fs.emplace("def");  // is still not directly emplaced; a temporary is created to find()
+    assert(InstrumentedWidget::move_ctors == 1);
+    assert(InstrumentedWidget::copy_ctors == 0);
+    InstrumentedWidget::move_ctors = 0;
+
+    FS fs2 = std::move(fs);  // should just transfer buffer ownership
+    assert(InstrumentedWidget::move_ctors == 0);
+    assert(InstrumentedWidget::copy_ctors == 0);
+
+    fs = std::move(fs2);  // should just transfer buffer ownership
+    assert(InstrumentedWidget::move_ctors == 0);
+    assert(InstrumentedWidget::copy_ctors == 0);
+
+    FS fs3(fs, std::allocator<InstrumentedWidget>());
+    assert(InstrumentedWidget::move_ctors == 0);
+    assert(InstrumentedWidget::copy_ctors == 2);
+    InstrumentedWidget::copy_ctors = 0;
+
+    FS fs4(std::move(fs), std::allocator<InstrumentedWidget>());  // should just transfer buffer ownership
+    assert(InstrumentedWidget::move_ctors == 0);
+    assert(InstrumentedWidget::copy_ctors == 0);
 }
 
 template<class FS>
@@ -147,6 +202,7 @@ void sg14_test::flat_set_test()
     AmbiguousEraseTest();
     ExtractDoesntSwapTest();
     VectorBoolSanityTest();
+    MoveOperationsPilferOwnership();
 
     // Test the most basic flat_set.
     {
