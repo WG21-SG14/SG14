@@ -168,11 +168,11 @@ namespace flatmap_detail {
     }
 
     template<class, class> class iter;
-    template<class K, class V> constexpr iter<K, V> make_iterator(K, V);
+    template<class K, class V> iter<K, V> make_iterator(K, V);
 
     template<class Reference>
     struct arrow_proxy {
-        constexpr Reference *operator->() { return &data_; }
+        Reference *operator->() { return &data_; }
 
         template<class, class> friend class iter;
 
@@ -199,47 +199,47 @@ namespace flatmap_detail {
                  class = std::enable_if_t<std::is_convertible<CK, KeyIt>::value && std::is_convertible<CM, MappedIt>::value>>
         iter(const iter<CK, CM>& other) : kit_(other.private_impl_getkey()), vit_(other.private_impl_getmapped()) {}
 
-        constexpr reference operator*() const {
+        reference operator*() const {
             return reference{*kit_, *vit_};
         }
 
-        constexpr pointer operator->() const {
+        pointer operator->() const {
             return arrow_proxy<reference>{reference{*kit_, *vit_}};
         }
 
-        constexpr iter& operator++() { ++kit_; ++vit_; return *this; }
-        constexpr iter& operator--() { --kit_; --vit_; return *this; }
-        constexpr iter operator++(int) { iter result(*this); ++*this; return result; }
-        constexpr iter operator--(int) { iter result(*this); --*this; return result; }
-        constexpr iter& operator+=(ptrdiff_t n) { kit_ += n; vit_ += n; return *this; }
-        constexpr iter& operator-=(ptrdiff_t n) { kit_ -= n; vit_ -= n; return *this; }
-        constexpr reference operator[](ptrdiff_t n) const { return *(*this + n); }
-        friend constexpr iter operator+(iter it, ptrdiff_t n) { it += n; return it; }
-        friend constexpr iter operator+(ptrdiff_t n, iter it) { it += n; return it; }
-        friend constexpr iter operator-(iter it, ptrdiff_t n) { it -= n; return it; }
-        friend constexpr iter operator-(const iter& it, const iter& jt) { return ptrdiff_t(it.kit_ - jt.kit_); }
-        friend constexpr bool operator==(const iter& a, const iter& b) { return a.kit_ == b.kit_; }
-        friend constexpr bool operator!=(const iter& a, const iter& b) { return !(a.kit_ == b.kit_); }
-        friend constexpr bool operator<(const iter& a, const iter& b) { return a.kit_ < b.kit_; }
-        friend constexpr bool operator<=(const iter& a, const iter& b) { return !(b.kit_ < a.kit_); }
-        friend constexpr bool operator>(const iter& a, const iter& b) { return b.kit_ < a.kit_; }
-        friend constexpr bool operator>=(const iter& a, const iter& b) { return !(a.kit_ < b.kit_); }
+        iter& operator++() { ++kit_; ++vit_; return *this; }
+        iter& operator--() { --kit_; --vit_; return *this; }
+        iter operator++(int) { iter result(*this); ++*this; return result; }
+        iter operator--(int) { iter result(*this); --*this; return result; }
+        iter& operator+=(ptrdiff_t n) { kit_ += n; vit_ += n; return *this; }
+        iter& operator-=(ptrdiff_t n) { kit_ -= n; vit_ -= n; return *this; }
+        reference operator[](ptrdiff_t n) const { return *(*this + n); }
+        friend iter operator+(iter it, ptrdiff_t n) { it += n; return it; }
+        friend iter operator+(ptrdiff_t n, iter it) { it += n; return it; }
+        friend iter operator-(iter it, ptrdiff_t n) { it -= n; return it; }
+        friend iter operator-(const iter& it, const iter& jt) { return ptrdiff_t(it.kit_ - jt.kit_); }
+        friend bool operator==(const iter& a, const iter& b) { return a.kit_ == b.kit_; }
+        friend bool operator!=(const iter& a, const iter& b) { return !(a.kit_ == b.kit_); }
+        friend bool operator<(const iter& a, const iter& b) { return a.kit_ < b.kit_; }
+        friend bool operator<=(const iter& a, const iter& b) { return !(b.kit_ < a.kit_); }
+        friend bool operator>(const iter& a, const iter& b) { return b.kit_ < a.kit_; }
+        friend bool operator>=(const iter& a, const iter& b) { return !(a.kit_ < b.kit_); }
 
-        constexpr KeyIt private_impl_getkey() const { return kit_; }
-        constexpr MappedIt private_impl_getmapped() const { return vit_; }
+        KeyIt private_impl_getkey() const { return kit_; }
+        MappedIt private_impl_getmapped() const { return vit_; }
 
     private:
         template<class K, class V>
-        friend constexpr iter<K, V> make_iterator(K, V);
+        friend iter<K, V> make_iterator(K, V);
 
-        constexpr explicit iter(KeyIt&& kit, MappedIt&& vit)
+        explicit iter(KeyIt&& kit, MappedIt&& vit)
             : kit_(static_cast<KeyIt&&>(kit)), vit_(static_cast<MappedIt&&>(vit)) {}
         KeyIt kit_;
         MappedIt vit_;
     };
 
     template<class K, class V>
-    constexpr iter<K, V> make_iterator(K kit, V vit) {
+    iter<K, V> make_iterator(K kit, V vit) {
         return iter<K, V>(static_cast<K&&>(kit), static_cast<V&&>(vit));
     }
 
