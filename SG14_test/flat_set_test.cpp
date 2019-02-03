@@ -151,6 +151,8 @@ static void ConstructionTest()
     std::vector<int> vec = {1, 3, 5};
     if (true) {
         FS fs;  // default constructor
+        fs = {1, 3, 5};  // assignment operator
+        assert(std::is_sorted(fs.begin(), fs.end(), fs.key_comp()));
     }
     for (auto&& fs : {
         FS(vec),

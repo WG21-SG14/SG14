@@ -308,6 +308,7 @@ public:
     flat_set& operator=(std::initializer_list<Key> il) {
         this->clear();
         this->insert(il);
+        return *this;
     }
 
     iterator begin() noexcept { return std::begin(c_); }
