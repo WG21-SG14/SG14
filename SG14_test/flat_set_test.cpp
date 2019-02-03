@@ -131,6 +131,17 @@ static void ConstructionTest()
     }
 }
 
+template<class FS>
+static void SpecialMemberTest()
+{
+    static_assert(std::is_default_constructible<FS>::value, "");
+    static_assert(std::is_nothrow_move_constructible<FS>::value == std::is_nothrow_move_constructible<typename FS::container_type>::value, "");
+    static_assert(std::is_copy_constructible<FS>::value, "");
+    static_assert(std::is_copy_assignable<FS>::value, "");
+    static_assert(std::is_move_assignable<FS>::value, "");
+    static_assert(std::is_nothrow_destructible<FS>::value, "");
+}
+
 void sg14_test::flat_set_test()
 {
     AmbiguousEraseTest();
@@ -141,24 +152,28 @@ void sg14_test::flat_set_test()
     {
         using FS = stdext::flat_set<int>;
         ConstructionTest<FS>();
+        SpecialMemberTest<FS>();
     }
 
     // Test a custom comparator.
     {
         using FS = stdext::flat_set<int, std::greater<int>>;
         ConstructionTest<FS>();
+        SpecialMemberTest<FS>();
     }
 
     // Test a transparent comparator.
     {
         using FS = stdext::flat_set<int, std::greater<>>;
         ConstructionTest<FS>();
+        SpecialMemberTest<FS>();
     }
 
     // Test a custom container.
     {
         using FS = stdext::flat_set<int, std::less<int>, std::deque<int>>;
         ConstructionTest<FS>();
+        SpecialMemberTest<FS>();
     }
 
 #if defined(__cpp_lib_memory_resource)
@@ -166,6 +181,7 @@ void sg14_test::flat_set_test()
     {
         using FS = stdext::flat_set<int, std::less<int>, std::pmr::vector<int>>;
         ConstructionTest<FS>();
+        SpecialMemberTest<FS>();
     }
 #endif
 }
