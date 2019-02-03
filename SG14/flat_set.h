@@ -77,7 +77,7 @@ namespace flatset_detail {
     T make_obj_using_allocator_(priority_tag<0>, const Alloc&, Args&&...) {
         static_assert(sizeof(T)==0, "this request for uses-allocator construction is ill-formed");
     }
-    template <class T, class Alloc, class... Args>
+    template<class T, class Alloc, class... Args>
     T make_obj_using_allocator(const Alloc& alloc, Args&&... args) {
         return make_obj_using_allocator_<T>(priority_tag<3>(), alloc, static_cast<Args&&>(args)...);
     }
@@ -175,33 +175,33 @@ public:
     flat_set(const Container& cont, const Compare& comp, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), comp, a) {}
 
-    flat_set(stdext::sorted_unique_t, KeyContainer ctr)
+    flat_set(sorted_unique_t, KeyContainer ctr)
         : c_(std::move(ctr)), compare_() {}
 
     // TODO: surely this should be using uses-allocator construction
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t s, KeyContainer ctr, const Alloc& a)
+    flat_set(sorted_unique_t s, KeyContainer ctr, const Alloc& a)
         : flat_set(s, KeyContainer(std::move(ctr), a)) {}
 
     template<class Container,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>>
-    flat_set(stdext::sorted_unique_t s, const Container& cont)
+    flat_set(sorted_unique_t s, const Container& cont)
         : flat_set(s, std::begin(cont), std::end(cont), Compare()) {}
 
     template<class Container,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>>
-    flat_set(stdext::sorted_unique_t s, const Container& cont, const Compare& comp)
+    flat_set(sorted_unique_t s, const Container& cont, const Compare& comp)
         : flat_set(s, std::begin(cont), std::end(cont), comp) {}
 
     template<class Container, class Alloc,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t s, const Container& cont, const Alloc& a)
+    flat_set(sorted_unique_t s, const Container& cont, const Alloc& a)
         : flat_set(s, std::begin(cont), std::end(cont), Compare(), a) {}
 
     template<class Container, class Alloc,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t s, const Container& cont, const Compare& comp, const Alloc& a)
+    flat_set(sorted_unique_t s, const Container& cont, const Compare& comp, const Alloc& a)
         : flat_set(s, std::begin(cont), std::end(cont), comp, a) {}
 
     explicit flat_set(const Compare& comp)
@@ -244,13 +244,13 @@ public:
         : flat_set(first, last, Compare(), a) {}
 
     template<class InputIterator>
-    flat_set(stdext::sorted_unique_t, InputIterator first, InputIterator last, const Compare& comp = Compare())
+    flat_set(sorted_unique_t, InputIterator first, InputIterator last, const Compare& comp = Compare())
         : c_(first, last), compare_(comp) {}
 
     // TODO: this constructor should conditionally use KeyContainer's iterator-pair constructor
     template<class InputIterator, class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t, InputIterator first, InputIterator last,
+    flat_set(sorted_unique_t, InputIterator first, InputIterator last,
              const Compare& comp, const Alloc& a)
         : c_(flatset_detail::make_obj_using_allocator<KeyContainer>(a)), compare_(comp)
     {
@@ -262,7 +262,7 @@ public:
 
     template<class InputIterator, class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t s, InputIterator first, InputIterator last, const Alloc& a)
+    flat_set(sorted_unique_t s, InputIterator first, InputIterator last, const Alloc& a)
         : flat_set(s, first, last, Compare(), a) {}
 
     template<class Alloc,
@@ -288,17 +288,17 @@ public:
     flat_set(std::initializer_list<Key>&& il, const Alloc& a)
         : flat_set(il, Compare(), a) {}
 
-    flat_set(stdext::sorted_unique_t s, std::initializer_list<Key>&& il, const Compare& comp = Compare())
+    flat_set(sorted_unique_t s, std::initializer_list<Key>&& il, const Compare& comp = Compare())
         : flat_set(s, il, comp) {}
 
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t s, std::initializer_list<Key>&& il, const Compare& comp, const Alloc& a)
+    flat_set(sorted_unique_t s, std::initializer_list<Key>&& il, const Compare& comp, const Alloc& a)
         : flat_set(s, il, comp, a) {}
 
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
-    flat_set(stdext::sorted_unique_t s, std::initializer_list<Key>&& il, const Alloc& a)
+    flat_set(sorted_unique_t s, std::initializer_list<Key>&& il, const Alloc& a)
         : flat_set(s, il, Compare(), a) {}
 
 
@@ -389,7 +389,7 @@ public:
     }
 
     template<class InputIterator>
-    void insert(stdext::sorted_unique_t, InputIterator first, InputIterator last) {
+    void insert(sorted_unique_t, InputIterator first, InputIterator last) {
         auto it = begin();
         while (first != last) {
             Key t(*first);
@@ -406,7 +406,7 @@ public:
         this->insert(il.begin(), il.end());
     }
 
-    void insert(stdext::sorted_unique_t s, std::initializer_list<Key> il) {
+    void insert(sorted_unique_t s, std::initializer_list<Key> il) {
         this->insert(s, il.begin(), il.end());
     }
 
@@ -427,7 +427,7 @@ public:
         return c_.erase(position);
     }
 
-    size_type erase(const key_type& t) {
+    size_type erase(const Key& t) {
         auto it = this->find(t);
         if (it != c_.end()) {
             this->erase(it);
