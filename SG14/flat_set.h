@@ -336,7 +336,7 @@ public:
     template<class... Args>
     std::pair<iterator, bool> emplace(Args&&... args) {
         Key t(static_cast<Args&&>(args)...);
-        auto it = std::lower_bound(begin(), end(), t, std::ref(compare_));
+        auto it = std::lower_bound(c_.begin(), c_.end(), t, std::ref(compare_));
         if (it == c_.end() || compare_(t, *it)) {
             it = c_.emplace(it, static_cast<Key&&>(t));
             return {it, true};
@@ -352,7 +352,7 @@ public:
     }
 
     std::pair<iterator, bool> insert(const Key& t) {
-        auto it = std::lower_bound(begin(), end(), t, std::ref(compare_));
+        auto it = std::lower_bound(c_.begin(), c_.end(), t, std::ref(compare_));
         if (it == c_.end() || compare_(t, *it)) {
             it = c_.emplace(it, t);
             return {it, true};
@@ -362,7 +362,7 @@ public:
     }
 
     std::pair<iterator, bool> insert(Key&& t) {
-        auto it = std::lower_bound(begin(), end(), t, std::ref(compare_));
+        auto it = std::lower_bound(c_.begin(), c_.end(), t, std::ref(compare_));
         if (it == c_.end() || compare_(t, *it)) {
             it = c_.emplace(it, static_cast<Key&&>(t));
             return {it, true};
@@ -429,7 +429,7 @@ public:
 
     size_type erase(const Key& t) {
         auto it = this->find(t);
-        if (it != c_.end()) {
+        if (it != this->end()) {
             this->erase(it);
             return 1;
         }

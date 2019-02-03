@@ -7,6 +7,7 @@
 #include <memory_resource>
 #endif
 #include <string>
+#include <vector>
 
 namespace {
 
