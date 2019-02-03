@@ -269,6 +269,7 @@ class flat_map {
     static_assert(flatmap_detail::is_random_access_iterator<typename MappedContainer::iterator>::value, "");
     static_assert(std::is_same<Key, typename KeyContainer::value_type>::value, "");
     static_assert(std::is_same<Mapped, typename MappedContainer::value_type>::value, "");
+    static_assert(std::is_convertible<decltype(std::declval<const Compare&>()(std::declval<const Key&>(), std::declval<const Key&>())), bool>::value, "");
 public:
     using key_type = Key;
     using mapped_type = Mapped;
