@@ -485,6 +485,7 @@ public:
     flat_map& operator=(std::initializer_list<value_type> il) {
         this->clear();
         this->insert(il);
+        return *this;
     }
 
     iterator begin() noexcept { return flatmap_detail::make_iterator(c_.keys.begin(), c_.values.begin()); }

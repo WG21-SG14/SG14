@@ -163,6 +163,13 @@ static void ConstructionTest()
     };
     if (true) {
         FS fs;  // default constructor
+        fs = {
+            {1, "a"},
+            {2, "b"},
+            {3, "c"},
+        };
+        assert(std::is_sorted(fs.keys().begin(), fs.keys().end(), fs.key_comp()));
+        assert(std::is_sorted(fs.begin(), fs.end(), fs.value_comp()));
     }
     for (auto&& fs : {
         FS({{1, "a"}, {3, "b"}, {5, "c"}}),
