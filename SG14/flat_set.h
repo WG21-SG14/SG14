@@ -123,6 +123,7 @@ template<
 class flat_set {
     static_assert(flatset_detail::is_random_access_iterator<typename KeyContainer::iterator>::value, "");
     static_assert(std::is_same<Key, typename KeyContainer::value_type>::value, "");
+    static_assert(std::is_convertible<decltype(std::declval<const Compare&>()(std::declval<const Key&>(), std::declval<const Key&>())), bool>::value, "");
 public:
     using key_type = Key;
     using key_compare = Compare;
