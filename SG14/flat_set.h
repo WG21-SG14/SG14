@@ -144,7 +144,7 @@ public:
     flat_set() : flat_set(Compare()) {}
 
     explicit flat_set(KeyContainer ctr)
-        : c_(std::move(ctr)), compare_()
+        : c_(static_cast<KeyContainer&&>(ctr)), compare_()
     {
         std::sort(std::begin(c_), std::end(c_), compare_);
     }
@@ -153,7 +153,7 @@ public:
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(KeyContainer ctr, const Alloc& a)
-        : flat_set(KeyContainer(std::move(ctr), a)) {}
+        : flat_set(KeyContainer(static_cast<KeyContainer&&>(ctr), a)) {}
 
     template<class Container,
              std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value, int> = 0>
@@ -176,13 +176,13 @@ public:
         : flat_set(std::begin(cont), std::end(cont), comp, a) {}
 
     flat_set(sorted_unique_t, KeyContainer ctr)
-        : c_(std::move(ctr)), compare_() {}
+        : c_(static_cast<KeyContainer&&>(ctr)), compare_() {}
 
     // TODO: surely this should be using uses-allocator construction
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(sorted_unique_t s, KeyContainer ctr, const Alloc& a)
-        : flat_set(s, KeyContainer(std::move(ctr), a)) {}
+        : flat_set(s, KeyContainer(static_cast<KeyContainer&&>(ctr), a)) {}
 
     template<class Container,
              class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>>
@@ -265,10 +265,11 @@ public:
     flat_set(sorted_unique_t s, InputIterator first, InputIterator last, const Alloc& a)
         : flat_set(s, first, last, Compare(), a) {}
 
+    // TODO: should this be conditionally noexcept?
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(flat_set&& m, const Alloc& a)
-        : c_(std::move(m.c_), a), compare_(std::move(m.compare_)) {}
+        : c_(static_cast<KeyContainer&&>(m.c_), a), compare_(static_cast<Compare&&>(m.compare_)) {}
 
     template<class Alloc,
              class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
@@ -334,10 +335,10 @@ public:
 
     template<class... Args>
     std::pair<iterator, bool> emplace(Args&&... args) {
-        Key t(std::forward<Args>(args)...);
+        Key t(static_cast<Args&&>(args)...);
         auto it = std::lower_bound(begin(), end(), t, std::ref(compare_));
         if (it == c_.end() || compare_(t, *it)) {
-            it = c_.emplace(it, std::move(t));
+            it = c_.emplace(it, static_cast<Key&&>(t));
             return {it, true};
         } else {
             return {it, false};
@@ -363,7 +364,7 @@ public:
     std::pair<iterator, bool> insert(Key&& t) {
         auto it = std::lower_bound(begin(), end(), t, std::ref(compare_));
         if (it == c_.end() || compare_(t, *it)) {
-            it = c_.emplace(it, std::move(t));
+            it = c_.emplace(it, static_cast<Key&&>(t));
             return {it, true};
         } else {
             return {it, false};
@@ -377,7 +378,7 @@ public:
 
     // TODO: this function cannot possibly meet its amortized-constant-complexity requirement
     iterator insert(const_iterator, Key&& t) {
-        return this->insert(std::move(t)).first;
+        return this->insert(static_cast<Key&&>(t)).first;
     }
 
     template<class InputIterator>
@@ -395,7 +396,7 @@ public:
             Key t(*first);
             it = std::lower_bound(it, this->end(), t, std::ref(compare_));
             if (it == c_.end() || compare_(t, *it)) {
-                it = c_.emplace(it, std::move(t));
+                it = c_.emplace(it, static_cast<Key&&>(t));
             }
             ++it;
             ++first;
@@ -410,13 +411,12 @@ public:
         this->insert(s, il.begin(), il.end());
     }
 
-    // TODO: as specified, this function fails to preserve the allocator, and has UB for std::pmr containers
     KeyContainer extract() && {
-        return std::move(c_);
+        return static_cast<KeyContainer&&>(c_);
     }
 
     void replace(KeyContainer&& ctr) {
-        c_ = std::move(ctr);
+        c_ = static_cast<KeyContainer&&>(ctr);
     }
 
     iterator erase(iterator position) {
