@@ -112,13 +112,11 @@ namespace flatmap_detail {
     {
         using std::swap;
         int dummy[] = {
-            [&](){
-                auto it = its + i;
-                auto jt = its + j;
+            [&](auto it, auto jt) {
                 using std::swap;
                 swap(*it, *jt);
                 return 0;
-            }() ...
+            }(its + i, its + j) ...
         };
         (void)dummy;
     }
