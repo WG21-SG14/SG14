@@ -921,44 +921,44 @@ private:
 };
 
 // TODO: all six comparison operators should be invisible friends
-template<class Key, class Compare, class KeyContainer>
-bool operator==(const flat_map<Key, Compare, KeyContainer>& x, const flat_map<Key, Compare, KeyContainer>& y)
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+bool operator==(const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y)
 {
     return std::equal(x.begin(), x.end(), y.begin(), y.end());
 }
 
-template<class Key, class Compare, class KeyContainer>
-bool operator!=(const flat_map<Key, Compare, KeyContainer>& x, const flat_map<Key, Compare, KeyContainer>& y)
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+bool operator!=(const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y)
 {
     return !(x == y);
 }
 
-template<class Key, class Compare, class KeyContainer>
-bool operator<(const flat_map<Key, Compare, KeyContainer>& x, const flat_map<Key, Compare, KeyContainer>& y)
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+bool operator<(const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y)
 {
     return std::lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
 }
 
-template<class Key, class Compare, class KeyContainer>
-bool operator>(const flat_map<Key, Compare, KeyContainer>& x, const flat_map<Key, Compare, KeyContainer>& y)
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+bool operator>(const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y)
 {
     return (y < x);
 }
 
-template<class Key, class Compare, class KeyContainer>
-bool operator<=(const flat_map<Key, Compare, KeyContainer>& x, const flat_map<Key, Compare, KeyContainer>& y)
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+bool operator<=(const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y)
 {
     return !(y < x);
 }
 
-template<class Key, class Compare, class KeyContainer>
-bool operator>=(const flat_map<Key, Compare, KeyContainer>& x, const flat_map<Key, Compare, KeyContainer>& y)
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+bool operator>=(const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, const flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y)
 {
     return !(x < y);
 }
 
-template<class Key, class Compare, class KeyContainer>
-void swap(flat_map<Key, Compare, KeyContainer>& x, flat_map<Key, Compare, KeyContainer>& y) noexcept(noexcept(x.swap(y)))
+template<class Key, class Mapped, class Compare, class KeyContainer, class MappedContainer>
+void swap(flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& x, flat_map<Key, Mapped, Compare, KeyContainer, MappedContainer>& y) noexcept(noexcept(x.swap(y)))
 {
     return x.swap(y);
 }

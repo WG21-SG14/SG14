@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <deque>
 #include <functional>
+#include <list>
 #if __has_include(<memory_resource>)
 #include <memory_resource>
 #endif
@@ -109,6 +110,15 @@ static void VectorBoolSanityTest()
     assert(fm.empty());
     assert(it == fm.begin());
     assert(it == fm.end());
+
+    assert(fm.find(true) == fm.end());
+    fm.try_emplace(true, true);
+    assert(fm.find(true) != fm.end());
+    assert(fm[true] == true);
+    fm[true] = false;
+    assert(fm.find(true) != fm.end());
+    assert(fm[true] == false);
+    fm.clear();
 }
 
 static void MoveOperationsPilferOwnership()
@@ -146,6 +156,262 @@ static void MoveOperationsPilferOwnership()
     FS fs4(std::move(fs), std::allocator<InstrumentedWidget>());  // should just transfer buffer ownership
     assert(InstrumentedWidget::move_ctors == 0);
     assert(InstrumentedWidget::copy_ctors == 0);
+}
+
+#if defined(__cpp_deduction_guides)
+static bool free_function_less(const int& a, const int& b) {
+    return (a < b);
+}
+
+template<class... Args>
+static auto flatmap_is_ctadable_from(int, Args&&... args)
+    -> decltype(flat_map(std::forward<Args>(args)...), std::true_type{})
+{
+    return {};
+}
+
+template<class... Args>
+static auto flatmap_is_ctadable_from(long, Args&&...)
+    -> std::false_type
+{
+    return {};
+}
+#endif // defined(__cpp_deduction_guides)
+
+
+static void DeductionGuideTests()
+{
+    using stdext::flat_map;
+#if defined(__cpp_deduction_guides)
+    if (true) {
+        // flat_map(Container)
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(v);
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+        flat_map fm2 = flat_map(std::deque<std::pair<std::string, int>>());
+        static_assert(std::is_same_v<decltype(fm2), flat_map<std::string, int>>);
+        std::list<std::pair<const int* const, const int*>> lst;
+        flat_map fm3(lst);
+        static_assert(std::is_same_v<decltype(fm3), flat_map<const int*, const int*>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        flat_map fm4(pv);
+        static_assert(std::is_same_v<decltype(fm4), flat_map<std::pmr::string, int>>);
+#endif
+        std::initializer_list<std::pair<int, std::string>> il = {{1,"c"}, {5,"b"}, {3,"a"}};
+        flat_map fm5(il);
+        static_assert(std::is_same_v<decltype(fm5), flat_map<int, std::string>>);
+        assert(fm5.size() == 3);
+        assert(( fm5 == decltype(fm5)(stdext::sorted_unique, {{1,"c"}, {3,"a"}, {5,"b"}}) ));
+    }
+    if (true) {
+        // flat_map(KeyContainer, MappedContainer)
+        std::vector<int> vi {2,1};
+        std::vector<std::string> vs {"a","b"};
+        flat_map fm1(vi, vs);
+        static_assert(std::is_same_v<decltype(fm1), flat_map<int, std::string>>);
+        assert(( fm1 == flat_map<int, std::string>(stdext::sorted_unique, {{1,"b"}, {2,"a"}}) ));
+        flat_map fm2(std::move(vs), std::move(vi));
+        static_assert(std::is_same_v<decltype(fm2), flat_map<std::string, int>>);
+        assert(( fm2 == flat_map<std::string, int>(stdext::sorted_unique, {{"a",2}, {"b",1}}) ));
+    }
+    if (true) {
+        // flat_map(Container, Allocator)
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(v, std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        // TODO: neither of these lines compiles, and it's unclear what is INTENDED to happen
+        // flat_map fm2(pv, std::allocator<int>());
+        // flat_map fm2(pv, std::pmr::polymorphic_allocator<int>());
+#endif
+    }
+    if (true) {
+        // flat_map(KeyContainer, MappedContainer, Allocator)
+        std::vector<int> vi {2,1};
+        std::vector<std::string> vs {"a","b"};
+        flat_map fm1(vi, vs, std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<int, std::string>>);
+        assert(( fm1 == decltype(fm1)(stdext::sorted_unique, {{1,"b"}, {2,"a"}}) ));
+#if __cpp_lib_memory_resource
+        std::pmr::vector<int> pvi {2,1};
+        std::pmr::vector<std::pmr::string> pvs {"a","b"};
+        flat_map fm2(pvi, pvs, std::pmr::polymorphic_allocator<char>());
+        static_assert(std::is_same_v<decltype(fm2), flat_map<int, std::pmr::string, std::less<int>, std::pmr::vector<int>, std::pmr::vector<std::pmr::string>>>);
+        assert(( fm2 == decltype(fm2)(stdext::sorted_unique, {{1,"b"}, {2,"a"}}) ));
+#endif
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, Container)
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(stdext::sorted_unique, v);
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+        flat_map fm2 = flat_map(stdext::sorted_unique, std::deque<std::pair<std::string, int>>());
+        static_assert(std::is_same_v<decltype(fm2), flat_map<std::string, int>>);
+        std::list<std::pair<const int* const, const int*>> lst;
+        flat_map fm3(stdext::sorted_unique, lst);
+        static_assert(std::is_same_v<decltype(fm3), flat_map<const int*, const int*>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        flat_map fm4(stdext::sorted_unique, pv);
+        static_assert(std::is_same_v<decltype(fm4), flat_map<std::pmr::string, int>>);
+#endif
+        std::initializer_list<std::pair<int, std::string>> il = {{1,"c"}, {3,"b"}, {5,"a"}};
+        flat_map fm5(stdext::sorted_unique, il);
+        static_assert(std::is_same_v<decltype(fm5), flat_map<int, std::string>>);
+        assert(( fm5 == decltype(fm5)(stdext::sorted_unique, {{1,"c"}, {3,"b"}, {5,"a"}}) ));
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, KeyContainer, MappedContainer)
+        std::vector<int> vi {1,2};
+        std::vector<std::string> vs {"a","b"};
+        flat_map fm1(stdext::sorted_unique, vi, vs);
+        static_assert(std::is_same_v<decltype(fm1), flat_map<int, std::string>>);
+        assert(( fm1 == decltype(fm1)(stdext::sorted_unique, {{1,"a"}, {2,"b"}}) ));
+        flat_map fm2(stdext::sorted_unique, std::move(vs), std::move(vi));
+        static_assert(std::is_same_v<decltype(fm2), flat_map<std::string, int>>);
+        assert(( fm2 == decltype(fm2)(stdext::sorted_unique, {{"a",1}, {"b",2}}) ));
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, Container, Allocator)
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(stdext::sorted_unique, v, std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        // TODO: neither of these lines compiles, and it's unclear what is INTENDED to happen
+        // flat_map fm2(stdext::sorted_unique, pv, std::allocator<int>());
+        // flat_map fm2(stdext::sorted_unique, pv, std::pmr::polymorphic_allocator<int>());
+#endif
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, KeyContainer, MappedContainer, Allocator)
+        std::vector<int> vi {2,1};
+        std::vector<std::string> vs {"a","b"};
+        flat_map fm1(stdext::sorted_unique, vs, vi, std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+        assert(( fm1 == decltype(fm1)(stdext::sorted_unique, {{"a",2}, {"b",1}}) ));
+#if __cpp_lib_memory_resource
+        std::pmr::vector<int> pvi {1, 2};
+        std::pmr::vector<std::pmr::string> pvs {"b","a"};
+        flat_map fm2(stdext::sorted_unique, pvi, pvs, std::pmr::polymorphic_allocator<char>());
+        static_assert(std::is_same_v<decltype(fm2), flat_map<int, std::pmr::string, std::less<int>, std::pmr::vector<int>, std::pmr::vector<std::pmr::string>>>);
+        assert(( fm2 == decltype(fm2)(stdext::sorted_unique, {{1,"b"}, {2,"a"}}) ));
+#endif
+    }
+    if (true) {
+        // flat_map(InputIterator, InputIterator, Compare = Compare())
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(v.begin(), v.end());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+        std::list<std::pair<const int* const, const int*>> lst;
+        flat_map fm3(lst.begin(), lst.end());
+        static_assert(std::is_same_v<decltype(fm3), flat_map<const int*, const int*>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        flat_map fm4(pv.begin(), pv.end());
+        static_assert(std::is_same_v<decltype(fm4), flat_map<std::pmr::string, int>>);
+#endif
+        std::initializer_list<std::pair<int, std::string>> il = {{1,"c"}, {5,"b"}, {3,"a"}};
+        flat_map fm5(il.begin(), il.end());
+        static_assert(std::is_same_v<decltype(fm5), flat_map<int, std::string>>);
+        assert(( fm5 == decltype(fm5)(stdext::sorted_unique, {{1,"c"}, {3,"a"}, {5,"b"}}) ));
+    }
+    if (true) {
+        // flat_map(InputIterator, InputIterator, Compare = Compare())
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(v.begin(), v.end(), std::less<std::string>());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+        int x = 3;
+        std::pair<int, int> arr[] = {{1,2}, {2,3}, {3,4}, {4,5}};
+        flat_map fm2(arr, arr + 4, [&x](int a, int b){ return (a % x) < (b % x); });
+        assert(fm2.key_comp()(2, 4) == false);
+        x = 10;
+        assert(fm2.key_comp()(2, 4) == true);
+        x = 3;
+        assert(fm2.begin()[0].first == 3);
+        std::list<std::pair<const int* const, const int*>> lst;
+        flat_map fm3(lst.begin(), lst.end(), std::greater<>());
+        static_assert(std::is_same_v<decltype(fm3), flat_map<const int*, const int*, std::greater<>>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        flat_map fm4(pv.begin(), pv.end(), std::greater<std::pmr::string>());
+        static_assert(std::is_same_v<decltype(fm4), flat_map<std::pmr::string, int, std::greater<std::pmr::string>>>);
+#endif
+        std::initializer_list<std::pair<int, std::string>> il = {{1,"c"}, {5,"b"}, {3,"a"}};
+        flat_map fm5(il.begin(), il.end(), std::less<int>());
+        static_assert(std::is_same_v<decltype(fm5), flat_map<int, std::string>>);
+        assert(( fm5 == decltype(fm5)(stdext::sorted_unique, {{1,"c"}, {3,"a"}, {5,"b"}}) ));
+
+        flat_map fm6(arr, arr + 4, free_function_less);
+        static_assert(std::is_same_v<decltype(fm6), flat_map<int, int, bool(*)(const int&, const int&)>>);
+        assert(fm6.key_comp() == free_function_less);
+        assert(( fm6 == decltype(fm6)(stdext::sorted_unique, {{1,2}, {2,3}, {3,4}, {4,5}}, free_function_less) ));
+    }
+    if (true) {
+        // flat_map(InputIterator, InputIterator, Compare, Allocator)
+        std::vector<std::pair<std::string, int>> v;
+        flat_map fm1(v.begin(), v.end(), std::less<std::string>(), std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm1), flat_map<std::string, int>>);
+        int x = 3;
+        std::pair<int, int> arr[] = {{1,2}, {2,3}, {3,4}, {4,5}};
+        flat_map fm2(arr, arr + 4, [&x](int a, int b){ return (a % x) < (b % x); }, std::allocator<int>());
+        assert(fm2.key_comp()(2, 4) == false);
+        x = 10;
+        assert(fm2.key_comp()(2, 4) == true);
+        x = 3;
+        assert(fm2.begin()[0].first == 3);
+        std::list<std::pair<const int* const, const int*>> lst;
+        flat_map fm3(lst.begin(), lst.end(), std::greater<>(), std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm3), flat_map<const int*, const int*, std::greater<>>>);
+#if __cpp_lib_memory_resource
+        std::pmr::vector<std::pair<std::pmr::string, int>> pv;
+        flat_map fm4(pv.begin(), pv.end(), std::greater<>(), std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm4), flat_map<std::pmr::string, int, std::greater<>>>);
+        assert(!flatmap_is_ctadable_from(0, pv.begin(), pv.end(), std::greater<int>(), std::pmr::polymorphic_allocator<int>()));
+#endif
+        std::initializer_list<std::pair<int, std::string>> il = {{1,"c"}, {5,"b"}, {3,"a"}};
+        flat_map fm5(il.begin(), il.end(), std::less<int>(), std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm5), flat_map<int, std::string>>);
+        assert(( fm5 == decltype(fm5)(stdext::sorted_unique, {{1,"c"}, {3,"a"}, {5,"b"}}) ));
+
+        flat_map fm6(arr, arr + 4, free_function_less, std::allocator<int>());
+        static_assert(std::is_same_v<decltype(fm6), flat_map<int, int, bool(*)(const int&, const int&)>>);
+        assert(fm6.key_comp() == free_function_less);
+        assert(( fm6 == decltype(fm6)(stdext::sorted_unique, {{1,2}, {2,3}, {3,4}, {4,5}}, free_function_less) ));
+    }
+    if (true) {
+        // flat_map(InputIterator, InputIterator, Allocator)
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, InputIterator, InputIterator, Compare = Compare())
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, InputIterator, InputIterator, Compare, Allocator)
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, InputIterator, InputIterator, Allocator)
+    }
+    if (true) {
+        // flat_map(std::initializer_list<std::pair<const Key, T>>, Compare = Compare())
+    }
+    if (true) {
+        // flat_map(std::initializer_list<std::pair<const Key, T>>, Compare, Allocator)
+    }
+    if (true) {
+        // flat_map(std::initializer_list<std::pair<const Key, T>>, Allocator)
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, std::initializer_list<std::pair<const Key, T>>, Compare = Compare())
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, std::initializer_list<std::pair<const Key, T>>, Compare, Allocator)
+    }
+    if (true) {
+        // flat_map(sorted_unique_t, std::initializer_list<std::pair<const Key, T>>, Allocator)
+    }
+#endif // defined(__cpp_deduction_guides)
 }
 
 template<class FS>
@@ -271,12 +537,69 @@ static void SpecialMemberTest()
     static_assert(std::is_nothrow_destructible<typename FS::containers>::value, "");
 }
 
+static void SortedUniqueConstructionTest()
+{
+    auto a = stdext::sorted_unique;
+    stdext::sorted_unique_t b;
+    stdext::sorted_unique_t c{};
+    (void)a; (void)b; (void)c;
+
+#if 0 // TODO: GCC cannot compile this
+    struct explicitness_tester {
+        bool test(std::vector<int>) { return true; }
+        bool test(stdext::sorted_unique_t) { return false; }
+    };
+    explicitness_tester tester;
+    assert(tester.test({}) == true);
+#endif
+}
+
+template<class FM>
+static void ComparisonOperatorsTest()
+{
+    const char *abc[] = {"", "a", "b", "c"};
+    FM fm1 = {
+        {1, abc[2]}, {2, abc[3]},
+    };
+    FM fm2 = {
+        {1, abc[2]}, {2, abc[3]},
+    };
+    // {1b, 2c} is equal to {1b, 2c}.
+    assert(fm1 == fm2);
+    assert(!(fm1 != fm2));
+    assert(!(fm1 < fm2));
+    assert(!(fm1 > fm2));
+    assert(fm1 <= fm2);
+    assert(fm1 >= fm2);
+
+    fm2[2] = abc[1];
+    // {1b, 2c} is greater than {1b, 2a}.
+    assert(!(fm1 == fm2));
+    assert(fm1 != fm2);
+    assert(!(fm1 < fm2));
+    assert(fm1 > fm2);
+    assert(!(fm1 <= fm2));
+    assert(fm1 >= fm2);
+
+    fm2.erase(2);
+    fm2.insert({0, abc[3]});
+    // {1b, 2c} is greater than {0c, 1b}.
+    assert(!(fm1 == fm2));
+    assert(fm1 != fm2);
+    assert(!(fm1 < fm2));
+    assert(fm1 > fm2);
+    assert(!(fm1 <= fm2));
+    assert(fm1 >= fm2);
+}
+
 void sg14_test::flat_map_test()
 {
+    SortedUniqueConstructionTest();
     AmbiguousEraseTest();
     ExtractDoesntSwapTest();
     VectorBoolSanityTest();
     MoveOperationsPilferOwnership();
+    DeductionGuideTests();
 
     // Test the most basic flat_set.
     {
@@ -284,6 +607,7 @@ void sg14_test::flat_map_test()
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
+        ComparisonOperatorsTest<FS>();
     }
 
     // Test a custom comparator.
@@ -292,6 +616,7 @@ void sg14_test::flat_map_test()
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
+        ComparisonOperatorsTest<FS>();
     }
 
     // Test a transparent comparator.
@@ -300,6 +625,7 @@ void sg14_test::flat_map_test()
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
+        ComparisonOperatorsTest<FS>();
     }
 
     // Test a custom container.
@@ -308,6 +634,7 @@ void sg14_test::flat_map_test()
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
+        ComparisonOperatorsTest<FS>();
     }
 
 #if defined(__cpp_lib_memory_resource)
@@ -317,6 +644,7 @@ void sg14_test::flat_map_test()
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
+        ComparisonOperatorsTest<FS>();
     }
 
     // Test a pmr container with uses-allocator construction!
@@ -325,6 +653,7 @@ void sg14_test::flat_map_test()
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
+        ComparisonOperatorsTest<FS>();
     }
 #endif
 }
