@@ -407,6 +407,14 @@ void test_move_construction_is_noexcept()
     EXPECT_EQ(1, moved);
 }
 
+// https://bugs.llvm.org/show_bug.cgi?id=32072
+struct test_bug_32072_C;
+struct test_bug_32072 {
+    stdext::inplace_function<test_bug_32072_C()> m;
+};
+static_assert(std::is_copy_constructible<test_bug_32072>::value, "");
+static_assert(std::is_nothrow_move_constructible<test_bug_32072>::value, "");
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
