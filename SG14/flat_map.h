@@ -195,6 +195,7 @@ namespace flatmap_detail {
         iter& operator=(const iter&) = default;
         ~iter() = default;
 
+        // This is the iterator-to-const_iterator implicit conversion.
         template<class CK, class CM,
                  class = std::enable_if_t<std::is_convertible<CK, KeyIt>::value && std::is_convertible<CM, MappedIt>::value>>
         iter(const iter<CK, CM>& other) : kit_(other.private_impl_getkey()), vit_(other.private_impl_getmapped()) {}
@@ -217,7 +218,7 @@ namespace flatmap_detail {
         friend iter operator+(iter it, ptrdiff_t n) { it += n; return it; }
         friend iter operator+(ptrdiff_t n, iter it) { it += n; return it; }
         friend iter operator-(iter it, ptrdiff_t n) { it -= n; return it; }
-        friend iter operator-(const iter& it, const iter& jt) { return ptrdiff_t(it.kit_ - jt.kit_); }
+        friend ptrdiff_t operator-(const iter& it, const iter& jt) { return ptrdiff_t(it.kit_ - jt.kit_); }
         friend bool operator==(const iter& a, const iter& b) { return a.kit_ == b.kit_; }
         friend bool operator!=(const iter& a, const iter& b) { return !(a.kit_ == b.kit_); }
         friend bool operator<(const iter& a, const iter& b) { return a.kit_ < b.kit_; }
@@ -269,6 +270,10 @@ class flat_map {
     static_assert(flatmap_detail::is_random_access_iterator<typename MappedContainer::iterator>::value, "");
     static_assert(std::is_same<Key, typename KeyContainer::value_type>::value, "");
     static_assert(std::is_same<Mapped, typename MappedContainer::value_type>::value, "");
+    static_assert(!std::is_const<KeyContainer>::value && !std::is_const<Key>::value, "");
+    static_assert(!std::is_const<MappedContainer>::value && !std::is_const<Mapped>::value, "");
+    static_assert(!std::is_reference<KeyContainer>::value && !std::is_reference<Key>::value, "");
+    static_assert(!std::is_reference<MappedContainer>::value && !std::is_reference<Mapped>::value, "");
     static_assert(std::is_convertible<decltype(std::declval<const Compare&>()(std::declval<const Key&>(), std::declval<const Key&>())), bool>::value, "");
 public:
     using key_type = Key;
