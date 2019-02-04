@@ -205,6 +205,43 @@ static void ConstructionTest()
     }
 }
 
+template<class FM>
+static void InsertOrAssignTest()
+{
+    FM fm;
+    const char *str = "a";
+    using Mapped = typename FM::mapped_type;
+    using Str = std::conditional_t<std::is_same<Mapped, const char *>::value, std::string, Mapped>;
+
+    fm.insert_or_assign(1, str);
+    assert(fm.at(1) == Str("a"));
+    assert(fm[1] == Str("a"));
+    fm.insert_or_assign(2, std::move(str));
+    assert(fm.at(2) == Str("a"));
+    assert(fm[2] == Str("a"));
+    fm.insert_or_assign(2, "b");
+    assert(fm.at(2) == Str("b"));
+    assert(fm[2] == Str("b"));
+    fm.insert_or_assign(3, "c");
+    assert(fm.at(3) == Str("c"));
+    assert(fm[3] == Str("c"));
+
+    // With hints.
+    fm.insert_or_assign(fm.begin(), 1, str);
+    assert(fm.at(1) == Str("a"));
+    assert(fm[1] == Str("a"));
+    fm.insert_or_assign(fm.begin()+2, 2, std::move(str));
+    assert(fm.at(2) == Str("a"));
+    assert(fm[2] == Str("a"));
+    fm.insert_or_assign(fm.end(), 2, "b");
+    assert(fm.at(2) == Str("b"));
+    assert(fm[2] == Str("b"));
+    fm.insert_or_assign(fm.end() - 1, 3, "c");
+    assert(fm.at(3) == Str("c"));
+    assert(fm[3] == Str("c"));
+}
+
+
 template<class FS>
 static void SpecialMemberTest()
 {
@@ -235,6 +272,7 @@ void sg14_test::flat_map_test()
         using FS = stdext::flat_map<int, const char*>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        InsertOrAssignTest<FS>();
     }
 
     // Test a custom comparator.
@@ -242,6 +280,7 @@ void sg14_test::flat_map_test()
         using FS = stdext::flat_map<int, const char*, std::greater<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        InsertOrAssignTest<FS>();
     }
 
     // Test a transparent comparator.
@@ -249,6 +288,7 @@ void sg14_test::flat_map_test()
         using FS = stdext::flat_map<int, const char*, std::greater<>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        InsertOrAssignTest<FS>();
     }
 
     // Test a custom container.
@@ -256,6 +296,7 @@ void sg14_test::flat_map_test()
         using FS = stdext::flat_map<int, const char*, std::less<int>, std::deque<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        InsertOrAssignTest<FS>();
     }
 
 #if defined(__cpp_lib_memory_resource)
@@ -264,6 +305,7 @@ void sg14_test::flat_map_test()
         using FS = stdext::flat_map<int, const char*, std::less<int>, std::pmr::vector<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        InsertOrAssignTest<FS>();
     }
 
     // Test a pmr container with uses-allocator construction!
@@ -271,6 +313,7 @@ void sg14_test::flat_map_test()
         using FS = stdext::flat_map<int, std::pmr::string, std::less<int>, std::pmr::vector<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        InsertOrAssignTest<FS>();
     }
 #endif
 }

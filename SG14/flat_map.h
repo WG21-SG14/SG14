@@ -672,13 +672,50 @@ public:
     }
 
     template<class M>
-    std::pair<iterator, bool> insert_or_assign(const Key& k, M&& obj);
+    std::pair<iterator, bool> insert_or_assign(const Key& k, M&& obj) {
+        static_assert(std::is_assignable<Mapped&, M>::value, "");
+        static_assert(sizeof( Mapped(static_cast<M&&>(obj)) ) != 0, "");
+        auto result = try_emplace(k, static_cast<M&&>(obj));
+        if (!result.second) {
+            result.first->second = static_cast<M&&>(obj);
+        }
+        return result;
+    }
+
     template<class M>
-    std::pair<iterator, bool> insert_or_assign(Key&& k, M&& obj);
+    std::pair<iterator, bool> insert_or_assign(Key&& k, M&& obj) {
+        static_assert(std::is_assignable<Mapped&, M>::value, "");
+        static_assert(sizeof( Mapped(static_cast<M&&>(obj)) ) != 0, "");
+        auto result = try_emplace(static_cast<Key&&>(k), static_cast<M&&>(obj));
+        if (!result.second) {
+            result.first->second = static_cast<M&&>(obj);
+        }
+        return result;
+    }
+
+    // TODO: use the hint, here
     template<class M>
-    iterator insert_or_assign(const_iterator hint, const Key& k, M&& obj);
+    iterator insert_or_assign(const_iterator, const Key& k, M&& obj) {
+        static_assert(std::is_assignable<Mapped&, M>::value, "");
+        static_assert(sizeof( Mapped(static_cast<M&&>(obj)) ) != 0, "");
+        auto result = try_emplace(k, static_cast<M&&>(obj));
+        if (!result.second) {
+            result.first->second = static_cast<M&&>(obj);
+        }
+        return result.first;
+    }
+
+    // TODO: use the hint, here
     template<class M>
-    iterator insert_or_assign(const_iterator hint, Key&& k, M&& obj);
+    iterator insert_or_assign(const_iterator, Key&& k, M&& obj) {
+        static_assert(std::is_assignable<Mapped&, M>::value, "");
+        static_assert(sizeof( Mapped(static_cast<M&&>(obj)) ) != 0, "");
+        auto result = try_emplace(static_cast<Key&&>(k), static_cast<M&&>(obj));
+        if (!result.second) {
+            result.first->second = static_cast<M&&>(obj);
+        }
+        return result.first;
+    }
 
     iterator erase(iterator position) {
         auto kit = position.private_impl_getkey();
