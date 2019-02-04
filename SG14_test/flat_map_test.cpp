@@ -153,30 +153,35 @@ static void ConstructionTest()
 {
     static_assert(std::is_same<int, typename FS::key_type>::value, "");
     static_assert(std::is_convertible<const char*, typename FS::mapped_type>::value, "");
+    using Mapped = typename FS::mapped_type;
+    using Str = std::conditional_t<std::is_same<Mapped, const char *>::value, std::string, Mapped>;
     using Compare = typename FS::key_compare;
     std::vector<int> keys = {1, 3, 5};
-    std::vector<const char*> values = {"a", "b", "c"};
+    std::vector<const char*> values = {"a", "c", "b"};
     std::vector<std::pair<int, const char*>> pairs = {
         {1, "a"},
-        {3, "b"},
-        {5, "c"},
+        {3, "c"},
+        {5, "b"},
     };
     if (true) {
         FS fs;  // default constructor
         fs = {
             {1, "a"},
-            {2, "b"},
             {3, "c"},
+            {5, "b"},
         };
         assert(std::is_sorted(fs.keys().begin(), fs.keys().end(), fs.key_comp()));
         assert(std::is_sorted(fs.begin(), fs.end(), fs.value_comp()));
+        assert(fs[1] == Str("a"));
+        assert(fs[3] == Str("c"));
+        assert(fs[5] == Str("b"));
     }
     for (auto&& fs : {
-        FS({{1, "a"}, {3, "b"}, {5, "c"}}),
+        FS({{1, "a"}, {3, "c"}, {5, "b"}}),
         FS(pairs.begin(), pairs.end()),
         FS(pairs.rbegin(), pairs.rend()),
         FS(pairs, Compare()),
-        FS({{1, "a"}, {3, "b"}, {5, "c"}}, Compare()),
+        FS({{1, "a"}, {3, "c"}, {5, "b"}}, Compare()),
         FS(pairs.begin(), pairs.end(), Compare()),
         FS(pairs.rbegin(), pairs.rend(), Compare()),
     }) {
@@ -189,18 +194,24 @@ static void ConstructionTest()
         assert(fs.find(4) == fs.end());
         assert(fs.find(5) != fs.end());
         assert(fs.find(6) == fs.end());
+        assert(fs.at(1) == Str("a"));
+        assert(fs.at(3) == Str("c"));
+        assert(fs.find(5)->second == Str("b"));
     }
     if (std::is_sorted(keys.begin(), keys.end(), Compare())) {
         for (auto&& fs : {
             FS(stdext::sorted_unique, pairs),
             FS(stdext::sorted_unique, pairs.begin(), pairs.end()),
-            FS(stdext::sorted_unique, {{1, "a"}, {3, "b"}, {5, "c"}}),
+            FS(stdext::sorted_unique, {{1, "a"}, {3, "c"}, {5, "b"}}),
             FS(stdext::sorted_unique, pairs, Compare()),
             FS(stdext::sorted_unique, pairs.begin(), pairs.end(), Compare()),
-            FS(stdext::sorted_unique, {{1, "a"}, {3, "b"}, {5, "c"}}, Compare()),
+            FS(stdext::sorted_unique, {{1, "a"}, {3, "c"}, {5, "b"}}, Compare()),
         }) {
             assert(std::is_sorted(fs.keys().begin(), fs.keys().end(), fs.key_comp()));
             assert(std::is_sorted(fs.begin(), fs.end(), fs.value_comp()));
+            assert(fs.at(1) == Str("a"));
+            assert(fs.at(3) == Str("c"));
+            assert(fs.find(5)->second == Str("b"));
         }
     }
 }
@@ -233,12 +244,12 @@ static void InsertOrAssignTest()
     fm.insert_or_assign(fm.begin()+2, 2, std::move(str));
     assert(fm.at(2) == Str("a"));
     assert(fm[2] == Str("a"));
-    fm.insert_or_assign(fm.end(), 2, "b");
-    assert(fm.at(2) == Str("b"));
-    assert(fm[2] == Str("b"));
-    fm.insert_or_assign(fm.end() - 1, 3, "c");
-    assert(fm.at(3) == Str("c"));
-    assert(fm[3] == Str("c"));
+    fm.insert_or_assign(fm.end(), 2, "c");
+    assert(fm.at(2) == Str("c"));
+    assert(fm[2] == Str("c"));
+    fm.insert_or_assign(fm.end() - 1, 3, "b");
+    assert(fm.at(3) == Str("b"));
+    assert(fm[3] == Str("b"));
 }
 
 
