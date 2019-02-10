@@ -28,16 +28,23 @@ private:
 
 struct InstrumentedWidget {
     static int move_ctors, copy_ctors;
+    InstrumentedWidget() = delete;
     InstrumentedWidget(const char *s) : s_(s) {}
-    InstrumentedWidget(InstrumentedWidget&& o) : s_(std::move(o.s_)) { move_ctors += 1; }
+    InstrumentedWidget(InstrumentedWidget&& o) : s_(std::move(o.s_)) { o.is_moved_from = true; move_ctors += 1; }
     InstrumentedWidget(const InstrumentedWidget& o) : s_(o.s_) { copy_ctors += 1; }
-    InstrumentedWidget& operator=(InstrumentedWidget&&) = default;
+    InstrumentedWidget& operator=(InstrumentedWidget&& o) {
+        s_ = std::move(o.s_);
+        o.is_moved_from = true;
+        return *this;
+    }
     InstrumentedWidget& operator=(const InstrumentedWidget&) = default;
 
     friend bool operator<(const InstrumentedWidget& a, const InstrumentedWidget& b) {
         return a.s_ < b.s_;
     }
+    std::string str() const { return s_; }
 
+    bool is_moved_from = false;
 private:
     std::string s_;
 };
@@ -85,42 +92,6 @@ static void ExtractDoesntSwapTest()
     }
 }
 
-static void VectorBoolSanityTest()
-{
-    using FM = stdext::flat_map<bool, bool>;
-    FM fm;
-    auto it_inserted = fm.emplace(true, false);
-    assert(it_inserted.second);
-    auto it = it_inserted.first;
-    assert(it == fm.begin());
-    assert(it->first == true); assert(it->first);
-    assert(it->second == false); assert(!it->second);
-    it->second = false;
-    assert(fm.size() == 1);
-    it = fm.emplace_hint(it, false, true);
-    assert(it == fm.begin());
-    assert(it->first == false); assert(!it->first);
-    assert(it->second == true); assert(it->second);
-    it->second = true;
-    assert(fm.size() == 2);
-    auto count = fm.erase(false);
-    assert(count == 1);
-    assert(fm.size() == 1);
-    it = fm.erase(fm.begin());
-    assert(fm.empty());
-    assert(it == fm.begin());
-    assert(it == fm.end());
-
-    assert(fm.find(true) == fm.end());
-    fm.try_emplace(true, true);
-    assert(fm.find(true) != fm.end());
-    assert(fm[true] == true);
-    fm[true] = false;
-    assert(fm.find(true) != fm.end());
-    assert(fm[true] == false);
-    fm.clear();
-}
-
 static void MoveOperationsPilferOwnership()
 {
     using FS = stdext::flat_map<InstrumentedWidget, int>;
@@ -156,6 +127,117 @@ static void MoveOperationsPilferOwnership()
     FS fs4(std::move(fs), std::allocator<InstrumentedWidget>());  // should just transfer buffer ownership
     assert(InstrumentedWidget::move_ctors == 0);
     assert(InstrumentedWidget::copy_ctors == 0);
+}
+
+static void SortedUniqueConstructionTest()
+{
+    auto a = stdext::sorted_unique;
+    stdext::sorted_unique_t b;
+    stdext::sorted_unique_t c{};
+    (void)a; (void)b; (void)c;
+
+#if 0 // TODO: GCC cannot compile this
+    struct explicitness_tester {
+        bool test(std::vector<int>) { return true; }
+        bool test(stdext::sorted_unique_t) { return false; }
+    };
+    explicitness_tester tester;
+    assert(tester.test({}) == true);
+#endif
+}
+
+static void TryEmplaceTest()
+{
+    stdext::flat_map<int, InstrumentedWidget> fm;
+    std::pair<stdext::flat_map<int, InstrumentedWidget>::iterator, bool> pair;
+    if (true) {
+        // try_emplace for a non-existent key does move-from.
+        InstrumentedWidget w("abc");
+        pair = fm.try_emplace(1, std::move(w));
+        assert(w.is_moved_from);
+        assert(pair.second);
+    }
+    if (true) {
+        // try_emplace over an existing key is a no-op.
+        InstrumentedWidget w("def");
+        pair = fm.try_emplace(1, std::move(w));
+        assert(!w.is_moved_from);
+        assert(!pair.second);
+        assert(pair.first->first == 1);
+        assert(pair.first->second.str() == "abc");
+    }
+    if (true) {
+        // emplace for a non-existent key does move-from.
+        InstrumentedWidget w("abc");
+        pair = fm.emplace(2, std::move(w));
+        assert(w.is_moved_from);
+        assert(pair.second);
+        assert(pair.first->first == 2);
+        assert(pair.first->second.str() == "abc");
+    }
+    if (true) {
+        // emplace over an existing key is a no-op, but does move-from in order to construct the pair.
+        InstrumentedWidget w("def");
+        pair = fm.emplace(2, std::move(w));
+        assert(w.is_moved_from);
+        assert(!pair.second);
+        assert(pair.first->first == 2);
+        assert(pair.first->second.str() == "abc");
+    }
+    if (true) {
+        // insert-or-assign for a non-existent key does move-construct.
+        InstrumentedWidget w("abc");
+        pair = fm.insert_or_assign(3, std::move(w));
+        assert(w.is_moved_from);
+        assert(pair.second);
+        assert(pair.first->first == 3);
+        assert(pair.first->second.str() == "abc");
+    }
+    if (true) {
+        // insert-or-assign over an existing key does a move-assign.
+        InstrumentedWidget w("def");
+        pair = fm.insert_or_assign(3, std::move(w));
+        assert(w.is_moved_from);
+        assert(!pair.second);
+        assert(pair.first->first == 3);
+        assert(pair.first->second.str() == "def");
+    }
+}
+
+static void VectorBoolSanityTest()
+{
+    using FM = stdext::flat_map<bool, bool>;
+    FM fm;
+    auto it_inserted = fm.emplace(true, false);
+    assert(it_inserted.second);
+    auto it = it_inserted.first;
+    assert(it == fm.begin());
+    assert(it->first == true); assert(it->first);
+    assert(it->second == false); assert(!it->second);
+    it->second = false;
+    assert(fm.size() == 1);
+    it = fm.emplace_hint(it, false, true);
+    assert(it == fm.begin());
+    assert(it->first == false); assert(!it->first);
+    assert(it->second == true); assert(it->second);
+    it->second = true;
+    assert(fm.size() == 2);
+    auto count = fm.erase(false);
+    assert(count == 1);
+    assert(fm.size() == 1);
+    it = fm.erase(fm.begin());
+    assert(fm.empty());
+    assert(it == fm.begin());
+    assert(it == fm.end());
+
+    assert(fm.find(true) == fm.end());
+    fm.try_emplace(true, true);
+    assert(fm.find(true) != fm.end());
+    assert(fm[true] == true);
+    fm[true] = false;
+    assert(fm.find(true) != fm.end());
+    assert(fm[true] == false);
+    fm.clear();
 }
 
 #if defined(__cpp_deduction_guides)
@@ -537,23 +619,6 @@ static void SpecialMemberTest()
     static_assert(std::is_nothrow_destructible<typename FS::containers>::value, "");
 }
 
-static void SortedUniqueConstructionTest()
-{
-    auto a = stdext::sorted_unique;
-    stdext::sorted_unique_t b;
-    stdext::sorted_unique_t c{};
-    (void)a; (void)b; (void)c;
-
-#if 0 // TODO: GCC cannot compile this
-    struct explicitness_tester {
-        bool test(std::vector<int>) { return true; }
-        bool test(stdext::sorted_unique_t) { return false; }
-    };
-    explicitness_tester tester;
-    assert(tester.test({}) == true);
-#endif
-}
-
 template<class FM>
 static void ComparisonOperatorsTest()
 {
@@ -592,13 +657,38 @@ static void ComparisonOperatorsTest()
     assert(fm1 >= fm2);
 }
 
+template<class FM>
+static void SearchTest()
+{
+    FM fm{{1, "a"}, {2, "b"}, {3, "c"}};
+    auto it = fm.lower_bound(2);
+    auto cit = const_cast<const FM&>(fm).lower_bound(2);
+    assert(it == fm.begin() + 1);
+    assert(cit == it);
+
+    it = fm.upper_bound(2);
+    cit = const_cast<const FM&>(fm).upper_bound(2);
+    assert(it == fm.begin() + 2);
+    assert(cit == it);
+
+    auto itpair = fm.equal_range(2);
+    auto citpair = const_cast<const FM&>(fm).equal_range(2);
+    assert(itpair.first == fm.begin() + 1);
+    assert(itpair.second == fm.begin() + 2);
+    assert(citpair == decltype(citpair)(itpair));
+
+    static_assert(std::is_same<decltype(it), typename FM::iterator>::value, "");
+    static_assert(std::is_same<decltype(cit), typename FM::const_iterator>::value, "");
+}
+
 void sg14_test::flat_map_test()
 {
-    SortedUniqueConstructionTest();
     AmbiguousEraseTest();
     ExtractDoesntSwapTest();
-    VectorBoolSanityTest();
     MoveOperationsPilferOwnership();
+    SortedUniqueConstructionTest();
+    TryEmplaceTest();
+    VectorBoolSanityTest();
     DeductionGuideTests();
 
     // Test the most basic flat_set.
@@ -608,6 +698,7 @@ void sg14_test::flat_map_test()
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
         ComparisonOperatorsTest<FS>();
+        SearchTest<FS>();
     }
 
     // Test a custom comparator.
@@ -617,6 +708,7 @@ void sg14_test::flat_map_test()
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
         ComparisonOperatorsTest<FS>();
+        SearchTest<FS>();
     }
 
     // Test a transparent comparator.
@@ -626,6 +718,7 @@ void sg14_test::flat_map_test()
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
         ComparisonOperatorsTest<FS>();
+        SearchTest<FS>();
     }
 
     // Test a custom container.
@@ -635,6 +728,7 @@ void sg14_test::flat_map_test()
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
         ComparisonOperatorsTest<FS>();
+        SearchTest<FS>();
     }
 
 #if defined(__cpp_lib_memory_resource)
@@ -645,6 +739,7 @@ void sg14_test::flat_map_test()
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
         ComparisonOperatorsTest<FS>();
+        SearchTest<FS>();
     }
 
     // Test a pmr container with uses-allocator construction!
@@ -654,6 +749,7 @@ void sg14_test::flat_map_test()
         SpecialMemberTest<FS>();
         InsertOrAssignTest<FS>();
         ComparisonOperatorsTest<FS>();
+        SearchTest<FS>();
     }
 #endif
 }

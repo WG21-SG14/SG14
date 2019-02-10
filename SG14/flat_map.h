@@ -833,8 +833,6 @@ public:
         return flatmap_detail::make_iterator(kit, vit);
     }
 
-// TODO
-
     size_type count(const Key& x) const {
         return this->contains(x) ? 1 : 0;
     }
@@ -856,63 +854,103 @@ public:
     }
 
     iterator lower_bound(const Key& t) {
-        return std::lower_bound(this->begin(), this->end(), t, std::ref(compare_));
+        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     const_iterator lower_bound(const Key& t) const {
-        return std::lower_bound(this->begin(), this->end(), t, std::ref(compare_));
+        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator lower_bound(const K& x) {
-        return std::lower_bound(this->begin(), this->end(), x, std::ref(compare_));
+        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator lower_bound(const K& x) const {
-        return std::lower_bound(this->begin(), this->end(), x, std::ref(compare_));
+        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     iterator upper_bound(const Key& t) {
-        return std::upper_bound(this->begin(), this->end(), t, std::ref(compare_));
+        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     const_iterator upper_bound(const Key& t) const {
-        return std::upper_bound(this->begin(), this->end(), t, std::ref(compare_));
+        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator upper_bound(const K& x) {
-        return std::upper_bound(this->begin(), this->end(), x, std::ref(compare_));
+        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator upper_bound(const K& x) const {
-        return std::upper_bound(this->begin(), this->end(), x, std::ref(compare_));
+        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        return flatmap_detail::make_iterator(kit, vit);
     }
 
     std::pair<iterator, iterator> equal_range(const Key& t) {
-        return std::equal_range(this->begin(), this->end(), t, std::ref(compare_));
+        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+        return {
+            flatmap_detail::make_iterator(kits.first, vit1),
+            flatmap_detail::make_iterator(kits.second, vit2)
+        };
     }
 
     std::pair<const_iterator, const_iterator> equal_range(const Key& t) const {
-        return std::equal_range(this->begin(), this->end(), t, std::ref(compare_));
+        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+        return {
+            flatmap_detail::make_iterator(kits.first, vit1),
+            flatmap_detail::make_iterator(kits.second, vit2)
+        };
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     std::pair<iterator, iterator> equal_range(const K& x) {
-        return std::equal_range(this->begin(), this->end(), x, std::ref(compare_));
+        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+        return {
+            flatmap_detail::make_iterator(kits.first, vit1),
+            flatmap_detail::make_iterator(kits.second, vit2)
+        };
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     std::pair<const_iterator, const_iterator> equal_range(const K& x) const {
-        return std::equal_range(this->begin(), this->end(), x, std::ref(compare_));
+        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+        return {
+            flatmap_detail::make_iterator(kits.first, vit1),
+            flatmap_detail::make_iterator(kits.second, vit2)
+        };
     }
 
 private:
