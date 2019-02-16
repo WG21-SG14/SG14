@@ -172,7 +172,7 @@ namespace flatmap_detail {
 
     template<class Reference>
     struct arrow_proxy {
-        Reference *operator->() { return &data_; }
+        Reference *operator->() { return std::addressof(data_); }
 
         template<class, class> friend class iter;
 
@@ -633,6 +633,7 @@ public:
         return static_cast<containers&&>(c_);
     }
 
+    // TODO: why by rvalue reference and not by-value?
     void replace(KeyContainer&& keys, MappedContainer&& values) {
         c_.keys = static_cast<KeyContainer&&>(keys);
         c_.values = static_cast<MappedContainer&&>(values);
