@@ -605,7 +605,7 @@ template<class FS>
 static void SpecialMemberTest()
 {
     static_assert(std::is_default_constructible<FS>::value, "");
-    static_assert(std::is_nothrow_move_constructible<FS>::value == std::is_nothrow_move_constructible<typename FS::key_container_type>::value && std::is_nothrow_move_constructible<typename FS::mapped_container_type>::value, "");
+    static_assert(std::is_nothrow_move_constructible<FS>::value == std::is_nothrow_move_constructible<typename FS::key_container_type>::value && std::is_nothrow_move_constructible<typename FS::mapped_container_type>::value && std::is_nothrow_move_constructible<typename FS::key_compare>::value, "");
     static_assert(std::is_copy_constructible<FS>::value, "");
     static_assert(std::is_copy_assignable<FS>::value, "");
     static_assert(std::is_move_assignable<FS>::value, "");

@@ -526,38 +526,34 @@ public:
     }
 
     mapped_reference at(const Key& k) {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), k, std::ref(compare_));
-        if (kit == c_.keys.end() || compare_(k, *kit)) {
+        auto it = this->find(k);
+        if (it == end()) {
             throw std::out_of_range("flat_map::at");
-        } else {
-            auto vit = c_.values.begin() + (kit - c_.keys.begin());
-            return *vit;
         }
+        return it->second;
     }
 
     const_mapped_reference at(const Key& k) const {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), k, std::ref(compare_));
-        if (kit == c_.keys.end() || compare_(k, *kit)) {
+        auto it = this->find(k);
+        if (it == end()) {
             throw std::out_of_range("flat_map::at");
-        } else {
-            auto vit = c_.values.begin() + (kit - c_.keys.begin());
-            return *vit;
         }
+        return it->second;
     }
 
     template<class... Args, class = decltype(std::pair<Key, Mapped>(std::declval<Args&&>()...), void())>
     std::pair<iterator, bool> emplace(Args&&... args) {
         std::pair<Key, Mapped> t(static_cast<Args&&>(args)...);
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), t.first, std::ref(compare_));
-        auto vit = c_.values.begin() + (kit - c_.keys.begin());
-        if (kit == c_.keys.end() || compare_(t.first, *kit)) {
+        auto it = this->lower_bound(t.first);
+        if (it == end() || compare_(t.first, it->first)) {
+            auto kit = it.private_impl_getkey();
+            auto vit = it.private_impl_getmapped();
             kit = c_.keys.emplace(kit, static_cast<Key&&>(t.first));
             vit = c_.values.emplace(vit, static_cast<Mapped&&>(t.second));
             auto result = flatmap_detail::make_iterator(kit, vit);
             return {std::move(result), true};
         } else {
-            auto result = flatmap_detail::make_iterator(kit, vit);
-            return {std::move(result), false};
+            return {it, false};
         }
     }
 
@@ -607,12 +603,13 @@ public:
     template<class InputIterator,
              class = std::enable_if_t<flatmap_detail::qualifies_as_input_iterator<InputIterator>::value>>
     void insert(stdext::sorted_unique_t, InputIterator first, InputIterator last) {
-        auto value_compare = this->value_comp();
         auto it = begin();
         while (first != last) {
             std::pair<Key, Mapped> t(*first);
-            it = std::lower_bound(it, this->end(), t, std::ref(value_compare));
-            if (it == this->end() || value_compare(t, *it)) {
+            it = std::partition_point(it, this->end(), [&](const auto& elt) {
+                return bool(compare_(elt.first, t.first));
+            });
+            if (it == this->end() || bool(compare_(t.first, it->first))) {
                 it = this->emplace(it, std::move(t));
             }
             ++it;
@@ -793,49 +790,44 @@ public:
         return c_.values;
     }
 
-
     iterator find(const Key& k) {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), k, std::ref(compare_));
-        if (kit == c_.keys.end() || compare_(k, *kit)) {
-            return this->end();
+        auto it = this->lower_bound(k);
+        if (it == end() || compare_(k, it->first)) {
+            return end();
         }
-        auto vit = c_.values.begin() + (kit - c_.keys.begin());
-        return flatmap_detail::make_iterator(kit, vit);
+        return it;
     }
 
     const_iterator find(const Key& k) const {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), k, std::ref(compare_));
-        if (kit == c_.keys.end() || compare_(k, *kit)) {
-            return this->end();
+        auto it = this->lower_bound(k);
+        if (it == end() || compare_(k, it->first)) {
+            return end();
         }
-        auto vit = c_.values.begin() + (kit - c_.keys.begin());
-        return flatmap_detail::make_iterator(kit, vit);
+        return it;
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator find(const K& x) {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
-        if (kit == c_.keys.end() || compare_(x, *kit)) {
-            return this->end();
+        auto it = this->lower_bound(x);
+        if (it == end() || compare_(x, it->first)) {
+            return end();
         }
-        auto vit = c_.values.begin() + (kit - c_.keys.begin());
-        return flatmap_detail::make_iterator(kit, vit);
+        return it;
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator find(const K& x) const {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
-        if (kit == c_.keys.end() || compare_(x, *kit)) {
-            return this->end();
+        auto it = this->lower_bound(x);
+        if (it == end() || compare_(x, it->first)) {
+            return end();
         }
-        auto vit = c_.values.begin() + (kit - c_.keys.begin());
-        return flatmap_detail::make_iterator(kit, vit);
+        return it;
     }
 
-    size_type count(const Key& x) const {
-        return this->contains(x) ? 1 : 0;
+    size_type count(const Key& k) const {
+        return this->contains(k) ? 1 : 0;
     }
 
     template<class K,
@@ -844,8 +836,8 @@ public:
         return this->contains(x) ? 1 : 0;
     }
 
-    bool contains(const Key& x) const {
-        return this->find(x) != this->end();
+    bool contains(const Key& k) const {
+        return this->find(k) != this->end();
     }
 
     template<class K,
@@ -854,14 +846,18 @@ public:
         return this->find(x) != this->end();
     }
 
-    iterator lower_bound(const Key& t) {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+    iterator lower_bound(const Key& k) {
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, k));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
 
-    const_iterator lower_bound(const Key& t) const {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+    const_iterator lower_bound(const Key& k) const {
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, k));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
@@ -869,7 +865,9 @@ public:
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator lower_bound(const K& x) {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
@@ -877,19 +875,25 @@ public:
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator lower_bound(const K& x) const {
-        auto kit = std::lower_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
 
-    iterator upper_bound(const Key& t) {
-        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+    iterator upper_bound(const Key& k) {
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(k, elt));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
 
-    const_iterator upper_bound(const Key& t) const {
-        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
+    const_iterator upper_bound(const Key& k) const {
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(k, elt));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
@@ -897,7 +901,9 @@ public:
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator upper_bound(const K& x) {
-        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
@@ -905,52 +911,74 @@ public:
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator upper_bound(const K& x) const {
-        auto kit = std::upper_bound(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
+        auto kit = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         return flatmap_detail::make_iterator(kit, vit);
     }
 
-    std::pair<iterator, iterator> equal_range(const Key& t) {
-        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
-        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
-        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+    std::pair<iterator, iterator> equal_range(const Key& k) {
+        auto kit1 = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, k));
+        });
+        auto kit2 = std::partition_point(kit1, c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(k, elt));
+        });
+        auto vit1 = c_.values.begin() + (kit1 - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kit2 - c_.keys.begin());
         return {
-            flatmap_detail::make_iterator(kits.first, vit1),
-            flatmap_detail::make_iterator(kits.second, vit2)
+            flatmap_detail::make_iterator(kit1, vit1),
+            flatmap_detail::make_iterator(kit2, vit2)
         };
     }
 
-    std::pair<const_iterator, const_iterator> equal_range(const Key& t) const {
-        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), t, std::ref(compare_));
-        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
-        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+    std::pair<const_iterator, const_iterator> equal_range(const Key& k) const {
+        auto kit1 = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, k));
+        });
+        auto kit2 = std::partition_point(kit1, c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(k, elt));
+        });
+        auto vit1 = c_.values.begin() + (kit1 - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kit2 - c_.keys.begin());
         return {
-            flatmap_detail::make_iterator(kits.first, vit1),
-            flatmap_detail::make_iterator(kits.second, vit2)
+            flatmap_detail::make_iterator(kit1, vit1),
+            flatmap_detail::make_iterator(kit2, vit2)
         };
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     std::pair<iterator, iterator> equal_range(const K& x) {
-        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
-        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
-        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+        auto kit1 = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
+        auto kit2 = std::partition_point(kit1, c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
+        auto vit1 = c_.values.begin() + (kit1 - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kit2 - c_.keys.begin());
         return {
-            flatmap_detail::make_iterator(kits.first, vit1),
-            flatmap_detail::make_iterator(kits.second, vit2)
+            flatmap_detail::make_iterator(kit1, vit1),
+            flatmap_detail::make_iterator(kit2, vit2)
         };
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     std::pair<const_iterator, const_iterator> equal_range(const K& x) const {
-        auto kits = std::equal_range(c_.keys.begin(), c_.keys.end(), x, std::ref(compare_));
-        auto vit1 = c_.values.begin() + (kits.first - c_.keys.begin());
-        auto vit2 = c_.values.begin() + (kits.second - c_.keys.begin());
+        auto kit1 = std::partition_point(c_.keys.begin(), c_.keys.end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
+        auto kit2 = std::partition_point(kit1, c_.keys.end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
+        auto vit1 = c_.values.begin() + (kit1 - c_.keys.begin());
+        auto vit2 = c_.values.begin() + (kit2 - c_.keys.begin());
         return {
-            flatmap_detail::make_iterator(kits.first, vit1),
-            flatmap_detail::make_iterator(kits.second, vit2)
+            flatmap_detail::make_iterator(kit1, vit1),
+            flatmap_detail::make_iterator(kit2, vit2)
         };
     }
 
