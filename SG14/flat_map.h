@@ -762,7 +762,7 @@ public:
 
     void swap(flat_map& fm) noexcept
 #if defined(__cpp_lib_is_swappable)
-        (std::is_nothrow_swappable<KeyContainer>::value && std::is_nothrow_swappable<Compare>::value)
+        (std::is_nothrow_swappable<KeyContainer>::value && std::is_nothrow_swappable<MappedContainer>::value && std::is_nothrow_swappable<Compare>::value)
 #endif
     {
         using std::swap;
