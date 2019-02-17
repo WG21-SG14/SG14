@@ -155,7 +155,11 @@ static void BasicTests(T t1, T t2)
     assert(num_removed == 1);
     assert(sm.size() == 1);
     assert(sm.find(k1) == sm.end());  // find an expired key
+    try { (void)sm.at(k1); assert(false); } catch (const std::out_of_range&) {}
     assert(sm.find(k2) == sm.begin());  // find a non-expired key
+    assert(sm.at(k2) == *sm.begin());
+    assert(sm.find_unchecked(k2) == sm.begin());
+    assert(sm[k2] == *sm.begin());
     assert(sm.erase(k1) == 0);  // erase an expired key
     sm.swap(sm2);
     assert(sm.empty());
@@ -181,6 +185,7 @@ static void FullContainerStressTest(TGen t)
     for (int i = 0; i < total; ++i) {
         assert(sm.size() == static_cast<typename SM::size_type>(total - i));
         assert(sm.find(keys[i]) != sm.end());
+        assert(sm.find_unchecked(keys[i]) != sm.end());
         for (int j = 0; j < i; ++j) {
             assert(sm.find(keys[j]) == sm.end());
         }
