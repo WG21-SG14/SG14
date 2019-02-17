@@ -183,8 +183,8 @@ namespace flatmap_detail {
     class iter {
     public:
         using difference_type = ptrdiff_t;
-        using value_type = std::pair<const typename KeyIt::value_type, typename MappedIt::value_type>;
-        using reference = std::pair<typename KeyIt::reference, typename MappedIt::reference>;
+        using value_type = std::pair<const typename std::iterator_traits<KeyIt>::value_type, typename std::iterator_traits<MappedIt>::value_type>;
+        using reference = std::pair<typename std::iterator_traits<KeyIt>::reference, typename std::iterator_traits<MappedIt>::reference>;
         using pointer = arrow_proxy<reference>;
         using iterator_category = std::random_access_iterator_tag;
 
