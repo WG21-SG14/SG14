@@ -46,6 +46,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 set(TEST_SOURCE_FILES
     ${SG14_TEST_SOURCE_DIRECTORY}/main.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/flat_map_test.cpp
+    ${SG14_TEST_SOURCE_DIRECTORY}/flat_map_jointstorage_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/flat_set_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/inplace_function_test.cpp
     ${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp

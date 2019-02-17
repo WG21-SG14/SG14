@@ -9,6 +9,7 @@
 int main(int, char *[])
 {
     sg14_test::flat_map_test();
+    sg14_test::flat_map_jointstorage_test();
     sg14_test::flat_set_test();
     sg14_test::inplace_function_test();
     sg14_test::plf_colony_test();

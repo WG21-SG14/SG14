@@ -6,6 +6,7 @@
 namespace sg14_test
 {
     void flat_map_test();
+    void flat_map_jointstorage_test();
     void flat_set_test();
     void inplace_function_test();
     void plf_colony_test();
