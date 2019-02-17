@@ -153,11 +153,11 @@ namespace flatmap_detail {
         iter(const iter<I, ConstKeyReference>& other) : it_(other.private_impl()) {}
 
         reference operator*() const {
-            return reference{*it_};
+            return reference{ (*it_).first, (*it_).second };
         }
 
         pointer operator->() const {
-            return arrow_proxy<reference>{reference{*it_}};
+            return arrow_proxy<reference>{ **this };
         }
 
         iter& operator++() { ++it_; return *this; }
