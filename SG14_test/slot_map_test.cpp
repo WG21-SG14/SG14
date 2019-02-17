@@ -81,6 +81,10 @@ struct Vector {
         data_ = std::move(p);
         *(end() - 1) = std::move(t);
     }
+    void clear() {
+        size_ = 0;
+        data_ = nullptr;
+    }
     friend void swap(Vector& a, Vector& b) {
         Vector t = std::move(a);
         a = std::move(b);
@@ -419,30 +423,32 @@ static void TypedefTests()
 #endif // __cplusplus >= 201703L
 }
 
+template<class SM>
 void BoundsCheckingTest()
 {
-    stdext::slot_map<int> sm;
+    using T = typename SM::mapped_type;
+    SM sm;
     const auto& csm = sm;
 
-    sm.emplace(1);
-    stdext::slot_map<int>::key_type k = sm.emplace(2);
+    sm.emplace(Monad<T>::from_value(1));
+    typename SM::key_type k = sm.emplace(Monad<T>::from_value(2));
     sm.clear();
 
-    stdext::slot_map<int>::iterator it = sm.find(k);
+    typename SM::iterator it = sm.find(k);
     assert(it == sm.end());
 
-    stdext::slot_map<int>::const_iterator cit = csm.find(k);
+    typename SM::const_iterator cit = csm.find(k);
     assert(cit == sm.end());
 }
 
 void sg14_test::slot_map_test()
 {
     TypedefTests();
-    BoundsCheckingTest();
 
     // Test the most basic slot_map.
     using slot_map_1 = stdext::slot_map<int>;
     BasicTests<slot_map_1>(42, 37);
+    BoundsCheckingTest<slot_map_1>();
     FullContainerStressTest<slot_map_1>([]() { return 1; });
     InsertEraseStressTest<slot_map_1>([i=3]() mutable { return ++i; });
     EraseInLoopTest<slot_map_1>();
@@ -453,6 +459,7 @@ void sg14_test::slot_map_test()
     // Test slot_map with a custom key type (C++14 destructuring).
     using slot_map_2 = stdext::slot_map<unsigned long, TestKey::key_16_8_t>;
     BasicTests<slot_map_2>(425, 375);
+    BoundsCheckingTest<slot_map_2>();
     FullContainerStressTest<slot_map_2>([]() { return 42; });
     InsertEraseStressTest<slot_map_2>([i=5]() mutable { return ++i; });
     EraseInLoopTest<slot_map_2>();
@@ -464,6 +471,7 @@ void sg14_test::slot_map_test()
     // Test slot_map with a custom key type (C++17 destructuring).
     using slot_map_3 = stdext::slot_map<int, TestKey::key_11_5_t>;
     BasicTests<slot_map_3>(42, 37);
+    BoundsCheckingTest<slot_map_3>();
     FullContainerStressTest<slot_map_3>([]() { return 42; });
     InsertEraseStressTest<slot_map_3>([i=3]() mutable { return ++i; });
     EraseInLoopTest<slot_map_3>();
@@ -475,6 +483,7 @@ void sg14_test::slot_map_test()
     // Test slot_map with a custom (but standard and random-access) container type.
     using slot_map_4 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::deque>;
     BasicTests<slot_map_4>(415, 315);
+    BoundsCheckingTest<slot_map_4>();
     FullContainerStressTest<slot_map_4>([]() { return 37; });
     InsertEraseStressTest<slot_map_4>([i=7]() mutable { return ++i; });
     EraseInLoopTest<slot_map_4>();
@@ -485,6 +494,7 @@ void sg14_test::slot_map_test()
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
     BasicTests<slot_map_5>(415, 315);
+    BoundsCheckingTest<slot_map_5>();
     FullContainerStressTest<slot_map_5>([]() { return 37; });
     InsertEraseStressTest<slot_map_5>([i=7]() mutable { return ++i; });
     EraseInLoopTest<slot_map_5>();
@@ -495,6 +505,7 @@ void sg14_test::slot_map_test()
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
     BasicTests<slot_map_6>(415, 315);
+    BoundsCheckingTest<slot_map_6>();
     FullContainerStressTest<slot_map_6>([]() { return 37; });
     InsertEraseStressTest<slot_map_6>([i=7]() mutable { return ++i; });
     EraseInLoopTest<slot_map_6>();
@@ -510,6 +521,7 @@ void sg14_test::slot_map_test()
     static_assert(! std::is_copy_constructible<slot_map_7>::value, "");
     static_assert(! std::is_copy_assignable<slot_map_7>::value, "");
     BasicTests<slot_map_7>(std::make_unique<int>(1), std::make_unique<int>(2));
+    BoundsCheckingTest<slot_map_7>();
     FullContainerStressTest<slot_map_7>([]() { return std::make_unique<int>(1); });
     InsertEraseStressTest<slot_map_7>([i=7]() mutable { return std::make_unique<int>(++i); });
     EraseInLoopTest<slot_map_7>();
