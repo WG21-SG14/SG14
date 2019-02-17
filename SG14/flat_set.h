@@ -338,8 +338,8 @@ public:
     template<class... Args>
     std::pair<iterator, bool> emplace(Args&&... args) {
         Key t(static_cast<Args&&>(args)...);
-        auto it = std::lower_bound(c_.begin(), c_.end(), t, std::ref(compare_));
-        if (it == c_.end() || compare_(t, *it)) {
+        auto it = this->lower_bound(t);
+        if (it == end() || compare_(t, *it)) {
             it = c_.emplace(it, static_cast<Key&&>(t));
             return {it, true};
         } else {
@@ -354,7 +354,7 @@ public:
     }
 
     std::pair<iterator, bool> insert(const Key& t) {
-        auto it = std::lower_bound(c_.begin(), c_.end(), t, std::ref(compare_));
+        auto it = this->lower_bound(t);
         if (it == c_.end() || compare_(t, *it)) {
             it = c_.emplace(it, t);
             return {it, true};
@@ -364,7 +364,7 @@ public:
     }
 
     std::pair<iterator, bool> insert(Key&& t) {
-        auto it = std::lower_bound(c_.begin(), c_.end(), t, std::ref(compare_));
+        auto it = this->lower_bound(t);
         if (it == c_.end() || compare_(t, *it)) {
             it = c_.emplace(it, static_cast<Key&&>(t));
             return {it, true};
@@ -396,8 +396,10 @@ public:
         auto it = begin();
         while (first != last) {
             Key t(*first);
-            it = std::lower_bound(it, this->end(), t, std::ref(compare_));
-            if (it == c_.end() || compare_(t, *it)) {
+            it = std::partition_point(it, end(), [&](const auto& elt) {
+                return bool(compare_(elt, t));
+            });
+            if (it == end() || compare_(t, *it)) {
                 it = c_.emplace(it, static_cast<Key&&>(t));
             }
             ++it;
@@ -460,16 +462,16 @@ public:
     Compare value_comp() const { return compare_; }
 
     iterator find(const Key& t) {
-        auto it = std::lower_bound(this->begin(), this->end(), t, std::ref(compare_));
-        if (it == c_.end() || compare_(t, *it)) {
+        auto it = this->lower_bound(t);
+        if (it == this->end() || compare_(t, *it)) {
             return this->end();
         }
         return it;
     }
 
     const_iterator find(const Key& t) const {
-        auto it = std::lower_bound(this->begin(), this->end(), t, std::ref(compare_));
-        if (it == c_.end() || compare_(t, *it)) {
+        auto it = this->lower_bound(t);
+        if (it == this->end() || compare_(t, *it)) {
             return this->end();
         }
         return it;
@@ -478,8 +480,8 @@ public:
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator find(const K& x) {
-        auto it = std::lower_bound(this->begin(), this->end(), x, std::ref(compare_));
-        if (it == c_.end() || compare_(x, *it)) {
+        auto it = this->lower_bound(x);
+        if (it == this->end() || compare_(x, *it)) {
             return this->end();
         }
         return it;
@@ -488,8 +490,8 @@ public:
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator find(const K& x) const {
-        auto it = std::lower_bound(this->begin(), this->end(), x, std::ref(compare_));
-        if (it == c_.end() || compare_(x, *it)) {
+        auto it = this->lower_bound(x);
+        if (it == this->end() || compare_(x, *it)) {
             return this->end();
         }
         return it;
@@ -516,63 +518,103 @@ public:
     }
 
     iterator lower_bound(const Key& t) {
-        return std::lower_bound(this->begin(), this->end(), t, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, t));
+        });
     }
 
     const_iterator lower_bound(const Key& t) const {
-        return std::lower_bound(this->begin(), this->end(), t, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, t));
+        });
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator lower_bound(const K& x) {
-        return std::lower_bound(this->begin(), this->end(), x, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator lower_bound(const K& x) const {
-        return std::lower_bound(this->begin(), this->end(), x, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
     }
 
     iterator upper_bound(const Key& t) {
-        return std::upper_bound(this->begin(), this->end(), t, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return !bool(compare_(t, elt));
+        });
     }
 
     const_iterator upper_bound(const Key& t) const {
-        return std::upper_bound(this->begin(), this->end(), t, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return !bool(compare_(t, elt));
+        });
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     iterator upper_bound(const K& x) {
-        return std::upper_bound(this->begin(), this->end(), x, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     const_iterator upper_bound(const K& x) const {
-        return std::upper_bound(this->begin(), this->end(), x, std::ref(compare_));
+        return std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
     }
 
     std::pair<iterator, iterator> equal_range(const Key& t) {
-        return std::equal_range(this->begin(), this->end(), t, std::ref(compare_));
+        auto lo = std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, t));
+        });
+        auto hi = std::partition_point(lo, this->end(), [&](const auto& elt) {
+            return !bool(compare_(t, elt));
+        });
+        return { lo, hi };
     }
 
     std::pair<const_iterator, const_iterator> equal_range(const Key& t) const {
-        return std::equal_range(this->begin(), this->end(), t, std::ref(compare_));
+        auto lo = std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, t));
+        });
+        auto hi = std::partition_point(lo, this->end(), [&](const auto& elt) {
+            return !bool(compare_(t, elt));
+        });
+        return { lo, hi };
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     std::pair<iterator, iterator> equal_range(const K& x) {
-        return std::equal_range(this->begin(), this->end(), x, std::ref(compare_));
+        auto lo = std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
+        auto hi = std::partition_point(lo, this->end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
+        return { lo, hi };
     }
 
     template<class K,
              class Compare_ = Compare, class = typename Compare_::is_transparent>
     std::pair<const_iterator, const_iterator> equal_range(const K& x) const {
-        return std::equal_range(this->begin(), this->end(), x, std::ref(compare_));
+        auto lo = std::partition_point(this->begin(), this->end(), [&](const auto& elt) {
+            return bool(compare_(elt, x));
+        });
+        auto hi = std::partition_point(lo, this->end(), [&](const auto& elt) {
+            return !bool(compare_(x, elt));
+        });
+        return { lo, hi };
     }
 
 private:
