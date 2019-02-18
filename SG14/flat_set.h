@@ -147,7 +147,7 @@ public:
     explicit flat_set(KeyContainer ctr)
         : c_(static_cast<KeyContainer&&>(ctr)), compare_()
     {
-        std::sort(std::begin(c_), std::end(c_), compare_);
+        std::sort(c_.begin(), c_.end(), compare_);
     }
 
     // TODO: surely this should be using uses-allocator construction
@@ -223,7 +223,7 @@ public:
     flat_set(InputIterator first, InputIterator last, const Compare& comp = Compare())
         : c_(first, last), compare_(comp)
     {
-        std::sort(std::begin(c_), std::end(c_), compare_);
+        std::sort(c_.begin(), c_.end(), compare_);
     }
 
     // TODO: this constructor should conditionally use KeyContainer's iterator-pair constructor
@@ -236,7 +236,7 @@ public:
             c_.insert(c_.end(), *first);
             ++first;
         }
-        std::sort(std::begin(c_), std::end(c_), compare_);
+        std::sort(c_.begin(), c_.end(), compare_);
     }
 
     template<class InputIterator, class Alloc,
@@ -312,21 +312,21 @@ public:
         return *this;
     }
 
-    iterator begin() noexcept { return std::begin(c_); }
-    const_iterator begin() const noexcept { return std::begin(c_); }
-    iterator end() noexcept { return std::end(c_); }
-    const_iterator end() const noexcept { return std::end(c_); }
+    iterator begin() noexcept { return c_.begin(); }
+    const_iterator begin() const noexcept { return c_.begin(); }
+    iterator end() noexcept { return c_.end(); }
+    const_iterator end() const noexcept { return c_.end(); }
 
-    const_iterator cbegin() const noexcept { return std::cbegin(c_); }
-    const_iterator cend() const noexcept { return std::cend(c_); }
+    const_iterator cbegin() const noexcept { return c_.begin(); }
+    const_iterator cend() const noexcept { return c_.end(); }
 
-    reverse_iterator rbegin() noexcept { return std::rbegin(c_); }
-    const_reverse_iterator rbegin() const noexcept { return std::rbegin(c_); }
-    reverse_iterator rend() noexcept { return std::rend(c_); }
-    const_reverse_iterator rend() const noexcept { return std::rend(c_); }
+    reverse_iterator rbegin() noexcept { return std::make_reverse_iterator(end()); }
+    const_reverse_iterator rbegin() const noexcept { return std::make_reverse_iterator(end()); }
+    reverse_iterator rend() noexcept { return std::make_reverse_iterator(begin()); }
+    const_reverse_iterator rend() const noexcept { return std::make_reverse_iterator(begin()); }
 
-    const_reverse_iterator crbegin() const noexcept { return std::crbegin(c_); }
-    const_reverse_iterator crend() const noexcept { return std::crend(c_); }
+    const_reverse_iterator crbegin() const noexcept { return std::make_reverse_iterator(end()); }
+    const_reverse_iterator crend() const noexcept { return std::make_reverse_iterator(begin()); }
 
 #if __cplusplus >= 201703L
     [[nodiscard]]
