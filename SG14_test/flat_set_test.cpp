@@ -1,6 +1,7 @@
 #include "SG14_test.h"
 #include "flat_set.h"
 #include <assert.h>
+#include <stdio.h>
 #include <deque>
 #include <functional>
 #if __has_include(<memory_resource>)
@@ -72,6 +73,7 @@ static void ExtractDoesntSwapTest()
         stdext::flat_set<int, std::less<>, std::pmr::vector<int>> fs({1, 2}, a);
         std::pmr::vector<int> v = std::move(fs).extract();
         assert(v.get_allocator() == a);
+        assert(fs.empty());
     }
 #endif
 
@@ -81,6 +83,60 @@ static void ExtractDoesntSwapTest()
         stdext::flat_set<int, std::less<>, std::vector<int>> fs({1, 2}, a);
         std::vector<int> v = std::move(fs).extract();
         assert(v.get_allocator() == a);
+        assert(fs.empty());
+    }
+}
+
+struct ComparatorWithThrowingSwap {
+    std::function<bool(int, int)> cmp_;
+    static bool please_throw;
+    ComparatorWithThrowingSwap(std::function<bool(int, int)> f) : cmp_(f) {}
+    friend void swap(ComparatorWithThrowingSwap& a, ComparatorWithThrowingSwap& b) {
+        if (please_throw) {
+            throw "oops";
+        }
+        a.cmp_.swap(b.cmp_);
+    }
+    bool operator()(int a, int b) const {
+        return cmp_(a, b);
+    }
+};
+bool ComparatorWithThrowingSwap::please_throw = false;
+
+static void ThrowingSwapDoesntBreakInvariants()
+{
+    using std::swap;
+    stdext::flat_set<int, ComparatorWithThrowingSwap> fsx({1,2,3}, ComparatorWithThrowingSwap(std::less<>()));
+    stdext::flat_set<int, ComparatorWithThrowingSwap> fsy({4,5,6}, ComparatorWithThrowingSwap(std::greater<>()));
+
+#if defined(__cpp_lib_is_swappable)
+    static_assert(!std::is_nothrow_swappable<decltype(fsx)>::value, "");
+#endif
+
+    if (true) {
+        ComparatorWithThrowingSwap::please_throw = false;
+        swap(fsx, fsy);  // should swap both the comparators and the containers
+        fsx.insert(7);
+        fsy.insert(8);
+        std::vector<int> expected_fsx = {7, 6, 5, 4};
+        std::vector<int> expected_fsy = {1, 2, 3, 8};
+        assert(std::equal(expected_fsx.begin(), expected_fsx.end(), fsx.begin(), fsx.end()));
+        assert(std::equal(expected_fsy.begin(), expected_fsy.end(), fsy.begin(), fsy.end()));
+    }
+
+    if (true) {
+        ComparatorWithThrowingSwap::please_throw = true;
+        try {
+            swap(fsx, fsy);  // neither the comparators nor containers should be swapped
+            assert(false);
+        } catch (...) {}
+        ComparatorWithThrowingSwap::please_throw = false;
+        fsx.insert(9);
+        fsy.insert(10);
+        std::vector<int> expected_fsx = {9, 7, 6, 5, 4};
+        std::vector<int> expected_fsy = {1, 2, 3, 8, 10};
+        assert(std::equal(expected_fsx.begin(), expected_fsx.end(), fsx.begin(), fsx.end()));
+        assert(std::equal(expected_fsy.begin(), expected_fsy.end(), fsy.begin(), fsy.end()));
     }
 }
 
@@ -154,6 +210,13 @@ static void ConstructionTest()
         fs = {1, 3, 5};  // assignment operator
         assert(std::is_sorted(fs.begin(), fs.end(), fs.key_comp()));
     }
+    if (true) {
+        FS fs {1, 3, 1, 5, 3};
+        assert(fs.size() == 3);  // assert that uniqueing takes place
+        std::vector<int> vec2 = {1, 3, 1, 5, 3};
+        FS fs2(vec2);
+        assert(fs2.size() == 3); // assert that uniqueing takes place
+    }
     for (auto&& fs : {
         FS(vec),
         FS({1, 3, 5}),
@@ -204,8 +267,9 @@ void sg14_test::flat_set_test()
 {
     AmbiguousEraseTest();
     ExtractDoesntSwapTest();
-    VectorBoolSanityTest();
     MoveOperationsPilferOwnership();
+    ThrowingSwapDoesntBreakInvariants();
+    VectorBoolSanityTest();
 
     // Test the most basic flat_set.
     {
