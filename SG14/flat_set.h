@@ -380,7 +380,6 @@ public:
         }
     }
 
-    // TODO: this function cannot possibly meet its amortized-constant-complexity requirement
     template<class... Args>
     iterator emplace_hint(const_iterator, Args&&... args) {
         return this->emplace(static_cast<Args&&>(args)...).first;
@@ -406,37 +405,80 @@ public:
         }
     }
 
-    // TODO: this function cannot possibly meet its amortized-constant-complexity requirement
     iterator insert(const_iterator, const Key& t) {
         return this->insert(t).first;
     }
 
-    // TODO: this function cannot possibly meet its amortized-constant-complexity requirement
     iterator insert(const_iterator, Key&& t) {
         return this->insert(static_cast<Key&&>(t)).first;
     }
 
     template<class InputIterator>
     void insert(InputIterator first, InputIterator last) {
-        while (first != last) {
-            this->insert(*first);
-            ++first;
+        auto original_size = c_.size();
+        try {
+            while (first != last) {
+                Key t(*first);
+                auto it = std::partition_point(
+                    c_.begin(), c_.begin() + original_size,
+                    [&](const auto& elt) {
+                        return bool(compare_(elt, t));
+                    }
+                );
+                if (it != c_.begin() + original_size && !bool(compare_(t, *it))) {
+                    // we already have a copy of this element; move on
+                } else {
+                    // we will need to insert this element; shove it on the back and move on
+                    c_.emplace(c_.end(), std::move(t));
+                }
+                ++first;
+            }
+        } catch (...) {
+            // If an exception is thrown, we can just erase the elements we inserted
+            // to restore our invariant. We assume that KeyContainer::erase() doesn't throw.
+            auto original_end = c_.begin() + original_size;
+            c_.erase(original_end, c_.end());
+            throw;
+        }
+        if (c_.size() != original_size) {
+            // At this point we have a uniqued, but not sorted, underlying container.
+            this->sort_or_clear_impl();
         }
     }
 
     template<class InputIterator>
     void insert(sorted_unique_t, InputIterator first, InputIterator last) {
-        auto it = begin();
-        while (first != last) {
-            Key t(*first);
-            it = std::partition_point(it, end(), [&](const auto& elt) {
-                return bool(compare_(elt, t));
-            });
-            if (it == end() || compare_(t, *it)) {
-                it = c_.emplace(it, static_cast<Key&&>(t));
+        auto original_size = c_.size();
+        try {
+            auto kit = c_.begin();
+            auto original_end = c_.begin() + original_size;
+            while (first != last) {
+                Key t(*first);
+                while ((kit != original_end) && bool(compare_(*kit, t))) {
+                    // we have not reached the next insertion point yet
+                    ++kit;
+                }
+                if ((kit != original_end) && !bool(compare_(t, *kit))) {
+                    // we already have a copy of this element; move on
+                } else {
+                    // we will need to insert this element; shove it on the back and move on
+                    auto idx = kit - c_.begin();
+                    c_.emplace(c_.end(), std::move(t));
+                    kit = c_.begin() + idx;
+                    original_end = c_.begin() + original_size;
+                }
+                ++first;
             }
-            ++it;
-            ++first;
+        } catch (...) {
+            // If an exception is thrown, we can just erase the elements we inserted
+            // to restore our invariant. We assume that KeyContainer::erase() doesn't throw.
+            auto original_end = c_.begin() + original_size;
+            c_.erase(original_end, c_.end());
+            throw;
+        }
+        if (c_.size() != original_size) {
+            // At this point we have a uniqued, but not sorted, underlying container.
+            this->sort_or_clear_impl();
         }
     }
 
@@ -655,6 +697,17 @@ private:
         std::sort(c_.begin(), c_.end(), compare_);
         auto it = flatset_detail::unique_helper(c_.begin(), c_.end(), compare_);
         c_.erase(it, c_.end());
+    }
+
+    void sort_or_clear_impl() {
+        try {
+            std::sort(begin(), end(), compare_);
+        } catch (...) {
+            // If an exception is thrown, we can't do much of anything to restore our
+            // invariant except to clear the entire container. TODO: this is terrible.
+            c_.clear();
+            throw;
+        }
     }
 
     KeyContainer c_;
