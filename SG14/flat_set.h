@@ -82,6 +82,26 @@ namespace flatset_detail {
         return make_obj_using_allocator_<T>(priority_tag<3>(), alloc, static_cast<Args&&>(args)...);
     }
 
+    template<class It, class Compare>
+    It unique_helper(It first, It last, Compare& compare) {
+        It dfirst = first;
+        while (first != last) {
+            It next = first;
+            ++next;
+            if ((next != last) && !bool(compare(*first, *next))) {
+                // "next" is a duplicate of "first", so do not preserve "first"
+            } else {
+                // do preserve "first"
+                if (first != dfirst) {
+                    *dfirst = std::move(*first);
+                }
+                ++dfirst;
+            }
+            first = next;
+        }
+        return dfirst;
+    }
+
     template<class Container>
     using cont_value_type = typename Container::value_type;
 
@@ -147,7 +167,7 @@ public:
     explicit flat_set(KeyContainer ctr)
         : c_(static_cast<KeyContainer&&>(ctr)), compare_()
     {
-        std::sort(c_.begin(), c_.end(), compare_);
+        this->sort_and_unique_impl();
     }
 
     // TODO: surely this should be using uses-allocator construction
@@ -223,7 +243,7 @@ public:
     flat_set(InputIterator first, InputIterator last, const Compare& comp = Compare())
         : c_(first, last), compare_(comp)
     {
-        std::sort(c_.begin(), c_.end(), compare_);
+        this->sort_and_unique_impl();
     }
 
     // TODO: this constructor should conditionally use KeyContainer's iterator-pair constructor
@@ -236,7 +256,7 @@ public:
             c_.insert(c_.end(), *first);
             ++first;
         }
-        std::sort(c_.begin(), c_.end(), compare_);
+        this->sort_and_unique_impl();
     }
 
     template<class InputIterator, class Alloc,
@@ -416,7 +436,9 @@ public:
     }
 
     KeyContainer extract() && {
-        return static_cast<KeyContainer&&>(c_);
+        KeyContainer result = static_cast<KeyContainer&&>(c_);
+        clear();
+        return result;
     }
 
     void replace(KeyContainer&& ctr) {
@@ -450,8 +472,8 @@ public:
 #endif
     {
         using std::swap;
-        swap(c_, m.c_);
         swap(compare_, m.compare_);
+        swap(c_, m.c_);
     }
 
     void clear() noexcept {
@@ -618,6 +640,12 @@ public:
     }
 
 private:
+    void sort_and_unique_impl() {
+        std::sort(c_.begin(), c_.end(), compare_);
+        auto it = flatset_detail::unique_helper(c_.begin(), c_.end(), compare_);
+        c_.erase(it, c_.end());
+    }
+
     KeyContainer c_;
     Compare compare_;
 };
