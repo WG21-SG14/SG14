@@ -167,6 +167,30 @@ namespace flatmap_detail {
         flatmap_detail::sort_together(less, 0, head.size(), head.begin(), rest.begin()...);
     }
 
+    template<class It, class It2, class Compare>
+    It unique_helper(It first, It last, It2 mapped, Compare& compare) {
+        It dfirst = first;
+        It2 dmapped = mapped;
+        while (first != last) {
+            It next = first;
+            ++next;
+            if ((next != last) && !bool(compare(*first, *next))) {
+                // "next" is a duplicate of "first", so do not preserve "first"
+            } else {
+                // do preserve "first"
+                if (first != dfirst) {
+                    *dfirst = std::move(*first);
+                    *dmapped = std::move(*mapped);
+                }
+                ++dfirst;
+                ++dmapped;
+            }
+            first = next;
+            ++mapped;
+        }
+        return dfirst;
+    }
+
     template<class, class> class iter;
     template<class K, class V> iter<K, V> make_iterator(K, V);
 
@@ -324,7 +348,7 @@ public:
     flat_map(KeyContainer keys, MappedContainer values)
         : c_{static_cast<KeyContainer&&>(keys), static_cast<MappedContainer&&>(values)}, compare_()
     {
-        flatmap_detail::sort_together(compare_, c_.keys, c_.values);
+        this->sort_and_unique_impl();
     }
 
     // TODO: surely this should use uses-allocator construction
@@ -402,9 +426,10 @@ public:
     {
         for (; first != last; ++first) {
             c_.keys.insert(c_.keys.end(), first->first);
+            // TODO: we must make this exception-safe if the container insert throws
             c_.values.insert(c_.values.end(), first->second);
         }
-        flatmap_detail::sort_together(compare_, c_.keys, c_.values);
+        this->sort_and_unique_impl();
     }
 
     template<class InputIterator, class Alloc,
@@ -416,7 +441,7 @@ public:
             c_.keys.insert(c_.keys.end(), first->first);
             c_.values.insert(c_.values.end(), first->second);
         }
-        flatmap_detail::sort_together(compare_, c_.keys, c_.values);
+        this->sort_and_unique_impl();
     }
 
     template<class InputIterator, class Alloc,
@@ -552,6 +577,7 @@ public:
         if (it == end() || compare_(t.first, it->first)) {
             auto kit = it.private_impl_getkey();
             auto vit = it.private_impl_getmapped();
+            // TODO: we must make this exception-safe
             kit = c_.keys.emplace(kit, static_cast<Key&&>(t.first));
             vit = c_.values.emplace(vit, static_cast<Mapped&&>(t.second));
             auto result = flatmap_detail::make_iterator(kit, vit);
@@ -561,7 +587,6 @@ public:
         }
     }
 
-    // TODO: this function cannot possibly meet its amortized-constant-complexity requirement
     template<class... Args>
     iterator emplace_hint(const_iterator, Args&&... args) {
         return this->emplace(static_cast<Args&&>(args)...).first;
@@ -575,18 +600,18 @@ public:
         return this->emplace(static_cast<value_type&&>(x));
     }
 
-    template<class P,
-             class = decltype(std::pair<Key, Mapped>(std::declval<P&&>()))>
-    std::pair<iterator, bool> insert(P&& x) {
-        return this->emplace(static_cast<P&&>(x));
-    }
-
     iterator insert(const_iterator position, const value_type& x) {
         return this->emplace_hint(position, x);
     }
 
     iterator insert(const_iterator position, value_type&& x) {
         return this->emplace_hint(position, static_cast<value_type&&>(x));
+    }
+
+    template<class P,
+             class = decltype(std::pair<Key, Mapped>(std::declval<P&&>()))>
+    std::pair<iterator, bool> insert(P&& x) {
+        return this->emplace(static_cast<P&&>(x));
     }
 
     template<class P,
@@ -598,6 +623,7 @@ public:
     template<class InputIterator,
              class = std::enable_if_t<flatmap_detail::qualifies_as_input_iterator<InputIterator>::value>>
     void insert(InputIterator first, InputIterator last) {
+        // TODO: if we're inserting lots of elements, stick them at the end and then sort
         while (first != last) {
             this->insert(*first);
             ++first;
@@ -607,6 +633,8 @@ public:
     template<class InputIterator,
              class = std::enable_if_t<flatmap_detail::qualifies_as_input_iterator<InputIterator>::value>>
     void insert(stdext::sorted_unique_t, InputIterator first, InputIterator last) {
+        // TODO: if InputIterator is bidirectional, this loop should (go backward??)
+        // TODO: if we're inserting lots of elements, stick them at the end and then sort
         auto it = begin();
         while (first != last) {
             std::pair<Key, Mapped> t(*first);
@@ -661,6 +689,7 @@ public:
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         if (kit == c_.keys.end() || compare_(k, *kit)) {
             kit = c_.keys.insert(kit, k);
+            // TODO: we must make this exception-safe if the container throws
             vit = c_.values.emplace(vit, static_cast<Args&&>(args)...);
             return {flatmap_detail::make_iterator(kit, vit), true};
         } else {
@@ -674,6 +703,7 @@ public:
         auto vit = c_.values.begin() + (kit - c_.keys.begin());
         if (kit == c_.keys.end() || compare_(k, *kit)) {
             kit = c_.keys.insert(kit, static_cast<Key&&>(k));
+            // TODO: we must make this exception-safe if the container throws
             vit = c_.values.emplace(vit, static_cast<Args&&>(args)...);
             return {flatmap_detail::make_iterator(kit, vit), true};
         } else {
@@ -1002,6 +1032,14 @@ public:
     }
 
 private:
+    void sort_and_unique_impl() {
+        flatmap_detail::sort_together(compare_, c_.keys, c_.values);
+        auto kit = flatmap_detail::unique_helper(c_.keys.begin(), c_.keys.end(), c_.values.begin(), compare_);
+        auto vit = c_.values.begin() + (kit - c_.keys.begin());
+        auto it = flatmap_detail::make_iterator(kit, vit);
+        this->erase(it, end());
+    }
+
     containers c_;
     Compare compare_;
 };
