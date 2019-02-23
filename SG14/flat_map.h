@@ -275,6 +275,10 @@ class flat_map {
     static_assert(!std::is_reference<KeyContainer>::value && !std::is_reference<Key>::value, "");
     static_assert(!std::is_reference<MappedContainer>::value && !std::is_reference<Mapped>::value, "");
     static_assert(std::is_convertible<decltype(std::declval<const Compare&>()(std::declval<const Key&>(), std::declval<const Key&>())), bool>::value, "");
+#if defined(__cpp_lib_is_swappable)
+    static_assert(std::is_nothrow_swappable<KeyContainer>::value, "");
+    static_assert(std::is_nothrow_swappable<MappedContainer>::value, "");
+#endif
 public:
     using key_type = Key;
     using mapped_type = Mapped;
@@ -627,13 +631,28 @@ public:
 
     // TODO: as specified, this function fails to preserve the allocator, and has UB for std::pmr containers
     containers extract() && {
-        return static_cast<containers&&>(c_);
+        try {
+            containers result{
+                static_cast<KeyContainer&&>(c_.keys),
+                static_cast<MappedContainer&&>(c_.values)
+            };
+            this->clear();
+            return result;
+        } catch (...) {
+            this->clear();
+            throw;
+        }
     }
 
     // TODO: why by rvalue reference and not by-value?
     void replace(KeyContainer&& keys, MappedContainer&& values) {
-        c_.keys = static_cast<KeyContainer&&>(keys);
-        c_.values = static_cast<MappedContainer&&>(values);
+        try {
+            c_.keys = static_cast<KeyContainer&&>(keys);
+            c_.values = static_cast<MappedContainer&&>(values);
+        } catch (...) {
+            this->clear();
+            throw;
+        }
     }
 
     template<class... Args>
@@ -760,13 +779,13 @@ public:
 
     void swap(flat_map& fm) noexcept
 #if defined(__cpp_lib_is_swappable)
-        (std::is_nothrow_swappable<KeyContainer>::value && std::is_nothrow_swappable<MappedContainer>::value && std::is_nothrow_swappable<Compare>::value)
+        (std::is_nothrow_swappable<Compare>::value)
 #endif
     {
         using std::swap;
+        swap(compare_, fm.compare_);
         swap(c_.keys, fm.c_.keys);
         swap(c_.values, fm.c_.values);
-        swap(compare_, fm.compare_);
     }
 
     void clear() noexcept {
