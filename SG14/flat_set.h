@@ -371,13 +371,7 @@ public:
     template<class... Args>
     std::pair<iterator, bool> emplace(Args&&... args) {
         Key t(static_cast<Args&&>(args)...);
-        auto it = this->lower_bound(t);
-        if (it == end() || compare_(t, *it)) {
-            it = c_.emplace(it, static_cast<Key&&>(t));
-            return {it, true};
-        } else {
-            return {it, false};
-        }
+        return this->insert(static_cast<Key&&>(t));
     }
 
     template<class... Args>
