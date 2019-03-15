@@ -512,7 +512,7 @@ public:
     }
 
     iterator erase(const_iterator first, const_iterator last) {
-        c_.erase(first, last);
+        return c_.erase(first, last);
     }
 
     void swap(flat_set& m)

@@ -7,6 +7,8 @@
 #if __has_include(<memory_resource>)
 #include <memory_resource>
 #endif
+#include <random>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -263,6 +265,70 @@ static void SpecialMemberTest()
     static_assert(std::is_nothrow_destructible<FS>::value, "");
 }
 
+template<class FS>
+static void StressTest()
+{
+    std::mt19937 g;
+    static_assert(std::is_same<typename FS::key_type, int>::value, "");
+    FS flatset;
+    std::set<int, typename FS::key_compare> set;
+    for (int t = 0; t < 10000; ++t) {
+        int choice = 0;
+        if ((t & (t-1)) == 0) {
+            choice = g() % 3 + 1;
+        }
+        switch (choice) {
+            case 0: {
+                int value = (g() % 1000);
+                auto r1 = flatset.insert(value);
+                auto r2 = set.insert(value);
+                assert(r1.second == r2.second);
+                assert(*r1.first == value);
+                assert(*r2.first == value);
+                break;
+            }
+            case 1: {
+                int value = (g() % 1000);
+                size_t r1 = flatset.erase(value);
+                size_t r2 = set.erase(value);
+                assert(r1 == r2);
+                break;
+            }
+            case 2: {
+                int value = (g() % 1000);
+                auto it1 = flatset.find(value);
+                auto it2 = set.find(value);
+                assert((it1 == flatset.end()) == (it2 == set.end()));
+                if (it1 != flatset.end()) {
+                    assert(*it1 == value);
+                    assert(*it2 == value);
+                    it1 = flatset.erase(it1);
+                    it2 = set.erase(it2);
+                    assert((it1 == flatset.end()) == (it2 == set.end()));
+                }
+                break;
+            }
+            case 3: {
+                int lo = (g() % 1000);
+                int hi = (g() % 1000);
+                if (flatset.key_comp()(hi, lo)) std::swap(lo, hi);
+                auto lo1 = flatset.lower_bound(lo);
+                auto hi1 = flatset.upper_bound(hi);
+                auto lo2 = set.lower_bound(lo);
+                auto hi2 = set.upper_bound(hi);
+                assert(std::distance(set.begin(), lo2) <= std::distance(set.begin(), hi2));
+                assert(lo1 <= hi1);
+                auto it1 = flatset.erase(lo1, hi1);
+                auto it2 = set.erase(lo2, hi2);
+                assert((it1 == flatset.end()) == (it2 == set.end()));
+                break;
+            }
+        }
+        assert(std::equal(flatset.begin(), flatset.end(), set.begin(), set.end()));
+    }
+
+}
+
 void sg14_test::flat_set_test()
 {
     AmbiguousEraseTest();
@@ -276,6 +342,7 @@ void sg14_test::flat_set_test()
         using FS = stdext::flat_set<int>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        StressTest<FS>();
     }
 
     // Test a custom comparator.
@@ -283,6 +350,7 @@ void sg14_test::flat_set_test()
         using FS = stdext::flat_set<int, std::greater<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        StressTest<FS>();
     }
 
     // Test a transparent comparator.
@@ -290,6 +358,7 @@ void sg14_test::flat_set_test()
         using FS = stdext::flat_set<int, std::greater<>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        StressTest<FS>();
     }
 
     // Test a custom container.
@@ -297,6 +366,7 @@ void sg14_test::flat_set_test()
         using FS = stdext::flat_set<int, std::less<int>, std::deque<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        StressTest<FS>();
     }
 
 #if defined(__cpp_lib_memory_resource)
@@ -305,6 +375,7 @@ void sg14_test::flat_set_test()
         using FS = stdext::flat_set<int, std::less<int>, std::pmr::vector<int>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
+        StressTest<FS>();
     }
 #endif
 }
