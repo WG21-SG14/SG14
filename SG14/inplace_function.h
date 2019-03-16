@@ -30,6 +30,10 @@
 #include <utility>
 #include <functional>
 
+#ifndef SG14_INPLACE_FUNCTION_THROW
+#define SG14_INPLACE_FUNCTION_THROW(x) throw (x)
+#endif
+
 namespace stdext {
 
 namespace inplace_function_detail {
@@ -92,7 +96,7 @@ template<typename R, typename... Args> struct vtable
 
     explicit constexpr vtable() noexcept :
         invoke_ptr{ [](storage_ptr_t, Args&&...) -> R
-            { throw std::bad_function_call(); }
+            { SG14_INPLACE_FUNCTION_THROW(std::bad_function_call()); }
         },
         copy_ptr{ [](storage_ptr_t, storage_ptr_t) -> void {} },
         relocate_ptr{ [](storage_ptr_t, storage_ptr_t) -> void {} },
