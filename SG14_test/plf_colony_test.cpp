@@ -218,7 +218,7 @@ void plf_colony_test()
 
 
 	unsigned int looper = 0;
-	
+
 	while (++looper != 25)
 	{
 		{
@@ -252,7 +252,7 @@ void plf_colony_test()
 				p_colony.insert(&twenty);
 			}
 			
-			unsigned int total = 0, numtotal = 0;
+			int total = 0, numtotal = 0;
 			
 			for(colony<int *>::iterator the_iterator = p_colony.begin(); the_iterator != p_colony.end(); ++the_iterator)
 			{
@@ -454,7 +454,7 @@ void plf_colony_test()
 			
 			colony<int> i_colony;
 
-			for (unsigned int temp = 0; temp != 500000; ++temp)
+			for (int temp = 0; temp != 500000; ++temp)
 			{
 				i_colony.insert(temp);
 			}
@@ -612,13 +612,13 @@ void plf_colony_test()
 			failpass("Large multi-decrement iterator test", i_colony.size() == 250000);
 
 			
-			for (unsigned int temp = 0; temp != 250000; ++temp)
+			for (int temp = 0; temp != 250000; ++temp)
 			{
 				i_colony.insert(10);
 			}
 			
 			
-			unsigned int total = 0;
+			int total = 0;
 			
 			for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end(); ++the_iterator)
 			{
@@ -736,7 +736,9 @@ void plf_colony_test()
 		
 			colony<int> i_colony;
 			
-			for (int counter = 0; counter != 1000; ++counter)
+			int counter = 0;
+
+			for (; counter != 1000; ++counter)
 			{
 				i_colony.insert(counter);
 			}
@@ -749,7 +751,7 @@ void plf_colony_test()
 			
 			i_colony.erase(it1, it2);
 			
-			unsigned int counter = 0;
+			counter = 0;
 
 			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
 			{
@@ -932,7 +934,7 @@ void plf_colony_test()
 						++counter;
 					}
 
-					if (i_colony.size() != counter)
+					if (i_colony.size() != static_cast<unsigned int>(counter))
 					{
 						printf("Fuzz-test range-erase randomly Fail: loop counter: %u, internal_loop_counter: %u.\n", loop_counter, internal_loop_counter);
 						getchar(); 
@@ -993,7 +995,7 @@ void plf_colony_test()
 						abort(); 
 					}
 					
-					if (i_colony.size() != counter)
+					if (i_colony.size() != static_cast<unsigned int>(counter))
 					{
 						printf("Fuzz-test range-erase + fill-insert randomly Fails during erase: loop counter: %u, internal_loop_counter: %u.\n", loop_counter, internal_loop_counter);
 						getchar(); 
@@ -1012,7 +1014,7 @@ void plf_colony_test()
 							abort(); 
 						}
 						
-						if (i_colony.size() != counter + extra_size)
+						if (i_colony.size() != static_cast<unsigned int>(counter) + extra_size)
 						{
 							printf("Fuzz-test range-erase + fill-insert randomly Fails during fill-insert: loop counter: %u, internal_loop_counter: %u.\n", loop_counter, internal_loop_counter);
 							getchar(); 
@@ -1026,7 +1028,7 @@ void plf_colony_test()
 							++counter;
 						}
 
-						if (i_colony.size() != counter)
+						if (i_colony.size() != static_cast<unsigned int>(counter))
 						{
 							printf("Fuzz-test range-erase + fill-insert randomly Fails during counter-test fill-insert: loop counter: %u, internal_loop_counter: %u.\n", loop_counter, internal_loop_counter);
 							getchar(); 
@@ -1609,7 +1611,6 @@ void plf_colony_test()
 		}
 	}
 }
-
 }
 
 #ifdef TEST_MAIN
