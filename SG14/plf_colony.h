@@ -1364,7 +1364,7 @@ public:
 				{
 					end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 					group &next_group = *(end_iterator.group_pointer->next_group);
-					const skipfield_type new_group_size = (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
+					const skipfield_type new_group_size = (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
 
 					try
 					{
@@ -1533,7 +1533,7 @@ public:
 					{
 						end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 						group &next_group = *(end_iterator.group_pointer->next_group);
-						const skipfield_type new_group_size = (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
+						const skipfield_type new_group_size = (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
 
 						try
 						{
@@ -1700,7 +1700,7 @@ public:
 					{
 						end_iterator.group_pointer->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 						group &next_group = *(end_iterator.group_pointer->next_group);
-						const skipfield_type new_group_size = (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<const skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
+						const skipfield_type new_group_size = (total_number_of_elements < static_cast<size_type>(group_allocator_pair.max_elements_per_group)) ? static_cast<skipfield_type>(total_number_of_elements) : group_allocator_pair.max_elements_per_group;
 
 						try
 						{
@@ -1894,7 +1894,7 @@ private:
 				catch (...)
 				{
 					end_iterator.group_pointer->last_endpoint = --end_iterator.element_pointer;
-					const skipfield_type elements_constructed_before_exception = static_cast<const skipfield_type>(end_iterator.element_pointer - end_iterator.group_pointer->elements);
+					const skipfield_type elements_constructed_before_exception = static_cast<skipfield_type>(end_iterator.element_pointer - end_iterator.group_pointer->elements);
 					end_iterator.group_pointer->number_of_elements = elements_constructed_before_exception;
 					end_iterator.skipfield_pointer = end_iterator.group_pointer->skipfield + elements_constructed_before_exception;
 					throw;
@@ -1942,7 +1942,7 @@ private:
 				catch (...)
 				{
 					// Reconstruct existing skipblock and free-list indexes to reflect partially-reused skipblock:
-					const skipfield_type elements_constructed_before_exception = static_cast<const skipfield_type>((current_location - 1) - location);
+					const skipfield_type elements_constructed_before_exception = static_cast<skipfield_type>((current_location - 1) - location);
 					groups_with_erasures_list_head->number_of_elements += elements_constructed_before_exception;
 					total_number_of_elements += elements_constructed_before_exception;
 
@@ -2085,7 +2085,7 @@ public:
 		if (number_of_elements > group_allocator_pair.max_elements_per_group)
 		{
 			size_type multiples = (number_of_elements / static_cast<size_type>(group_allocator_pair.max_elements_per_group));
-			const skipfield_type element_remainder = static_cast<const skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
+			const skipfield_type element_remainder = static_cast<skipfield_type>(number_of_elements - (multiples * static_cast<size_type>(group_allocator_pair.max_elements_per_group)));
 
 			while (multiples-- != 0)
 			{
@@ -3023,7 +3023,7 @@ public:
 			// Special case for initial element pointer and initial group (we don't know how far into the group the element pointer is)
 			if (element_pointer != group_pointer->elements + *(group_pointer->skipfield)) // ie. != first non-erased element in group
 			{
-				const difference_type distance_from_end = static_cast<const difference_type>(group_pointer->last_endpoint - element_pointer);
+				const difference_type distance_from_end = static_cast<difference_type>(group_pointer->last_endpoint - element_pointer);
 
 				if (group_pointer->number_of_elements == static_cast<skipfield_type>(distance_from_end)) // ie. if there are no erasures in the group (using endpoint - elements_start to determine number of elements in group just in case this is the last group of the colony, in which case group->last_endpoint != group->elements + group->capacity)
 				{
@@ -3140,7 +3140,7 @@ public:
 			{
 				if (group_pointer->free_list_head == std::numeric_limits<skipfield_type>::max()) // ie. no prior erasures have occurred in this group
 				{
-					const difference_type distance_from_beginning = static_cast<const difference_type>(element_pointer - group_pointer->elements);
+					const difference_type distance_from_beginning = static_cast<difference_type>(element_pointer - group_pointer->elements);
 
 					if (distance <= distance_from_beginning)
 					{
@@ -3349,7 +3349,7 @@ public:
 			{
 				if (group_pointer->free_list_head == std::numeric_limits<skipfield_type>::max()) // ie. if there are no erasures in the group
 				{
-					const difference_type distance_from_end = static_cast<const difference_type>(group_pointer->last_endpoint - element_pointer);
+					const difference_type distance_from_end = static_cast<difference_type>(group_pointer->last_endpoint - element_pointer);
 
 					if (distance < distance_from_end)
 					{
