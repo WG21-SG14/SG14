@@ -11,7 +11,7 @@ A library for Study Group 14 of Working Group 21 (C++)
 
 /SG14_test - Individual tests for implementations.
 
-https://groups.google.com/a/isocpp.org/forum/?fromgroups=#!forum/sg14 for more information
+http://lists.isocpp.org/mailman/listinfo.cgi/sg14 for more information
 
 ## Build Instructions
 Clone the repo. Navigate to the folder in your favorite terminal.

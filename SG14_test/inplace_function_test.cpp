@@ -415,6 +415,20 @@ struct test_bug_32072 {
 static_assert(std::is_copy_constructible<test_bug_32072>::value, "");
 static_assert(std::is_nothrow_move_constructible<test_bug_32072>::value, "");
 
+static void RvalueRefParameter()
+{
+    stdext::inplace_function<void(std::unique_ptr<int>&&)> f;
+    f = [](std::unique_ptr<int>) {};
+    f = [](std::unique_ptr<int>&&) {};
+    f = [](const std::unique_ptr<int>&) {};
+    f(std::make_unique<int>(42));
+    stdext::inplace_function<void(std::unique_ptr<int>)> g;
+    g = [](std::unique_ptr<int>) {};
+    g = [](std::unique_ptr<int>&&) {};
+    g = [](const std::unique_ptr<int>&) {};
+    g(std::make_unique<int>(42));
+}
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -427,6 +441,7 @@ void sg14_test::inplace_function_test()
     ContainingStdFunction();
     SimilarTypeCopy();
     FunctorDestruction();
+    RvalueRefParameter();
 
     // second set of tests
     using IPF = stdext::inplace_function<void(int)>;
