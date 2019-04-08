@@ -439,6 +439,57 @@ static void RvalueRefParameter()
     g(std::make_unique<int>(42));
 }
 
+static void test_is_convertible()
+{
+    static_assert(std::is_convertible<int(&)(), stdext::inplace_function<int()>>::value, "");
+    static_assert(std::is_convertible<int(*)(), stdext::inplace_function<int()>>::value, "");
+    static_assert(std::is_convertible<int(*&)(), stdext::inplace_function<int()>>::value, "");
+    static_assert(std::is_convertible<int(*&&)(), stdext::inplace_function<int()>>::value, "");
+}
+
+namespace {
+struct InstrumentedCopyConstructor {
+    static int copies;
+    static int moves;
+    InstrumentedCopyConstructor() = default;
+    InstrumentedCopyConstructor(const InstrumentedCopyConstructor&) {
+        copies += 1;
+    }
+    InstrumentedCopyConstructor(InstrumentedCopyConstructor&&) {
+        moves += 1;
+    }
+};
+int InstrumentedCopyConstructor::copies = 0;
+int InstrumentedCopyConstructor::moves = 0;
+} // anonymous namespace
+
+static void test_return_by_move()
+{
+    using IPF20 = stdext::inplace_function<void(), 20>;
+    using IPF40 = stdext::inplace_function<void(), 40>;
+    static_assert(std::is_convertible<IPF20, IPF40>::value, "");
+    static_assert(std::is_convertible<IPF20&, IPF40>::value, "");
+    static_assert(std::is_convertible<IPF20&&, IPF40>::value, "");
+    static_assert(std::is_convertible<const IPF20&, IPF40>::value, "");
+    static_assert(std::is_convertible<const IPF20&&, IPF40>::value, "");
+
+    auto foo = []() -> IPF40 {
+        InstrumentedCopyConstructor cc;
+        InstrumentedCopyConstructor::copies = 0;
+        InstrumentedCopyConstructor::moves = 0;
+        IPF20 f = [cc]() { };
+        assert(InstrumentedCopyConstructor::copies == 1);
+        assert(InstrumentedCopyConstructor::moves == 1);
+        InstrumentedCopyConstructor::copies = 0;
+        InstrumentedCopyConstructor::moves = 0;
+        return f;
+    };
+    IPF40 f = foo();
+    assert(InstrumentedCopyConstructor::copies == 0);
+    assert(InstrumentedCopyConstructor::moves == 1);
+}
+
+
 void sg14_test::inplace_function_test()
 {
     // first set of tests (from Optiver)
@@ -523,6 +574,8 @@ void sg14_test::inplace_function_test()
     test_overloaded_operator_new();
     test_move_construction_is_noexcept();
     test_move_construction_from_smaller_buffer_is_noexcept();
+    test_is_convertible();
+    test_return_by_move();
 }
 
 #ifdef TEST_MAIN

@@ -159,6 +159,12 @@ template<
 >
 class inplace_function; // unspecified
 
+namespace inplace_function_detail {
+    template<class> struct is_inplace_function : std::false_type {};
+    template<class Sig, size_t Cap, size_t Align>
+    struct is_inplace_function<inplace_function<Sig, Cap, Align>> : std::true_type {};
+} // namespace inplace_function_detail
+
 template<
     typename R,
     typename... Args,
@@ -184,10 +190,7 @@ public:
     template<
         typename T,
         typename C = std::decay_t<T>,
-        typename = std::enable_if_t<
-            !(std::is_same<C, inplace_function>::value
-            || std::is_convertible<C, inplace_function>::value)
-        >
+        typename = std::enable_if_t<!inplace_function_detail::is_inplace_function<C>::value>
     >
     inplace_function(T&& closure)
     {
@@ -212,6 +215,26 @@ public:
         vtable_ptr_ = std::addressof(vt);
 
         ::new (std::addressof(storage_)) C{std::forward<T>(closure)};
+    }
+
+    template<size_t Cap, size_t Align>
+    inplace_function(const inplace_function<R(Args...), Cap, Align>& other)
+        : inplace_function(other.vtable_ptr_, other.vtable_ptr_->copy_ptr, std::addressof(other.storage_))
+    {
+        static_assert(inplace_function_detail::is_valid_inplace_dst<
+            Capacity, Alignment, Cap, Align
+        >::value, "conversion not allowed");
+    }
+
+    template<size_t Cap, size_t Align>
+    inplace_function(inplace_function<R(Args...), Cap, Align>&& other) noexcept
+        : inplace_function(other.vtable_ptr_, other.vtable_ptr_->relocate_ptr, std::addressof(other.storage_))
+    {
+        static_assert(inplace_function_detail::is_valid_inplace_dst<
+            Capacity, Alignment, Cap, Align
+        >::value, "conversion not allowed");
+
+        other.vtable_ptr_ = std::addressof(inplace_function_detail::empty_vtable<R, Args...>);
     }
 
     inplace_function(std::nullptr_t) noexcept :
@@ -299,28 +322,6 @@ public:
     explicit constexpr operator bool() const noexcept
     {
         return vtable_ptr_ != std::addressof(inplace_function_detail::empty_vtable<R, Args...>);
-    }
-
-    template<size_t Cap, size_t Align>
-    operator inplace_function<R(Args...), Cap, Align>() const&
-    {
-        static_assert(inplace_function_detail::is_valid_inplace_dst<
-            Cap, Align, Capacity, Alignment
-        >::value, "conversion not allowed");
-
-        return {vtable_ptr_, vtable_ptr_->copy_ptr, std::addressof(storage_)};
-    }
-
-    template<size_t Cap, size_t Align>
-    operator inplace_function<R(Args...), Cap, Align>() && noexcept
-    {
-        static_assert(inplace_function_detail::is_valid_inplace_dst<
-            Cap, Align, Capacity, Alignment
-        >::value, "conversion not allowed");
-
-        auto vtable_ptr = std::exchange(vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>));
-
-        return {vtable_ptr, vtable_ptr->relocate_ptr, std::addressof(storage_)};
     }
 
     void swap(inplace_function& other) noexcept
