@@ -165,8 +165,8 @@ code {
 
 <body>
 Audience: LEWG, SG14, WG21<br>
-Document number: P0447R6<br>
-Date: 2019-01-21<br>
+Document number: D0447R7<br>
+Date: 2019-04-12<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
@@ -246,6 +246,7 @@ sortable. Lastly, because there is no way of predicting in advance where
 erasures ('skips') may occur during iteration, an O(1) time complexity []
 operator is impossible and the container is bidirectional, but not
 random-access.</p>
+
 <img src="https://plflib.org/vector_addition.gif"
 alt="Visual demonstration of inserting to a full vector" height="540"
 width="960"> <img src="https://plflib.org/colony_addition.gif"
@@ -334,7 +335,7 @@ different name for it.</p>
 <p>This is a pure library addition, no changes necessary to the standard asides
 from the introduction of the colony container. <br>
 A reference implementation of colony is available for download and use <a
-href="https://www.plflib.org/colony.htm#download">here</a>. </p>
+href="https://plflib.org/colony.htm#download">here</a>. </p>
 
 <h2><a name="design"></a>IV. Design Decisions</h2>
 
@@ -400,7 +401,7 @@ memory block, and other information useful to specific functions, such as the
 total number of non-erased elements in the node. This approach keeps the
 operation of freeing empty memory blocks from the colony container at O(1) time
 complexity. Further information is available <a
-href="https://www.plflib.org/chained_group_allocation_pattern.htm">here</a>.</p>
+href="https://plflib.org/chained_group_allocation_pattern.htm">here</a>.</p>
 
 <p>An alternative implementation could be to use a vector of pointers to
 dynamically-allocated memory blocks + skipfields in a single struct, with a
@@ -539,10 +540,10 @@ See benchmarks <a href="#benchmarks">here</a>.</p>
 <h4>General specification</h4>
 
 <p>Colony meets the requirements of the C++ <a
-href="http://en.cppreference.com/w/cpp/concept/Container">Container</a>, <a
-href="http://en.cppreference.com/w/cpp/concept/AllocatorAwareContainer">AllocatorAwareContainer</a>,
+href="https://en.cppreference.com/w/cpp/named_req/Container">Container</a>, <a
+href="https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer">AllocatorAwareContainer</a>,
 and <a
-href="http://en.cppreference.com/w/cpp/concept/ReversibleContainer">ReversibleContainer</a>
+href="https://en.cppreference.com/w/cpp/named_req/ReversibleContainer">ReversibleContainer</a>
 concepts.</p>
 
 <p>For the most part the syntax and semantics of colony functions are very
@@ -552,21 +553,21 @@ Skipfield_Type = unsigned short&gt; class colony</code>
 
 <p><code><b>T</b></code> - the element type. In general T must meet the
 requirements of <a
-href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>, <a
-href="http://en.cppreference.com/w/cpp/concept/CopyAssignable">CopyAssignable</a>
+href="https://en.cppreference.com/w/cpp/named_req/Erasable">Erasable</a>, <a
+href="https://en.cppreference.com/w/cpp/named_req/CopyAssignable">CopyAssignable</a>
 and <a
-href="http://en.cppreference.com/w/cpp/concept/CopyConstructible">CopyConstructible</a>.<br>
+href="https://en.cppreference.com/w/cpp/named_req/CopyConstructible">CopyConstructible</a>.<br>
 However, if emplace is utilized to insert elements into the colony, and no
 functions which involve copying or moving are utilized, T is only required to
 meet the requirements of <a
-href="http://en.cppreference.com/w/cpp/concept/Erasable">Erasable</a>.<br>
+href="https://en.cppreference.com/w/cpp/named_req/Erasable">Erasable</a>.<br>
 If move-insert is utilized instead of emplace, T must also meet the
 requirements of <a
-href="http://en.cppreference.com/w/cpp/concept/MoveConstructible">MoveConstructible</a>.<br>
+href="https://en.cppreference.com/w/cpp/named_req/MoveConstructible">MoveConstructible</a>.<br>
 <br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
-href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator</a>. The
+href="https://en.cppreference.com/w/cpp/named_req/Allocator">Allocator</a>. The
 behavior is undefined if <code>Allocator::value_type</code> is not the same as
 T.<br>
 <br>
@@ -583,7 +584,7 @@ reduce the memory usage of the skipfield by reducing the skipfield bit depth to
 a Uint8 type. The reduced skipfield size may also reduce cache saturation in
 this case without impacting iteration speed due to the low amount of elements.
 However whether or not this constitutes a performance advantage is <a
-href="https://www.plflib.org/blog.htm#shortandchardifferences">largely
+href="https://plflib.org/blog.htm#shortandchardifferences">largely
 situational</a>, so it is best to leave control in the end user's hands.</p>
 
 <h4>Basic example of usage (using <a
@@ -1112,7 +1113,7 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
     <p>Changes the minimum internal block size only, in terms of minimum number
     of elements stored per block. If the colony is not empty and min_block_size
     is larger than the smallest block in the colony, the colony will be
-    internally copy-constructed into a new colony which uses the new minimum
+    internally move-constructed (if possible) or copy-constructed into a new colony which uses the new minimum
     block size, invalidating all pointers/iterators/references.<br>
     Example: <code
     style="color: brown">object_colony.change_minimum_block_size(100);</code></p>
@@ -1122,17 +1123,17 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
     <p>Changes the maximum internal block size only, in terms of maximum number
     of elements stored per block. If the colony is not empty and either
     max_block_size is smaller than the largest block in the colony, the colony
-    will be internally copy-constructed into a new colony which uses the new
+    will be internally move-constructed (if possible) or copy-constructed into a new colony which uses the new
     maximum block size, invalidating all pointers/iterators/references.<br>
     Example: <code
     style="color: brown">object_colony.change_maximum_block_size(1000);</code></p>
   </li>
   <li><code>void reinitialize(Skipfield_type min_block_size, Skipfield_type
-    max_block_size)</code> 
+    max_block_size)</code>
     <p>Semantics of this function are the same as "clear();
     change_block_sizes(min_block_size, max_block_size);", but without the
-    copy-construction code of the change_block_sizes() function - this means it
-    can be used with element types which are non-copy-constructible, unlike
+    move/copy-construction code of the change_block_sizes() function - this means it
+    can be used with element types which are non-copy-constructible and non-move-constructible, unlike
     change_block_sizes().<br>
     Example: <code style="color: brown">object_colony.reinitialize(1000,
     10000);</code></p>
@@ -1364,11 +1365,11 @@ implementation as a workaround for an unfixed bug in MSVC2013.</p>
 
 <p>Benchmark results for the colony v5 reference implementation under GCC 8.1
 x64 on an Intel Xeon E3-1241 (Haswell) are <a
-href="https://www.plflib.org/benchmarks_haswell_gcc.htm">here</a>.</p>
+href="https://plflib.org/benchmarks_haswell_gcc.htm">here</a>.</p>
 
 <p>Old benchmark results for an earlier version of colony under MSVC 2015
 update 3, on an Intel Xeon E3-1241 (Haswell) are <a
-href="https://www.plflib.org/benchmarks_haswell_msvc.htm">here</a>. There is no
+href="https://plflib.org/benchmarks_haswell_msvc.htm">here</a>. There is no
 commentary for the MSVC results.</p>
 
 <h3><a id="faq"></a>Appendix C - Frequently Asked Questions</h3>
@@ -1716,7 +1717,7 @@ previous committee feedback</h3>
     thought of yet. This is something I am flexible on, as a singular skipfield
     type will cover the majority of scenarios.</p>
     <p><a name="Research" id="Research"
-    href="https://www.plflib.org/blog.htm#shortandchardifferences">Research
+    href="https://plflib.org/blog.htm#shortandchardifferences">Research
     into this area</a> has determined that there is only really an advantage to
     using unsigned char for the skipfield type if the number of elements is
     under 1000, and not in all scenarios. So whether or not this constitutes a

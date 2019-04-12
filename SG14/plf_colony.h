@@ -2150,11 +2150,25 @@ private:
 
 	inline PLF_COLONY_FORCE_INLINE void consolidate() // get all elements contiguous in memory and shrink to fit, remove erasures and erasure free lists
 	{
-		colony temp(*this);
-
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+			colony temp;
+			temp.change_group_sizes(static_cast<skipfield_type>((pointer_allocator_pair.min_elements_per_group > total_number_of_elements) ? pointer_allocator_pair.min_elements_per_group : ((total_number_of_elements > group_allocator_pair.max_elements_per_group) ? group_allocator_pair.max_elements_per_group : total_number_of_elements)), group_allocator_pair.max_elements_per_group); // Make first allocated group as large total number of elements, where possible
+
+			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+				if (std::is_move_assignable<element_type>::value && std::is_move_constructible<element_type>::value)
+				{
+					temp.insert(std::make_move_iterator(begin_iterator), std::make_move_iterator(end_iterator));
+				}
+				else
+			#endif
+			{
+				temp.insert(begin_iterator, end_iterator);
+			}
+
+			temp.pointer_allocator_pair.min_elements_per_group = pointer_allocator_pair.min_elements_per_group; // reset to correct value for future clear() or erasures
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
+			colony temp(*this);
 			swap(temp);
 		#endif
 	}
@@ -2963,7 +2977,7 @@ public:
 			reserve_amount = static_cast<skipfield_type>(max_size());
 		}
 
-		if (total_number_of_elements == 0) // Most common scenario
+		if (total_number_of_elements == 0) // Most common scenario - empty colony
 		{
 			if (begin_iterator.group_pointer != NULL) // Edge case - empty colony but first group is initialized ie. had some insertions but all elements got subsequently erased
 			{
@@ -2975,14 +2989,14 @@ public:
 			begin_iterator.group_pointer->last_endpoint = begin_iterator.group_pointer->elements; // last_endpoint initially == elements + 1 via default constructor
 			begin_iterator.group_pointer->number_of_elements = 0; // 1 by default
 		}
-		else if (reserve_amount <= total_capacity)
+		else if (reserve_amount <= total_capacity) // Already have enough space allocated
 		{
 			return;
 		}
-		else
+		else // Non-empty colony, don't have enough space allocated
 		{
 			const skipfield_type original_min_elements = pointer_allocator_pair.min_elements_per_group;
-			pointer_allocator_pair.min_elements_per_group = reserve_amount; // Make sure all groups are at maximum appropriate capacity
+			pointer_allocator_pair.min_elements_per_group = static_cast<skipfield_type>(reserve_amount); // Make sure all groups are at maximum appropriate capacity (this amount already rounded down to a skipfield type earlier in function)
 			consolidate();
 			pointer_allocator_pair.min_elements_per_group = original_min_elements;
 		}
