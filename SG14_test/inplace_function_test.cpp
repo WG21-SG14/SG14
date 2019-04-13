@@ -407,6 +407,16 @@ void test_move_construction_is_noexcept()
     EXPECT_EQ(1, moved);
 }
 
+void test_move_construction_from_smaller_buffer_is_noexcept()
+{
+    using IPF32 = stdext::inplace_function<void(int), 32>;
+    using IPF40 = stdext::inplace_function<void(int), 40>;
+    static_assert(std::is_nothrow_constructible<IPF32, IPF32&&>::value, "");
+    static_assert(std::is_nothrow_assignable<IPF32, IPF32&&>::value, "");
+    static_assert(std::is_nothrow_constructible<IPF40, IPF32&&>::value, "");
+    static_assert(std::is_nothrow_assignable<IPF40, IPF32&&>::value, "");
+}
+
 // https://bugs.llvm.org/show_bug.cgi?id=32072
 struct test_bug_32072_C;
 struct test_bug_32072 {
@@ -512,6 +522,7 @@ void sg14_test::inplace_function_test()
     test_nullptr();
     test_overloaded_operator_new();
     test_move_construction_is_noexcept();
+    test_move_construction_from_smaller_buffer_is_noexcept();
 }
 
 #ifdef TEST_MAIN
