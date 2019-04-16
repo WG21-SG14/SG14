@@ -63,7 +63,14 @@
 		#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 		#define PLF_COLONY_INITIALIZER_LIST_SUPPORT
 	#endif
-#elif defined(__cplusplus) && __cplusplus >= 201103L
+
+	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
+		#define PLF_COLONY_CONSTEXPR constexpr
+	#else
+		#define PLF_COLONY_CONSTEXPR
+	#endif
+
+#elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 	#define PLF_COLONY_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
@@ -95,7 +102,6 @@
 		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_COLONY_TYPE_TRAITS_SUPPORT
 		#endif
-
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
 			#define PLF_COLONY_VARIADICS_SUPPORT
@@ -147,13 +153,30 @@
 		#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator) noexcept
 	#endif
 
+	#if __cplusplus >= 201703L
+		#if defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3)
+			#define PLF_COLONY_CONSTEXPR constexpr
+		#elif defined(__GNUC__) && __GNUC__ >= 7
+			#define PLF_COLONY_CONSTEXPR constexpr
+		#elif !defined(__clang__) && !defined(__GNUC__)
+			#define PLF_COLONY_CONSTEXPR constexpr // assume correct C++17 implementation for other compilers
+		#else
+			#define PLF_COLONY_CONSTEXPR
+		#endif
+	#else
+		#define PLF_COLONY_CONSTEXPR
+	#endif
+
 	#define PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 #else
 	#define PLF_COLONY_FORCE_INLINE
 	#define PLF_COLONY_NOEXCEPT throw()
 	#define PLF_COLONY_NOEXCEPT_SWAP(the_allocator)
 	#define PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
+	#define PLF_COLONY_CONSTEXPR
 #endif
+
+
 
 
 
@@ -1036,7 +1059,7 @@ private:
 	inline void blank() PLF_COLONY_NOEXCEPT
 	{
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value)  // if all pointer types are trivial, we can just nuke it from orbit with memset (NULL is always 0 in C++):
+			if PLF_COLONY_CONSTEXPR (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value)  // if all pointer types are trivial, we can just nuke it from orbit with memset (NULL is always 0 in C++):
 			{
 				std::memset(static_cast<void *>(this), 0, offsetof(colony, pointer_allocator_pair));
 			}
@@ -1252,7 +1275,7 @@ private:
 	void destroy_all_data() PLF_COLONY_NOEXCEPT
 	{
 	#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-		if (total_number_of_elements != 0 && !(std::is_trivially_destructible<element_type>::value))
+		if ((total_number_of_elements != 0) & !(std::is_trivially_destructible<element_type>::value)) // Amusingly enough, these changes from && to logical & actually do make a significant difference in debug mode
 	#else // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise the 'destruct' loop out for POD types
 		if (total_number_of_elements != 0)
 	#endif
@@ -1288,8 +1311,7 @@ private:
 		else // Avoid iteration for both empty groups and trivially-destructible types eg. POD, structs, classes with empty destructors
 		{
 			// Technically under a type-traits-supporting compiler total_number_of_elements could be non-zero at this point, but since begin_iterator.group_pointer would already be NULL in the case of double-destruction, it's unnecessary to zero total_number_of_elements
-
-   		while (begin_iterator.group_pointer != NULL)
+			while (begin_iterator.group_pointer != NULL)
 			{
 				const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
 				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer);
@@ -1342,7 +1364,7 @@ public:
 					const iterator return_iterator = end_iterator; /* Make copy for return before modifying end_iterator */
 
 					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if (std::is_nothrow_copy_constructible<element_type>::value)
+						if PLF_COLONY_CONSTEXPR (std::is_nothrow_copy_constructible<element_type>::value)
 						{ // For no good reason this compiles to faster code under GCC:
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), element);
 							end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
@@ -1382,7 +1404,7 @@ public:
 					}
 
 					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if (std::is_nothrow_copy_constructible<element_type>::value)
+						if PLF_COLONY_CONSTEXPR (std::is_nothrow_copy_constructible<element_type>::value)
 						{
 							PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(next_group.elements), element);
 						}
@@ -1473,7 +1495,7 @@ public:
 			initialize(pointer_allocator_pair.min_elements_per_group);
 
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-				if (std::is_nothrow_copy_constructible<element_type>::value)
+				if PLF_COLONY_CONSTEXPR (std::is_nothrow_copy_constructible<element_type>::value)
 				{
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), element);
 				}
@@ -1511,7 +1533,7 @@ public:
 						const iterator return_iterator = end_iterator;
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_move_constructible<element_type>::value)
+							if PLF_COLONY_CONSTEXPR (std::is_nothrow_move_constructible<element_type>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::move(element));
 								end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
@@ -1551,7 +1573,7 @@ public:
 						}
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_move_constructible<element_type>::value)
+							if PLF_COLONY_CONSTEXPR (std::is_nothrow_move_constructible<element_type>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(next_group.elements), std::move(element));
 							}
@@ -1637,7 +1659,7 @@ public:
 				initialize(pointer_allocator_pair.min_elements_per_group);
 
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-					if (std::is_nothrow_move_constructible<element_type>::value)
+					if PLF_COLONY_CONSTEXPR (std::is_nothrow_move_constructible<element_type>::value)
 					{
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::move(element));
 					}
@@ -1678,7 +1700,7 @@ public:
 						const iterator return_iterator = end_iterator;
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_constructible<element_type, arguments ...>::value)
+							if PLF_COLONY_CONSTEXPR (std::is_nothrow_constructible<element_type, arguments ...>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::forward<arguments>(parameters)...);
 								end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
@@ -1714,7 +1736,7 @@ public:
 						}
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (std::is_nothrow_constructible<element_type, arguments ...>::value)
+							if PLF_COLONY_CONSTEXPR (std::is_nothrow_constructible<element_type, arguments ...>::value)
 							{
 								PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(next_group.elements), std::forward<arguments>(parameters)...);
 							}
@@ -1799,7 +1821,7 @@ public:
 				initialize(pointer_allocator_pair.min_elements_per_group);
 
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-					if (std::is_nothrow_constructible<element_type, arguments ...>::value)
+					if PLF_COLONY_CONSTEXPR (std::is_nothrow_constructible<element_type, arguments ...>::value)
 					{
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(end_iterator.element_pointer++), std::forward<arguments>(parameters) ...);
 					}
@@ -1862,10 +1884,10 @@ private:
 	void group_fill(const element_type &element, const skipfield_type number_of_elements)
 	{
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (std::is_trivially_copyable<element_type>::value && std::is_trivially_copy_constructible<element_type>::value && std::is_nothrow_copy_constructible<element_type>::value) // ie. we can get away with using the cheaper fill_n here if there is no chance of an exception being thrown:
+			if PLF_COLONY_CONSTEXPR (std::is_trivially_copyable<element_type>::value && std::is_trivially_copy_constructible<element_type>::value && std::is_nothrow_copy_constructible<element_type>::value) // ie. we can get away with using the cheaper fill_n here if there is no chance of an exception being thrown:
 			{
 				#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
-					if (sizeof(aligned_element_type) == sizeof(element_type)) // This statement should be resolved at compile-time
+					if PLF_COLONY_CONSTEXPR (sizeof(aligned_element_type) == sizeof(element_type))
 					{
 						std::fill_n(reinterpret_cast<pointer>(end_iterator.element_pointer), number_of_elements, element);
 					}
@@ -1911,10 +1933,10 @@ private:
 	void fill_skipblock(const element_type &element, aligned_pointer_type const location, skipfield_pointer_type const skipfield_pointer, const skipfield_type number_of_elements)
 	{
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (std::is_trivially_copyable<element_type>::value && std::is_trivially_copy_constructible<element_type>::value && std::is_nothrow_copy_constructible<element_type>::value) // ie. we can get away with using the cheaper fill_n here if there is no chance of an exception being thrown:
+			if PLF_COLONY_CONSTEXPR (std::is_trivially_copyable<element_type>::value && std::is_trivially_copy_constructible<element_type>::value && std::is_nothrow_copy_constructible<element_type>::value) // ie. we can get away with using the cheaper fill_n here if there is no chance of an exception being thrown:
 			{
 				#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
-					if (sizeof(aligned_element_type) == sizeof(element_type)) // This statement should be resolved at compile-time
+					if PLF_COLONY_CONSTEXPR (sizeof(aligned_element_type) == sizeof(element_type))
 					{
 						std::fill_n(reinterpret_cast<pointer>(location), number_of_elements, element);
 					}
@@ -2155,7 +2177,7 @@ private:
 			temp.change_group_sizes(static_cast<skipfield_type>((pointer_allocator_pair.min_elements_per_group > total_number_of_elements) ? pointer_allocator_pair.min_elements_per_group : ((total_number_of_elements > group_allocator_pair.max_elements_per_group) ? group_allocator_pair.max_elements_per_group : total_number_of_elements)), group_allocator_pair.max_elements_per_group); // Make first allocated group as large total number of elements, where possible
 
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-				if (std::is_move_assignable<element_type>::value && std::is_move_constructible<element_type>::value)
+				if PLF_COLONY_CONSTEXPR (std::is_move_assignable<element_type>::value && std::is_move_constructible<element_type>::value)
 				{
 					temp.insert(std::make_move_iterator(begin_iterator), std::make_move_iterator(end_iterator));
 				}
@@ -2208,7 +2230,7 @@ public:
 		assert(*(it.skipfield_pointer) == 0); // ie. element pointed to by iterator has not been erased previously
 
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (!(std::is_trivially_destructible<element_type>::value)) // This if-statement should be removed by the compiler on resolution of element_type. For some optimizing compilers this step won't be necessary (for MSVC 2013 it makes a difference)
+			if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value)) // This if-statement should be removed by the compiler on resolution of element_type. For some optimizing compilers this step won't be necessary (for MSVC 2013 it makes a difference)
 		#endif
 		{
 			PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(it.element_pointer)); // Destruct element
@@ -2430,7 +2452,7 @@ public:
 				// Schema: first erase all non-erased elements until end of group & remove all skipblocks post-iterator1 from the free_list. Then, either update preceding skipblock or create new one:
 
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT // if trivially-destructible, and C++11 or higher, and no erasures in group, skip while loop below and just jump straight to the location
-					if (std::is_trivially_destructible<element_type>::value && current.group_pointer->free_list_head == std::numeric_limits<skipfield_type>::max())
+					if ((std::is_trivially_destructible<element_type>::value) & (current.group_pointer->free_list_head == std::numeric_limits<skipfield_type>::max()))
 					{
 						number_of_group_erasures += static_cast<size_type>(end - current.element_pointer);
 					}
@@ -2442,7 +2464,7 @@ public:
 						if (*current.skipfield_pointer == 0)
 						{
 							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-								if (!(std::is_trivially_destructible<element_type>::value))
+								if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value))
 							#endif
 							{
 								PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(current.element_pointer)); // Destruct element
@@ -2467,7 +2489,7 @@ public:
 								number_of_group_erasures += static_cast<size_type>(end - current.element_pointer);
 
 								#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-									if (!(std::is_trivially_destructible<element_type>::value))
+									if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value))
 								#endif
 								{
 									while (current.element_pointer != end) // miniloop - avoid checking skipfield for rest of elements in group, as there are no more skipped elements now
@@ -2539,7 +2561,7 @@ public:
 			while (current.group_pointer != iterator2.group_pointer)
 			{
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-					if (!(std::is_trivially_destructible<element_type>::value)) // This should be removed by the compiler
+					if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value))
 				#endif
 				{
 					current.element_pointer = current.group_pointer->elements + *(current.group_pointer->skipfield);
@@ -2601,7 +2623,7 @@ public:
 			const iterator current_saved = current;
 
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT // if trivially-destructible, and C++11 or higher, and no erasures in group, skip while loop below and just jump straight to the location
-				if (std::is_trivially_destructible<element_type>::value && current.group_pointer->free_list_head == std::numeric_limits<skipfield_type>::max())
+				if ((std::is_trivially_destructible<element_type>::value) & (current.group_pointer->free_list_head == std::numeric_limits<skipfield_type>::max()))
 				{
 					number_of_group_erasures += static_cast<size_type>(iterator2.element_pointer - current.element_pointer);
 				}
@@ -2613,7 +2635,7 @@ public:
 					if (*current.skipfield_pointer == 0)
 					{
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if (!(std::is_trivially_destructible<element_type>::value))
+							if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value))
 						#endif
 						{
 							PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(current.element_pointer)); // Destruct element
@@ -2638,7 +2660,7 @@ public:
 							number_of_group_erasures += static_cast<size_type>(iterator2.element_pointer - current.element_pointer);
 
 							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-								if (!(std::is_trivially_destructible<element_type>::value))
+								if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value))
 							#endif
 							{
 								while (current.element_pointer != iterator2.element_pointer)
@@ -2710,7 +2732,7 @@ public:
 		else // ie. full group erasure
 		{
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-				if (!(std::is_trivially_destructible<element_type>::value)) // This decision should be resolved at compile-time
+				if PLF_COLONY_CONSTEXPR (!(std::is_trivially_destructible<element_type>::value))
 			#endif
 			{
 				while(current.element_pointer != iterator2.element_pointer)
@@ -2889,7 +2911,7 @@ public:
 			destroy_all_data();
 
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-				if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value)
+				if PLF_COLONY_CONSTEXPR (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value)
 				{
 					std::memcpy(static_cast<void *>(this), &source, sizeof(colony));
 				}
@@ -3784,7 +3806,7 @@ public:
 			new_location.reserve(static_cast<skipfield_type>((total_number_of_elements > std::numeric_limits<skipfield_type>::max()) ? std::numeric_limits<skipfield_type>::max() : total_number_of_elements));
 
 			#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && defined(PLF_COLONY_MOVE_SEMANTICS_SUPPORT)
-				if (std::is_move_constructible<element_type>::value)
+				if PLF_COLONY_CONSTEXPR (std::is_move_constructible<element_type>::value)
 				{
 					for (pointer *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
 					{
@@ -3803,7 +3825,7 @@ public:
 		catch (...)
 		{
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-				if (!std::is_trivially_destructible<pointer>::value)
+				if PLF_COLONY_CONSTEXPR (!std::is_trivially_destructible<pointer>::value)
 			#endif
 			{
 				for (pointer *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
@@ -3826,7 +3848,7 @@ public:
 
 
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (!std::is_trivially_destructible<pointer>::value)
+			if PLF_COLONY_CONSTEXPR (!std::is_trivially_destructible<pointer>::value)
 		#endif
 		{
 			for (pointer *current_element_pointer = element_pointers; current_element_pointer != element_pointer; ++current_element_pointer)
@@ -3975,7 +3997,7 @@ public:
 		assert(&source != this);
 
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value) // if all pointer types are trivial we can just copy using memcpy - avoids constructors/destructors etc and is faster
+			if PLF_COLONY_CONSTEXPR (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value) // if all pointer types are trivial we can just copy using memcpy - avoids constructors/destructors etc and is faster
 			{
 				char temp[sizeof(colony)];
 				std::memcpy(&temp, static_cast<void *>(this), sizeof(colony));
@@ -3983,7 +4005,7 @@ public:
 				std::memcpy(static_cast<void *>(&source), &temp, sizeof(colony));
 			}
 			#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT // If pointer types are not trivial, moving them is probably going to be more efficient than copying them below
-				else if (std::is_move_assignable<group_pointer_type>::value && std::is_move_assignable<aligned_pointer_type>::value && std::is_move_assignable<skipfield_pointer_type>::value && std::is_move_constructible<group_pointer_type>::value && std::is_move_constructible<aligned_pointer_type>::value && std::is_move_constructible<skipfield_pointer_type>::value)
+				else if PLF_COLONY_CONSTEXPR (std::is_move_assignable<group_pointer_type>::value && std::is_move_assignable<aligned_pointer_type>::value && std::is_move_assignable<skipfield_pointer_type>::value && std::is_move_constructible<group_pointer_type>::value && std::is_move_constructible<aligned_pointer_type>::value && std::is_move_constructible<skipfield_pointer_type>::value)
 				{
 					colony temp(std::move(source));
 					source = std::move(*this);
@@ -4045,6 +4067,7 @@ inline void swap (colony<element_type, element_allocator_type, element_skipfield
 #undef PLF_COLONY_NOEXCEPT
 #undef PLF_COLONY_NOEXCEPT_SWAP
 #undef PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT
+#undef PLF_COLONY_CONSTEXPR
 
 #undef PLF_COLONY_CONSTRUCT
 #undef PLF_COLONY_DESTROY
