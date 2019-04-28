@@ -489,6 +489,104 @@ static void test_return_by_move()
     assert(InstrumentedCopyConstructor::moves == 1);
 }
 
+static int overloaded_function(stdext::inplace_function<int()>&& exec)
+{
+    return exec();
+}
+
+static int overloaded_function(stdext::inplace_function<int(int)>&& exec)
+{
+    return exec(42);
+}
+
+static void test_is_invocable()
+{
+    using C_Int1 = int();
+    using C_Int2 = int(int);
+    using C_Void = void(int&);
+
+    using stdext::inplace_function_detail::is_invocable_r;
+
+    static_assert(is_invocable_r<int, C_Int1>::value, "");
+    static_assert(! is_invocable_r<int, C_Int2>::value, "");
+    static_assert(! is_invocable_r<int, C_Void>::value, "");
+
+    static_assert(is_invocable_r<int, C_Int2, int>::value, "");
+    static_assert(! is_invocable_r<int, C_Int1, int>::value, "");
+    static_assert(! is_invocable_r<int, C_Void, int>::value, "");
+
+    static_assert(is_invocable_r<void, C_Void, int&>::value, "");
+    static_assert(! is_invocable_r<void, C_Int1, int&>::value, "");
+
+    // Testing widening and narrowing conversions, and the "conversion" to void.
+    static_assert(is_invocable_r<void, C_Int1>::value, "");
+    static_assert(is_invocable_r<long, C_Int1>::value, "");
+    static_assert(is_invocable_r<char, C_Int1>::value, "");
+
+    // Testing the conversion from void to int, which should definitely not be allowed.
+    static_assert(! is_invocable_r<int, C_Void, int&>::value, "");
+
+    // cppreference:
+    // > Determines whether Fn can be invoked with the arguments ArgTypes...
+    // > to yield a result that is convertible to R.
+    //
+    // void is treated specially because a functions return value can be ignored.
+    static_assert(is_invocable_r<void, C_Int2, int&>::value, "");
+    static_assert(is_invocable_r<const void, C_Int2, int&>::value, "");
+
+    // Regression tests for both is_invocable and is_convertible.
+    static_assert(is_invocable_r<const int&, int()>::value, "");
+    static_assert(is_invocable_r<const int&, int(*)()>::value, "");
+}
+
+static void test_overloading()
+{
+    struct NoDefaultCtor {
+        int val;
+        explicit NoDefaultCtor(int v) : val{v} {}
+    };
+
+    EXPECT_EQ(overloaded_function([]() -> int { return 3; }), 3);
+    EXPECT_EQ(overloaded_function([](int arg) -> int { return arg; }), 42);
+
+    using std::is_convertible;
+    using stdext::inplace_function;
+
+    const auto a = []() -> int { return 3; };
+    static_assert(is_convertible<decltype(a), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(a), inplace_function<int(int)>>::value, "");
+    static_assert(!is_convertible<decltype(a), inplace_function<void(int&)>>::value, "");
+
+    const auto b = [](int&) -> void {};
+    static_assert(is_convertible<decltype(b), inplace_function<void(int&)>>::value, "");
+    static_assert(!is_convertible<decltype(b), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(b), inplace_function<int(int)>>::value, "");
+
+    const auto c = [](int, NoDefaultCtor) -> int { return 3; };
+    static_assert(is_convertible<decltype(c), inplace_function<void(int, NoDefaultCtor)>>::value, "");
+    static_assert(!is_convertible<decltype(c), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(c), inplace_function<int(int)>>::value, "");
+
+    const auto d = []() -> void {};
+    static_assert(is_convertible<decltype(d), inplace_function<void()>>::value, "");
+    static_assert(!is_convertible<decltype(d), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(d), inplace_function<int(int)>>::value, "");
+
+    static_assert(is_convertible<int(), inplace_function<const int&()>>::value, "");
+    static_assert(is_convertible<int(*)(), inplace_function<const int&()>>::value, "");
+
+    // Same as a, but not const.
+    auto e = []() -> int { return 3; };
+    static_assert(is_convertible<decltype(e), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(e), inplace_function<int(int)>>::value, "");
+    static_assert(!is_convertible<decltype(e), inplace_function<void(int&)>>::value, "");
+
+    // Same as a, but not const and mutable.
+    auto f = []() mutable -> int { return 3; };
+    static_assert(is_convertible<decltype(f), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(f), inplace_function<int(int)>>::value, "");
+    static_assert(!is_convertible<decltype(f), inplace_function<void(int&)>>::value, "");
+}
 
 void sg14_test::inplace_function_test()
 {
@@ -576,6 +674,8 @@ void sg14_test::inplace_function_test()
     test_move_construction_from_smaller_buffer_is_noexcept();
     test_is_convertible();
     test_return_by_move();
+    test_is_invocable();
+    test_overloading();
 }
 
 #ifdef TEST_MAIN
