@@ -29,7 +29,7 @@ struct ConstFunctor {
     void operator()(int i) const { assert(i == expected); called_with = i; }
 };
 
-void Foo(int i)
+static void Foo(int i)
 {
     assert(i == expected);
     called_with = i;
@@ -41,14 +41,14 @@ std::string gLastS;
 int gLastI = 0;
 double gNextReturn = 0.0;
 
-double GlobalFunction(const std::string& s, int i)
+static double GlobalFunction(const std::string& s, int i)
 {
     gLastS = s;
     gLastI = i;
     return gNextReturn;
 }
 
-void FunctionPointer()
+static void FunctionPointer()
 {
     // Even compatible function pointers require an appropriate amount of "storage".
     using CompatibleFunctionType = std::remove_reference_t<decltype(GlobalFunction)>;
@@ -65,7 +65,7 @@ void FunctionPointer()
     EXPECT_EQ(42, gLastI);
 }
 
-void Lambda()
+static void Lambda()
 {
     stdext::inplace_function<double(int), 8> fun;
     std::string closure("some closure");
@@ -80,7 +80,7 @@ void Lambda()
     EXPECT_EQ(42, gLastI);
 }
 
-void Bind()
+static void Bind()
 {
     stdext::inplace_function<double(int), 64> fun;
     std::string closure("some closure");
@@ -111,7 +111,7 @@ struct AnotherFunctor
 int AnotherFunctor::mDestructorCalls = 0;
 int AnotherFunctor::mConstructorCalls = 0;
 
-void FunctorDestruction()
+static void FunctorDestruction()
 {
     AnotherFunctor::mDestructorCalls = 0;
     AnotherFunctor::mConstructorCalls = 0;
@@ -140,7 +140,7 @@ void FunctorDestruction()
     EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 }
 
-void Swapping()
+static void Swapping()
 {
     AnotherFunctor::mDestructorCalls = 0;
     AnotherFunctor::mConstructorCalls = 0;
@@ -166,7 +166,7 @@ void Swapping()
     EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 }
 
-void Copying()
+static void Copying()
 {
     auto sptr = std::make_shared<int>(42);
     EXPECT_EQ(1, sptr.use_count());
@@ -190,7 +190,7 @@ void Copying()
     EXPECT_TRUE(bool(fun2));
 }
 
-void ContainingStdFunction()
+static void ContainingStdFunction()
 {
     // build a big closure, bigger than 32 bytes
     uint64_t offset1 = 1234;
@@ -210,7 +210,7 @@ void ContainingStdFunction()
     EXPECT_EQ(r, int(offset1+offset2+offset3+str1.length()+3));
 }
 
-void SimilarTypeCopy()
+static void SimilarTypeCopy()
 {
     auto sptr = std::make_shared<int>(42);
     EXPECT_EQ(1, sptr.use_count());
@@ -236,7 +236,7 @@ void SimilarTypeCopy()
     fun4 = fun1; // fun1 is bigger than 17, but we should be smart about it
 }
 
-void AssignmentDifferentFunctor()
+static void AssignmentDifferentFunctor()
 {
     int calls = 0;
     stdext::inplace_function<int(int,int), 16> add = [&calls] (int a, int b) { ++calls; return a+b; };
@@ -395,7 +395,7 @@ static void test_overloaded_operator_new()
     EXPECT_EQ(43, fun(1));
 }
 
-void test_move_construction_is_noexcept()
+static void test_move_construction_is_noexcept()
 {
     using IPF = stdext::inplace_function<void(int), sizeof(Functor)>;
     std::vector<IPF> vec;
@@ -407,7 +407,7 @@ void test_move_construction_is_noexcept()
     EXPECT_EQ(1, moved);
 }
 
-void test_move_construction_from_smaller_buffer_is_noexcept()
+static void test_move_construction_from_smaller_buffer_is_noexcept()
 {
     using IPF32 = stdext::inplace_function<void(int), 32>;
     using IPF40 = stdext::inplace_function<void(int), 40>;
@@ -489,6 +489,108 @@ static void test_return_by_move()
     assert(InstrumentedCopyConstructor::moves == 1);
 }
 
+namespace
+{
+    struct NoDefaultCtor
+    {
+        int val;
+        explicit NoDefaultCtor(int v) : val{v} {}
+    };
+} // anonymous namespace
+
+static int overloaded_function(stdext::inplace_function<int()>&& exec)
+{
+    return exec();
+}
+
+static int overloaded_function(stdext::inplace_function<int(int)>&& exec)
+{
+    return exec(42);
+}
+
+static void test_is_invocable()
+{
+    using C_Int1 = int();
+    using C_Int2 = int(int);
+    using C_Void = void(int&);
+
+    using stdext::inplace_function_detail::is_invocable_r;
+
+    static_assert(is_invocable_r<int, C_Int1>::value, "");
+    static_assert(! is_invocable_r<int, C_Int2>::value, "");
+    static_assert(! is_invocable_r<int, C_Void>::value, "");
+
+    static_assert(is_invocable_r<int, C_Int2, int>::value, "");
+    static_assert(! is_invocable_r<int, C_Int1, int>::value, "");
+    static_assert(! is_invocable_r<int, C_Void, int>::value, "");
+
+    static_assert(is_invocable_r<void, C_Void, int&>::value, "");
+    static_assert(! is_invocable_r<void, C_Int1, int&>::value, "");
+
+    // Testing widening and narrowing conversions, and the "conversion" to void.
+    static_assert(is_invocable_r<void, C_Int1>::value, "");
+    static_assert(is_invocable_r<long, C_Int1>::value, "");
+    static_assert(is_invocable_r<char, C_Int1>::value, "");
+
+    // Testing the conversion from void to int, which should definitely not be allowed.
+    static_assert(! is_invocable_r<int, C_Void, int&>::value, "");
+
+    // cppreference:
+    // > Determines whether Fn can be invoked with the arguments ArgTypes...
+    // > to yield a result that is convertible to R.
+    //
+    // void is treated specially because a functions return value can be ignored.
+    static_assert(is_invocable_r<void, C_Int2, int&>::value, "");
+    static_assert(is_invocable_r<const void, C_Int2, int&>::value, "");
+
+    // Regression tests for both is_invocable and is_convertible.
+    static_assert(is_invocable_r<const int&, int()>::value, "");
+    static_assert(is_invocable_r<const int&, int(*)()>::value, "");
+}
+
+static void test_overloading()
+{
+    EXPECT_EQ(overloaded_function([]() -> int { return 3; }), 3);
+    EXPECT_EQ(overloaded_function([](int arg) -> int { return arg; }), 42);
+
+    using std::is_convertible;
+    using stdext::inplace_function;
+
+    const auto a = []() -> int { return 3; };
+    static_assert(is_convertible<decltype(a), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(a), inplace_function<int(int)>>::value, "");
+    static_assert(!is_convertible<decltype(a), inplace_function<void(int&)>>::value, "");
+
+    const auto b = [](int&) -> void {};
+    static_assert(is_convertible<decltype(b), inplace_function<void(int&)>>::value, "");
+    static_assert(!is_convertible<decltype(b), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(b), inplace_function<int(int)>>::value, "");
+
+    const auto c = [](int, NoDefaultCtor) -> int { return 3; };
+    static_assert(is_convertible<decltype(c), inplace_function<void(int, NoDefaultCtor)>>::value, "");
+    static_assert(!is_convertible<decltype(c), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(c), inplace_function<int(int)>>::value, "");
+
+    const auto d = []() -> void {};
+    static_assert(is_convertible<decltype(d), inplace_function<void()>>::value, "");
+    static_assert(!is_convertible<decltype(d), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(d), inplace_function<int(int)>>::value, "");
+
+    static_assert(is_convertible<int(), inplace_function<const int&()>>::value, "");
+    static_assert(is_convertible<int(*)(), inplace_function<const int&()>>::value, "");
+
+    // Same as a, but not const.
+    auto e = []() -> int { return 3; };
+    static_assert(is_convertible<decltype(e), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(e), inplace_function<int(int)>>::value, "");
+    static_assert(!is_convertible<decltype(e), inplace_function<void(int&)>>::value, "");
+
+    // Same as a, but not const and mutable.
+    auto f = []() mutable -> int { return 3; };
+    static_assert(is_convertible<decltype(f), inplace_function<int()>>::value, "");
+    static_assert(!is_convertible<decltype(f), inplace_function<int(int)>>::value, "");
+    static_assert(!is_convertible<decltype(f), inplace_function<void(int&)>>::value, "");
+}
 
 void sg14_test::inplace_function_test()
 {
@@ -576,6 +678,8 @@ void sg14_test::inplace_function_test()
     test_move_construction_from_smaller_buffer_is_noexcept();
     test_is_convertible();
     test_return_by_move();
+    test_is_invocable();
+    test_overloading();
 }
 
 #ifdef TEST_MAIN

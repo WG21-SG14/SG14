@@ -150,6 +150,39 @@ struct is_valid_inplace_dst : std::true_type
     );
 };
 
+// C++11 MSVC compatible implementation of std::is_invocable_r.
+
+template<class R> void accept(R);
+
+template<class, class R, class F, class... Args> struct is_invocable_r_impl : std::false_type {};
+
+template<class F, class... Args> struct is_invocable_r_impl<
+    decltype(std::declval<F>()(std::declval<Args>()...), void()),
+    void,
+    F,
+    Args...
+> : std::true_type {};
+
+template<class F, class... Args> struct is_invocable_r_impl<
+    decltype(std::declval<F>()(std::declval<Args>()...), void()),
+    const void,
+    F,
+    Args...
+> : std::true_type {};
+
+template<class R, class F, class... Args> struct is_invocable_r_impl<
+    decltype(accept<R>(std::declval<F>()(std::declval<Args>()...))),
+    R,
+    F,
+    Args...
+> : std::true_type {};
+
+template<class R, class F, class... Args> using is_invocable_r = is_invocable_r_impl<
+    void,
+    R,
+    F,
+    Args...
+>;
 } // namespace inplace_function_detail
 
 template<
@@ -190,15 +223,13 @@ public:
     template<
         typename T,
         typename C = std::decay_t<T>,
-        typename = std::enable_if_t<!inplace_function_detail::is_inplace_function<C>::value>
+        typename = std::enable_if_t<
+            !inplace_function_detail::is_inplace_function<C>::value
+            && inplace_function_detail::is_invocable_r<R, C, Args...>::value
+        >
     >
     inplace_function(T&& closure)
     {
-#if __cplusplus >= 201703L
-        static_assert(std::is_invocable_r<R, C, Args...>::value,
-            "inplace_function cannot be constructed from non-callable type"
-        );
-#endif
         static_assert(std::is_copy_constructible<C>::value,
             "inplace_function cannot be constructed from non-copyable type"
         );
