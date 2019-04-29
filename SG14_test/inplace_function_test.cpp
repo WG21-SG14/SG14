@@ -37,18 +37,18 @@ void Foo(int i)
 
 } // anonymous namespace
 
-std::string gLastS;
-int gLastI = 0;
-double gNextReturn = 0.0;
+static std::string gLastS;
+static int gLastI = 0;
+static double gNextReturn = 0.0;
 
-double GlobalFunction(const std::string& s, int i)
+static double GlobalFunction(const std::string& s, int i)
 {
     gLastS = s;
     gLastI = i;
     return gNextReturn;
 }
 
-void FunctionPointer()
+static void FunctionPointer()
 {
     // Even compatible function pointers require an appropriate amount of "storage".
     using CompatibleFunctionType = std::remove_reference_t<decltype(GlobalFunction)>;
@@ -65,7 +65,7 @@ void FunctionPointer()
     EXPECT_EQ(42, gLastI);
 }
 
-void Lambda()
+static void Lambda()
 {
     stdext::inplace_function<double(int), 8> fun;
     std::string closure("some closure");
@@ -80,7 +80,7 @@ void Lambda()
     EXPECT_EQ(42, gLastI);
 }
 
-void Bind()
+static void Bind()
 {
     stdext::inplace_function<double(int), 64> fun;
     std::string closure("some closure");
@@ -111,7 +111,7 @@ struct AnotherFunctor
 int AnotherFunctor::mDestructorCalls = 0;
 int AnotherFunctor::mConstructorCalls = 0;
 
-void FunctorDestruction()
+static void FunctorDestruction()
 {
     AnotherFunctor::mDestructorCalls = 0;
     AnotherFunctor::mConstructorCalls = 0;
@@ -140,7 +140,7 @@ void FunctorDestruction()
     EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 }
 
-void Swapping()
+static void Swapping()
 {
     AnotherFunctor::mDestructorCalls = 0;
     AnotherFunctor::mConstructorCalls = 0;
@@ -166,7 +166,7 @@ void Swapping()
     EXPECT_EQ(AnotherFunctor::mDestructorCalls, AnotherFunctor::mConstructorCalls);
 }
 
-void Copying()
+static void Copying()
 {
     auto sptr = std::make_shared<int>(42);
     EXPECT_EQ(1, sptr.use_count());
@@ -190,7 +190,7 @@ void Copying()
     EXPECT_TRUE(bool(fun2));
 }
 
-void ContainingStdFunction()
+static void ContainingStdFunction()
 {
     // build a big closure, bigger than 32 bytes
     uint64_t offset1 = 1234;
@@ -210,7 +210,7 @@ void ContainingStdFunction()
     EXPECT_EQ(r, int(offset1+offset2+offset3+str1.length()+3));
 }
 
-void SimilarTypeCopy()
+static void SimilarTypeCopy()
 {
     auto sptr = std::make_shared<int>(42);
     EXPECT_EQ(1, sptr.use_count());
@@ -236,7 +236,7 @@ void SimilarTypeCopy()
     fun4 = fun1; // fun1 is bigger than 17, but we should be smart about it
 }
 
-void AssignmentDifferentFunctor()
+static void AssignmentDifferentFunctor()
 {
     int calls = 0;
     stdext::inplace_function<int(int,int), 16> add = [&calls] (int a, int b) { ++calls; return a+b; };
@@ -395,7 +395,7 @@ static void test_overloaded_operator_new()
     EXPECT_EQ(43, fun(1));
 }
 
-void test_move_construction_is_noexcept()
+static void test_move_construction_is_noexcept()
 {
     using IPF = stdext::inplace_function<void(int), sizeof(Functor)>;
     std::vector<IPF> vec;
@@ -407,7 +407,7 @@ void test_move_construction_is_noexcept()
     EXPECT_EQ(1, moved);
 }
 
-void test_move_construction_from_smaller_buffer_is_noexcept()
+static void test_move_construction_from_smaller_buffer_is_noexcept()
 {
     using IPF32 = stdext::inplace_function<void(int), 32>;
     using IPF40 = stdext::inplace_function<void(int), 40>;
