@@ -225,7 +225,7 @@ public:
         typename C = std::decay_t<T>,
         typename = std::enable_if_t<
             !inplace_function_detail::is_inplace_function<C>::value
-            && inplace_function_detail::is_invocable_r<R, C, Args...>::value
+            && inplace_function_detail::is_invocable_r<R, C&, Args...>::value
         >
     >
     inplace_function(T&& closure)

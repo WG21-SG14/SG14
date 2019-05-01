@@ -447,6 +447,26 @@ static void test_is_convertible()
     static_assert(std::is_convertible<int(*&&)(), stdext::inplace_function<int()>>::value, "");
 }
 
+static void test_convertibility_with_qualified_call_operators()
+{
+    struct Callable { void operator()() {} };
+    struct LvalueOnlyCallable { void operator()() & {} };
+    struct RvalueOnlyCallable { void operator()() && {} };
+    struct ConstCallable { void operator()() const {} };
+    struct ConstOnlyCallable { void operator()() const {} void operator()() = delete; };
+    struct NonconstOnlyCallable { void operator()() {} void operator()() const = delete; };
+    struct LvalueConstCallable { void operator()() const & {} };
+    struct NoexceptCallable { void operator()() noexcept {} };
+    static_assert(std::is_convertible<Callable, stdext::inplace_function<void()>>::value, "");
+    static_assert(std::is_convertible<LvalueOnlyCallable, stdext::inplace_function<void()>>::value, "");
+    static_assert(!std::is_convertible<RvalueOnlyCallable, stdext::inplace_function<void()>>::value, "");
+    static_assert(std::is_convertible<ConstCallable, stdext::inplace_function<void()>>::value, "");
+    static_assert(!std::is_convertible<ConstOnlyCallable, stdext::inplace_function<void()>>::value, "");
+    static_assert(std::is_convertible<NonconstOnlyCallable, stdext::inplace_function<void()>>::value, "");
+    static_assert(std::is_convertible<LvalueConstCallable, stdext::inplace_function<void()>>::value, "");
+    static_assert(std::is_convertible<NoexceptCallable, stdext::inplace_function<void()>>::value, "");
+}
+
 namespace {
 struct InstrumentedCopyConstructor {
     static int copies;
@@ -673,6 +693,7 @@ void sg14_test::inplace_function_test()
     test_move_construction_is_noexcept();
     test_move_construction_from_smaller_buffer_is_noexcept();
     test_is_convertible();
+    test_convertibility_with_qualified_call_operators();
     test_return_by_move();
     test_is_invocable();
     test_overloading();
