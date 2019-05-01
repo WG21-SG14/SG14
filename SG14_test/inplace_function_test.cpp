@@ -510,6 +510,21 @@ static void test_convertibility_with_lambdas()
     static_assert(!std::is_convertible<decltype(f), stdext::inplace_function<void(int&)>>::value, "");
 }
 
+static void test_void_returning_function_runtime()
+{
+    auto lambda = []() { return 42; };
+    static_assert(std::is_convertible<decltype(lambda), stdext::inplace_function<void()>>::value, "");
+    static_assert(std::is_convertible<decltype(lambda), stdext::inplace_function<const void()>>::value, "");
+
+    stdext::inplace_function<void()> f = lambda;
+    f = lambda;
+    f();
+
+    stdext::inplace_function<const void()> g = lambda;
+    g = lambda;
+    g();
+}
+
 namespace {
 struct InstrumentedCopyConstructor {
     static int copies;
@@ -703,6 +718,7 @@ void sg14_test::inplace_function_test()
     test_is_convertible();
     test_convertibility_with_qualified_call_operators();
     test_convertibility_with_lambdas();
+    test_void_returning_function_runtime();
     test_return_by_move();
     test_is_invocable();
     test_overloading_on_arity();

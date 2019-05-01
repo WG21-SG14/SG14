@@ -105,9 +105,11 @@ template<typename R, typename... Args> struct vtable
 
     template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
         invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
-            { return (*static_cast<C*>(storage_ptr))(
-                static_cast<Args&&>(args)...
-            ); }
+            {
+                return static_cast<R>((*static_cast<C*>(storage_ptr))(
+                    static_cast<Args&&>(args)...
+                ));
+            }
         },
         copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
             { ::new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
