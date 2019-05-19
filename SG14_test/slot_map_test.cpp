@@ -338,7 +338,7 @@ static void TypedefTests()
         using SM = stdext::slot_map<int>;
         static_assert(std::is_same<typename SM::key_type, std::pair<unsigned, unsigned>>::value, "");
         static_assert(std::is_same<typename SM::mapped_type, int>::value, "");
-        static_assert(std::is_same<typename SM::key_size_type, unsigned>::value, "");
+        static_assert(std::is_same<typename SM::key_index_type, unsigned>::value, "");
         static_assert(std::is_same<typename SM::key_generation_type, unsigned>::value, "");
         static_assert(std::is_same<typename SM::container_type, std::vector<int>>::value, "");
         static_assert(std::is_same<typename SM::reference, int&>::value, "");
@@ -356,7 +356,7 @@ static void TypedefTests()
         using SM = stdext::slot_map<bool>;
         static_assert(std::is_same<typename SM::key_type, std::pair<unsigned, unsigned>>::value, "");
         static_assert(std::is_same<typename SM::mapped_type, bool>::value, "");
-        static_assert(std::is_same<typename SM::key_size_type, unsigned>::value, "");
+        static_assert(std::is_same<typename SM::key_index_type, unsigned>::value, "");
         static_assert(std::is_same<typename SM::key_generation_type, unsigned>::value, "");
         static_assert(std::is_same<typename SM::container_type, std::vector<bool>>::value, "");
         static_assert(std::is_same<typename SM::reference, std::vector<bool>::reference>::value, "");
@@ -374,7 +374,7 @@ static void TypedefTests()
         using SM = stdext::slot_map<double, TestKey::key_16_8_t>;
         static_assert(std::is_same<typename SM::key_type, TestKey::key_16_8_t>::value, "");
         static_assert(std::is_same<typename SM::mapped_type, double>::value, "");
-        static_assert(std::is_same<typename SM::key_size_type, uint16_t>::value, "");
+        static_assert(std::is_same<typename SM::key_index_type, uint16_t>::value, "");
         static_assert(std::is_same<typename SM::key_generation_type, uint8_t>::value, "");
         static_assert(std::is_same<typename SM::container_type, std::vector<double>>::value, "");
         static_assert(std::is_same<typename SM::reference, double&>::value, "");
@@ -392,7 +392,7 @@ static void TypedefTests()
         using SM = stdext::slot_map<int, std::pair<char, int>, TestContainer::Vector>;
         static_assert(std::is_same<typename SM::key_type, std::pair<char, int>>::value, "");
         static_assert(std::is_same<typename SM::mapped_type, int>::value, "");
-        static_assert(std::is_same<typename SM::key_size_type, char>::value, "");
+        static_assert(std::is_same<typename SM::key_index_type, char>::value, "");
         static_assert(std::is_same<typename SM::key_generation_type, int>::value, "");
         static_assert(std::is_same<typename SM::container_type, TestContainer::Vector<int>>::value, "");
         static_assert(std::is_same<typename SM::reference, int&>::value, "");
@@ -411,7 +411,7 @@ static void TypedefTests()
         using SM = stdext::slot_map<double, TestKey::key_11_5_t>;
         static_assert(std::is_same<typename SM::key_type, TestKey::key_11_5_t>::value, "");
         static_assert(std::is_same<typename SM::mapped_type, double>::value, "");
-        static_assert(std::is_same<typename SM::key_size_type, uint16_t>::value, "");
+        static_assert(std::is_same<typename SM::key_index_type, uint16_t>::value, "");
         static_assert(std::is_same<typename SM::key_generation_type, uint8_t>::value, "");
         static_assert(std::is_same<typename SM::container_type, std::vector<double>>::value, "");
         static_assert(std::is_same<typename SM::reference, double&>::value, "");

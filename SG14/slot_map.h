@@ -69,12 +69,12 @@ class slot_map
 #if __cplusplus >= 201703L
     static constexpr auto get_index(const Key& k) { const auto& [idx, gen] = k; return idx; }
     static constexpr auto get_generation(const Key& k) { const auto& [idx, gen] = k; return gen; }
-    template<class Integral> static constexpr void set_index(Key& k, Integral value) { auto& [idx, gen] = k; idx = static_cast<key_size_type>(value); }
+    template<class Integral> static constexpr void set_index(Key& k, Integral value) { auto& [idx, gen] = k; idx = static_cast<key_index_type>(value); }
     static constexpr void increment_generation(Key& k) { auto& [idx, gen] = k; ++gen; }
 #else
     static constexpr auto get_index(const Key& k) { using std::get; return get<0>(k); }
     static constexpr auto get_generation(const Key& k) { using std::get; return get<1>(k); }
-    template<class Integral> static constexpr void set_index(Key& k, Integral value) { using std::get; get<0>(k) = static_cast<key_size_type>(value); }
+    template<class Integral> static constexpr void set_index(Key& k, Integral value) { using std::get; get<0>(k) = static_cast<key_index_type>(value); }
     static constexpr void increment_generation(Key& k) { using std::get; ++get<1>(k); }
 #endif
 
@@ -84,7 +84,7 @@ public:
     using key_type = Key;
     using mapped_type = T;
 
-    using key_size_type = decltype(slot_map::get_index(std::declval<Key>()));
+    using key_index_type = decltype(slot_map::get_index(std::declval<Key>()));
     using key_generation_type = decltype(slot_map::get_generation(std::declval<Key>()));
 
     using container_type = Container<mapped_type>;
@@ -223,7 +223,7 @@ public:
         slot_map_detail::reserve_if_possible(slots_, n);
         while (slots_.size() < n) {
             auto idx = next_available_slot_index_;
-            next_available_slot_index_ = static_cast<key_size_type>(slots_.size());
+            next_available_slot_index_ = static_cast<key_index_type>(slots_.size());
             slots_.emplace_back(key_type{idx, key_generation_type{}});
         }
     }
@@ -292,7 +292,7 @@ public:
         slots_.clear();
         values_.clear();
         reverse_map_.clear();
-        next_available_slot_index_ = key_size_type{};
+        next_available_slot_index_ = key_index_type{};
     }
 
     // swap is not mentioned in P0661r1 but it should be.
@@ -328,21 +328,21 @@ private:
             *value_iter = std::move(*value_back_iter);
             this->set_index(*slot_back_iter, value_index);
             auto reverse_map_iter = std::next(reverse_map_.begin(), value_index);
-            *reverse_map_iter = static_cast<key_size_type>(std::distance(slots_.begin(), slot_back_iter));
+            *reverse_map_iter = static_cast<key_index_type>(std::distance(slots_.begin(), slot_back_iter));
         }
         values_.pop_back();
         reverse_map_.pop_back();
         // Expire this key.
         this->set_index(*slot_iter, next_available_slot_index_);
         this->increment_generation(*slot_iter);
-        next_available_slot_index_ = static_cast<key_size_type>(slot_index);
+        next_available_slot_index_ = static_cast<key_index_type>(slot_index);
         return std::next(values_.begin(), value_index);
     }
 
     Container<key_type> slots_;  // high_water_mark() entries
-    Container<key_size_type> reverse_map_;  // exactly size() entries
+    Container<key_index_type> reverse_map_;  // exactly size() entries
     Container<mapped_type> values_;  // exactly size() entries
-    key_size_type next_available_slot_index_{};
+    key_index_type next_available_slot_index_{};
 };
 
 template<class T, class Key, template<class...> class Container>
