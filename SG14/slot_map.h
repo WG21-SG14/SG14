@@ -128,17 +128,6 @@ public:
         return *value_iter;
     }
 
-    // The at_unchecked() function has no checks whatsoever
-    // and does not throw.
-    // O(1) time and space complexity.
-    //
-    constexpr reference at_unchecked(const key_type& key) {
-        return *find_unchecked(key);
-    }
-    constexpr const_reference at_unchecked(const key_type& key) const {
-        return *find_unchecked(key);
-    }
-
     // The bracket operator[] has a generation counter check
     // and does not throw.
     // If the check fails it is undefined behavior.

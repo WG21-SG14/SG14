@@ -162,13 +162,11 @@ static void BasicTests(T t1, T t2)
     assert(sm.find_unchecked(k1) == sm.begin());
     assert(sm[k1] == *sm.begin());
     assert(sm.at(k1) == *sm.begin());
-    assert(sm.at_unchecked(k1) == *sm.begin());
 
     assert(sm.find(k2) == std::next(sm.begin()));
     assert(sm.find_unchecked(k2) == std::next(sm.begin()));
     assert(sm[k2] == *std::next(sm.begin()));
     assert(sm.at(k2) == *std::next(sm.begin()));
-    assert(sm.at_unchecked(k2) == *std::next(sm.begin()));
 
     assert(sm2.empty());
     assert(sm2.size() == 0);
@@ -193,7 +191,6 @@ static void BasicTests(T t1, T t2)
     assert(sm2.find_unchecked(k2) == sm2.begin());  // find a non-expired key
     assert(sm2[k2] == *sm2.begin());  // find a non-expired key
     assert(sm2.at(k2) == *sm2.begin());  // find a non-expired key
-    assert(sm2.at_unchecked(k2) == *sm2.begin());  // find a non-expired key
 
     assert(sm2.erase(k1) == 0);  // erase an expired key
 }
