@@ -247,7 +247,6 @@ public:
         auto slot_iter = std::next(slots_.begin(), next_available_slot_index_);
         next_available_slot_index_ = this->get_index(*slot_iter);
         this->set_index(*slot_iter, value_pos);
-        this->increment_generation(*slot_iter);
         key_type result = *slot_iter;
         this->set_index(result, std::distance(slots_.begin(), slot_iter));
         return result;
