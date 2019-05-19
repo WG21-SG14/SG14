@@ -17,20 +17,22 @@ namespace TestKey {
 struct key_16_8_t {
     uint16_t index;
     uint8_t generation;
-    friend bool operator==(key_16_8_t lhs, key_16_8_t rhs);
+
+    // For unit tests only, not a necessary user API.
+    friend bool operator==(key_16_8_t lhs, key_16_8_t rhs) {
+        return lhs.index == rhs.index && lhs.generation == rhs.generation;
+    }
 };
-bool operator==(key_16_8_t lhs, key_16_8_t rhs) {
-    return lhs.index == rhs.index && lhs.generation == rhs.generation;
-}
 
 struct key_11_5_t {  // C++17 only
     uint16_t index : 11;
     uint8_t generation : 5;
-    friend bool operator==(key_11_5_t lhs, key_11_5_t rhs);
+
+    // For unit tests only, not a necessary user API.
+    friend bool operator==(key_11_5_t lhs, key_11_5_t rhs) {
+        return lhs.index == rhs.index && lhs.generation == rhs.generation;
+    }
 };
-bool operator==(key_11_5_t lhs, key_11_5_t rhs) {
-    return lhs.index == rhs.index && lhs.generation == rhs.generation;
-}
 
 #if __cplusplus < 201703L
 template<int I, class K> auto get(const K& k) { return get(k, std::integral_constant<int, I>{}); }
