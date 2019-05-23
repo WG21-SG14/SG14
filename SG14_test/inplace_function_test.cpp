@@ -476,6 +476,7 @@ static void test_convertibility_with_lambdas()
 
     const auto a = []() -> int { return 3; };
     static_assert(std::is_convertible<decltype(a), stdext::inplace_function<int()>>::value, "");
+    static_assert(std::is_convertible<decltype(a), stdext::inplace_function<long()>>::value, "");
     static_assert(!std::is_convertible<decltype(a), stdext::inplace_function<int(int)>>::value, "");
     static_assert(!std::is_convertible<decltype(a), stdext::inplace_function<void(int&)>>::value, "");
 
@@ -485,7 +486,13 @@ static void test_convertibility_with_lambdas()
     static_assert(!std::is_convertible<decltype(b), stdext::inplace_function<int(int)>>::value, "");
 
     const auto c = [](int, NoDefaultCtor) -> int { return 3; };
+    static_assert(std::is_convertible<decltype(c), stdext::inplace_function<int(int, NoDefaultCtor)>>::value, "");
+    static_assert(std::is_convertible<decltype(c), stdext::inplace_function<long(int, NoDefaultCtor)>>::value, "");
+#if SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID
     static_assert(std::is_convertible<decltype(c), stdext::inplace_function<void(int, NoDefaultCtor)>>::value, "");
+#else
+    static_assert(!std::is_convertible<decltype(c), stdext::inplace_function<void(int, NoDefaultCtor)>>::value, "");
+#endif
     static_assert(!std::is_convertible<decltype(c), stdext::inplace_function<int()>>::value, "");
     static_assert(!std::is_convertible<decltype(c), stdext::inplace_function<int(int)>>::value, "");
 
@@ -500,12 +507,14 @@ static void test_convertibility_with_lambdas()
     // Same as a, but not const.
     auto e = []() -> int { return 3; };
     static_assert(std::is_convertible<decltype(e), stdext::inplace_function<int()>>::value, "");
+    static_assert(std::is_convertible<decltype(e), stdext::inplace_function<long()>>::value, "");
     static_assert(!std::is_convertible<decltype(e), stdext::inplace_function<int(int)>>::value, "");
     static_assert(!std::is_convertible<decltype(e), stdext::inplace_function<void(int&)>>::value, "");
 
     // Same as a, but not const and mutable.
     auto f = []() mutable -> int { return 3; };
     static_assert(std::is_convertible<decltype(f), stdext::inplace_function<int()>>::value, "");
+    static_assert(std::is_convertible<decltype(f), stdext::inplace_function<long()>>::value, "");
     static_assert(!std::is_convertible<decltype(f), stdext::inplace_function<int(int)>>::value, "");
     static_assert(!std::is_convertible<decltype(f), stdext::inplace_function<void(int&)>>::value, "");
 }
@@ -513,16 +522,15 @@ static void test_convertibility_with_lambdas()
 static void test_void_returning_function_runtime()
 {
     auto lambda = []() { return 42; };
+#if SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID
     static_assert(std::is_convertible<decltype(lambda), stdext::inplace_function<void()>>::value, "");
-    static_assert(std::is_convertible<decltype(lambda), stdext::inplace_function<const void()>>::value, "");
 
     stdext::inplace_function<void()> f = lambda;
     f = lambda;
     f();
-
-    stdext::inplace_function<const void()> g = lambda;
-    g = lambda;
-    g();
+#else
+    static_assert(!std::is_convertible<decltype(lambda), stdext::inplace_function<void()>>::value, "");
+#endif
 }
 
 namespace {
@@ -583,11 +591,22 @@ static void test_is_invocable()
     static_assert(! is_invocable_r<int, C_Int1, int>::value, "");
     static_assert(! is_invocable_r<int, C_Void, int>::value, "");
 
+    static_assert(is_invocable_r<const int, C_Int2, int>::value, "");
+    static_assert(! is_invocable_r<const int, C_Int1, int>::value, "");
+    static_assert(! is_invocable_r<const int, C_Void, int>::value, "");
+
     static_assert(is_invocable_r<void, C_Void, int&>::value, "");
     static_assert(! is_invocable_r<void, C_Int1, int&>::value, "");
 
+    static_assert(is_invocable_r<const void, C_Void, int&>::value, "");
+    static_assert(! is_invocable_r<const void, C_Int1, int&>::value, "");
+
     // Testing widening and narrowing conversions, and the "conversion" to void.
+#if SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID
     static_assert(is_invocable_r<void, C_Int1>::value, "");
+#else
+    static_assert(! is_invocable_r<void, C_Int1>::value, "");
+#endif
     static_assert(is_invocable_r<long, C_Int1>::value, "");
     static_assert(is_invocable_r<char, C_Int1>::value, "");
 
@@ -598,9 +617,14 @@ static void test_is_invocable()
     // > Determines whether Fn can be invoked with the arguments ArgTypes...
     // > to yield a result that is convertible to R.
     //
-    // void is treated specially because a functions return value can be ignored.
+    // void is treated specially because a function's return value can be ignored.
+#if SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID
     static_assert(is_invocable_r<void, C_Int2, int&>::value, "");
     static_assert(is_invocable_r<const void, C_Int2, int&>::value, "");
+#else
+    static_assert(! is_invocable_r<void, C_Int2, int&>::value, "");
+    static_assert(! is_invocable_r<const void, C_Int2, int&>::value, "");
+#endif
 
     // Regression tests for both is_invocable and is_convertible.
     static_assert(is_invocable_r<const int&, int()>::value, "");
@@ -630,6 +654,17 @@ static void test_overloading_on_return_type()
     EXPECT_EQ(overloaded_function3([](int) { return 0; }), 1);
     EXPECT_EQ(overloaded_function3([](int) { return nullptr; }), 2);
 }
+
+#if !(SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID)
+static int overloaded_function4(stdext::inplace_function<void()>) { return 1; }
+static int overloaded_function4(stdext::inplace_function<int()>) { return 2; }
+
+static void test_overloading_on_return_type_void()
+{
+    EXPECT_EQ(overloaded_function4([]() -> void {}), 1);
+    EXPECT_EQ(overloaded_function4([]() -> int { return 0; }), 2);
+}
+#endif
 
 void sg14_test::inplace_function_test()
 {
@@ -724,6 +759,9 @@ void sg14_test::inplace_function_test()
     test_overloading_on_arity();
     test_overloading_on_parameter_type();
     test_overloading_on_return_type();
+#if !(SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID)
+    test_overloading_on_return_type_void();
+#endif
 }
 
 #ifdef TEST_MAIN
