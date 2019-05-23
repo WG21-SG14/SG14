@@ -1,12 +1,12 @@
 #include "SG14_test.h"
 #include "slot_map.h"
-#include <algorithm>
 #include <assert.h>
+#include <inttypes.h>
+#include <algorithm>
 #include <deque>
 #include <forward_list>
-#include <inttypes.h>
-#include <iterator>
 #include <list>
+#include <iterator>
 #include <memory>
 #include <random>
 #include <type_traits>
@@ -447,28 +447,29 @@ void BoundsCheckingTest()
 }
 
 template<class SM>
-void GenerationTest()
+static void GenerationsDontSkipTest()
 {
     using T = typename SM::mapped_type;
     SM sm;
-    auto k = sm.emplace(Monad<T>::from_value(0));
-    int original_cap = int(sm.slot_count());
+    auto k1 = sm.emplace(Monad<T>::from_value(1));
+    int original_cap = sm.slot_count();
     for (int i=1; i < original_cap; ++i) {
         sm.emplace(Monad<T>::from_value(i));
     }
     assert(sm.size() == sm.slot_count());
 
-    sm.erase(k);
-    auto k2 = sm.emplace(Monad<T>::from_value(1));
-#if __cplusplus >= 201701L
-    auto [idx, gen] = k;
-    auto [idx2, gen2] = k2;
-    assert(idx2 == idx);
-    assert(gen2 == gen + 1);
-#else
+    sm.erase(k1);
+    auto k2 = sm.emplace(Monad<T>::from_value(2));
+
+#if __cplusplus < 201703L
     using std::get;
-    assert(get<0>(k2) == get<0>(k));
-    assert(get<1>(k2) == get<1>(k) + 1);
+    assert(get<0>(k2) == get<0>(k1));
+    assert(get<1>(k2) == get<1>(k1) + 1);
+#else
+    auto [idx1, gen1] = k1;
+    auto [idx2, gen2] = k2;
+    assert(idx2 == idx1);
+    assert(gen2 == gen1 + 1);
 #endif
 }
 
@@ -486,7 +487,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_1>();
     ReserveTest<slot_map_1>();
     VerifyCapacityExists<slot_map_1>(true);
-    GenerationTest<slot_map_1>();
+    GenerationsDontSkipTest<slot_map_1>();
 
     // Test slot_map with a custom key type (C++14 destructuring).
     using slot_map_2 = stdext::slot_map<unsigned long, TestKey::key_16_8_t>;
@@ -498,7 +499,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_2>();
     ReserveTest<slot_map_2>();
     VerifyCapacityExists<slot_map_2>(true);
-    GenerationTest<slot_map_2>();
+    GenerationsDontSkipTest<slot_map_2>();
 
 #if __cplusplus >= 201703L
     // Test slot_map with a custom key type (C++17 destructuring).
@@ -511,7 +512,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_3>();
     ReserveTest<slot_map_3>();
     VerifyCapacityExists<slot_map_3>(true);
-    GenerationTest<slot_map_3>();
+    GenerationsDontSkipTest<slot_map_3>();
 #endif // __cplusplus >= 201703L
 
     // Test slot_map with a custom (but standard and random-access) container type.
@@ -524,7 +525,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_4>();
     ReserveTest<slot_map_4>();
     VerifyCapacityExists<slot_map_4>(false);
-    GenerationTest<slot_map_4>();
+    GenerationsDontSkipTest<slot_map_4>();
 
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
@@ -536,7 +537,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_5>();
     ReserveTest<slot_map_5>();
     VerifyCapacityExists<slot_map_5>(false);
-    GenerationTest<slot_map_5>();
+    GenerationsDontSkipTest<slot_map_5>();
 
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
@@ -548,7 +549,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_6>();
     ReserveTest<slot_map_6>();
     VerifyCapacityExists<slot_map_6>(false);
-    GenerationTest<slot_map_6>();
+    GenerationsDontSkipTest<slot_map_6>();
 
     // Test slot_map with a move-only value_type.
     // Sadly, standard containers do not propagate move-only-ness, so we must use our custom Vector instead.
@@ -565,7 +566,7 @@ void sg14_test::slot_map_test()
     EraseRangeTest<slot_map_7>();
     ReserveTest<slot_map_7>();
     VerifyCapacityExists<slot_map_7>(false);
-    GenerationTest<slot_map_7>();
+    GenerationsDontSkipTest<slot_map_7>();
 }
 
 #if defined(__cpp_concepts)
