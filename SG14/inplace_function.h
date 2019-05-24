@@ -303,11 +303,11 @@ public:
         {
             vtable_ptr_->destructor_ptr(std::addressof(storage_));
 
-            vtable_ptr_ = other.vtable_ptr_;
-            vtable_ptr_->copy_ptr(
+            other.vtable_ptr_->copy_ptr(
                 std::addressof(storage_),
                 std::addressof(other.storage_)
             );
+            vtable_ptr_ = other.vtable_ptr_;
         }
         return *this;
     }

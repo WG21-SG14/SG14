@@ -327,6 +327,11 @@ static void test_exception_safety()
     // The assignment operators are implemented as "construct an IPF, then move from it"; so, two moves of the ThrowingFunctor.
     try { tf.reset(1); caught = false; IPF a; a = std::move(tf); } catch (int) { caught = true; }
     EXPECT_TRUE((!caught) && (tf.countdown == 1) && (tf.constructed == 2) && (tf.destructed == 2));
+
+    try { tf.reset(1); caught = false; IPF a; IPF b(tf); a = b; } catch (int) { caught = true; }
+    EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 0) && (tf.destructed == 0));
+    try { tf.reset(2); caught = false; IPF a; IPF b(tf); a = b; } catch (int) { caught = true; }
+    EXPECT_TRUE((caught) && (tf.countdown == 0) && (tf.constructed == 1) && (tf.destructed == 1));
 }
 
 template<size_t Cap>
