@@ -297,33 +297,15 @@ public:
         return *this;
     }
 
-    inplace_function& operator= (const inplace_function& other)
+    inplace_function& operator= (inplace_function other) noexcept
     {
-        if(this != std::addressof(other))
-        {
-            vtable_ptr_->destructor_ptr(std::addressof(storage_));
+        vtable_ptr_->destructor_ptr(std::addressof(storage_));
 
-            other.vtable_ptr_->copy_ptr(
-                std::addressof(storage_),
-                std::addressof(other.storage_)
-            );
-            vtable_ptr_ = other.vtable_ptr_;
-        }
-        return *this;
-    }
-
-    inplace_function& operator= (inplace_function&& other) noexcept
-    {
-        if(this != std::addressof(other))
-        {
-            vtable_ptr_->destructor_ptr(std::addressof(storage_));
-
-            vtable_ptr_ = std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>));
-            vtable_ptr_->relocate_ptr(
-                std::addressof(storage_),
-                std::addressof(other.storage_)
-            );
-        }
+        vtable_ptr_ = std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>));
+        vtable_ptr_->relocate_ptr(
+            std::addressof(storage_),
+            std::addressof(other.storage_)
+        );
         return *this;
     }
 
