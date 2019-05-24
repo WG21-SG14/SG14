@@ -76,12 +76,12 @@ static_assert(sizeof(std::aligned_storage_t<sizeof(void*)>) == sizeof(void*), "C
 static_assert(alignof(std::aligned_storage_t<sizeof(void*)>) == alignof(void*), "D");
 #endif
 
-template<typename T> struct wrapper
+template<class T> struct wrapper
 {
     using type = T;
 };
 
-template<typename R, typename... Args> struct vtable
+template<class R, class... Args> struct vtable
 {
     using storage_ptr_t = void*;
 
@@ -103,7 +103,7 @@ template<typename R, typename... Args> struct vtable
         destructor_ptr{ [](storage_ptr_t) -> void {} }
     {}
 
-    template<typename C> explicit constexpr vtable(wrapper<C>) noexcept :
+    template<class C> explicit constexpr vtable(wrapper<C>) noexcept :
         invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
             { return (*static_cast<C*>(storage_ptr))(
                 static_cast<Args&&>(args)...
@@ -132,7 +132,7 @@ template<typename R, typename... Args> struct vtable
     ~vtable() = default;
 };
 
-template<typename R, typename... Args>
+template<class R, class... Args>
 #if __cplusplus >= 201703L
 inline constexpr
 #endif
@@ -186,7 +186,7 @@ template<class R, class F, class... Args> using is_invocable_r = is_invocable_r_
 } // namespace inplace_function_detail
 
 template<
-    typename Signature,
+    class Signature,
     size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
     size_t Alignment = alignof(inplace_function_detail::aligned_storage_t<Capacity>)
 >
@@ -199,8 +199,8 @@ namespace inplace_function_detail {
 } // namespace inplace_function_detail
 
 template<
-    typename R,
-    typename... Args,
+    class R,
+    class... Args,
     size_t Capacity,
     size_t Alignment
 >
@@ -210,7 +210,7 @@ class inplace_function<R(Args...), Capacity, Alignment>
     using vtable_t = inplace_function_detail::vtable<R, Args...>;
     using vtable_ptr_t = const vtable_t*;
 
-    template <typename, size_t, size_t> friend class inplace_function;
+    template <class, size_t, size_t> friend class inplace_function;
 
 public:
     using capacity = std::integral_constant<size_t, Capacity>;
@@ -221,9 +221,9 @@ public:
     {}
 
     template<
-        typename T,
-        typename C = std::decay_t<T>,
-        typename = std::enable_if_t<
+        class T,
+        class C = std::decay_t<T>,
+        class = std::enable_if_t<
             !inplace_function_detail::is_inplace_function<C>::value
             && inplace_function_detail::is_invocable_r<R, C&, Args...>::value
         >

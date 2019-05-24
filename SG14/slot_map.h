@@ -241,7 +241,7 @@ public:
     constexpr key_type insert(const mapped_type& value)   { return this->emplace(value); }
     constexpr key_type insert(mapped_type&& value)        { return this->emplace(std::move(value)); }
 
-    template<typename... Args> constexpr key_type emplace(Args&&... args) {
+    template<class... Args> constexpr key_type emplace(Args&&... args) {
         auto value_pos = values_.size();
         values_.emplace_back(std::forward<Args>(args)...);
         reverse_map_.emplace_back(next_available_slot_index_);
