@@ -206,15 +206,15 @@ template<
 >
 class inplace_function<R(Args...), Capacity, Alignment>
 {
-public:
-    using capacity = std::integral_constant<size_t, Capacity>;
-    using alignment = std::integral_constant<size_t, Alignment>;
-
     using storage_t = inplace_function_detail::aligned_storage_t<Capacity, Alignment>;
     using vtable_t = inplace_function_detail::vtable<R, Args...>;
     using vtable_ptr_t = const vtable_t*;
 
-    template <typename, size_t, size_t>	friend class inplace_function;
+    template <typename, size_t, size_t> friend class inplace_function;
+
+public:
+    using capacity = std::integral_constant<size_t, Capacity>;
+    using alignment = std::integral_constant<size_t, Alignment>;
 
     inplace_function() noexcept :
         vtable_ptr_{std::addressof(inplace_function_detail::empty_vtable<R, Args...>)}
