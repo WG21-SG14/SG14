@@ -54,10 +54,12 @@ static void AmbiguousEraseTest()
     assert(fs.size() == 3);
     fs.erase(AmbiguousEraseWidget("a"));  // calls erase(const Key&)
     assert(fs.size() == 2);
-    fs.erase(fs.begin());                 // calls erase(iterator)
-    assert(fs.size() == 1);
     fs.erase(fs.cbegin());                // calls erase(const_iterator)
+    assert(fs.size() == 1);
+#if __cplusplus >= 201703L
+    fs.erase(fs.begin());                 // calls erase(iterator)
     assert(fs.size() == 0);
+#endif
 }
 
 static void ExtractDoesntSwapTest()
@@ -67,7 +69,7 @@ static void ExtractDoesntSwapTest()
     {
         std::pmr::monotonic_buffer_resource mr;
         std::pmr::polymorphic_allocator<int> a(&mr);
-        stdext::flat_set<int, std::less<>, std::pmr::vector<int>> fs({1, 2}, a);
+        stdext::flat_set<int, std::less<int>, std::pmr::vector<int>> fs({1, 2}, a);
         std::pmr::vector<int> v = std::move(fs).extract();
         assert(v.get_allocator() == a);
         assert(fs.empty());
@@ -77,7 +79,7 @@ static void ExtractDoesntSwapTest()
     // Sanity-check with std::allocator, even though this can't fail.
     {
         std::allocator<int> a;
-        stdext::flat_set<int, std::less<>, std::vector<int>> fs({1, 2}, a);
+        stdext::flat_set<int, std::less<int>, std::vector<int>> fs({1, 2}, a);
         std::vector<int> v = std::move(fs).extract();
         assert(v.get_allocator() == a);
         assert(fs.empty());
@@ -104,8 +106,8 @@ bool ComparatorWithThrowingSwap::please_throw = false;
 static void ThrowingSwapDoesntBreakInvariants()
 {
     using std::swap;
-    stdext::flat_set<int, ComparatorWithThrowingSwap> fsx({1,2,3}, ComparatorWithThrowingSwap(std::less<>()));
-    stdext::flat_set<int, ComparatorWithThrowingSwap> fsy({4,5,6}, ComparatorWithThrowingSwap(std::greater<>()));
+    stdext::flat_set<int, ComparatorWithThrowingSwap> fsx({1,2,3}, ComparatorWithThrowingSwap(std::less<int>()));
+    stdext::flat_set<int, ComparatorWithThrowingSwap> fsy({4,5,6}, ComparatorWithThrowingSwap(std::greater<int>()));
 
     if (true) {
         ComparatorWithThrowingSwap::please_throw = false;
@@ -114,8 +116,10 @@ static void ThrowingSwapDoesntBreakInvariants()
         fsy.insert(8);
         std::vector<int> expected_fsx = {7, 6, 5, 4};
         std::vector<int> expected_fsy = {1, 2, 3, 8};
-        assert(std::equal(expected_fsx.begin(), expected_fsx.end(), fsx.begin(), fsx.end()));
-        assert(std::equal(expected_fsy.begin(), expected_fsy.end(), fsy.begin(), fsy.end()));
+        assert(expected_fsx.size() == fsx.size());
+        assert(std::equal(expected_fsx.begin(), expected_fsx.end(), fsx.begin()));
+        assert(expected_fsy.size() == fsy.size());
+        assert(std::equal(expected_fsy.begin(), expected_fsy.end(), fsy.begin()));
     }
 
     // However, if ComparatorWithThrowingSwap::please_throw were
@@ -124,6 +128,7 @@ static void ThrowingSwapDoesntBreakInvariants()
 
 static void VectorBoolSanityTest()
 {
+#if __cplusplus >= 201402L  // C++11 doesn't support vector<bool>::emplace
     using FS = stdext::flat_set<bool>;
     FS fs;
     auto it_inserted = fs.emplace(true);
@@ -141,6 +146,31 @@ static void VectorBoolSanityTest()
     assert(fs.empty());
     assert(it == fs.begin());
     assert(it == fs.end());
+#endif
+}
+
+struct VectorBoolEvilComparator {
+    bool operator()(bool a, bool b) const {
+        return a < b;
+    }
+    template<class T, class U>
+    bool operator()(T a, U b) const {
+        static_assert(sizeof(T) < 0, "should never instantiate this call operator");
+        return a < b;
+    }
+};
+
+static void VectorBoolEvilComparatorTest()
+{
+    using FS = stdext::flat_set<bool, VectorBoolEvilComparator>;
+    FS fs;
+    (void)fs.lower_bound(true);
+    (void)fs.upper_bound(true);
+    (void)fs.equal_range(true);
+    const FS& cfs = fs;
+    (void)cfs.lower_bound(true);
+    (void)cfs.upper_bound(true);
+    (void)cfs.equal_range(true);
 }
 
 static void MoveOperationsPilferOwnership()
@@ -254,6 +284,7 @@ void sg14_test::flat_set_test()
     MoveOperationsPilferOwnership();
     ThrowingSwapDoesntBreakInvariants();
     VectorBoolSanityTest();
+    VectorBoolEvilComparatorTest();
 
     // Test the most basic flat_set.
     {
@@ -269,12 +300,14 @@ void sg14_test::flat_set_test()
         SpecialMemberTest<FS>();
     }
 
+#if __cplusplus >= 201402L
     // Test a transparent comparator.
     {
         using FS = stdext::flat_set<int, std::greater<>>;
         ConstructionTest<FS>();
         SpecialMemberTest<FS>();
     }
+#endif
 
     // Test a custom container.
     {
