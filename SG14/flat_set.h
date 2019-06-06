@@ -197,12 +197,14 @@ public:
         : flat_set(std::begin(cont), std::end(cont), comp) {}
 
     template<class Container, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>,
+             class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(const Container& cont, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), Compare(), a) {}
 
     template<class Container, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>,
+             class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(const Container& cont, const Compare& comp, const Alloc& a)
         : flat_set(std::begin(cont), std::end(cont), comp, a) {}
 
@@ -230,12 +232,14 @@ public:
         : flat_set(s, std::begin(cont), std::end(cont), comp) {}
 
     template<class Container, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>,
+             class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(sorted_unique_t s, const Container& cont, const Alloc& a)
         : flat_set(s, std::begin(cont), std::end(cont), Compare(), a) {}
 
     template<class Container, class Alloc,
-             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value && std::uses_allocator<KeyContainer, Alloc>::value>>
+             class = std::enable_if_t<flatset_detail::qualifies_as_range<const Container&>::value>,
+             class = std::enable_if_t<std::uses_allocator<KeyContainer, Alloc>::value>>
     flat_set(sorted_unique_t s, const Container& cont, const Compare& comp, const Alloc& a)
         : flat_set(s, std::begin(cont), std::end(cont), comp, a) {}
 
