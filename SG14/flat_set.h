@@ -358,13 +358,13 @@ public:
     const_iterator cbegin() const noexcept { return c_.begin(); }
     const_iterator cend() const noexcept { return c_.end(); }
 
-    reverse_iterator rbegin() noexcept { return std::make_reverse_iterator(end()); }
-    const_reverse_iterator rbegin() const noexcept { return std::make_reverse_iterator(end()); }
-    reverse_iterator rend() noexcept { return std::make_reverse_iterator(begin()); }
-    const_reverse_iterator rend() const noexcept { return std::make_reverse_iterator(begin()); }
+    reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+    const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
+    reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+    const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
 
-    const_reverse_iterator crbegin() const noexcept { return std::make_reverse_iterator(end()); }
-    const_reverse_iterator crend() const noexcept { return std::make_reverse_iterator(begin()); }
+    const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(end()); }
+    const_reverse_iterator crend() const noexcept { return const_reverse_iterator(begin()); }
 
 #if __cplusplus >= 201703L
     [[nodiscard]]
