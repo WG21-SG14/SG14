@@ -1445,7 +1445,7 @@ public:
 					PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(new_location.element_pointer), element);
 
 					// Update skipblock:
-					const skipfield_type new_value = *(new_location.skipfield_pointer) - 1;
+					const skipfield_type new_value = static_cast<skipfield_type>(*(new_location.skipfield_pointer) - 1);
 
 					if (new_value != 0) // ie. skipfield was not 1, ie. a single-node skipblock, with no additional nodes to update
 					{
@@ -1611,7 +1611,7 @@ public:
 						const skipfield_type prev_free_list_index = *(reinterpret_cast<skipfield_pointer_type>(new_location.element_pointer));
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(new_location.element_pointer), std::move(element));
 
-						const skipfield_type new_value = *(new_location.skipfield_pointer) - 1;
+						const skipfield_type new_value = static_cast<skipfield_type>(*(new_location.skipfield_pointer) - 1);
 
 						if (new_value != 0)
 						{
@@ -1773,7 +1773,7 @@ public:
 
 						const skipfield_type prev_free_list_index = *(reinterpret_cast<skipfield_pointer_type>(new_location.element_pointer));
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(new_location.element_pointer), std::forward<arguments>(parameters) ...);
-						const skipfield_type new_value = *(new_location.skipfield_pointer) - 1;
+						const skipfield_type new_value = static_cast<skipfield_type>(*(new_location.skipfield_pointer) - 1);
 
 						if (new_value != 0)
 						{
@@ -1925,7 +1925,7 @@ private:
 		}
 
 		end_iterator.group_pointer->last_endpoint = end_iterator.element_pointer;
-		end_iterator.group_pointer->number_of_elements += number_of_elements;
+		end_iterator.group_pointer->number_of_elements = static_cast<skipfield_type>(end_iterator.group_pointer->number_of_elements + number_of_elements);
 	}
 
 
@@ -1987,7 +1987,7 @@ private:
 		}
 
 		std::memset(skipfield_pointer, 0, number_of_elements * sizeof(skipfield_type)); // reset skipfield nodes within skipblock to 0
-		groups_with_erasures_list_head->number_of_elements += number_of_elements;
+		groups_with_erasures_list_head->number_of_elements = static_cast<skipfield_type>(groups_with_erasures_list_head->number_of_elements + number_of_elements);
 		total_number_of_elements += number_of_elements;
 	}
 
@@ -2061,7 +2061,7 @@ public:
 						// Update skipfield (earlier nodes already memset'd in fill_skipblock function):
 						*(skipfield_pointer + number_of_elements) = new_skipblock_size;
 						*(skipfield_pointer + skipblock_size - 1) = new_skipblock_size;
-						groups_with_erasures_list_head->free_list_head += static_cast<skipfield_type>(number_of_elements); // set free list head to new start node
+						groups_with_erasures_list_head->free_list_head = static_cast<skipfield_type>(groups_with_erasures_list_head->free_list_head + number_of_elements); // set free list head to new start node
 
 						// Update free list with new head:
 						*(reinterpret_cast<skipfield_pointer_type>(element_pointer + number_of_elements)) = prev_index;
@@ -2278,12 +2278,12 @@ public:
 				}
 				case 1: // previous erased consecutive elements, none following
 				{
-					*(it.skipfield_pointer - *(it.skipfield_pointer - 1)) = *it.skipfield_pointer = *(it.skipfield_pointer - 1) + 1;
+					*(it.skipfield_pointer - *(it.skipfield_pointer - 1)) = *it.skipfield_pointer = static_cast<skipfield_type>(*(it.skipfield_pointer - 1) + 1);
 					break;
 				}
 				case 2: // following erased consecutive elements, none preceding
 				{
-					const skipfield_type following_value = *(it.skipfield_pointer + 1) + 1;
+					const skipfield_type following_value = static_cast<skipfield_type>(*(it.skipfield_pointer + 1) + 1);
 					*(it.skipfield_pointer + following_value - 1) = *(it.skipfield_pointer) = following_value;
 
 					const skipfield_type following_previous = *(reinterpret_cast<skipfield_pointer_type>(it.element_pointer + 1));
@@ -2313,10 +2313,10 @@ public:
 				case 3: // both preceding and following consecutive erased elements
 				{
 					const skipfield_type preceding_value = *(it.skipfield_pointer - 1);
-					const skipfield_type following_value = *(it.skipfield_pointer + 1) + 1;
+					const skipfield_type following_value = static_cast<skipfield_type>(*(it.skipfield_pointer + 1) + 1);
 
 					// Join the skipblocks
-					*(it.skipfield_pointer - preceding_value) = *(it.skipfield_pointer + following_value - 1) = preceding_value + following_value;
+					*(it.skipfield_pointer - preceding_value) = *(it.skipfield_pointer + following_value - 1) = static_cast<skipfield_type>(preceding_value + following_value);
 
 					// Remove the following skipblock's entry from the free list
 					const skipfield_type following_previous = *(reinterpret_cast<skipfield_pointer_type>(it.element_pointer + 1));
@@ -2545,10 +2545,10 @@ public:
 				}
 				else
 				{ // update previous skipblock, no need to update free list:
-					*(iterator1.skipfield_pointer - previous_node_value) = *(iterator1.skipfield_pointer + distance_to_end - 1) = previous_node_value + distance_to_end;
+					*(iterator1.skipfield_pointer - previous_node_value) = *(iterator1.skipfield_pointer + distance_to_end - 1) = static_cast<skipfield_type>(previous_node_value + distance_to_end);
 				}
 
-				iterator1.group_pointer->number_of_elements -= static_cast<skipfield_type>(number_of_group_erasures);
+				iterator1.group_pointer->number_of_elements = static_cast<skipfield_type>(iterator1.group_pointer->number_of_elements - number_of_group_erasures);
 				total_number_of_elements -= number_of_group_erasures;
 
 				current.group_pointer = current.group_pointer->next_group;
@@ -2716,8 +2716,8 @@ public:
 			{
 				// Just update existing skipblock, no need to create new free list node:
 				const skipfield_type prev_node_value = *(current_saved.skipfield_pointer - 1);
-				*(current_saved.skipfield_pointer - prev_node_value) = prev_node_value + distance_to_iterator2;
-				*(iterator2.skipfield_pointer - 1) = prev_node_value + distance_to_iterator2;
+				*(current_saved.skipfield_pointer - prev_node_value) = static_cast<skipfield_type>(prev_node_value + distance_to_iterator2);
+				*(iterator2.skipfield_pointer - 1) = static_cast<skipfield_type>(prev_node_value + distance_to_iterator2);
 			}
 
 
@@ -2726,7 +2726,7 @@ public:
 				begin_iterator = iterator2;
 			}
 
-			iterator2.group_pointer->number_of_elements -= static_cast<skipfield_type>(number_of_group_erasures);
+			iterator2.group_pointer->number_of_elements = static_cast<skipfield_type>(iterator2.group_pointer->number_of_elements - number_of_group_erasures);
 			total_number_of_elements -= number_of_group_erasures;
 		}
 		else // ie. full group erasure
@@ -3969,7 +3969,7 @@ public:
 			}
 			else
 			{ // update previous skipblock, no need to update free list:
-				*(end_iterator.skipfield_pointer - previous_node_value) = *(end_iterator.skipfield_pointer + distance_to_end - 1) = previous_node_value + distance_to_end;
+				*(end_iterator.skipfield_pointer - previous_node_value) = *(end_iterator.skipfield_pointer + distance_to_end - 1) = static_cast<skipfield_type>(previous_node_value + distance_to_end);
 			}
 		}
 
