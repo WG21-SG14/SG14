@@ -204,6 +204,17 @@ namespace
 		small_struct(const int num) PLF_NOEXCEPT: number(num) {};
 	};
 
+
+	class non_copyable_type
+	{
+	private:
+		int i;
+		non_copyable_type(const non_copyable_type &); // non construction-copyable
+		non_copyable_type& operator=(const non_copyable_type &); // non copyable
+	public:
+		non_copyable_type(int a) : i(a) {}
+	};
+
 #endif
 }
 
@@ -1202,6 +1213,8 @@ void plf_colony_test()
 			failpass("Perfect forwarding test", (*pf_colony.begin()).success);
 			failpass("Perfect forwarding test 2", lvalueref == 1);
 		}
+
+
 		{
 			title2("Basic emplace test");
 
@@ -1213,7 +1226,7 @@ void plf_colony_test()
 				ss_colony.emplace(counter);
 				total1 += counter;
 			}
-			
+
 			for (colony<small_struct>::iterator it = ss_colony.begin(); it != ss_colony.end(); ++it)
 			{
 				total2 += it->number;
@@ -1221,6 +1234,18 @@ void plf_colony_test()
 
 			failpass("Basic emplace test", total1 == total2);
 			failpass("Basic emplace test 2", ss_colony.size() == 100);
+		}
+
+
+		{
+			title2("Non-copyable type test");
+
+			plf::colony<non_copyable_type> temp;
+
+			temp.emplace(1);
+			temp.emplace(2);
+
+			failpass("Non-copyable size test", temp.size() == 2);
 		}
 		#endif
 
