@@ -165,7 +165,7 @@ code {
 
 <body>
 Audience: LEWG, SG14, WG21<br>
-Document number: D0447R7<br>
+Document number: P0447R7<br>
 Date: 2019-04-12<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
@@ -1097,48 +1097,46 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
     <p>Empties the colony and removes all elements and blocks.<br>
     Example: <code style="color: brown">object_colony.clear();</code></p>
   </li>
-  <li><code>void change_block_sizes(Skipfield_type min_block_size,
-    Skipfield_type max_block_size)</code> 
-    <p>Changes the minimum and maximum internal block sizes, in terms of number
-    of elements stored per block. If the colony is not empty and either
-    min_block_size is larger than the smallest block in the colony, or
-    max_block_size is smaller than the largest block in the colony, the colony
+  <li><code>void change_group_sizes(Skipfield_type min_group_size, Skipfield_type max_group_size)</code>
+    <p>Changes the minimum and maximum internal group sizes, in terms of number
+    of elements stored per group. If the colony is not empty and either
+    min_group_size is larger than the smallest group in the colony, or
+    max_group_size is smaller than the largest group in the colony, the colony
     will be internally copy-constructed into a new colony which uses the new
-    block sizes, invalidating all pointers/iterators/references.<br>
-    Example: <code style="color: brown">object_colony.change_block_sizes(1000,
+    group sizes, invalidating all pointers/iterators/references. If trying to change group sizes with a colony storing a non-copyable/movable type, please use the reinitialize function instead.<br>
+    Example: <code style="color: brown">object_colony.change_group_sizes(1000,
     10000);</code></p>
   </li>
-  <li><code>void change_minimum_block_size(Skipfield_type
-    min_block_size)</code> 
-    <p>Changes the minimum internal block size only, in terms of minimum number
-    of elements stored per block. If the colony is not empty and min_block_size
-    is larger than the smallest block in the colony, the colony will be
+  <li><code>void change_minimum_group_size(Skipfield_type
+    min_group_size)</code>
+    <p>Changes the minimum internal group size only, in terms of minimum number
+    of elements stored per group. If the colony is not empty and min_group_size
+    is larger than the smallest group in the colony, the colony will be
     internally move-constructed (if possible) or copy-constructed into a new colony which uses the new minimum
-    block size, invalidating all pointers/iterators/references.<br>
+    group size, invalidating all pointers/iterators/references. If trying to change group sizes with a colony storing a non-copyable/movable type, please use the reinitialize function instead.<br>
     Example: <code
-    style="color: brown">object_colony.change_minimum_block_size(100);</code></p>
+    style="color: brown">object_colony.change_minimum_group_size(100);</code></p>
   </li>
-  <li><code>void change_maximum_block_size(Skipfield_type
-    min_block_size)</code> 
-    <p>Changes the maximum internal block size only, in terms of maximum number
-    of elements stored per block. If the colony is not empty and either
-    max_block_size is smaller than the largest block in the colony, the colony
+  <li><code>void change_maximum_group_size(Skipfield_type
+    min_group_size)</code>
+    <p>Changes the maximum internal group size only, in terms of maximum number
+    of elements stored per group. If the colony is not empty and either
+    max_group_size is smaller than the largest group in the colony, the colony
     will be internally move-constructed (if possible) or copy-constructed into a new colony which uses the new
-    maximum block size, invalidating all pointers/iterators/references.<br>
+    maximum group size, invalidating all pointers/iterators/references. If trying to change group sizes with a colony storing a non-copyable/movable type, please use the reinitialize function instead.<br>
     Example: <code
-    style="color: brown">object_colony.change_maximum_block_size(1000);</code></p>
+    style="color: brown">object_colony.change_maximum_group_size(1000);</code></p>
   </li>
-  <li><code>void reinitialize(Skipfield_type min_block_size, Skipfield_type
-    max_block_size)</code>
+  <li><code>void reinitialize(Skipfield_type min_group_size,
+    const Skipfield_type max_group_size)</code>
     <p>Semantics of this function are the same as "clear();
-    change_block_sizes(min_block_size, max_block_size);", but without the
-    move/copy-construction code of the change_block_sizes() function - this means it
+    change_group_sizes(min_group_size, max_group_size);", but without the
+    move/copy-construction code of the change_group_sizes() function - this means it
     can be used with element types which are non-copy-constructible and non-move-constructible, unlike
-    change_block_sizes().<br>
-    Example: <code style="color: brown">object_colony.reinitialize(1000,
-    10000);</code></p>
+    change_group_sizes().<br>
+    Example: <code style="color: brown">object_colony.reinitialize(1000, 10000);</code></p>
   </li>
-  <li><code>void swap(colony &amp;source)</code> 
+  <li><code>void swap(colony &amp;source)</code>
     <p>Swaps the colony's contents with that of <code>source</code>.<br>
     Example: <code
     style="color: brown">object_colony.swap(other_colony);</code></p>
