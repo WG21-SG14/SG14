@@ -165,8 +165,8 @@ code {
 
 <body>
 Audience: LEWG, SG14, WG21<br>
-Document number: D0447R7<br>
-Date: 2019-04-12<br>
+Document number: D0447R8<br>
+Date: 2019-07-30<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
@@ -181,10 +181,9 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
   <li><a href="#design">Design Decisions</a></li>
   <li><a href="#technical">Technical Specifications</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
-  <li>Appendixes: 
+  <li>Appendixes:
     <ol type="A">
-      <li><a
-      href="#functions">Reference implementation member functions</a></li>
+      <li><a href="#functions">Member functions list</a></li>
       <li><a href="#benchmarks">Reference implementation benchmarks</a></li>
       <li><a href="#faq">Frequently Asked Questions</a></li>
       <li><a href="#responses">Specific responses to previous committee
@@ -537,6 +536,7 @@ See benchmarks <a href="#benchmarks">here</a>.</p>
     location and state of colony.</li>
 </ul>
 
+
 <h4>General specification</h4>
 
 <p>Colony meets the requirements of the C++ <a
@@ -549,7 +549,7 @@ concepts.</p>
 <p>For the most part the syntax and semantics of colony functions are very
 similar to all std:: c++ libraries. Formal description is as follows:</p>
 <code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename
-Skipfield_Type = unsigned short&gt; class colony</code> 
+Skipfield_Type = unsigned short&gt; class colony</code>
 
 <p><code><b>T</b></code> - the element type. In general T must meet the
 requirements of <a
@@ -862,7 +862,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
   </li>
   <li><code>colony&lt;T&gt; a_colony(size_type n, Skipfield_type min_block_size
     = 8, Skipfield_type max_block_size =
-    std::numeric_limits&lt;Skipfield_type&gt;::max())</code> 
+    std::numeric_limits&lt;Skipfield_type&gt;::max())</code>
     <p>Fill constructor with value_type unspecified, so the value_type's
     default constructor is used. <code>n</code> specifies the number of
     elements to create upon construction. If <code>n</code> is larger than
@@ -888,7 +888,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     &amp;el = {3, 5, 2, 1000};<br>
     std::colony&lt;int&gt; int_colony(el, 64, 512);</code> </p>
   </li>
-  <li><code>colony&lt;T&gt; a_colony(colony &amp;source)</code> 
+  <li><code>colony&lt;T&gt; a_colony(colony &amp;source)</code>
     <p>Copy all contents from source colony, removes any empty (erased) element
     locations in the process. Size of blocks created is either the total size
     of the source colony, or the maximum block size of the source colony,
@@ -896,7 +896,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     Example: <code style="color: brown">std::colony&lt;int&gt;
     int_colony_2(int_colony_1);</code> </p>
   </li>
-  <li><code>colony&lt;T&gt; a_colony(colony &amp;&amp;source)</code> 
+  <li><code>colony&lt;T&gt; a_colony(colony &amp;&amp;source)</code>
     <p>Move all contents from source colony, does not remove any erased element
     locations or alter any of the source block sizes. Source colony is now
     empty and can be safely destructed or otherwise used.<br>
@@ -935,7 +935,29 @@ operator &lt;= <br>
 operator &gt;= <br>
 base() (reverse_iterator and const_reverse_iterator only)</code> </p>
 
-<h3>Member functions</h3>
+
+<p>For more information see the <a href="#functions">member functions list</a> in the appendices.</p>
+
+
+
+
+<h2><a name="#acknowledgements"></a>VI. Acknowledgements</h2>
+<p>Matt would like to thank: Glen Fernandes and Ion Gaztanaga for restructuring
+advice, Robert Ramey for documentation advice, various Boost and SG14 members
+for support, Baptiste Wicht for teaching me how to construct decent benchmarks,
+Jonathan Wakely for standards-compliance advice and critiques, Sean Middleditch, Patrice Roy
+and Guy Davidson for critiques, support and bug reports, that guy from Lionhead for
+annoying me enough to force me to implement the original skipfield
+pattern, Jon Blow for some initial advice and Mike Acton for some influence.<br>
+Also Nico Josuttis for doing such an excellent job in terms of explaining the general format of the structure to the committee.
+</p>
+
+
+
+
+<h2>Appendices</h2>
+
+<h3><a name="#functions"></a>Appendix A: Member functions</h3>
 
 <h4>Insert</h4>
 
@@ -1144,7 +1166,7 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
   <li><code>void sort();<br>
     <br>
     template &lt;class comparison_function&gt;<br>
-    void sort(comparison_function compare);</code> 
+    void sort(comparison_function compare);</code>
     <p>Sort the content of the colony. By default this compares the colony
     content using a less-than operator, unless the user supplies a comparison
     function (ie. same conditions as std::list's sort function). Uses std::sort
@@ -1179,7 +1201,7 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
     colony&lt;int&gt; colony1 = {1, 2, 3, 4}, colony2 = {5, 6, 7, 8};<br>
     colony1.splice(colony2);</code> </p>
   </li>
-  <li><code>colony &amp; operator = (colony &amp;source)</code> 
+  <li><code>colony &amp; operator = (colony &amp;source)</code>
     <p>Copy the elements from another colony to this colony, clearing this
     colony of existing elements first.<br>
     Example: <code style="color: brown">// Manually swap data_colony1 and
@@ -1271,7 +1293,7 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
   </li>
   <li><code>size_type
     get_index_from_reverse_iterator(reverse_iterator/const_reverse_iterator
-    &amp;the_iterator) <b>(slow)</b></code> 
+    &amp;the_iterator) <b>(slow)</b></code>
     <p>The same as get_index_from_iterator, but for reverse_iterators and
     const_reverse_iterators. Index is from front of colony (same as iterator),
     not back of colony. Example:</p>
@@ -1358,6 +1380,8 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
 
 <p>Note: the four immediately above are member functions in the reference
 implementation as a workaround for an unfixed bug in MSVC2013.</p>
+
+
 
 <h3><a id="benchmarks"></a>Appendix B - reference implementation benchmarks</h3>
 
@@ -1628,36 +1652,20 @@ commentary for the MSVC results.</p>
     the number of allocations.</p>
   </li>
   <li><h4><a name="simd"></a>Can a colony be used with SIMD instructions?</h4>
-    <p>No and yes. Yes if you're careful, no if you're not. On most platforms
-    SIMD instructions require elements to be contiguous in memory, and when you
-    have a bunch of erasures in a colony, there's no guarantee that your
-    objects will be contiguous in memory, even though they are sequential
-    during iteration. Some of them may also be in different memory blocks to
-    each other. Hence if you want to use SIMD with colony, you must do the
-    following:</p>
+    <p>No and yes. Yes if you're careful, no if you're not.<br>
+	 On platforms which support scatter and gather operations you can use colony with SIMD as much as you want, using gather to load elements from disparate or sequential locations, into a SIMD register. Then use scatter to push the post-SIMD-process values elsewhere after.<br>
+	 On platforms which require elements to be contiguous in memory for SIMD processing, this is more complicated. When you have a bunch of erasures in a colony, there's no guarantee that your objects will be contiguous in memory, even though they are sequential during iteration. Some of them may also be in different memory blocks to each other. In these situations if you want to use SIMD with colony, you must do the following:</p>
     <ul>
-      <li>Set your minimum and maximum block sizes to multiples of the width of
-        your SIMD instruction. If it supports 8 elements at once, set the block
-        sizes to multiples of 8.</li>
-      <li>Either never erase from the colony, or:<br>
-
-        <ol>
-          <li>After doing a bunch of erasures, copy-construct a new colony from
-            the existing colony, then std::move the new colony to the existing
-            colony (will invalidate all pointers to elements within the
-            colony), OR:</li>
-          <li>Only erase from the back or front of the colony, and only erase
-            elements in multiples of the width of your SIMD instruction eg. 8
-            consecutive elements at once. This will ensure that the
-            end-of-memory-block boundaries line up with the width of the SIMD
-            instruction, provided you've set your min/max block sizes as
-          above.</li>
-        </ol>
-      </li>
-    </ul>
-    <p>Generally if you want to use SIMD, it's probably preferable to use a
-    vector or an array.</p>
-  </li>
+    <li>Set your minimum and maximum group sizes to multiples of the width of your SIMD instruction. If it supports 8 elements at once, set the group sizes to multiples of 8.</li>
+    <li>Either never erase from the colony, or:<br>
+    	<ol>
+    	<li>Shrink-to-fit after you erase (will invalidate all pointers to elements within the colony).</li>
+    	<li>Only erase from the back or front of the colony, and only erase elements in multiples of the width of your SIMD instruction eg. 8 consecutive elements at once. This will ensure that the end-of-memory-block boundaries line up with the width of the SIMD instruction, provided you've set your min/max block sizes as above.</li>
+    	</ol>
+   </li>
+   </ul>
+	<p>Generally if you want to use SIMD without gather/scatter, it's probably preferable to use a vector or an array.</p>
+   </li>
 </ol>
 
 <h3><a id="responses" name="responses"></a>Appendix D - Specific responses to
@@ -1833,7 +1841,7 @@ likely the following or derivatives:</p>
     <br>
     Advantages: Fast "deactivation". Easy to manage in multi-access
     environments.<br>
-    Disadvantages: Slower to iterate due to branching.</li>
+    Disadvantages: Can be slower to iterate due to branching.</li>
   <li>Using a vector of data and a secondary vector of indexes. When erasing,
     the erasure occurs only in the vector of indexes, not the vector of data.
     When iterating it iterates over the vector of indexes and accesses the data
@@ -1861,6 +1869,7 @@ indie developers are more likely to rely on third party solutions. Regardless,
 standardising the container will allow for greater cross-discipline
 communcation.</p>
 
+
 <h3><a id="questions"></a>Appendix F - Questions for reviewers</h3>
 
 <p>Please feel free to get in touch with information and opinions on the
@@ -1868,12 +1877,14 @@ following topics:</p>
 <ul>
   <li>Can you see any possible alternative to a 1-node-per-element
   skipfield?</li>
-  <li>Can you see any disadvantages to including &lt;, &gt;, &lt;= and &gt;=
-    operators?</li>
+  <li>Can you see any possible difficulties with implementing a thread-safe version fo this structure?</li>
 </ul>
+
 
 <h3><a id="revisions"></a>Appendix G - Paper revision history</h3>
 <ul>
+  <li>R8: Correction to SIMD info. Correction to structure (missing appendices title, member functions and technical specification were conjoined, acknowledgments section had mysteriously gone missing since an earlier version, now restored and updated).</li>
+  <li>R7: Minor changes to member functions.</li>
   <li>R6: Re-write. Reserve() and shrink_to_fit() removed from
   specification.</li>
   <li>R5: Additional note for reserve, re-write of introduction.</li>
