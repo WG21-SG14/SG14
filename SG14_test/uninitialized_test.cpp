@@ -19,7 +19,7 @@ namespace
 		{
 			++construct;
 		}
-		lifetest(lifetest&& /*in*/)
+		lifetest(lifetest&& /*in*/) noexcept
 		{
 			++move;
 		}

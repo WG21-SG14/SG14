@@ -51,14 +51,14 @@ struct Vector {
     Vector() = default;
     template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
     Vector(const Vector& rhs) { *this = rhs; }
-    Vector(Vector&& rhs) { *this = std::move(rhs); }
+    Vector(Vector&& rhs) noexcept { *this = std::move(rhs); }
     template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
     void operator=(const Vector& rhs) {
         size_ = rhs.size_;
         data_ = std::make_unique<T[]>(size_);
         std::copy(rhs.begin(), rhs.end(), data_.get());
     }
-    void operator=(Vector&& rhs) {
+    void operator=(Vector&& rhs) noexcept {
         size_ = rhs.size_;
         data_ = std::move(rhs.data_);
     }
@@ -452,7 +452,7 @@ static void GenerationsDontSkipTest()
     using T = typename SM::mapped_type;
     SM sm;
     auto k1 = sm.emplace(Monad<T>::from_value(1));
-    int original_cap = sm.slot_count();
+    int original_cap = static_cast<int>(sm.slot_count());
     for (int i=1; i < original_cap; ++i) {
         sm.emplace(Monad<T>::from_value(i));
     }
@@ -480,7 +480,7 @@ static void IndexesAreUsedEvenlyTest()
     SM sm;
     auto k1 = sm.emplace(Monad<T>::from_value(1));
     auto k2 = sm.emplace(Monad<T>::from_value(2));
-    int original_cap = sm.slot_count();
+    int original_cap = static_cast<int>(sm.slot_count());
     for (int i=2; i < original_cap; ++i) {
         sm.emplace(Monad<T>::from_value(i));
     }

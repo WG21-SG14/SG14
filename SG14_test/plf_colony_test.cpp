@@ -135,21 +135,21 @@
 namespace
 {
 
-    inline void failpass(const char *test_type, bool condition)
-    {
-        if (!condition)
-        {
-				printf("%s: Fail\n", test_type);
-				getchar();
-            abort();
-        }
-    }
+	inline void failpass(const char* test_type, bool condition)
+	{
+		if (!condition)
+		{
+			printf("%s: Fail\n", test_type);
+			getchar();
+			abort();
+		}
+	}
 
-	void title1(const char *)
+	void title1(const char*)
 	{
 	}
 
-	void title2(const char *)
+	void title2(const char*)
 	{
 	}
 
@@ -192,12 +192,13 @@ namespace
 	};
 
 
+
 	struct small_struct
 	{
-		double *empty_field_1;
+		double* empty_field_1;
 		double unused_number;
 		unsigned int empty_field2;
-		double *empty_field_3;
+		double* empty_field_3;
 		int number;
 		unsigned int empty_field4;
 
@@ -205,17 +206,36 @@ namespace
 	};
 
 
+
 	class non_copyable_type
 	{
 	private:
 		int i;
-		non_copyable_type(const non_copyable_type &); // non construction-copyable
-		non_copyable_type& operator=(const non_copyable_type &); // non copyable
+		non_copyable_type(const non_copyable_type&); // non construction-copyable
+		non_copyable_type& operator=(const non_copyable_type&); // non copyable
 	public:
 		non_copyable_type(int a) : i(a) {}
 	};
 
 #endif
+
+
+
+
+	int global_counter = 0;
+
+	struct small_struct_non_trivial
+	{
+		double* empty_field_1;
+		double unused_number;
+		unsigned int empty_field2;
+		double* empty_field_3;
+		int number;
+		unsigned int empty_field4;
+
+		small_struct_non_trivial(const int num) PLF_NOEXCEPT: number(num) {};
+		~small_struct_non_trivial() { ++global_counter; };
+	};
 }
 
 
@@ -513,12 +533,9 @@ void plf_colony_test()
 			i_colony.clear();
 			i_colony.change_minimum_group_size(10000);
 			
-			for (unsigned int temp = 0; temp != 30000; ++temp)
-			{
-				i_colony.insert(1);
-			}
+			i_colony.insert(30000, 1); // fill-insert 30000 elements
 			
-			failpass("Size after reinitialize + insert test", i_colony.size() == 30000);
+			failpass("Size after reinitialize + fill-insert test", i_colony.size() == 30000);
 
 			unsigned short count2 = 0;
 			
@@ -541,10 +558,7 @@ void plf_colony_test()
 			
 			failpass("Erase randomly till half-empty test", i_colony.size() == 30000u - count2);
 
-			for (unsigned int temp = 0; temp != count2; ++temp)
-			{
-				i_colony.insert(1);
-			}
+			i_colony.insert(count2, 1);
 			
 			failpass("Size after reinsert test", i_colony.size() == 30000);
 
@@ -589,10 +603,7 @@ void plf_colony_test()
 			failpass("Random insert/erase till empty test", i_colony.size() == 0);
 
 			
-			for (unsigned int temp = 0; temp != 500000; ++temp)
-			{
-				i_colony.insert(10);
-			}
+			i_colony.insert(500000, 10);
 
 			failpass("Insert post-erase test", i_colony.size() == 500000);
 			colony<int>::iterator it2 = i_colony.begin();
@@ -606,11 +617,7 @@ void plf_colony_test()
 			
 			failpass("Large multi-increment iterator test", i_colony.size() == 250000);
 
-			
-			for (unsigned int temp = 0; temp != 250000; ++temp)
-			{
-				i_colony.insert(10);
-			}
+			i_colony.insert(250000, 10);
 			
 			colony<int>::iterator end_iterator = i_colony.end();
 			i_colony.advance(end_iterator, -250000);
@@ -622,13 +629,8 @@ void plf_colony_test()
 
 			failpass("Large multi-decrement iterator test", i_colony.size() == 250000);
 
-			
-			for (int temp = 0; temp != 250000; ++temp)
-			{
-				i_colony.insert(10);
-			}
-			
-			
+
+			i_colony.insert(250000, 10);
 			int total = 0;
 			
 			for (colony<int>::iterator the_iterator = i_colony.begin(); the_iterator != i_colony.end(); ++the_iterator)
@@ -652,10 +654,7 @@ void plf_colony_test()
 			failpass("Non-end decrement + erase test", i_colony.size() == 350001);
 			
 
-			for (unsigned int temp = 0; temp != 100000; ++temp)
-			{
-				i_colony.insert(10);
-			}
+			i_colony.insert(100000, 10);
 			
 			begin_iterator = i_colony.begin();
 			i_colony.advance(begin_iterator, 300001);
@@ -978,7 +977,7 @@ void plf_colony_test()
 				i_colony.clear();
 				internal_loop_counter = 0;
 				
-				i_colony.insert(10000, 10); // fill-insert
+				i_colony.insert(10000, 10);
 				
 				while (!i_colony.empty())
 				{
@@ -1062,6 +1061,150 @@ void plf_colony_test()
 			i_colony.erase(i_colony.begin(), i_colony.begin());
 
 			failpass("Range-erase when range is empty test (crash test)", i_colony.size() == 10);
+
+
+
+			i_colony.insert(10000, 5);
+
+			int sum1 = 0, sum2 = 0;
+			range1 = 0;
+			range2 = 0;
+
+
+			// Erase half of all elements and sum the rest:
+			for (colony<int>::iterator it = i_colony.begin(); it != i_colony.end(); ++it)
+			{
+				it = i_colony.erase(it);
+				sum1 += *it;
+				++range1;
+			}
+
+			
+			colony<int>::raw_memory_block_pointers *data = i_colony.get_raw_memory_block_pointers();
+
+			// Manually sum using raw memory blocks:
+			for (unsigned int block_num = 0; block_num != data->number_of_blocks; ++block_num)
+			{
+				for (unsigned short block_sub_index = 0; block_sub_index != data->block_sizes[block_num]; ++block_sub_index)
+				{
+					if ((data->skipfield_memory_block_pointers[block_num])[block_sub_index] == 0)
+					{
+						// We have to reinterpret_cast (via pointers) back to the original type since colony stores data internally as an aligned version of the same type
+						sum2 += *reinterpret_cast<int *>((data->element_memory_block_pointers[block_num]) + block_sub_index);
+						++range2;
+					}
+				}
+			}
+
+			delete data;
+
+			failpass("Manual summing pass over elements gotten from get_raw_memory_block_pointers()", (sum1 == sum2) && (range1 == range2));
+		}
+
+
+
+		{
+			title1("Non-trivial type tests");
+			
+			colony<small_struct_non_trivial> ss_nt;
+			colony<small_struct_non_trivial>::iterator ss_it1, ss_it2;
+			
+			small_struct_non_trivial ss(5);
+			
+			unsigned int size, range1 = 0, range2 = 0, internal_loop_counter;
+			int counter, sum1 = 0, sum2 = 0;
+
+			ss_nt.insert(10000, ss);
+
+			failpass("Non-trivial type insert test", ss_nt.size() == 10000);
+
+
+			for (colony<small_struct_non_trivial>::iterator ss_it = ss_nt.begin(); ss_it != ss_nt.end(); ++ss_it)
+			{
+				ss_it = ss_nt.erase(ss_it);
+				sum1 += ss_it->number;
+				++range1;
+			}
+
+			failpass("Non-trivial type erase half of all elements", ss_nt.size() == 5000);
+			
+			
+			colony<small_struct_non_trivial>::raw_memory_block_pointers *data = ss_nt.get_raw_memory_block_pointers();
+
+			// Manually pass over contents:
+			for (unsigned int block_num = 0; block_num != data->number_of_blocks; ++block_num)
+			{
+				for (unsigned short block_sub_index = 0; block_sub_index != data->block_sizes[block_num]; ++block_sub_index)
+				{
+					if (*(data->skipfield_memory_block_pointers[block_num] + block_sub_index) == 0)
+					{
+						// We have to reinterpret_cast (via pointers) back to the original type since the colony stores data as an aligned version of the same type
+						sum2 += (reinterpret_cast<small_struct_non_trivial *>(data->element_memory_block_pointers[block_num] + block_sub_index))->number;
+						++range2;
+					}
+				}
+			}
+
+			delete data;
+
+			failpass("Non-trivial manual summing pass over elements gotten from get_raw_memory_block_pointers()", (sum1 == sum2) && (range1 == range2));
+
+			
+			for (unsigned int loop_counter = 0; loop_counter != 50; ++loop_counter)
+			{
+				ss_nt.clear();
+
+				for (counter = 0; counter != 1000; ++counter)
+				{
+					ss_nt.insert(counter);
+				}
+				
+				internal_loop_counter = 0;
+
+				while (!ss_nt.empty())
+				{
+					ss_it2 = ss_it1 = ss_nt.begin();
+
+					size = static_cast<unsigned int>(ss_nt.size());
+					range1 = xor_rand() % size;
+					range2 = range1 + 1 + (xor_rand() % (size - range1));
+					ss_nt.advance(ss_it1, range1);
+					ss_nt.advance(ss_it2, range2);
+
+					ss_nt.erase(ss_it1, ss_it2);
+
+					counter = 0;
+
+					for (colony<small_struct_non_trivial>::iterator ss_it = ss_nt.begin(); ss_it != ss_nt.end(); ++ss_it)
+					{
+						++counter;
+					}
+
+					if (ss_nt.size() != static_cast<unsigned int>(counter))
+					{
+						printf("Fuzz-test range-erase randomly Fail: loop counter: %u, internal_loop_counter: %u.\n", loop_counter, internal_loop_counter);
+						getchar(); 
+						abort(); 
+					}
+					
+					if (ss_nt.size() != ss_nt.group_size_sum())
+					{
+						printf("Fuzz-test range-erase randomly Fail - group_size_sum failure: loop counter: %u, internal_loop_counter: %u, size: %u, group_size_sum: %u.\n", loop_counter, internal_loop_counter, static_cast<unsigned int>(ss_nt.size()), static_cast<unsigned int>(ss_nt.group_size_sum()));
+						getchar(); 
+						abort(); 
+					}
+					
+					if (ss_nt.size() > 2)
+					{ // Test to make sure our stored erased_locations are valid
+						ss_nt.insert(1);
+						ss_nt.insert(10);
+					}
+	
+					++internal_loop_counter;
+				}
+			}
+
+			failpass("Non-trivial type fuzz-test range-erase randomly until empty", ss_nt.size() == 0);
 		}
 
 
@@ -1247,6 +1390,8 @@ void plf_colony_test()
 
 			failpass("Non-copyable size test", temp.size() == 2);
 		}
+
+
 		#endif
 
 

@@ -244,7 +244,7 @@ public:
 	typedef element_skipfield_type																		skipfield_type;
 
 	#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
-		typedef typename std::aligned_storage<sizeof(element_type), (alignof(element_type) > (sizeof(element_skipfield_type) * 2)) ? alignof(element_type) : (sizeof(element_skipfield_type) * 2)>::type	aligned_element_type;
+		typedef typename std::aligned_storage<sizeof(element_type), (sizeof(element_type) > (sizeof(element_skipfield_type) * 2)) ? alignof(element_type) : (sizeof(element_skipfield_type) * 2)>::type	aligned_element_type;
 	#else
 		typedef element_type																				aligned_element_type;
 	#endif
@@ -322,7 +322,7 @@ private:
 		const skipfield_pointer_type		skipfield; 					// Skipfield storage. The element and skipfield arrays are allocated contiguously, hence the skipfield pointer also functions as a 'one-past-end' pointer for the elements array. There will always be one additional skipfield node allocated compared to the number of elements. This is to ensure a faster ++ iterator operation (fewer checks are required when this is present). The extra node is unused and always zero, but checked, and not having it will result in out-of-bounds memory errors.
 		group_pointer_type					previous_group; 			// previous group in the intrusive list of all groups. NULL if no preceding group
 		skipfield_type						free_list_head; 			// The index of the last erased element in the group. The last erased element will, in turn, contain the number of the index of the next erased element, and so on. If this is == maximum skipfield_type value then free_list is empty ie. no erasures have occurred in the group (or if they have, the erased locations have then been reused via insert()).
-		const skipfield_type				capacity; 						// The element capacity of this particular group
+		const skipfield_type				capacity; 					// The element capacity of this particular group
 		skipfield_type						number_of_elements; 		// indicates total number of active elements in group - changes with insert and erase commands - used to check for empty group in erase function, as an indication to remove the group
 		group_pointer_type					erasures_list_next_group; 	// The next group in the intrusive singly-linked list of groups with erasures ie. with active erased-element free lists
 		size_type							group_number; 				// Used for comparison (> < >= <=) iterator operators (used by distance function and user)
@@ -348,7 +348,7 @@ private:
 		#else
 			// This is a hack around the fact that element_allocator_type::construct only supports copy construction in C++03 and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and losing performance) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor.
 			group(const skipfield_type elements_per_group, group_pointer_type const previous = NULL):
-				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + ((elements_per_group + 1) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))),
+				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + (static_cast<size_type>(elements_per_group + 1) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))),
 				elements(NULL),
 				skipfield(reinterpret_cast<skipfield_pointer_type>(last_endpoint + elements_per_group)),
 				previous_group(previous),
@@ -965,7 +965,7 @@ private:
 
 
 	iterator				end_iterator, begin_iterator;
-	group_pointer_type	groups_with_erasures_list_head; // Head of a singly-linked intrusive list of groups which have erased-element memory locations available for reuse
+	group_pointer_type		groups_with_erasures_list_head; // Head of a singly-linked intrusive list of groups which have erased-element memory locations available for reuse
 	size_type				total_number_of_elements, total_capacity;
 
 	struct ebco_pair2 : pointer_allocator_type // Packaging the element pointer allocator with a lesser-used member variable, for empty-base-class optimisation
@@ -1893,7 +1893,7 @@ private:
 					}
 					else
 					{
-						alignas (sizeof(aligned_element_type)) element_type aligned_copy = element; // to avoid potentially violating memory boundaries in line below, create an initial copy object of same (but aligned) type
+						alignas (alignof(aligned_element_type)) element_type aligned_copy = element; // to avoid potentially violating memory boundaries in line below, create an initial copy object of same (but aligned) type
 						std::fill_n(end_iterator.element_pointer, number_of_elements, *(reinterpret_cast<aligned_pointer_type>(&aligned_copy)));
 					}
 				#else // type is not aligned to anything so is safe to use fill_n anyway:
@@ -1942,7 +1942,7 @@ private:
 					}
 					else
 					{
-						alignas (sizeof(aligned_element_type)) element_type aligned_copy = element; // to avoid potentially violating memory boundaries in line below, create an initial copy object of same (but aligned) type
+						alignas (alignof(aligned_element_type)) element_type aligned_copy = element; // to avoid potentially violating memory boundaries in line below, create an initial copy object of same (but aligned) type
 						std::fill_n(location, number_of_elements, *(reinterpret_cast<aligned_pointer_type>(&aligned_copy)));
 					}
 				#else // type is not aligned to anything so is safe to use fill_n anyway:
@@ -1965,7 +1965,7 @@ private:
 				{
 					// Reconstruct existing skipblock and free-list indexes to reflect partially-reused skipblock:
 					const skipfield_type elements_constructed_before_exception = static_cast<skipfield_type>((current_location - 1) - location);
-					groups_with_erasures_list_head->number_of_elements += elements_constructed_before_exception;
+					groups_with_erasures_list_head->number_of_elements = static_cast<skipfield_type>(groups_with_erasures_list_head->number_of_elements + elements_constructed_before_exception);
 					total_number_of_elements += elements_constructed_before_exception;
 
 					std::memset(skipfield_pointer, 0, elements_constructed_before_exception * sizeof(skipfield_type));
@@ -1973,7 +1973,7 @@ private:
 					*(reinterpret_cast<skipfield_pointer_type>(location + elements_constructed_before_exception)) = prev_free_list_node;
 					*(reinterpret_cast<skipfield_pointer_type>(location + elements_constructed_before_exception) + 1) = std::numeric_limits<skipfield_type>::max();
 
-					const skipfield_type new_skipblock_head_index = static_cast<skipfield_type>(location - groups_with_erasures_list_head->elements) + elements_constructed_before_exception;
+					const skipfield_type new_skipblock_head_index = static_cast<skipfield_type>(static_cast<skipfield_type>(location - groups_with_erasures_list_head->elements) + elements_constructed_before_exception);
 					groups_with_erasures_list_head->free_list_head = new_skipblock_head_index;
 
 					if (prev_free_list_node != std::numeric_limits<skipfield_type>::max())
@@ -2310,8 +2310,9 @@ public:
 					update_value = following_value;
 					break;
 				}
-				case 3: // both preceding and following consecutive erased elements
+				case 3: // both preceding and following consecutive erased elements - erased element is between two skipblocks
 				{
+               *(it.skipfield_pointer) = 1;  // modification to allow skipfield to be used for SIMD-gather masking
 					const skipfield_type preceding_value = *(it.skipfield_pointer - 1);
 					const skipfield_type following_value = static_cast<skipfield_type>(*(it.skipfield_pointer + 1) + 1);
 
@@ -2440,7 +2441,7 @@ public:
 
 		iterator current = iterator1;
 
-		if (current.group_pointer != iterator2.group_pointer)
+		if (current.group_pointer != iterator2.group_pointer) // ie. if start and end iterators are in separate groups
 		{
 			if (current.element_pointer != current.group_pointer->elements + *(current.group_pointer->skipfield)) // if iterator1 is not the first non-erased element in it's group - most common case
 			{
@@ -2522,10 +2523,13 @@ public:
 				const skipfield_type previous_node_value = *(iterator1.skipfield_pointer - 1);
 				const skipfield_type distance_to_end = static_cast<skipfield_type>(end - iterator1.element_pointer);
 
+				std::memset(&*(iterator1.skipfield_pointer), 1, sizeof(skipfield_type) * (static_cast<size_type>(distance_to_end) - 1)); // modification to allow skipfield to be used for SIMD-gather masking
+
+
 				if (previous_node_value == 0) // no previous skipblock
 				{
-					*iterator1.skipfield_pointer = distance_to_end;
-					*(iterator1.skipfield_pointer + distance_to_end - 1) = distance_to_end;
+					*iterator1.skipfield_pointer = distance_to_end; // set start node value
+					*(iterator1.skipfield_pointer + distance_to_end - 1) = distance_to_end; // set end node value
 
 					const skipfield_type index = static_cast<skipfield_type>(iterator1.element_pointer - iterator1.group_pointer->elements);
 
@@ -2692,6 +2696,9 @@ public:
 
 			const skipfield_type distance_to_iterator2 = static_cast<skipfield_type>(iterator2.element_pointer - current_saved.element_pointer);
 			const skipfield_type index = static_cast<skipfield_type>(current_saved.element_pointer - iterator2.group_pointer->elements);
+
+			std::memset(&*(current_saved.skipfield_pointer + 1), 1, sizeof(skipfield_type) * (static_cast<size_type>(distance_to_iterator2) - 1));  // modification to allow skipfield to be used for SIMD-gather masking
+
 
 			if (index == 0 || *(current_saved.skipfield_pointer - 1) == 0) // element is either at start of group or previous skipfield node is 0
 			{
@@ -3991,6 +3998,53 @@ public:
 		end_iterator = source.end_iterator;
 		total_number_of_elements += source.total_number_of_elements;
 		source.blank();
+	}
+
+
+
+	struct raw_memory_block_pointers : private uchar_allocator_type
+	{
+		aligned_pointer_type *element_memory_block_pointers;		// array of pointers to element memory blocks (allow for scatter back to memory blocks)
+		skipfield_pointer_type *skipfield_memory_block_pointers;	// array of pointers to skipfield memory blocks
+		skipfield_type *block_sizes;								// array of the number of elements in each memory block
+		size_type number_of_blocks;									// size of each array
+
+		raw_memory_block_pointers(const size_type size) :
+			element_memory_block_pointers(reinterpret_cast<aligned_pointer_type *>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, size * sizeof(aligned_pointer_type), NULL))),
+			skipfield_memory_block_pointers(reinterpret_cast<skipfield_pointer_type *>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, size * sizeof(skipfield_pointer_type), NULL))),
+			block_sizes(reinterpret_cast<skipfield_type *>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, size * sizeof(skipfield_type *), NULL))),
+			number_of_blocks(size)
+		{}
+
+		~raw_memory_block_pointers()
+		{
+			PLF_COLONY_DEALLOCATE(uchar_allocator_type, (*this), reinterpret_cast<uchar_pointer_type>(element_memory_block_pointers), number_of_blocks * sizeof(pointer));
+			PLF_COLONY_DEALLOCATE(uchar_allocator_type, (*this), reinterpret_cast<uchar_pointer_type>(skipfield_memory_block_pointers), number_of_blocks * sizeof(skipfield_pointer_type));
+			PLF_COLONY_DEALLOCATE(uchar_allocator_type, (*this), reinterpret_cast<uchar_pointer_type>(block_sizes), number_of_blocks * sizeof(size_type));
+		}
+	};
+
+
+
+	raw_memory_block_pointers * get_raw_memory_block_pointers()
+	{
+		raw_memory_block_pointers *data = new raw_memory_block_pointers(end_iterator.group_pointer->group_number + 1);
+		size_type group_number = 0;
+		
+		for (group_pointer_type current_group = begin_iterator.group_pointer; current_group != end_iterator.group_pointer; current_group = current_group->next_group)
+		{
+			data->element_memory_block_pointers[group_number] = current_group->elements;
+			data->skipfield_memory_block_pointers[group_number] = current_group->skipfield;
+			data->block_sizes[group_number] = current_group->capacity;
+			++group_number;
+		}
+		
+		// Special case for end group:
+		data->element_memory_block_pointers[group_number] = end_iterator.group_pointer->elements;
+		data->skipfield_memory_block_pointers[group_number] = end_iterator.group_pointer->skipfield;
+		data->block_sizes[group_number] = static_cast<skipfield_type>(end_iterator.group_pointer->last_endpoint - end_iterator.group_pointer->elements);
+		
+		return data;
 	}
 
 

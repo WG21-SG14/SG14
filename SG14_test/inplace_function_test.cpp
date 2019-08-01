@@ -18,14 +18,14 @@ static int expected;
 struct Functor {
     Functor() {}
     Functor(const Functor&) { copied += 1; }
-    Functor(Functor&&) { moved += 1; }
+    Functor(Functor&&) noexcept { moved += 1; }
     void operator()(int i) { assert(i == expected); called_with = i; }
 };
 
 struct ConstFunctor {
     ConstFunctor() {}
     ConstFunctor(const ConstFunctor&) { copied += 1; }
-    ConstFunctor(ConstFunctor&&) { moved += 1; }
+    ConstFunctor(ConstFunctor&&) noexcept { moved += 1; }
     void operator()(int i) const { assert(i == expected); called_with = i; }
 };
 
@@ -103,7 +103,7 @@ struct AnotherFunctor
     int operator()(int x) { mTotal += x; return mTotal; }
 
     AnotherFunctor() { mConstructorCalls++; }
-    AnotherFunctor(AnotherFunctor&&) { mConstructorCalls++; }
+    AnotherFunctor(AnotherFunctor&&) noexcept { mConstructorCalls++; }
     AnotherFunctor(const AnotherFunctor&) { mConstructorCalls++; }
     ~AnotherFunctor() { mDestructorCalls++; }
 };
@@ -523,7 +523,7 @@ struct InstrumentedCopyConstructor {
     InstrumentedCopyConstructor(const InstrumentedCopyConstructor&) {
         copies += 1;
     }
-    InstrumentedCopyConstructor(InstrumentedCopyConstructor&&) {
+    InstrumentedCopyConstructor(InstrumentedCopyConstructor&&) noexcept {
         moves += 1;
     }
 };

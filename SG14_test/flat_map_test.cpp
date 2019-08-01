@@ -30,9 +30,9 @@ struct InstrumentedWidget {
     static int move_ctors, copy_ctors;
     InstrumentedWidget() = delete;
     InstrumentedWidget(const char *s) : s_(s) {}
-    InstrumentedWidget(InstrumentedWidget&& o) : s_(std::move(o.s_)) { o.is_moved_from = true; move_ctors += 1; }
+    InstrumentedWidget(InstrumentedWidget&& o) noexcept : s_(std::move(o.s_)) { o.is_moved_from = true; move_ctors += 1; }
     InstrumentedWidget(const InstrumentedWidget& o) : s_(o.s_) { copy_ctors += 1; }
-    InstrumentedWidget& operator=(InstrumentedWidget&& o) {
+    InstrumentedWidget& operator=(InstrumentedWidget&& o) noexcept {
         s_ = std::move(o.s_);
         o.is_moved_from = true;
         return *this;
