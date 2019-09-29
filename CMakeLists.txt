@@ -30,6 +30,7 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib) # For future use with testing 
 ##
 add_library(${PROJECT_NAME} INTERFACE)
 
+include(GNUInstallDirs)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -79,13 +80,11 @@ endif()
 
 install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}_targets)
 
-include(GNUInstallDirs)
-
 install(EXPORT ${PROJECT_NAME}_targets
     NAMESPACE ${PROJECT_NAME}::
     FILE ${PROJECT_NAME}-config.cmake
     DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
 )
 
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/SG14" DESTINATION include)
+install(DIRECTORY "${SG14_INCLUDE_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
