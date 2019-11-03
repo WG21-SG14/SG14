@@ -19,7 +19,7 @@
       p {
          padding: 0;
          line-height: 1.3em;
-         margin-top: 2.5em;
+         margin-top: 1.2em;
          margin-bottom: 1em;
          text-align: left;
       }
@@ -165,8 +165,8 @@ code {
 
 <body>
 Audience: LEWG, SG14, WG21<br>
-Document number: D0447R8<br>
-Date: 2019-07-30<br>
+Document number: D0447R10<br>
+Date: 2019-11-03<br>
 Project: Introduction of std::colony to the standard library <br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
 
@@ -195,14 +195,15 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
   </li>
 </ol>
 
-<h2><a name="introduction"></a>I. Introduction</h2>
+<h2><a id="introduction"></a>I. Introduction</h2>
+
+<p>The purpose of a container in the standard library cannot be to provide the most optimal solution for all scenarios. Inevitably in fields such as high-performance trading or gaming, the optimal solution within critical loops will be a custom-made one that fits that scenario perfectly. However, outside of the most critical of hot paths, there is a wide range of application for more generalised solutions.</p>
 
 <p>Colony is a formalisation, extension and optimization of what is typically
 known as a 'bucket array' container in game programming circles; similar
 structures exist in various incarnations across the high-performance computing,
-high performace trading, physics simulation, robotics, server/client
-application and particle simulation fields (see: <a
-href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ</a>).</p>
+high performance trading, physics simulation, robotics, server/client
+application and particle simulation fields (see: <a href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ</a>).</p>
 
 <p>The concept of a bucket array is: you have multiple memory blocks of
 elements, and a boolean token for each element which denotes whether or not
@@ -213,19 +214,19 @@ blocks. If an insertion occurs when all the blocks are full, a new memory block
 is allocated.</p>
 
 <p>The advantages of this structure are as follows: because a skipfield is
-used, no reallocation of elements is necessary - which means element memory
-locations stay stable, which means pointers and references stay valid
-regardless of erasures. Because the structure uses multiple memory blocks,
-insertions also do not trigger reallocations. This is highly desirable, for
+used, no reallocation of elements is necessary upon erasure. Because the structure uses multiple memory blocks,
+insertions to a full container also do not trigger reallocations. This means that element memory
+locations stay stable and pointers/references stay valid
+regardless of erasure/insertion. This is highly desirable, for
 example, in game programming because there are usually multiple elements in
-different containers which need to reference each other during gameplay.</p>
+different containers which need to reference each other during gameplay and elements are being inserted or erased in real time.</p>
 
 <p>Problematic aspects of a typical bucket array are that they tend to have a
 fixed memory block size, do not re-use memory locations from erased elements,
 and utilize a boolean skipfield. The fixed block size (as opposed to block
 sizes with a growth factor) and lack of erased-element re-use leads to far more
 allocations/deallocations than is necessary. Given that allocation is typically
-a costly operation in most OS's, this becomes important in performance-critical
+a costly operation in most OSs', this becomes important in performance-critical
 environments. The boolean skipfield makes iteration time complexity undefined,
 as there is no way of knowing ahead of time how many erased elements occur
 between any two erased elements. It also requires branching code, which may
@@ -233,13 +234,13 @@ cause issues on processors with deep pipelines and poor branch-prediction
 failure performance.</p>
 
 <p>A colony uses a non-boolean, largely non-branching method for skipping
-<i>runs</i> of erased elements, which allows for O(1) amortized iteration time
+<i>runs</i> of erased elements, which allows for O(1) amortised iteration time
 complexity and more-predictable iteration performance than a bucket array. It
 also utilizes a growth factor for memory blocks and reuses erased element
 locations upon insertion, which leads to fewer allocations/reallocations.
 Because it reuses erased element memory space, the exact location of insertion
-is undefined, unless no erasures have occured or an equal number of erasures
-and insertions have occured (in which case the insertion location is the back
+is undefined, unless no erasures have occurred or an equal number of erasures
+and insertions have occurred (in which case the insertion location is the back
 of the container). The container is therefore considered unordered but
 sortable. Lastly, because there is no way of predicting in advance where
 erasures ('skips') may occur during iteration, an O(1) time complexity []
@@ -258,16 +259,16 @@ width="960">
 
 <p>There are two patterns for accessing stored elements in a colony: the first
 is to iterate over the container and process each element (or skip some
-elements using the advance/prev/next/++/-- functions). The second is to store
+elements using the advance/prev/next/iterator ++/-- functions). The second is to store
 the iterator returned by the insert() function (or a pointer derived from the
 iterator) in some other structure and access the inserted element in that
 way.</p>
 
-<h2><a name="motivation"></a>II. Motivation and Scope</h2>
+<h2><a id="motivation"></a>II. Motivation and Scope</h2>
 
 <p><i>Note: Throughout this document I will use the term 'link' to denote any
 form of referencing between elements whether it be via
-iterators/pointers/indexes/references/id's/etcetera.</i></p>
+iterators/pointers/indexes/references/ids/etc.</i></p>
 
 <p>There are situations where data is heavily interlinked, iterated over
 frequently, and changing often. An example is the typical video game engine.
@@ -283,7 +284,7 @@ quadtrees/octrees, level structures, and so on.</p>
 
 <p>Entities may be erased at any time (for example, a wall gets destroyed and
 no longer is required to be processed by the game's engine, so is erased) and
-new entities nserted (for example, a new enemy is spawned). While this is all
+new entities inserted (for example, a new enemy is spawned). While this is all
 happening the links between entities, resources and superstructures such as
 levels and quadtrees, must stay valid in order for the game to run. The order
 of the entities and resources themselves within the containers is, in the
@@ -329,14 +330,14 @@ general. It will also ease communication across fields, as opposed to the
 current scenario where each field uses a similar container but each has a
 different name for it.</p>
 
-<h2><a name="impact"></a>III. Impact On the Standard</h2>
+<h2><a id="impact"></a>III. Impact On the Standard</h2>
 
 <p>This is a pure library addition, no changes necessary to the standard asides
 from the introduction of the colony container. <br>
 A reference implementation of colony is available for download and use <a
 href="https://plflib.org/colony.htm#download">here</a>. </p>
 
-<h2><a name="design"></a>IV. Design Decisions</h2>
+<h2><a id="design"></a>IV. Design Decisions</h2>
 
 <p>The three core aspects of a colony from an abstract perspective are: </p>
 <ol>
@@ -355,8 +356,8 @@ separate structure). This metadata might include, for example, the number of
 erased elements within each block and the block's capacity - which would allow
 the container to know when the block is empty. A non-boolean skipfield is
 required in order to skip over erased elements during iteration while
-maintaining O(1) amortized iteration time complexity. Finally, a mechanism for
-keeping track of elements which've been erased must be present, so that those
+maintaining O(1) amortised iteration time complexity. Finally, a mechanism for
+keeping track of elements which have been erased must be present, so that those
 memory locations can be reused upon subsequent element insertions.</p>
 
 <p>The following aspects of a colony must be implementation-defined in order to
@@ -378,7 +379,7 @@ non-erased elements regardless of erasures/insertions, etcetera).</p>
 <p>In terms of the <a href="https://plflib.org/colony.htm">reference
 implementation</a>, the specific structure and mechanisms have changed many
 times over the course of development, however the interface to the container
-and it's time complexity guarantees have remained largely unchanged (with the
+and its time complexity guarantees have remained largely unchanged (with the
 exception of the time complexity for updating skipfield nodes). So it is
 reasonably likely that regardless of specific implementation, it is possible to
 maintain this general specification without obviating future improvements in
@@ -417,13 +418,12 @@ vector. In short it would negate all of a colony's beneficial aspects.</p>
 
 <h4>2. Non-boolean skipfield</h4>
 
-<p>The reference implementation currently uses a skipfield pattern temporarily
-named the 'bentley' skipfield pattern (paper in progress, name will probably
-change). This effectively encodes the run-length of sequences of contiguous
+<p>The reference implementation currently uses a skipfield pattern
+called the Bentley pattern (<a href="https://plflib.org/matt_bentley_-_the_bentley_pattern_rev_13.pdf">current version of paper in-progress</a>). This effectively encodes the run-length of sequences of contiguous
 erased elements, into a skipfield, which allows for O(1) time complexity during
 iteration. Since there is no branching involved in iterating over the skipfield
 aside from end-of-block checks, it is less problematic than a boolean skipfield
-(which has to branch for every skipfield read) in terms of CPU's which don't
+(which has to branch for every skipfield read) in terms of CPUs which don't
 handle branching or branch-prediction failure efficiently.</p>
 
 <p>This pattern stores and modifies the run-lengths during insertion and
@@ -436,7 +436,7 @@ the reference implementation.</p>
 skipfield update time complexity guarantees for that pattern are effectively
 undefined, or between O(1) and O(skipfield length) for each insertion/erasure.
 In practice those updates result in one memcpy operation which resolves to a
-single block-copy operation, but it is still a little slower than the 'bentley'
+single block-copy operation, but it is still a little slower than the Bentley
 skipfield. The skipfield type you use will also typically have an effect on the
 type of memory-reuse mechanism you can utilize.</p>
 
@@ -453,7 +453,7 @@ erased element locations:</p>
 <ol type="a">
   <li>Metadata for each memory block includes a 'next block with erasures'
     pointer. The container itself contains a 'blocks with erasures' intrusive
-    list-head pointer. These are used by the container to create an instrusive
+    list-head pointer. These are used by the container to create an intrusive
     singly-linked list of memory blocks with erased elements which can be
     re-used for future insertions.</li>
   <li>Metadata for each memory block also includes a 'free list head' index
@@ -468,7 +468,7 @@ erased element locations:</p>
 
 <p>Previous versions of the reference implementation used a singly-linked free
 list instead of a doubly-linked one, this is possible with the advanced
-jump-counting skipfield, not possible using a bentley pattern for various
+jump-counting skipfield, not possible using a Bentley pattern for various
 reasons.</p>
 
 <p>One cannot use a stack of pointers to erased elements for this mechanism, as
@@ -481,7 +481,7 @@ this would be slow.</p>
 
 <p>The reference implementation's iterator stores a pointer to the current
 'group' struct mentioned above, plus a pointer to the current element and a
-pointer to it's corresponding skipfield node. An alternative approach is to
+pointer to its corresponding skipfield node. An alternative approach is to
 store the group pointer + an index, since the index can indicate both the
 offset from the memory block for the element, as well as the offset from the
 start of the skipfield for the skipfield node. However multiple implementations
@@ -489,13 +489,13 @@ and benchmarks across many processors have shown this to be worse-performing
 than the separate pointer-based approach, despite the increased memory cost for
 the iterator class itself.</p>
 
-<p>++ operation is as follows, utilizing the reference implementations
-'bentley' skipfield pattern:</p>
+<p>++ operation is as follows, utilising the reference implementation's
+Bentley skipfield pattern:</p>
 <ol>
   <li>Add 1 to the existing element and skipfield pointers.</li>
   <li>Dereference skipfield pointer to get content of skipfield node, add
     content of skipfield node to both the skipfield pointer and the element
-    pointer. If the node is erased, it's value will be a positive integer
+    pointer. If the node is erased, its value will be a positive integer
     indicating the number of nodes until the next non-erased node, if not
     erased it will be zero.</li>
   <li>If element pointer is beyond end of element memory block, change group
@@ -516,25 +516,43 @@ for insertion and (non-back) erasure than current standard library containers,
 and generally faster for iteration than any container except vector and deque.
 See benchmarks <a href="#benchmarks">here</a>.</p>
 
-<h2><a name="technical"></a>V. Technical Specifications</h2>
+
+<h2><a id="technical"></a>V. Technical Specifications</h2>
 
 <h4>Time complexities for basic operations</h4>
-<ul>
-  <li>insert (single): O(1) amortized</li>
-  <li>insert (multiple): O(N)</li>
-  <li>erase (single): O(1) amortized</li>
-  <li>erase (multiple): O(N) for non-trivially-destructible elements, for
-    trivially-destructible elements O(log n) or better (between O(1) and O(log
-    n) depending on start and end erasure locations and state of colony).</li>
-  <li>std::find: O(n)</li>
-  <li>splice: O(1) amortized</li>
-  <li>all iterator operations: O(1) amortized</li>
-  <li>begin()/end(): O(1)</li>
-  <li>advance()/next()/prev(): Implementation defined, as this depends on the
-    metadata stored for each memory block. In terms of current reference
-    implementation, between O(1) and O(n), depending on current location, end
-    location and state of colony.</li>
-</ul>
+
+  <p>In most cases the time complexity of operations results from the fundamental requirements of the container itself, not the implementation. In some cases, such as erase complexity, this can change a little based on the implementation, but the change is minor in practice.</p>
+
+	<h5>Insert (single): O(1) amortised</h5>
+	<p>One of the requirements of colony is that pointers to non-erased elements stay valid regardless of insertion/erasure within the container. For this reason the container must use multiple memory blocks. If a single memory block were used, like in a std::vector, reallocation of elements would occur when the container expanded (and the elements were copied to a larger memory block). Hence, colony will insert into existing memory blocks when able, and create a new memory block when all existing memory blocks are full. Because colony (by default) has a growth pattern for new memory blocks, the number of insertions before a new memory block is required increases as more insertions take place. Hence the insertion time complexity is O(1) amortised.</p>
+
+	<h5>Insert (multiple): O(N) amortised</h5>
+	<p>This follows the same principle - there will occasionally be a need to create a new memory block, but since this is infrequent it is O(N) amortised.</p>
+
+	<h5>Erase (single): O(1) amortised</h5>
+	<p>Generally speaking erasure is a simple matter of destructing the element in question and updating the skipfield. When using the bentley pattern this skipfield update is always O(1). However, when a memory block becomes empty of non-erased elements it must be freed to the OS (or stored for future insertions, depending on implementation) and removed from the colony's sequence of memory blocks. It it was not, we would end up with non-O(1) amortised iteration, since there would be no way to predict how many empty memory blocks there would be between the current memory block being iterated over, and the next memory block with non-erased (active) elements in it. Since removal of memory blocks is infrequent the time complexity becomes O(1) amortised.</p>
+
+	<h5>Erase (multiple): O(N) amortised for non-trivially-destructible types, for trivially-destructible types between O(1) and O(N) amortised depending on range start/end (approximating O(log n) average)</h5>
+	<p>In this case, where the element is non-trivially destructible, the time complexity is O(N) amortised, with infrequent deallocation necessary from the removal of an empty memory block as noted above. However where the elements are trivially-destructible, if the range spans an entire memory block at any point, that block and it's skipfield can simply be removed without doing any individual writes to it's skipfield or individual destruction of elements, potentially making this a O(1) operation.</p>
+	<p>In addition (when dealing with trivially-destructible types) for those memory blocks where only a portion of elements are erased by the range, if no prior erasures have occurred in that memory block you can erase that range in O(1) time, as there will be no need to check within the range for previously erased elements, and the Bentley pattern only requires two skipfield writes to indicate a range of skipped nodes. The reason you would need to check for previously erased elements within that portion's range is so you can update the metadata for that memory block to accurately reflect how many non-erased elements remain within the block. If that metadata is not present, there is no way to ascertain when a memory block is empty of non-erased elements and hence needs to be removed from the colony. The reasoning for why empty memory blocks must be removed is included in the Erase(single) section, above.</p>
+	<p>However in most cases the erase range will not perfectly match the size of all memory blocks, and with typical usage of a colony there is usually some prior erasures in most memory blocks. So for example when dealing with a colony of a trivially-destructible type, you might end up with a tail portion of the first memory block in the erasure range being erased in O(N) time, the second and intermediary memory block being completely erased and freed in O(1) time, and only a small front portion of the third and final memory block in the range being erased in O(N) time. Hence the time complexity for trivially-destructible elements approximates O(log n) on average, being between O(1) and O(N) depending on the start and end of the erasure range.</p>
+
+	<h5>std::find: O(n)</h5>
+	<p>This relies on basic iteration so is O(N).</p>
+
+	<h5>splice: O(1)</h5>
+	<p>Colony only does full-container splicing, not partial-container splicing (use range-insert with std::move to achieve the latter, albiet with the loss of pointer validity to the moved range). When splicing the memory blocks from the source colony are transferred to the destination colony without processing the individual elements or skipfields, inserted after the destination's final block. If there are unused element memory spaces at the back of the destination container (ie. the final memory block is not full), the skipfield nodes corresponding to those empty spaces must be altered to indicate that these are skipped elements. Again when using the bentley pattern for the skipfield this is also a O(1) operation, hence the overall operation is O(1).</p>
+
+	<h5>Iterator operators ++ and --: O(1) amortised</h5>
+	<p>Generally the time complexity is O(1), as the skipfield pattern used must allow for skipping of multiple erased elements. However every so often iteration will involve a transistion to the next/previous memory block in the colony's sequence of blocks, depending on whether we are doing ++ or --. At this point a read of the next/previous memory block's corresponding skipfield is necessary, in case the first/last element(s) in that memory block are erased and hence skipped. So for every block transition, 2 reads of the skipfield are necessary instead of 1. Hence the time complexity is O(1) amortised.</p>
+	<p>Skipfields must be per-block and independent between memory blocks, as otherwise you would end up with a vector for a skipfield, which would need a range erased every time a memory block was removed from the colony (see notes under Erase above), and reallocation to larger skipfield memory block when the colony expanded. Both of these procedures carry reallocation costs, meaning you could have thousands of skipfield nodes needing to be reallocated based on a single erasure (from within a memory block which only had one non-erased element left and hence would need to be removed from the colony). This is unacceptable latency for any field involving high timing sensitivity (all of <a href="https://lists.isocpp.org/mailman/listinfo.cgi/sg14/">SG14</a>).</p>
+
+	<h5>begin()/end(): O(1)</h5>
+	<p>For any implementation these should generally be stored as member variables and so returning them is O(1).</p>
+
+	<h5>advance/next/prev: between O(1) and O(n), depending on current iterator location and distance. Average approximates O(log N).</h5>
+	<p>The reasoning for this is similar to that of Erase(multiple), above. Memory blocks which are completely traversed by the increment/decrement distance can be skipped in O(1) time by reading the metadata for the block which details the number of non-erased elements in the block. If the current iterator location is not at the very beginning of a memory block, then the distance within that block will need to be processed in O(N) time, unless no erasures have occurred within that block, in which case the skipfield does not need to be checked and traversal is simply a matter of pointer arithmetic and checking the distance between the current iterator position and the end of the memory block, which is a O(1) operation.</p>
+	<p>Similarly for the final block involved in the traversal (if the traversal spans multiple memory blocks!) if no erasures have occurred in that memory block pointer arithmetic can be used and the procedure is O(1), otherwise it is O(N) (++ iterating over the skipfield). We can therefore say that the overall time complexity for these operations might approximate O(log N), while being between O(1) and O(N) amortised respectively.</p>
 
 
 <h4>General specification</h4>
@@ -568,17 +586,17 @@ href="https://en.cppreference.com/w/cpp/named_req/MoveConstructible">MoveConstru
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
 href="https://en.cppreference.com/w/cpp/named_req/Allocator">Allocator</a>. The
-behavior is undefined if <code>Allocator::value_type</code> is not the same as
+behaviour is undefined if <code>Allocator::value_type</code> is not the same as
 T.<br>
 <br>
 <code><b>Skipfield_Type</b></code> - an unsigned integer type. This type is
 used to form the skipfield which skips over erased T elements. In terms of the
 reference implementation, this also acts as a limiting factor to the maximum
 size of memory blocks, due to the way that the skipfield pattern works
-(<code>eg. unsigned short</code> is 16-bit on most platforms which constrains
+(<code>e.g. unsigned short</code> is 16-bit on most platforms which constrains
 the size of individual memory blocks to a maximum of 65535 elements).
 <code>unsigned short</code> has been found to be the optimal type for the
-current reference implementation. However in the case of small collections (ie.
+current reference implementation. However in the case of small collections (i.e.
 &lt; 1000 elements) in a memory-constrained environment, it may be useful to
 reduce the memory usage of the skipfield by reducing the skipfield bit depth to
 a Uint8 type. The reduced skipfield size may also reduce cache saturation in
@@ -849,13 +867,13 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
   </li>
   <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony(const
     allocator_type &amp;alloc = allocator_type())</code> 
-    <p>Default constructor, but using a custom memory allocator eg. something
+    <p>Default constructor, but using a custom memory allocator e.g. something
     other than std::allocator. <br>
     Example: <code style="color: brown">std::colony&lt;int,
     tbb::allocator&lt;int&gt; &gt; int_colony;</code> <br>
     Example2: <br>
     <code style="color: brown">// Using an instance of an allocator as well as
-    it's type<br>
+    its type<br>
     tbb::allocator&lt;int&gt; alloc_instance;<br>
     std::colony&lt;int, tbb::allocator&lt;int&gt; &gt;
     int_colony(alloc_instance);</code> </p>
@@ -868,7 +886,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     elements to create upon construction. If <code>n</code> is larger than
     <code>min_block_size</code>, the size of the blocks created will either be
     <code>n</code> and <code>max_block_size</code>, depending on which is
-    smaller. <code>min_block_size</code> (ie. the smallest possible number of
+    smaller. <code>min_block_size</code> (i.e. the smallest possible number of
     elements which can be stored in a colony block) can be defined, as can the
     <code>max_block_size</code>. Setting the block sizes can be a performance
     advantage if you know in advance roughly how many objects are likely to be
@@ -916,7 +934,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 <code>for</code> loops when skipping over multiple elements per loop). The O(1)
 complexity of these operators are achieved by keeping a record of the order of
 memory blocks in some way (in the reference implementation this is done via
-assigning a number to each memory block in it's metadata), comparing the
+assigning a number to each memory block in its metadata), comparing the
 relative order of the two iterators' memory blocks via this number, then
 comparing the memory locations of the elements themselves, if they happen to be
 in the same memory block. The full list of operators for iterator,
@@ -941,7 +959,7 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
 
 
 
-<h2><a name="#acknowledgements"></a>VI. Acknowledgements</h2>
+<h2><a id="acknowledgements"></a>VI. Acknowledgements</h2>
 <p>Matt would like to thank: Glen Fernandes and Ion Gaztanaga for restructuring
 advice, Robert Ramey for documentation advice, various Boost and SG14 members
 for support, Baptiste Wicht for teaching me how to construct decent benchmarks,
@@ -957,7 +975,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
 
 <h2>Appendices</h2>
 
-<h3><a name="#functions"></a>Appendix A: Member functions</h3>
+<h3><a id="functions"></a>Appendix A: Member functions</h3>
 
 <h4>Insert</h4>
 
@@ -1014,7 +1032,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
   <li><code>template &lt;class InputIterator&gt; void insert (InputIterator
     &amp;first, InputIterator &amp;last)</code> 
     <p>Inserts a series of <code>value_type</code> elements from an external
-    source into a colony holding the same <code>value_type</code> (eg. int,
+    source into a colony holding the same <code>value_type</code> (e.g. int,
     float, a particular class, etcetera). Stops inserting once it reaches
     <code>last</code>. Example:</p>
     <code style="color: brown">// Insert all contents of colony2 into
@@ -1169,7 +1187,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
     void sort(comparison_function compare);</code>
     <p>Sort the content of the colony. By default this compares the colony
     content using a less-than operator, unless the user supplies a comparison
-    function (ie. same conditions as std::list's sort function). Uses std::sort
+    function (i.e. same conditions as std::list's sort function). Uses std::sort
     internally but will use plf::timsort if plf_timsort.h is included in the
     project before plf_colony.h.<br>
     Example: <code style="color: brown">// Sort a colony of integers in
@@ -1193,7 +1211,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
     3, 4}, depending on internal state of both colonies and prior
     insertions/erasures.</p>
     <p>Note: If the minimum block size of the source is smaller than the
-    destination, the destination will change it's minimum block size to match
+    destination, the destination will change its minimum block size to match
     the source. The same applies for maximum block sizes (if source's is
     larger, the destination will adjust its size).<br>
     Example: <code style="color: brown">// Splice two colonies of integers
@@ -1248,7 +1266,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
   <li><code>iterator get_iterator_from_pointer(element_pointer_type
     the_pointer)</code> 
     <p>Getting a pointer from an iterator is simple - simply dereference it
-    then grab the address ie. <code>"&amp;(*the_iterator);"</code>. Getting an
+    then grab the address i.e. <code>"&amp;(*the_iterator);"</code>. Getting an
     iterator from a pointer is typically not so simple. This function enables
     the user to do exactly that. This is expected to be useful in the use-case
     where external containers are storing pointers to colony elements instead
@@ -1341,7 +1359,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
   <li><code>template &lt;iterator_type&gt; void advance(iterator_type iterator,
     distance_type distance)</code> 
     <p>Increments/decrements the iterator supplied by the positive or negative
-    amount indicated by <i>distance</i>. Speed of incrementation will almost
+    amount indicated by <i>distance</i>. Speed of incrementing will almost
     always be faster than using the ++ operator on the iterator for increments
     greater than 1. In some cases it may approximate O(1). The iterator_type
     can be an iterator, const_iterator, reverse_iterator or
@@ -1370,7 +1388,7 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
     iterator_type &amp;first, const iterator_type &amp;last)</code> 
     <p>Measures the distance between two iterators, returning the result, which
     will be negative if the second iterator supplied is before the first
-    iterator supplied in terms of it's location in the colony.<br>
+    iterator supplied in terms of its location in the colony.<br>
     Example: <code style="color: brown">colony&lt;int&gt;::iterator it =
     i_colony.next(i_colony.begin(), 20);<br>
     colony&lt;int&gt;::iterator it2 = i_colony.prev(i_colony.end(), 20);<br>
@@ -1439,7 +1457,7 @@ commentary for the MSVC results.</p>
     <p>Unlike a std::vector, a colony can be read from and inserted into at the
     same time (assuming different locations for read and write), however it
     cannot be iterated over and written to at the same time. If we look at a
-    (non-concurrent implementation of) std::vector's threadsafe matrix to see
+    (non-concurrent implementation of) std::vector's thread-safe matrix to see
     which basic operations can occur at the same time, it reads as follows
     (please note push_back() is the same as insertion in this regard):</p>
 
@@ -1535,10 +1553,10 @@ commentary for the MSVC results.</p>
     erasures (provided that the element being erased is not the element being
     read), multiple reads and iterations may occur at the same time, but
     iterations may not occur at the same time as an erasure or insertion, as
-    either of these may change the state of the skipfield which's being
+    either of these may change the state of the skipfield which is being
     iterated over. Note that iterators pointing to end() may be invalidated by
     insertion.</p>
-    <p>So, colony could be considered more inherently threadsafe than a
+    <p>So, colony could be considered more inherently thread-safe than a
     (non-concurrent implementation of) std::vector, but still has some areas
     which would require mutexes or atomics to navigate in a multithreaded
     environment.</p>
@@ -1554,7 +1572,7 @@ commentary for the MSVC results.</p>
     <p>One reason might be to ensure that memory blocks match a certain
     processor's cache or memory pathway sizes. Another reason to do this is
     that it is slightly slower to obtain an erased-element location from the
-    list of groups-with-erasures (subsequently utilizing that group's free list
+    list of groups-with-erasures (subsequently utilising that group's free list
     of erased locations) and to reuse that space than to insert a new element
     to the back of the colony (the default behaviour when there are no
     previously-erased elements). If there are any erased elements in the
@@ -1579,17 +1597,17 @@ commentary for the MSVC results.</p>
     href="https://en.wikipedia.org/wiki/Set_(abstract_data_type)#Multiset">Multisets/bags</a>
     are also not sortable (by means other than automatically by key value).
     Colony does not utilize key values, is sortable, and does not provide the
-    sort of functionality frequently associated with a bag (eg. counting the
+    sort of functionality frequently associated with a bag (e.g. counting the
     number of times a specific value occurs).</p>
   </li>
-  <li><h4><a name="remove_when_empty"></a>Why must blocks be removed when
+  <li><h4><a id="remove_when_empty"></a>Why must blocks be removed when
     empty?</h4>
     <p>Two reasons:</p>
     <ol type="a">
       <li>Standards compliance: if blocks aren't removed then <code>++</code>
         and <code>--</code> iterator operations become undefined in terms of
         time complexity, making them non-compliant with the C++ standard. At
-        the moment they are O(1) amortized, typically one update for both
+        the moment they are O(1) amortised, typically one update for both
         skipfield and element pointers, but two if a skipfield jump takes the
         iterator beyond the bounds of the current block and into the next
         block. But if empty blocks are allowed, there could be anywhere between
@@ -1605,7 +1623,7 @@ commentary for the MSVC results.</p>
         blocks while iterating, then you have to include a while loop in every
         iteration operation, which increases cache misses and code size. The
         strategy of removing blocks when they become empty also statistically
-        removes (assuming randomized erasure patterns) smaller blocks from the
+        removes (assuming randomised erasure patterns) smaller blocks from the
         colony before larger blocks, which has a net result of improving
         iteration, because with a larger block, more iterations within the
         block can occur before the end-of-block condition is reached and a jump
@@ -1614,7 +1632,7 @@ commentary for the MSVC results.</p>
         needs to be allocated, will be faster than recycling memory locations
         as each subsequent insertion occurs in a subsequent memory location
         (which is cache-friendlier) and also less computational work is
-        necessary. If a block is removed it's recyclable memory locations are
+        necessary. If a block is removed its recyclable memory locations are
         also of course removed, hence subsequent insertions are more likely to
         be pushed to the back of the colony.</li>
     </ol>
@@ -1626,7 +1644,7 @@ commentary for the MSVC results.</p>
     the memory block rather than making this undefined. If a scenario calls for
     retaining memory blocks instead of deallocating them, this should be left
     to an allocator to manage. Otherwise you get unpredictable memory behaviour
-    across implementations, and this is one of the things that SG14 mmembers
+    across implementations, and this is one of the things that SG14 members
     have complained about time-and-time again, the lack of predictable
     behaviour across standard library implementations. Ameliorating this
     unpredictability is best in my view.</p>
@@ -1651,40 +1669,41 @@ commentary for the MSVC results.</p>
     testing due to the balance between memory contiguousness, memory waste and
     the number of allocations.</p>
   </li>
-  <li><h4><a name="simd"></a>Can a colony be used with SIMD instructions?</h4>
+  <li><h4><a id="simd"></a>Can a colony be used with SIMD instructions?</h4>
     <p>No and yes. Yes if you're careful, no if you're not.<br>
-	 On platforms which support scatter and gather operations you can use colony with SIMD as much as you want, using gather to load elements from disparate or sequential locations, into a SIMD register. Then use scatter to push the post-SIMD-process values elsewhere after.<br>
-	 On platforms which require elements to be contiguous in memory for SIMD processing, this is more complicated. When you have a bunch of erasures in a colony, there's no guarantee that your objects will be contiguous in memory, even though they are sequential during iteration. Some of them may also be in different memory blocks to each other. In these situations if you want to use SIMD with colony, you must do the following:</p>
+	 On platforms which support scatter and gather operations via hardware (e.g. AVX512) you can use colony with SIMD as much as you want, using gather to load elements from disparate or sequential locations, directly into a SIMD register, in parallel. Then use scatter to push the post-SIMD-process values elsewhere after. On platforms which do not support this in hardware, you would need to manually implement a scalar gather-and-scatter operation which may be significantly slower.<br>
+	 In situations where gather and scatter operations are too expensive, which require elements to be contiguous in memory for SIMD processing, this is more complicated. When you have a bunch of erasures in a colony, there's no guarantee that your objects will be contiguous in memory, even though they are sequential during iteration. Some of them may also be in different memory blocks to each other. In these situations if you want to use SIMD with colony, you must do the following:</p>
     <ul>
     <li>Set your minimum and maximum group sizes to multiples of the width of your SIMD instruction. If it supports 8 elements at once, set the group sizes to multiples of 8.</li>
     <li>Either never erase from the colony, or:<br>
     	<ol>
     	<li>Shrink-to-fit after you erase (will invalidate all pointers to elements within the colony).</li>
-    	<li>Only erase from the back or front of the colony, and only erase elements in multiples of the width of your SIMD instruction eg. 8 consecutive elements at once. This will ensure that the end-of-memory-block boundaries line up with the width of the SIMD instruction, provided you've set your min/max block sizes as above.</li>
+    	<li>Only erase from the back or front of the colony, and only erase elements in multiples of the width of your SIMD instruction e.g. 8 consecutive elements at once. This will ensure that the end-of-memory-block boundaries line up with the width of the SIMD instruction, provided you've set your min/max block sizes as above.</li>
     	</ol>
    </li>
    </ul>
 	<p>Generally if you want to use SIMD without gather/scatter, it's probably preferable to use a vector or an array.</p>
+<!-- 	<p>A version of colony designed for SIMD with gather/scatter could be more fully realised by using a slight alteration of the existing skipfield pattern. -->
    </li>
 </ol>
 
 <h3><a id="responses" name="responses"></a>Appendix D - Specific responses to
 previous committee feedback</h3>
 <ol>
-  <li><h4>"Why not 'bag'? Colony is too selective a name."</h4>
+  <li><h4>"Why not 'bag'? Colony is too selective a id."</h4>
     <p>'bag' is problematic partially because it has been synonymous with a
     multiset (and colony is not one of those) in both <a
     href="https://en.wikipedia.org/wiki/Set_(abstract_data_type)#Multiset">computer
     science</a> and <a
     href="https://en.wikipedia.org/wiki/Multiset">mathematics</a> since the
-    1970's, and partially because it's a bit vague - it doesn't describe how
+    1970s, and partially because it's a bit vague - it doesn't describe how
     the container works. However I accept that it is a familiar name and
     describes a similar territory, for most programmers and will accept that as
-    a name if needed. 'colony' is an intuitive name if you understand the
+    a id if needed. 'colony' is an intuitive name if you understand the
     container, and allows for easy conveyance of how it functions internally
     (colony = human colony/ant colony etc, memory blocks = houses, elements =
     people/ants in the houses who come and go). The claim that the use of the
-    word is selective in terms of it's meaning, is also true for vector, set,
+    word is selective in terms of its meaning, is also true for vector, set,
     'bag', and many other C++ names.</p>
   </li>
   <li><h4>"Unordered and no associative lookup, so this only supports use cases
@@ -1714,7 +1733,7 @@ previous committee feedback</h3>
     use of the skipfield patterns utilized in the reference implementations,
     and there may be better techniques. </p>
     <p>However, the parameter can always be ignored in an implementation.
-    Retaining it, even if significantly advanced strutures are discovered for
+    Retaining it, even if significantly advanced structures are discovered for
     skipping elements, harms nothing and can be deprecated if necessary. At
     this point in time I do not personally see many alternatives to the two
     skipfield patterns which have been used in the references implementations,
@@ -1722,12 +1741,11 @@ previous committee feedback</h3>
     that is not the same as saying there are no alternatives, just ones never
     thought of yet. This is something I am flexible on, as a singular skipfield
     type will cover the majority of scenarios.</p>
-    <p><a name="Research" id="Research"
-    href="https://plflib.org/blog.htm#shortandchardifferences">Research
+    <p><a href="https://plflib.org/blog.htm#shortandchardifferences">Research
     into this area</a> has determined that there is only really an advantage to
     using unsigned char for the skipfield type if the number of elements is
     under 1000, and not in all scenarios. So whether or not this constitutes a
-    performance gain is largely scenario-dependant, certainly it always
+    performance gain is largely scenario-dependent, certainly it always
     constitutes a memory usage reduction but the relative effect of this
     depends on the size of your stored type.</p>
   </li>
@@ -1742,7 +1760,7 @@ previous committee feedback</h3>
   </li>
   <li><h4>"If this is for games, won't game devs just write their own versions
     for specific types in order to get a 1% speed increase anyway?"</h4>
-    <p>This is true for many/most AAA game companies who're on the bleeding
+    <p>This is true for many/most AAA game companies who are on the bleeding
     edge, but they also do this for vector etc, so they aren't the target
     audience of std:: for the most part; sub-AAA game companies are more likely
     to use third party/pre-existing tools. As mentioned earlier, this structure
@@ -1759,7 +1777,7 @@ previous committee feedback</h3>
     possible for this specification to fail to allow for a better
     implementation in future. This is unlikely given the container's
     requirements and how this impacts on implementation. Bucket arrays have
-    been around since the 90's, there's been no significant innovation in them
+    been around since the 1990s, there's been no significant innovation in them
     until now. I've been researching/working on colony since early 2015, and
     while I can't say for sure that a better implementation might not be
     possible, I am confident that no change should be necessary to the
@@ -1775,7 +1793,7 @@ previous committee feedback</h3>
     there's limited numbers of ways to do this also. Multiple consecutive
     erased elements have to be skipped in O(1) time, and again there's limits
     to how many ways you can do that. That covers the three core aspects upon
-    which this specification is based. See <a name="design1"
+    which this specification is based. See <a id="design1"
     id="design1"></a>IV. Design Decisions for the various ways these aspects
     can be designed.</p>
     <p>Skipfield update time complexity should, I think, be left
@@ -1821,13 +1839,13 @@ verified by game developers within SG14:</p>
   <li>Memory waste is avoided.</li>
 </ol>
 
-<p>std::vector in it's default state does not meet these requirements due to:
+<p>std::vector in its default state does not meet these requirements due to:
 </p>
 <ol>
   <li>Poor (non-fill) singular insertion performance (regardless of insertion
     position) due to the need for reallocation upon reaching capacity</li>
   <li>Insert invalidates pointers/iterators to all elements </li>
-  <li>Erase invalidates pointers/iterators/indexes to all elements afer the
+  <li>Erase invalidates pointers/iterators/indexes to all elements after the
     erased element</li>
 </ol>
 
@@ -1867,7 +1885,7 @@ developers, particularly AAA developers, will almost always develop a custom
 solution for specific use-cases within their engine, I believe most sub-AAA and
 indie developers are more likely to rely on third party solutions. Regardless,
 standardising the container will allow for greater cross-discipline
-communcation.</p>
+communication.</p>
 
 
 <h3><a id="questions"></a>Appendix F - Questions for reviewers</h3>
@@ -1877,13 +1895,15 @@ following topics:</p>
 <ul>
   <li>Can you see any possible alternative to a 1-node-per-element
   skipfield?</li>
-  <li>Can you see any possible difficulties with implementing a thread-safe version fo this structure?</li>
+  <li>Can you see any possible difficulties with implementing a thread-safe version of this structure?</li>
 </ul>
 
 
 <h3><a id="revisions"></a>Appendix G - Paper revision history</h3>
 <ul>
-  <li>R8: Correction to SIMD info. Correction to structure (missing appendices title, member functions and technical specification were conjoined, acknowledgments section had mysteriously gone missing since an earlier version, now restored and updated).</li>
+  <li>R10: Additional information about time complexity added, some minor corrections to time complexity.</li>
+  <li>R9: Link to Bentley pattern paper added, and is spellchecked now.</li>
+  <li>R8: Correction to SIMD info. Correction to structure (missing appendices title, member functions and technical specification were conjoined, acknowledgments section had mysteriously gone missing since an earlier version, now restored and updated). Update intro. HTML corrections.</li>
   <li>R7: Minor changes to member functions.</li>
   <li>R6: Re-write. Reserve() and shrink_to_fit() removed from
   specification.</li>
