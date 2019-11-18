@@ -526,9 +526,11 @@ public:
 			if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 			{
 				group_pointer = group_pointer->next_group;
-				skip = *(group_pointer->skipfield);
-				element_pointer = group_pointer->elements + skip;
-				skipfield_pointer = group_pointer->skipfield;
+				const aligned_pointer_type elements = group_pointer->elements;
+				const skipfield_pointer_type skipfield = group_pointer->skipfield;
+				skip = *skipfield;
+				element_pointer = elements + skip;
+				skipfield_pointer = skipfield;
 			}
 
 			skipfield_pointer += skip;
@@ -552,9 +554,11 @@ public:
 			if (element_pointer == group_pointer->last_endpoint && group_pointer->next_group != NULL)
 			{
 				group_pointer = group_pointer->next_group;
-				skipfield_pointer = group_pointer->skipfield;
-				element_pointer = group_pointer->elements + *skipfield_pointer;
-				skipfield_pointer += *skipfield_pointer;
+				const aligned_pointer_type elements = group_pointer->elements;
+				const skipfield_pointer_type skipfield = group_pointer->skipfield;
+				const skipfield_type skip = *skipfield;
+				element_pointer = elements + skip;
+				skipfield_pointer = skipfield + skip;
 			}
 		}
 
@@ -579,9 +583,10 @@ public:
 			}
 
 			group_pointer = group_pointer->previous_group;
-			skipfield_pointer = group_pointer->skipfield + group_pointer->capacity - 1;
-			element_pointer = (reinterpret_cast<colony::aligned_pointer_type>(group_pointer->skipfield) - 1) - *skipfield_pointer;
-			skipfield_pointer -= *skipfield_pointer;
+			const skipfield_pointer_type skipfield = group_pointer->skipfield + group_pointer->capacity - 1;
+			const skipfield_type skip = *skipfield;
+			element_pointer = (reinterpret_cast<colony::aligned_pointer_type>(group_pointer->skipfield) - 1) - skip;
+			skipfield_pointer = skipfield - skip;
 
 			return *this;
 		}
@@ -1434,10 +1439,7 @@ public:
 				}
 				default: // ie. there are erased elements, reuse previous-erased element locations
 				{
-					iterator new_location;
-					new_location.group_pointer = groups_with_erasures_list_head;
-					new_location.element_pointer = groups_with_erasures_list_head->elements + groups_with_erasures_list_head->free_list_head;
-					new_location.skipfield_pointer = groups_with_erasures_list_head->skipfield + groups_with_erasures_list_head->free_list_head;
+					iterator new_location(groups_with_erasures_list_head, groups_with_erasures_list_head->elements + groups_with_erasures_list_head->free_list_head, groups_with_erasures_list_head->skipfield + groups_with_erasures_list_head->free_list_head);
 
 					// always at start of skipblock, update skipblock:
 					const skipfield_type prev_free_list_index = *(reinterpret_cast<skipfield_pointer_type>(new_location.element_pointer));
@@ -1603,10 +1605,7 @@ public:
 					}
 					default:
 					{
-						iterator new_location;
-						new_location.group_pointer = groups_with_erasures_list_head;
-						new_location.element_pointer = groups_with_erasures_list_head->elements + groups_with_erasures_list_head->free_list_head;
-						new_location.skipfield_pointer = groups_with_erasures_list_head->skipfield + groups_with_erasures_list_head->free_list_head;
+						iterator new_location(groups_with_erasures_list_head, groups_with_erasures_list_head->elements + groups_with_erasures_list_head->free_list_head, groups_with_erasures_list_head->skipfield + groups_with_erasures_list_head->free_list_head);
 
 						const skipfield_type prev_free_list_index = *(reinterpret_cast<skipfield_pointer_type>(new_location.element_pointer));
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(new_location.element_pointer), std::move(element));
@@ -1766,10 +1765,7 @@ public:
 					}
 					default:
 					{
-						iterator new_location;
-						new_location.group_pointer = groups_with_erasures_list_head;
-						new_location.element_pointer = groups_with_erasures_list_head->elements + groups_with_erasures_list_head->free_list_head;
-						new_location.skipfield_pointer = groups_with_erasures_list_head->skipfield + groups_with_erasures_list_head->free_list_head;
+						iterator new_location(groups_with_erasures_list_head, groups_with_erasures_list_head->elements + groups_with_erasures_list_head->free_list_head, groups_with_erasures_list_head->skipfield + groups_with_erasures_list_head->free_list_head);
 
 						const skipfield_type prev_free_list_index = *(reinterpret_cast<skipfield_pointer_type>(new_location.element_pointer));
 						PLF_COLONY_CONSTRUCT(element_allocator_type, (*this), reinterpret_cast<pointer>(new_location.element_pointer), std::forward<arguments>(parameters) ...);
@@ -2174,7 +2170,10 @@ private:
 	{
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			colony temp;
-			temp.change_group_sizes(static_cast<skipfield_type>((pointer_allocator_pair.min_elements_per_group > total_number_of_elements) ? pointer_allocator_pair.min_elements_per_group : ((total_number_of_elements > group_allocator_pair.max_elements_per_group) ? group_allocator_pair.max_elements_per_group : total_number_of_elements)), group_allocator_pair.max_elements_per_group); // Make first allocated group as large total number of elements, where possible
+
+			// Make first allocated group as large total number of elements, where possible:
+			temp.pointer_allocator_pair.min_elements_per_group = static_cast<skipfield_type>((pointer_allocator_pair.min_elements_per_group > total_number_of_elements) ? pointer_allocator_pair.min_elements_per_group : ((total_number_of_elements > group_allocator_pair.max_elements_per_group) ? group_allocator_pair.max_elements_per_group : total_number_of_elements));
+			temp.group_allocator_pair.max_elements_per_group = group_allocator_pair.max_elements_per_group;
 
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 				if PLF_COLONY_CONSTEXPR (std::is_move_assignable<element_type>::value && std::is_move_constructible<element_type>::value)
@@ -2575,9 +2574,9 @@ public:
 					do
 					{
 						PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(current.element_pointer)); // Destruct element
-						++current.skipfield_pointer;
-						current.element_pointer += *current.skipfield_pointer + 1;
-						current.skipfield_pointer += *current.skipfield_pointer;
+						const skipfield_type skip = *(++current.skipfield_pointer);
+						current.element_pointer += skip + 1;
+						current.skipfield_pointer += skip;
 					} while (current.element_pointer != end);
 				}
 
@@ -2595,7 +2594,7 @@ public:
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
 			}
 
-			current.element_pointer = current.group_pointer->elements + *(current.group_pointer->skipfield);
+			current.element_pointer = current.group_pointer->elements + *(current.group_pointer->skipfield); // TODO
 			current.skipfield_pointer = current.group_pointer->skipfield + *(current.group_pointer->skipfield);
 			current.group_pointer->previous_group = previous_group;
 
@@ -3461,7 +3460,6 @@ public:
 				if (group_pointer->next_group == NULL) // bound to rbegin()
 				{
 					skipfield_pointer = group_pointer->skipfield + (group_pointer->last_endpoint - group_pointer->elements) - 1;
-					--skipfield_pointer;
 					element_pointer = (group_pointer->last_endpoint - 1) - *skipfield_pointer;
 					skipfield_pointer -= *skipfield_pointer;
 					return;
