@@ -229,7 +229,6 @@
 #endif
 
 
-
 namespace plf
 {
 
@@ -460,7 +459,7 @@ public:
 
 			inline colony_iterator & operator = (colony_iterator<!is_const> &&source) PLF_COLONY_NOEXCEPT
 			{
-				assert (&source != this);
+				assert (reinterpret_cast<colony_iterator *>(&source) != this);
 				group_pointer = std::move(source.group_pointer);
 				element_pointer = std::move(source.element_pointer);
 				skipfield_pointer = std::move(source.skipfield_pointer);
@@ -1205,7 +1204,7 @@ public:
 
 
 
-	inline PLF_COLONY_FORCE_INLINE const iterator & begin() const PLF_COLONY_NOEXCEPT // To allow for functions which only take const colony & as a source eg. copy constructor
+	inline PLF_COLONY_FORCE_INLINE const_iterator begin() const PLF_COLONY_NOEXCEPT // To allow for functions which only take const colony & as a source eg. copy constructor
 	{
 		return begin_iterator;
 	}
@@ -1219,7 +1218,7 @@ public:
 
 
 
-	inline PLF_COLONY_FORCE_INLINE const iterator & end() const PLF_COLONY_NOEXCEPT
+	inline PLF_COLONY_FORCE_INLINE const_iterator end() const PLF_COLONY_NOEXCEPT
 	{
 		return end_iterator;
 	}
@@ -1228,14 +1227,14 @@ public:
 
 	inline const_iterator cbegin() const PLF_COLONY_NOEXCEPT
 	{
-		return const_iterator(begin_iterator.group_pointer, begin_iterator.element_pointer, begin_iterator.skipfield_pointer);
+		return begin_iterator;
 	}
 
 
 
 	inline const_iterator cend() const PLF_COLONY_NOEXCEPT
 	{
-		return const_iterator(end_iterator.group_pointer, end_iterator.element_pointer, end_iterator.skipfield_pointer);
+		return end_iterator;
 	}
 
 
