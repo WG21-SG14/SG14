@@ -312,6 +312,9 @@ void plf_colony_test()
 				failpass("Iterator/Const iterator equality operator test", prev_iterator == prev_iterator2);
 			#endif
 			
+			prev_iterator = p_colony.begin();
+			p_colony.advance(prev_iterator, 5);
+			failpass("Iterator/Const iterator equality operator test 2", prev_iterator == next_iterator);
 			
 			colony<int *> p_colony2;
 			p_colony2 = p_colony;

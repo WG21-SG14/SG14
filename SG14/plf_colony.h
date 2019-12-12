@@ -459,7 +459,6 @@ public:
 
 			inline colony_iterator & operator = (colony_iterator<!is_const> &&source) PLF_COLONY_NOEXCEPT
 			{
-				assert (reinterpret_cast<colony_iterator *>(&source) != this);
 				group_pointer = std::move(source.group_pointer);
 				element_pointer = std::move(source.element_pointer);
 				skipfield_pointer = std::move(source.skipfield_pointer);
@@ -689,7 +688,9 @@ public:
 				group_pointer(std::move(source.group_pointer)),
 				element_pointer(std::move(source.element_pointer)),
 				skipfield_pointer(std::move(source.skipfield_pointer))
-			{}
+			{
+				assert (&source != this);
+			}
 
 
 			inline colony_iterator(colony_iterator<!is_const> &&source) PLF_COLONY_NOEXCEPT:
@@ -731,9 +732,34 @@ public:
 
 
 
+		inline colony_reverse_iterator& operator = (const colony_reverse_iterator<!r_is_const> &source) PLF_COLONY_NOEXCEPT
+		{
+			it = source.it;
+			return *this;
+		}
+
+
+
+		template<bool is_const>
+		inline colony_reverse_iterator& operator = (const colony_iterator<is_const> &source) PLF_COLONY_NOEXCEPT
+		{
+			it = source;
+			return *this;
+		}
+		
+
+
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			// move assignment
 			inline colony_reverse_iterator& operator = (colony_reverse_iterator &&source) PLF_COLONY_NOEXCEPT
+			{
+				assert (&source != this);
+				it = std::move(source.it);
+				return *this;
+			}
+
+
+			inline colony_reverse_iterator& operator = (colony_reverse_iterator<!r_is_const> &&source) PLF_COLONY_NOEXCEPT
 			{
 				it = std::move(source.it);
 				return *this;
@@ -749,7 +775,21 @@ public:
 
 
 
+		inline PLF_COLONY_FORCE_INLINE bool operator == (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (it == rh.it);
+		}
+
+
+
 		inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
+		{
+			return (it != rh.it);
+		}
+
+
+
+		inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return (it != rh.it);
 		}
@@ -871,20 +911,6 @@ public:
 
 
 
-		inline PLF_COLONY_FORCE_INLINE bool operator == (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return (it == rh.it);
-		}
-
-
-
-		inline PLF_COLONY_FORCE_INLINE bool operator != (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return (it != rh.it);
-		}
-
-
-
 		inline bool operator > (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return (rh.it > it);
@@ -924,9 +950,17 @@ public:
 
 
 
-		colony_reverse_iterator (const typename colony::iterator &source) PLF_COLONY_NOEXCEPT:
+		colony_reverse_iterator (const colony_reverse_iterator<!r_is_const> &source) PLF_COLONY_NOEXCEPT:
+			it(source.it)
+		{}
+
+
+
+		template<bool is_const>
+		colony_reverse_iterator (const colony_iterator<is_const> &source) PLF_COLONY_NOEXCEPT:
 			it(source)
 		{}
+
 
 
 
@@ -942,10 +976,12 @@ public:
 			// move constructors
 			colony_reverse_iterator (colony_reverse_iterator &&source) PLF_COLONY_NOEXCEPT:
 				it(std::move(source.it))
-			{}
+			{
+				assert (&source != this);
+			}
 
-			colony_reverse_iterator (typename colony::iterator &&source) PLF_COLONY_NOEXCEPT:
-				it(std::move(source))
+			colony_reverse_iterator (colony_reverse_iterator<!r_is_const> &&source) PLF_COLONY_NOEXCEPT:
+				it(std::move(source.it))
 			{}
 		#endif
 
@@ -1101,6 +1137,7 @@ public:
 			pointer_allocator_pair(source.pointer_allocator_pair.min_elements_per_group),
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group)
 		{
+			assert (&source != this);
 			source.blank();
 		}
 
@@ -1117,6 +1154,7 @@ public:
 			pointer_allocator_pair(source.pointer_allocator_pair.min_elements_per_group),
 			group_allocator_pair(source.group_allocator_pair.max_elements_per_group)
 		{
+			assert (&source != this);
 			source.blank();
 		}
 	#endif
@@ -2165,7 +2203,7 @@ private:
 
 
 
-	inline PLF_COLONY_FORCE_INLINE void consolidate() // get all elements contiguous in memory and shrink to fit, remove erasures and erasure free lists
+	inline PLF_COLONY_FORCE_INLINE void consolidate() // get all elements contiguous in memory and shrink to fit, remove erasures and erasure free lists. Invalidates all iterators and pointers to elements
 	{
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			colony temp;
@@ -2310,7 +2348,7 @@ public:
 				}
 				case 3: // both preceding and following consecutive erased elements - erased element is between two skipblocks
 				{
-               *(it.skipfield_pointer) = 1;  // modification to allow skipfield to be used for SIMD-gather masking
+					*(it.skipfield_pointer) = 1;  // modification to allow skipfield to be used for SIMD-gather masking
 					const skipfield_type preceding_value = *(it.skipfield_pointer - 1);
 					const skipfield_type following_value = static_cast<skipfield_type>(*(it.skipfield_pointer + 1) + 1);
 
