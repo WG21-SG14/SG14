@@ -112,11 +112,8 @@ namespace flatmap_detail {
     {
         using std::swap;
         int dummy[] = {
-            [&](auto it, auto jt) {
-                using std::swap;
-                swap(*it, *jt);
-                return 0;
-            }(its + i, its + j) ...
+            0,
+            (std::iter_swap(its + i, its + j), 0) ...
         };
         (void)dummy;
     }
@@ -137,13 +134,7 @@ namespace flatmap_detail {
 
     template<class Compare, class Head, class... Rest>
     void sort_together(Compare& less, size_t left, size_t right, Head head, Rest... rest) {
-        if (right - left == 2) {
-            if (less(*(head + left), *(head + (left+1)))) {
-                // nothing to do
-            } else {
-                flatmap_detail::swap_together(left, left+1, head, rest...);
-            }
-        } else if (right - left >= 3) {
+        if (right - left >= 3) {
             size_t pivot_idx = left + (right - left) / 2;
             // Swap the pivot element all the way to the right.
             if (pivot_idx != right - 1) {
@@ -159,6 +150,12 @@ namespace flatmap_detail {
             }
             flatmap_detail::sort_together(less, left, correct_pivot_idx, head, rest...);
             flatmap_detail::sort_together(less, correct_pivot_idx+1, right, head, rest...);
+        } else if (right - left == 2) {
+            if (less(*(head + left), *(head + (left+1)))) {
+                // nothing to do
+            } else {
+                flatmap_detail::swap_together(left, left+1, head, rest...);
+            }
         }
     }
 
