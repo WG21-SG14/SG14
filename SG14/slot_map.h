@@ -104,7 +104,7 @@ public:
 
     constexpr slot_map() = default;
     constexpr slot_map(const slot_map&) = default;
-    constexpr slot_map(slot_map&&) noexcept = default;
+    constexpr slot_map(slot_map&&) = default;
     constexpr slot_map& operator=(const slot_map&) = default;
     constexpr slot_map& operator=(slot_map&&) = default;
     ~slot_map() = default;

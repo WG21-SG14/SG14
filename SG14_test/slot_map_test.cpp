@@ -51,14 +51,14 @@ struct Vector {
     Vector() = default;
     template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
     Vector(const Vector& rhs) { *this = rhs; }
-    Vector(Vector&& rhs) noexcept { *this = std::move(rhs); }
+    Vector(Vector&& rhs) { *this = std::move(rhs); }
     template<class T_ = T, class = std::enable_if_t<std::is_copy_constructible<T_>::value>>
     void operator=(const Vector& rhs) {
         size_ = rhs.size_;
         data_ = std::make_unique<T[]>(size_);
         std::copy(rhs.begin(), rhs.end(), data_.get());
     }
-    void operator=(Vector&& rhs) noexcept {
+    void operator=(Vector&& rhs) {
         size_ = rhs.size_;
         data_ = std::move(rhs.data_);
     }
@@ -86,9 +86,8 @@ struct Vector {
         data_ = nullptr;
     }
     friend void swap(Vector& a, Vector& b) {
-        Vector t = std::move(a);
-        a = std::move(b);
-        b = std::move(t);
+        std::swap(a.size_, b.size_);
+        std::swap(a.data_, b.data_);
     }
 private:
     size_t size_ = 0;
@@ -515,6 +514,7 @@ void sg14_test::slot_map_test()
 
     // Test the most basic slot_map.
     using slot_map_1 = stdext::slot_map<int>;
+    static_assert(std::is_nothrow_move_constructible<slot_map_1>::value, "preserve nothrow-movability of vector");
     BasicTests<slot_map_1>(42, 37);
     BoundsCheckingTest<slot_map_1>();
     FullContainerStressTest<slot_map_1>([]() { return 1; });
@@ -569,6 +569,7 @@ void sg14_test::slot_map_test()
 
     // Test slot_map with a custom (non-standard, random-access) container type.
     using slot_map_5 = stdext::slot_map<int, std::pair<unsigned, unsigned>, TestContainer::Vector>;
+    static_assert(!std::is_nothrow_move_constructible<slot_map_5>::value, "preserve non-nothrow-movability of Vector");
     BasicTests<slot_map_5>(415, 315);
     BoundsCheckingTest<slot_map_5>();
     FullContainerStressTest<slot_map_5>([]() { return 37; });
@@ -582,6 +583,8 @@ void sg14_test::slot_map_test()
 
     // Test slot_map with a custom (standard, bidirectional-access) container type.
     using slot_map_6 = stdext::slot_map<int, std::pair<unsigned, unsigned>, std::list>;
+    static_assert(std::is_nothrow_move_constructible<slot_map_6>::value == std::is_nothrow_move_constructible<std::list<int>>::value,
+                  "preserve implementation-defined nothrow-movability of std::list");
     BasicTests<slot_map_6>(415, 315);
     BoundsCheckingTest<slot_map_6>();
     FullContainerStressTest<slot_map_6>([]() { return 37; });
