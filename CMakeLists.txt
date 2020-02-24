@@ -1,14 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(sg14 CXX)
-
-find_package(Threads REQUIRED)
+option(SG14_ENABLE_UNIT_TESTS "Enable unit tests" ON)
 
 # Prefer C++17, downgrade if it isn't available.
 set(CMAKE_CXX_STANDARD_REQUIRED OFF)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SG14_INCLUDE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/SG14")
-set(SG14_TEST_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/SG14_test")
 
 # Output binary to predictable location.
 set(BINARY_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
@@ -40,50 +38,54 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 ##
 # Unit Tests
 ##
-set(TEST_SOURCE_FILES
-    ${SG14_TEST_SOURCE_DIRECTORY}/main.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/flat_map_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/flat_set_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/inplace_function_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/ring_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/slot_map_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/uninitialized_test.cpp
-    ${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
-)
+if (SG14_ENABLE_UNIT_TESTS)
+	set(SG14_TEST_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/SG14_test")
 
-set(TEST_NAME ${PROJECT_NAME}_tests)
-add_executable(${TEST_NAME} ${TEST_SOURCE_FILES})
-target_link_libraries(${TEST_NAME} ${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(${TEST_NAME} PRIVATE "${SG14_TEST_SOURCE_DIRECTORY}")
-
-# Compile options
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
-	set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
-		COMPILE_FLAGS "-Wno-unused-parameter"
+	set(TEST_SOURCE_FILES
+		${SG14_TEST_SOURCE_DIRECTORY}/main.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/flat_map_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/flat_set_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/inplace_function_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/ring_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/slot_map_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/uninitialized_test.cpp
+		${SG14_TEST_SOURCE_DIRECTORY}/unstable_remove_test.cpp
 	)
+
+	set(TEST_NAME ${PROJECT_NAME}_tests)
+	add_executable(${TEST_NAME} ${TEST_SOURCE_FILES})
+	target_link_libraries(${TEST_NAME} ${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+	target_include_directories(${TEST_NAME} PRIVATE "${SG14_TEST_SOURCE_DIRECTORY}")
+
+	# Compile options
+	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
+		set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
+			COMPILE_FLAGS "-Wno-unused-parameter"
+		)
 	if (CMAKE_CXX_COMPILER_VERSION MATCHES "^7.*")
 		set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/slot_map_test.cpp PROPERTIES
 			COMPILE_FLAGS "-Wno-error=unused-variable -Wno-error=unused-but-set-variable") # Fix gcc7 issues with structured bindings
 		message("Disabled -Wunused-variable and -Wunused-but-set-variable for gcc ${CMAKE_CXX_COMPILER_VERSION}.")
 	endif()
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME})
-	target_compile_options(${TEST_NAME} PRIVATE /Zc:__cplusplus /permissive- /W4 /WX)
-	add_definitions(-DNOMINMAX -D_SCL_SECURE_NO_WARNINGS)
-	set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
-		COMPILE_FLAGS "/wd4127") # Disable conditional expression is constant, use if constexpr
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+		set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME})
+		target_compile_options(${TEST_NAME} PRIVATE /Zc:__cplusplus /permissive- /W4 /WX)
+		add_definitions(-DNOMINMAX -D_SCL_SECURE_NO_WARNINGS)
+		set_source_files_properties(${SG14_TEST_SOURCE_DIRECTORY}/plf_colony_test.cpp PROPERTIES
+			COMPILE_FLAGS "/wd4127") # Disable conditional expression is constant, use if constexpr
+	endif()
 endif()
 
 install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}_targets)
 
 install(EXPORT ${PROJECT_NAME}_targets
-    NAMESPACE ${PROJECT_NAME}::
-    FILE ${PROJECT_NAME}-config.cmake
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
+	NAMESPACE ${PROJECT_NAME}::
+		FILE ${PROJECT_NAME}-config.cmake
+	DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
 )
 
 install(DIRECTORY "${SG14_INCLUDE_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
