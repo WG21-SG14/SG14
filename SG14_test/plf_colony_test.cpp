@@ -38,6 +38,8 @@
 		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 		#define PLF_INITIALIZER_LIST_SUPPORT
 	#endif
+
+
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 	#define PLF_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
@@ -110,6 +112,16 @@
 		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
 	#endif
 
+	#if __cplusplus > 201703L // C++20
+		#if defined(__clang__) && (__clang_major__ >= 10)
+			#define PLF_SPACESHIP
+		#elif defined(__GNUC__) && __GNUC__ >= 10
+			#define PLF_SPACESHIP
+		#elif !defined(__clang__) && !defined(__GNUC__) // assume correct C++20 implementation for other compilers
+			#define PLF_SPACESHIP
+		#endif
+	#endif
+
 	#define PLF_MOVE_SEMANTICS_SUPPORT
 #else
 	#define PLF_FORCE_INLINE
@@ -119,11 +131,11 @@
 #endif
 
 
+#include <functional> // std::greater
+#include <vector> // range-insert testing
 #include <algorithm> // std::find
 #include <cstdio> // log redirection, printf
 #include <cstdlib> // abort
-#include <functional> // std::greater
-#include <vector> // range-insert testing
 
 #ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -480,6 +492,7 @@ void plf_colony_test()
 
 			failpass("max_size() test", p_colony2.max_size() > p_colony2.size());
 
+<<<<<<< HEAD
 		}
 
 
@@ -523,6 +536,51 @@ void plf_colony_test()
 		}
 
 
+=======
+		}
+
+
+		{
+			title2("Iterator comparison tests");
+
+			colony<int> i_colony;
+
+			for (int temp = 0; temp != 10; ++temp)
+			{
+				i_colony.insert(temp);
+			}
+
+			colony<int>::iterator it1 = i_colony.begin(), it2 = i_colony.begin();
+
+			++it2;
+			++it2;
+			++it2;
+
+			failpass("Iterator ++ test", *it2 == 3);
+
+			failpass("Iterator > test", it2 > it1);
+
+			failpass("Iterator >= test", it2 >= it1);
+
+			failpass("Iterator < test", it1 < it2);
+
+			failpass("Iterator <= test", it1 <= it2);
+
+			failpass("Iterator != test", it2 != it1);
+
+			#ifdef PLF_SPACESHIP_SUPPORT
+				failpass("Iterator <=> test 1", (it2 <=> it1) == 1);
+
+				failpass("Iterator <=> test 2", (it1 <=> it2) == -1);
+
+				it1 = it2;
+
+				failpass("Iterator <=> test 3", (it1 <=> it2) == 0);
+			#endif
+		}
+
+
+>>>>>>> 014fbbb43e63ffde629b155139b85375a04c191f
 		{
 			title2("Insert and Erase tests");
 
@@ -574,7 +632,11 @@ void plf_colony_test()
 
 
 			i_colony.clear();
+<<<<<<< HEAD
+			i_colony.set_minimum_block_capacity(10000);
+=======
 			i_colony.change_minimum_group_size(10000);
+>>>>>>> 014fbbb43e63ffde629b155139b85375a04c191f
 
 			i_colony.insert(30000, 1); // fill-insert 30000 elements
 
@@ -742,7 +804,7 @@ void plf_colony_test()
 
 
 			i_colony.clear();
-			i_colony.change_minimum_group_size(3);
+			i_colony.set_minimum_block_capacity(3);
 
 			const unsigned int temp_capacity2 = static_cast<unsigned int>(i_colony.capacity());
 			i_colony.reserve(1000);
@@ -1381,12 +1443,16 @@ void plf_colony_test()
 
 			failpass("Reserve + fill + fill + reserve + fill test", i_colony2.size() == 12060 && total == 12060);
 
+<<<<<<< HEAD
+
+=======
 			#ifdef PLF_INITIALIZER_LIST_SUPPORT
 				i_colony = {5, 4, 3, 2, 1};
 				
 				failpass("Initializer-list operator = test", i_colony.size() == 5 && *i_colony.begin() == 5);
 			#endif
 			
+>>>>>>> 014fbbb43e63ffde629b155139b85375a04c191f
 		}
 
 
@@ -1447,7 +1513,11 @@ void plf_colony_test()
 			title2("Misc function tests");
 
 			colony<int> colony1;
+<<<<<<< HEAD
+			colony1.set_block_capacity_limits(50, 100);
+=======
 			colony1.change_group_sizes(50, 100);
+>>>>>>> 014fbbb43e63ffde629b155139b85375a04c191f
 
 			colony1.insert(27);
 
@@ -1472,6 +1542,15 @@ void plf_colony_test()
 			}
 
 			failpass("Reinitialize max-size test", colony1.capacity() == 5200);
+<<<<<<< HEAD
+
+			colony1.set_block_capacity_limits(500, 500);
+
+			failpass("Change_group_sizes resize test", colony1.capacity() == 3500);
+
+			colony1.set_minimum_block_capacity(200);
+			colony1.set_maximum_block_capacity(200);
+=======
 
 			colony1.change_group_sizes(500, 500);
 
@@ -1479,6 +1558,7 @@ void plf_colony_test()
 
 			colony1.change_minimum_group_size(200);
 			colony1.change_maximum_group_size(200);
+>>>>>>> 014fbbb43e63ffde629b155139b85375a04c191f
 
 			failpass("Change_maximum_group_size resize test", colony1.capacity() == 3400);
 
@@ -1668,8 +1748,13 @@ void plf_colony_test()
 			{
 				colony<int> colony1, colony2;
 
+<<<<<<< HEAD
+				colony1.set_block_capacity_limits(200, 200);
+				colony2.set_block_capacity_limits(200, 200);
+=======
 				colony1.change_group_sizes(200, 200);
 				colony2.change_group_sizes(200, 200);
+>>>>>>> 014fbbb43e63ffde629b155139b85375a04c191f
 
 				for(int number = 0; number != 100; ++number)
 				{
