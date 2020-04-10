@@ -72,7 +72,7 @@
 	#endif
 
 	#if defined(_MSVC_LANG) && (_MSVC_LANG > 201703L)
-		#define PLF_COLONY_SPACESHIP
+		#define PLF_COLONY_CPP20_SUPPORT
 	#endif
 
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
@@ -180,11 +180,11 @@
 
 	#if __cplusplus > 201703L // C++20
 		#if defined(__clang__) && (__clang_major__ >= 10)
-			#define PLF_COLONY_SPACESHIP
+			#define PLF_COLONY_CPP20_SUPPORT
 		#elif defined(__GNUC__) && __GNUC__ >= 10
-			#define PLF_COLONY_SPACESHIP
+			#define PLF_COLONY_CPP20_SUPPORT
 		#elif !defined(__clang__) && !defined(__GNUC__) // assume correct C++20 implementation for other compilers
-			#define PLF_COLONY_SPACESHIP
+			#define PLF_COLONY_CPP20_SUPPORT
 		#endif
 	#endif
 
@@ -677,7 +677,7 @@ public:
 
 
 		// C++20:
-		#ifdef PLF_COLONY_SPACESHIP
+		#ifdef PLF_COLONY_CPP20_SUPPORT
 	 		inline int operator <=> (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
 	 		{
 	 			return (element_pointer == rh.element_pointer) ? 0 : ((rh > *this) ? 1 : -1);
@@ -977,7 +977,7 @@ public:
 
 
 		// C++20:
-		#ifdef PLF_COLONY_SPACESHIP
+		#ifdef PLF_COLONY_CPP20_SUPPORT
 	 		inline int operator <=> (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
 	 		{
 	 			return (rh.it <=> it);
@@ -2897,6 +2897,9 @@ public:
 
 
 
+	#ifdef PLF_COLONY_CPP20_SUPPORT
+		[[nodiscard]]
+	#endif
 	inline PLF_COLONY_FORCE_INLINE bool empty() const PLF_COLONY_NOEXCEPT
 	{
 		return total_number_of_elements == 0;
@@ -2951,7 +2954,7 @@ public:
 		return
 			sizeof(*this) + // sizeof colony basic structure
 			(total_capacity * (sizeof(aligned_element_type) + sizeof(skipfield_type))) + // sizeof current colony data capacity + skipfields
-			((end_iterator.group_pointer == NULL) ? 0 : ((end_iterator.group_pointer->group_number + 1) * (sizeof(group) + sizeof(skipfield_type)))); // if colony not empty, add the memory usage of the group structures themselves, adding the extra skipfield node
+			((end_iterator.group_pointer == NULL) ? 0 : ((end_iterator.group_pointer->group_number + 1) * (sizeof(group) + sizeof(skipfield_type)))); // if colony not empty, add the memory use of the group structures themselves, adding the extra skipfield node
 	}
 
 
@@ -4271,7 +4274,7 @@ inline void swap (colony<element_type, element_allocator_type, element_skipfield
 #undef PLF_COLONY_NOEXCEPT_MOVE_ASSIGNMENT
 #undef PLF_COLONY_CONSTEXPR
 #undef PLF_COLONY_CONSTEXPR_SUPPORT
-#undef PLF_COLONY_SPACESHIP
+#undef PLF_COLONY_CPP20_SUPPORT
 
 #undef PLF_COLONY_CONSTRUCT
 #undef PLF_COLONY_DESTROY
