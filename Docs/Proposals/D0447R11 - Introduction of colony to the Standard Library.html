@@ -168,8 +168,8 @@ code {
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R11<br>
 Date: 2020-04-12<br>
-Project: Introduction of std::colony to the standard library <br>
-Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
+Project: Introduction of std::colony to the standard library<br>
+Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
 <h1>Introduction of std::colony to the standard library</h1>
 
@@ -190,6 +190,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt; <br>
         feedback</a></li>
       <li><a href="#sg14gameengine">Typical game engine requirements</a></li>
       <li><a href="#timecomplexityexplanations">Time complexity requirement explanations</a></li>
+      <li><a href="#questions">Questions for the committee</a></li>
       <li><a href="#revisions">Paper revision history</a></li>
     </ol>
   </li>
@@ -218,7 +219,7 @@ used, no reallocation of elements is necessary upon erasure. Because the structu
 insertions to a full container also do not trigger reallocations. This means that element memory
 locations stay stable and pointers/references/indexes stay valid
 regardless of erasure/insertion. This is highly desirable, for
-example, in game programming because there are usually multiple elements in
+example, <a href="#sg14gameengine">in game programming</a> because there are usually multiple elements in
 different containers which need to reference each other during gameplay and elements are being inserted or erased in real time.</p>
 
 <p>Problematic aspects of a typical bucket array are that they tend to have a
@@ -326,7 +327,7 @@ different name for it.</p>
 <h2><a id="impact"></a>III. Impact On the Standard</h2>
 
 <p>This is a pure library addition, no changes are necessary to the standard asides
-from the introduction of the colony container. <br>
+from the introduction of the colony container.<br>
 A reference implementation of colony is available for download and use <a
 href="https://plflib.org/colony.htm#download">here</a>. </p>
 
@@ -519,7 +520,7 @@ See benchmarks <a href="#benchmarks">here</a>.</p>
 <h3>Class template colony</h3>
 <h4>Class template colony overview</h4>
 <ol>
-<li>A colony is a sequence container with unordered insertion which supports constant time insert and erase operations. Storage management is handled automatically and is specifically organised in multiple blocks of sequential elements, including block metadata.</li>
+<li>A colony is a sequence container with unordered insertion which supports amortised constant time insert and erase operations. Storage management is handled automatically and is specifically organised in multiple blocks of sequential elements, including block metadata.</li>
 <li>A colony satisfies all of the requirements of a container and of a reversible container, of a sequence container, of an allocator-aware container.</li>
 </ol>
 
@@ -528,103 +529,102 @@ See benchmarks <a href="#benchmarks">here</a>.</p>
 <span style="color: #008800; font-weight: bold">class</span> <span style="color: #BB0066; font-weight: bold">colony</span> {
 <span style="color: #997700; font-weight: bold">public:</span>
 
-	<span style="color: #888888">// types:</span>
-	<span style="color: #008800; font-weight: bold">using</span> value_type <span style="color: #333333">=</span> T;
-	<span style="color: #008800; font-weight: bold">using</span> allocator_type <span style="color: #333333">=</span> Allocator;
-	<span style="color: #008800; font-weight: bold">using</span> skipfield_type <span style="color: #333333">=</span> Skipfield;
-	<span style="color: #008800; font-weight: bold">using</span> pointer <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">typename</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>pointer;
-	<span style="color: #008800; font-weight: bold">using</span> const_pointer <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">typename</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>const_pointer;
-	<span style="color: #008800; font-weight: bold">using</span> reference <span style="color: #333333">=</span> value_type<span style="color: #333333">&amp;</span>;
-	<span style="color: #008800; font-weight: bold">using</span> const_reference <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">const</span> value_type<span style="color: #333333">&amp;</span>;
-	<span style="color: #008800; font-weight: bold">using</span> size_type <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-	<span style="color: #008800; font-weight: bold">using</span> difference_type <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-	<span style="color: #008800; font-weight: bold">using</span> iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-	<span style="color: #008800; font-weight: bold">using</span> const_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-	<span style="color: #008800; font-weight: bold">using</span> reverse_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-	<span style="color: #008800; font-weight: bold">using</span> const_reverse_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+&nbsp;&nbsp;<span style="color: #888888">// types:</span>
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> value_type <span style="color: #333333">=</span> T;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> allocator_type <span style="color: #333333">=</span> Allocator;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> skipfield_type <span style="color: #333333">=</span> Skipfield;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> pointer <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">typename</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>pointer;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> const_pointer <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">typename</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>const_pointer;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> reference <span style="color: #333333">=</span> value_type<span style="color: #333333">&amp;</span>;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> const_reference <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">const</span> value_type<span style="color: #333333">&amp;</span>;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> size_type <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> difference_type <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> const_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> reverse_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">using</span> const_reverse_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
 
 
-	<span style="color: #0066BB; font-weight: bold">colony</span>() noexcept(noexcept(Allocator())) <span style="color: #333333">:</span> colony(Allocator()) {};
-	<span style="color: #008800; font-weight: bold">explicit</span> <span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>) noexcept;
-	<span style="color: #008800; font-weight: bold">explicit</span> <span style="color: #0066BB; font-weight: bold">colony</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-	<span style="color: #0066BB; font-weight: bold">colony</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> value, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-	<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> InputIterator<span style="color: #333333">&gt;</span>
-	<span style="color: #0066BB; font-weight: bold">colony</span>(InputIterator first, InputIterator last, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-	<span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span> x);
-	<span style="color: #0066BB; font-weight: bold">colony</span>(colony<span style="color: #333333">&amp;&amp;</span>) noexcept;
-	<span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span>, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>);
-	<span style="color: #0066BB; font-weight: bold">colony</span>(colony<span style="color: #333333">&amp;&amp;</span>, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>);
-	<span style="color: #0066BB; font-weight: bold">colony</span>(initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-	<span style="color: #0066BB; font-weight: bold">~colony</span>();
-	colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span> x);
-	colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (colony<span style="color: #333333">&amp;&amp;</span> x) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_move_assignment<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
-	colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>);
-	allocator_type <span style="color: #0066BB; font-weight: bold">get_allocator</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>() noexcept(noexcept(Allocator())) <span style="color: #333333">:</span> colony(Allocator()) {};
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">explicit</span> <span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>) noexcept;
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">explicit</span> <span style="color: #0066BB; font-weight: bold">colony</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> value, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> InputIterator<span style="color: #333333">&gt;</span>
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(InputIterator first, InputIterator last, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span> x);
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(colony<span style="color: #333333">&amp;&amp;</span>) noexcept;
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span>, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>);
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(colony<span style="color: #333333">&amp;&amp;</span>, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>);
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">colony</span>(initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
+&nbsp;&nbsp;<span style="color: #0066BB; font-weight: bold">~colony</span>();
+&nbsp;&nbsp;colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span> x);
+&nbsp;&nbsp;colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (colony<span style="color: #333333">&amp;&amp;</span> x) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_move_assignment<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
+&nbsp;&nbsp;colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>);
+&nbsp;&nbsp;allocator_type <span style="color: #0066BB; font-weight: bold">get_allocator</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
 
-	<span style="color: #888888">// iterators:</span>
-	iterator <span style="color: #0066BB; font-weight: bold">begin</span>() noexcept;
-	const_iterator <span style="color: #0066BB; font-weight: bold">begin</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	iterator <span style="color: #0066BB; font-weight: bold">end</span>() noexcept;
-	const_iterator <span style="color: #0066BB; font-weight: bold">end</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	reverse_iterator <span style="color: #0066BB; font-weight: bold">rbegin</span>(); <span style="color: #888888">// Since this could be derived from --end() depending on implementation, whether this is noexcept is implementation-defined</span>
-	const_reverse_iterator <span style="color: #0066BB; font-weight: bold">rbegin</span>() <span style="color: #008800; font-weight: bold">const</span>;
-	reverse_iterator <span style="color: #0066BB; font-weight: bold">rend</span>() noexcept;
-	const_reverse_iterator <span style="color: #0066BB; font-weight: bold">rend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	const_iterator <span style="color: #0066BB; font-weight: bold">cbegin</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	const_iterator <span style="color: #0066BB; font-weight: bold">cend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	const_reverse_iterator <span style="color: #0066BB; font-weight: bold">crbegin</span>() <span style="color: #008800; font-weight: bold">const</span>;
-	const_reverse_iterator <span style="color: #0066BB; font-weight: bold">crend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;<span style="color: #888888">// iterators:</span>
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">begin</span>() noexcept;
+&nbsp;&nbsp;const_iterator <span style="color: #0066BB; font-weight: bold">begin</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">end</span>() noexcept;
+&nbsp;&nbsp;const_iterator <span style="color: #0066BB; font-weight: bold">end</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;reverse_iterator <span style="color: #0066BB; font-weight: bold">rbegin</span>(); <span style="color: #888888">// Since this could be derived from --end() depending on implementation, whether this is noexcept is implementation-defined</span>
+&nbsp;&nbsp;const_reverse_iterator <span style="color: #0066BB; font-weight: bold">rbegin</span>() <span style="color: #008800; font-weight: bold">const</span>;
+&nbsp;&nbsp;reverse_iterator <span style="color: #0066BB; font-weight: bold">rend</span>() noexcept;
+&nbsp;&nbsp;const_reverse_iterator <span style="color: #0066BB; font-weight: bold">rend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;const_iterator <span style="color: #0066BB; font-weight: bold">cbegin</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;const_iterator <span style="color: #0066BB; font-weight: bold">cend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;const_reverse_iterator <span style="color: #0066BB; font-weight: bold">crbegin</span>() <span style="color: #008800; font-weight: bold">const</span>;
+&nbsp;&nbsp;const_reverse_iterator <span style="color: #0066BB; font-weight: bold">crend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
 
-	<span style="color: #888888">// capacity</span>
-	[[nodiscard]] <span style="color: #333399; font-weight: bold">bool</span> <span style="color: #0066BB; font-weight: bold">empty</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	size_type <span style="color: #0066BB; font-weight: bold">size</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	size_type <span style="color: #0066BB; font-weight: bold">max_size</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	size_type <span style="color: #0066BB; font-weight: bold">capacity</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	size_type <span style="color: #0066BB; font-weight: bold">approximate_memory_usage</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept; <span style="color: #888888">// Approximate so as to allow for platform-based constraints and alignment</span>
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">reserve</span>(size_type n);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">shrink_to_fit</span>();
-
-
-	<span style="color: #888888">// modifiers</span>
-	<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span>class... Args<span style="color: #333333">&gt;</span>
-	iterator <span style="color: #0066BB; font-weight: bold">emplace</span>(Args<span style="color: #333333">&amp;&amp;</span>... args);
-	iterator <span style="color: #0066BB; font-weight: bold">insert</span>(<span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> x);
-	iterator <span style="color: #0066BB; font-weight: bold">insert</span>(T<span style="color: #333333">&amp;&amp;</span> x);
-	iterator <span style="color: #0066BB; font-weight: bold">insert</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> x);
-	<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> InputIterator<span style="color: #333333">&gt;</span>
-	iterator <span style="color: #0066BB; font-weight: bold">insert</span>(InputIterator first, InputIterator last);
-	iterator <span style="color: #0066BB; font-weight: bold">insert</span>(initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span> il);
-	iterator <span style="color: #0066BB; font-weight: bold">erase</span>(const_iterator position);
-	iterator <span style="color: #0066BB; font-weight: bold">erase</span>(const_iterator first, const_iterator last);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">swap</span>(colony<span style="color: #333333">&amp;</span>) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_swap<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">clear</span>() noexcept;
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">sort</span>();
-	<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> Compare<span style="color: #333333">&gt;</span>
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">sort</span>(Compare comp);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">splice</span>(colony <span style="color: #333333">&amp;</span>x) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_swap<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
+&nbsp;&nbsp;<span style="color: #888888">// capacity</span>
+&nbsp;&nbsp;[[nodiscard]] <span style="color: #333399; font-weight: bold">bool</span> <span style="color: #0066BB; font-weight: bold">empty</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">size</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">max_size</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">capacity</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">approximate_memory_use</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept; <span style="color: #888888">// Approximate so as to allow for platform-based constraints and alignment</span>
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">reserve</span>(size_type n);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">shrink_to_fit</span>();
 
 
-	<span style="color: #888888">// Element memory block capacity limit functions:</span>
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">get_block_capacity_limits</span>(Skipfield <span style="color: #333333">&amp;</span>minimum, Skipfield <span style="color: #333333">&amp;</span>maximum) <span style="color: #008800; font-weight: bold">const</span> noexcept;
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_block_capacity_limits</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum, <span style="color: #008800; font-weight: bold">const</span> Skipfield maximum);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_minimum_block_capacity</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_maximum_block_capacity</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield maximum);
-	<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">reinitialize</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum, <span style="color: #008800; font-weight: bold">const</span> Skipfield maximum) noexcept;
+&nbsp;&nbsp;<span style="color: #888888">// modifiers</span>
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span>class... Args<span style="color: #333333">&gt;</span>
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">emplace</span>(Args<span style="color: #333333">&amp;&amp;</span>... args);
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">insert</span>(<span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> x);
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">insert</span>(T<span style="color: #333333">&amp;&amp;</span> x);
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">insert</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> x);
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> InputIterator<span style="color: #333333">&gt;</span>
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">insert</span>(InputIterator first, InputIterator last);
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">insert</span>(initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span> il);
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">erase</span>(const_iterator position);
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">erase</span>(const_iterator first, const_iterator last);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">swap</span>(colony<span style="color: #333333">&amp;</span>) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_swap<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">clear</span>() noexcept;
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">sort</span>();
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> Compare<span style="color: #333333">&gt;</span>
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">sort</span>(Compare comp);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">splice</span>(colony <span style="color: #333333">&amp;</span>x) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_swap<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
 
-	<span style="color: #888888">// Type-changing functions:</span>
-	iterator <span style="color: #0066BB; font-weight: bold">get_iterator_from_pointer</span>(<span style="color: #008800; font-weight: bold">const</span> pointer element_pointer) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// Cannot be noexcept as colony could be empty or pointer invalid</span>
-	reverse_iterator <span style="color: #0066BB; font-weight: bold">get_reverse_iterator_from_pointer</span>(<span style="color: #008800; font-weight: bold">const</span> pointer element_pointer) <span style="color: #008800; font-weight: bold">const</span>;
 
-	size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// may throw exception if iterator is invalid/uninitialized</span>
-	size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> const_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
-	size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> reverse_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
-	size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> const_reverse_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
+&nbsp;&nbsp;<span style="color: #888888">// Element memory block capacity limit functions:</span>
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">get_block_capacity_limits</span>(Skipfield <span style="color: #333333">&amp;</span>minimum, Skipfield <span style="color: #333333">&amp;</span>maximum) <span style="color: #008800; font-weight: bold">const</span> noexcept;
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_block_capacity_limits</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum, <span style="color: #008800; font-weight: bold">const</span> Skipfield maximum);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_minimum_block_capacity</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_maximum_block_capacity</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield maximum);
+&nbsp;&nbsp;<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">reinitialize</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum, <span style="color: #008800; font-weight: bold">const</span> Skipfield maximum) noexcept;
 
-	<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">typename</span> index_type<span style="color: #333333">&gt;</span>
-	iterator <span style="color: #0066BB; font-weight: bold">get_iterator_from_index</span>(<span style="color: #008800; font-weight: bold">const</span> index_type index) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// Cannot be noexcept as colony could be empty</span>
-	<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">typename</span> index_type<span style="color: #333333">&gt;</span>
-	reverse_iterator <span style="color: #0066BB; font-weight: bold">get_reverse_iterator_from_index</span>(<span style="color: #008800; font-weight: bold">const</span> index_type index) <span style="color: #008800; font-weight: bold">const</span>;
-<br>
+&nbsp;&nbsp;<span style="color: #888888">// Type-changing functions:</span>
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">get_iterator_from_pointer</span>(<span style="color: #008800; font-weight: bold">const</span> pointer element_pointer) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// Cannot be noexcept as colony could be empty or pointer invalid</span>
+&nbsp;&nbsp;reverse_iterator <span style="color: #0066BB; font-weight: bold">get_reverse_iterator_from_pointer</span>(<span style="color: #008800; font-weight: bold">const</span> pointer element_pointer) <span style="color: #008800; font-weight: bold">const</span>;
+
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// may throw exception if iterator is invalid/uninitialized</span>
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> const_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> reverse_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
+&nbsp;&nbsp;size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> const_reverse_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
+
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">typename</span> index_type<span style="color: #333333">&gt;</span>
+&nbsp;&nbsp;iterator <span style="color: #0066BB; font-weight: bold">get_iterator_from_index</span>(<span style="color: #008800; font-weight: bold">const</span> index_type index) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// Cannot be noexcept as colony could be empty</span>
+&nbsp;&nbsp;<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">typename</span> index_type<span style="color: #333333">&gt;</span>
+&nbsp;&nbsp;reverse_iterator <span style="color: #0066BB; font-weight: bold">get_reverse_iterator_from_index</span>(<span style="color: #008800; font-weight: bold">const</span> index_type index) <span style="color: #008800; font-weight: bold">const</span>;
 };
 
 <span style="color: #888888">// specialized algorithms</span>
@@ -636,21 +636,20 @@ See benchmarks <a href="#benchmarks">here</a>.</p>
 <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">advance</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance);
 <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">advance</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance);
 
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
 
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
 
-difference_type <span style="color: #0066BB; font-weight: bold">difference</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>last); <span style="color: #888888">// May throw exception if iterators are invalid. Difference can usually be calculated in less than linear time but exact time complexity is implementation-defined.</span>
-difference_type <span style="color: #0066BB; font-weight: bold">difference</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>last);
-difference_type <span style="color: #0066BB; font-weight: bold">difference</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>last);
-difference_type <span style="color: #0066BB; font-weight: bold">difference</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>last);
-
+difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator last); <span style="color: #888888">// May throw exception if iterators are invalid.</span>
+difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator last);
+difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator last);
+difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator last);
 }
 </pre></div>
 
@@ -732,8 +731,8 @@ iterator emplace(Args&amp;&amp;... args);<br></code>
 <br>
 <code style="font-weight:bold">iterator erase(const_iterator position);</code>
 <ol start="3">
-<li>Effects: Destructs element(s) at position(s). Invalidates pointers, iterators and references to the element(s) being erased.</li>
-<li>Complexity: Constant amortised. When a memory block becomes empty of non-erased elements it must be removed from the colony's sequence of memory blocks (and either freed to the OS or stored for future insertions, depending on implementation). Since a memory block becoming empty is infrequent the time complexity is amortised. See <a href="#timecomplexityexplanations">appendix F</a>. Skipfield modification time complexity is not factored into this, is implementation-defined and may be constant or linear, dependent on implementation.</li>
+<li>Effects: Destructs element at position and removes position from iteration sequence. Invalidates pointers, iterators and references to the element being erased.</li>
+<li>Complexity: Constant amortised. When a memory block becomes empty of non-erased elements it must be removed from the colony's sequence of memory blocks (and either deallocated or stored for future insertions, depending on implementation). Since a memory block becoming empty is infrequent the time complexity is amortised. See <a href="#timecomplexityexplanations">appendix F</a>. Skipfield modification time complexity is not factored into this; it's implementation-defined and may be constant, linear or otherwise defined.</li>
 <li>Throws: Nothing unless the supplied iterator is invalid.</li>
 </ol>
 <br>
@@ -764,7 +763,12 @@ void sort(Compare comp);</code>
 <ol start="15">
 <li>Effects: Takes the element memory blocks owned by x and transfers ownership of them to *this. Then includes said memory blocks in the iterative sequence of blocks. In effect transfers ownership of all elements from x to *this and includes them in *this's iterative sequence, without reallocation.</li>
 <li>Complexity: Constant time.</li>
-<li>Notes: Whether x's elements are transferred to the beginning or end of *this's iterative sequence is implementation-defined. Better performance may be gained in some cases by allowing the source blocks to go to the front rather than the back, depending on how full the final block in source's iterative sequence is (unused elements will need to be marked as skipped, and hence may incur a performance disadvantage during iteration.</li>
+<li>Remarks: Whether x's elements are transferred to the beginning or end of *this's iterative sequence is implementation-defined. Better performance may be gained in some cases by allowing the source blocks to go to the front rather than the back, depending on how full the final block in source's iterative sequence is (unused elements will need to be marked as skipped, and hence may incur a performance disadvantage during iteration.</li>
+</ol>
+<code style="font-weight:bold">size_type approximate_memory_use() const noexcept;</code>
+<ol start="18">
+<li>Effects: Returns the approximate memory use, in bytes, of the container as a whole, minus whatever dynamic allocation is incurred by elements themselves (for example, if the elements are vectors of indeterminate size). Since a colony uses both skipfields and metadata, and much of that is implementation-defined, it is not possible for the user to estimate memory use from size() or capacity().</li>
+<li>Complexity: Implementation-defined. Should typically be constant.</li>
 </ol>
 
 
@@ -831,16 +835,32 @@ void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator, 
 </ol>
 <br>
 <code style="font-weight:bold">void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, difference_type distance);<br>
-colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, difference_type distance = 1);<br>
-colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, difference_type distance = 1);</code>
+void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator &amp;it, difference_type distance);<br>
+void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator &amp;it, difference_type distance);<br>
+void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator &amp;it, difference_type distance);<br>
+<br>
+colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);<br>
+<br>
+colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);</code>
 <ol start="2">
-<li>Complexity: For advance, prev and next, complexity is dependent on state of colony, position of iterator and amount of distance, but in most use-cases should be less than linear. Because it is necessary in a colony to store metadata both about the capacity of each block size (for iteration purposes), and about how many non-erased elements are present within the block (for the purpose of removing empty blocks from the iterative chain), intermediary blocks between the iterator's beginning block and it's end block (if these are not the same block) can be skipped rather than iterated linearly across. This means that the only linear time operations are the iterations within the beginning block and the end block. However if either the beginning or end block have no erased elements, linear iteration can be skipped and pointer math used instead to determine distances, reducing complexity to constant time. Hence the best case for this operation is constant time, the worst is linear to the distance.</li>
+<li>Complexity: For advance, prev and next, complexity is dependent on state of colony, position of iterator and amount of distance, but in most use-cases should be less than linear. It is necessary in a colony to store metadata both about the capacity of each block (for the purpose of iteration) and how many non-erased elements are present within the block (for the purpose of removing blocks from the iterative chain once they become empty). For this reason, intermediary blocks between the iterator's initial block and it's final destination block (if these are not the same block, and if thhe initial block and final block are no immediately adjacent) can be skipped rather than iterated linearly across, by using the "number of non-erased elements" metadata.<br>
+This means that the only linear time operations are any iterations within the initial block and the final block. However if either the initial or final block have no erased elements (as determined by comparing whether the block's capacity metadata and the block's "number of non-erased elements" metadata are equal), linear iteration can be skipped for that block and pointer/index math used instead to determine distances, reducing complexity to constant time. Hence the best case for this operation is constant time, the worst is linear to the distance.</li>
 <li>Throws: Nothing unless the supplied iterator is invalid.</li>
 </ol>
 <br>
-<code style="font-weight:bold">difference_type difference(const colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;first, const colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;last); // May throw exception if iterators are invalid. Difference can usually be calculated in less than linear time time but exact time complexity is implementation-defined.</code>
+<code style="font-weight:bold">
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);<br>
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);</code>
 <ol start="4">
-<li>Complexity: The same considerations as apply to advance, prev and next also apply to difference - intermediary blocks between first and last can be skipped in constant time time, first's block and last's block (if not the same block) must be linearly iterated across unless either block has no erased elements, in which case the operation becomes pointer math and reduces to constant time for that block.</li>
+<li>Complexity: The same considerations which apply to advance, prev and next also apply to difference - intermediary blocks between first and last's blocks can be skipped in constant time time, first's block and last's block (if not the same block) must be linearly iterated across unless either block has no erased elements, in which case the operation becomes pointer/index math and is reduced to constant time for that block.</li>
 <li>Throws: Nothing unless the supplied iterator is invalid.</li>
 </ol>
 
@@ -852,7 +872,7 @@ advice, Robert Ramey for documentation advice, various Boost and SG14 members
 for support, Baptiste Wicht for teaching me how to construct decent benchmarks,
 Jonathan Wakely, Sean Middleditch, Patrice Roy and Guy Davidson for standards-compliance advice and critiques, support, representation at meetings and bug reports,
 that guy from Lionhead for annoying me enough to force me to implement the original skipfield
-pattern, Jon Blow for some initial advice and Mike Acton for some influence.<br>
+pattern, Jon Blow for some initial advice and Mike Acton for some influence, the community at large for giving me feedback and bug reports on the reference implementation.<br>
 Also Nico Josuttis for doing such an excellent job in terms of explaining the general format of the structure to the committee.
 </p>
 
@@ -877,7 +897,7 @@ concepts.</p>
 <p>For the most part the syntax and semantics of colony functions are very
 similar to all std:: c++ libraries. Formal description is as follows:</p>
 <code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename
-Skipfield_Type = unsigned short&gt; class colony</code>
+Skipfield_Type = implementation-defined&gt; class colony</code>
 
 <p><code><b>T</b></code> - the element type. In general T must meet the
 requirements of <a
@@ -906,60 +926,60 @@ size of memory blocks, due to the way that the skipfield pattern works
 (<code>e.g. unsigned short</code> is 16-bit on most platforms which constrains
 the size of individual memory blocks to a maximum of 65535 elements).
 <code>unsigned short</code> has been found to be the optimal type for the
-current reference implementation. However in the case of small collections (i.e.
+reference implementation in general. However in the case of small collections (i.e.
 &lt; 1000 elements) in a memory-constrained environment, it may be useful to
-reduce the memory usage of the skipfield by reducing the skipfield bit depth to
+reduce the memory use of the skipfield by reducing the skipfield bit depth to
 a Uint8 type. The reduced skipfield size may also reduce cache saturation in
-this case without impacting iteration speed due to the low amount of elements.
+this case without impacting iteration speed due to the low number of elements.
 However whether or not this constitutes a performance advantage is <a
 href="https://plflib.org/blog.htm#shortandchardifferences">largely
-situational</a>, so it is best to leave control in the end user's hands.</p>
+situational</a>, so it is best to leave control in the end user's hands.<br>
+This attribute can always be ignored for an implementation which does not use it</p>
 
 
 
 <h4>Iterators</h4>
 
 <p>Iterators are bidirectional but also provide O(1) time complexity &gt;,
-&lt;, &gt;= and &lt;= operators for convenience (for example, for use in
+&lt;, &gt;=, &lt;= and &lt;=&gt; operators for convenience (for example, for use in
 <code>for</code> loops when skipping over multiple elements per loop). The O(1)
 complexity of these operators are achieved by keeping a record of the order of
-memory blocks in some way (in the reference implementation this is done via
-assigning a number to each memory block in its metadata), comparing the
-relative order of the two iterators' memory blocks via this number, then
+memory blocks in some way. In the reference implementation this is done via
+assigning a number to each memory block in its metadata. In an implementation using a vector of blocks instead of a linked list, one could simply use the position of the block within the vector to determine this.
+Comparing relative order of the two iterators' memory blocks via this number, then
 comparing the memory locations of the elements themselves, if they happen to be
-in the same memory block. The full list of operators for iterator,
-reverse_iterator, const_iterator and const_reverse_iterator follow:</p>
+in the same memory block, is enough to implement all greater/lesser comparisons.
+The full list of operators for iterator, reverse_iterator, const_iterator and const_reverse_iterator follows:</p>
 
-<p><code>operator * <br>
-operator -&gt; <br>
+<p><code>operator *<br>
+operator -&gt;<br>
 operator ++<br>
 operator --<br>
-operator = <br>
-operator == <br>
-operator != <br>
-operator &lt; <br>
-operator &gt; <br>
-operator &lt;= <br>
-operator &gt;= <br>
-operator &lt;=&gt; <br>
+operator =<br>
+operator ==<br>
+operator !=<br>
+operator &lt;<br>
+operator &gt;<br>
+operator &lt;=<br>
+operator &gt;=<br>
+operator &lt;=&gt;<br>
 base() (reverse_iterator and const_reverse_iterator only)</code> </p>
 
 
-<h4>Iterator Invalidation</h4>
+<h4><a id="#iteratorinvalidation"></a>Iterator Invalidation</h4>
 
 <table border="1">
   <tbody>
     <tr>
-      <td>All read-only operations, swap, std::swap, free_unused_memory</td>
+      <td>All read-only operations, swap, std::swap, splice, free_unused_memory, operator = && (source)</td>
       <td>Never</td>
     </tr>
     <tr>
-      <td>clear, sort, reinitialize, operator =</td>
+      <td>clear, sort, reinitialize, operator = &, operator = && (destination)</td>
       <td>Always</td>
     </tr>
     <tr>
-      <td>change_block_sizes, change_minimum_block_size,
-        change_maximum_block_size</td>
+      <td>set_block_capacity_limits, set_minimum_block_capacity, set_maximum_block_capacity</td>
       <td>Only if supplied minimum block size is larger than smallest block in
         colony, or supplied maximum block size is smaller than largest block in
         colony.</td>
@@ -977,16 +997,19 @@ base() (reverse_iterator and const_reverse_iterator only)</code> </p>
       <td>If an iterator is == end() it may be invalidated by a subsequent
         insert/emplace, in some cases.</td>
     </tr>
+    <tr>
+    	<td>reserve</td>
+    	<td>Implementation-defined. If the colony isn't empty, and the reserve amount is larger than the existing block capacity(s), but smaller or equal to the maximum block capacity,
+		 an implementation is allowed to create a larger block and transfer all elements to the larger block, so that subsequent iteration is faster (due to greater linearity of elements in memory).
+		 However an implementation can also choose to simply create an additional block(s) rather than reallocating existing elements to a larger one.</td>
   </tbody>
 </table>
 
 
 
-<h4>Basic example of usage (using <a
-href="https://plflib.org/colony.htm">reference implementation</a>)</h4>
+<h4>Basic example of usage (using <a href="https://plflib.org/colony.htm">reference implementation</a>)</h4>
 
-<div
-style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
+<div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
 <pre style="margin: 0; line-height: 125%"><code><span style="color: #557799">#include &lt;iostream&gt;</span>
 <span style="color: #557799">#include "plf_colony.h"</span>
 
@@ -1073,77 +1096,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 } </code></pre>
 </div>
 
-<h5>Some constructor usage examples</h5>
-<ul>
-  <li><code>colony&lt;T&gt; a_colony</code>
-    <p>Default constructor - default minimum block size is 8, default maximum
-    block size is std::numeric_limits&lt;Skipfield_type&gt;::max() (typically
-    65535). You cannot set the block sizes from the constructor in this
-    scenario, but you can call the change_block_sizes() member function after
-    construction has occurred. <br>
-    Example: <code style="color: brown">std::colony&lt;int&gt;
-    int_colony;</code> </p>
-  </li>
-  <li><code>colony&lt;T, the_allocator&lt;T&gt; &gt; a_colony(allocator_type &amp;alloc = allocator_type())</code>
-    <p>Default constructor, but using a custom memory allocator e.g. something
-    other than std::allocator. <br>
-    Example: <code style="color: brown">std::colony&lt;int,
-    tbb::allocator&lt;int&gt; &gt; int_colony;</code> <br>
-    Example2: <br>
-    <code style="color: brown">// Using an instance of an allocator as well as
-    its type<br>
-    tbb::allocator&lt;int&gt; alloc_instance;<br>
-    std::colony&lt;int, tbb::allocator&lt;int&gt; &gt;
-    int_colony(alloc_instance);</code> </p>
-  </li>
-  <li><code>colony&lt;T&gt; a_colony(size_type n, Skipfield_type min_block_size
-    = 8, Skipfield_type max_block_size =
-    std::numeric_limits&lt;Skipfield_type&gt;::max())</code>
-    <p>Fill constructor with value_type unspecified, so the value_type's
-    default constructor is used. <code>n</code> specifies the number of
-    elements to create upon construction. If <code>n</code> is larger than
-    <code>min_block_size</code>, the size of the blocks created will either be
-    <code>n</code> and <code>max_block_size</code>, depending on which is
-    smaller. <code>min_block_size</code> (i.e. the smallest possible number of
-    elements which can be stored in a colony block) can be defined, as can the
-    <code>max_block_size</code>. Setting the block sizes can be a performance
-    advantage if you know in advance roughly how many objects are likely to be
-    stored in your colony long-term - or at least the rough scale of storage.
-    If that case, using this can stop many small initial blocks being
-    allocated. <br>
-    Example: <code style="color: brown">std::colony&lt;int&gt;
-    int_colony(62);</code> </p>
-  </li>
-  <li><code>colony&lt;T&gt; a_colony(std::initializer_list&lt;value_type&gt;
-    &amp;element_list,<br>
-    Skipfield_type min_block_size = 8, Skipfield_type max_block_size =
-    std::numeric_limits&lt;Skipfield_type&gt;::max())</code>
-    <p>Using an initialiser list to insert into the colony upon construction.
-    <br>
-    Example: <code style="color: brown">std::initializer_list&lt;int&gt;
-    &amp;el = {3, 5, 2, 1000};<br>
-    std::colony&lt;int&gt; int_colony(el, 64, 512);</code> </p>
-  </li>
-  <li><code>colony&lt;T&gt; a_colony(colony &amp;source)</code>
-    <p>Copy all contents from source colony, removes any empty (erased) element
-    locations in the process. Size of blocks created is either the total size
-    of the source colony, or the maximum block size of the source colony,
-    whichever is the smaller. <br>
-    Example: <code style="color: brown">std::colony&lt;int&gt;
-    int_colony_2(int_colony_1);</code> </p>
-  </li>
-  <li><code>colony&lt;T&gt; a_colony(colony &amp;&amp;source)</code>
-    <p>Move all contents from source colony, does not remove any erased element
-    locations or alter any of the source block sizes. Source colony is now
-    empty and can be safely destructed or otherwise used.<br>
-    Example: <code style="color: brown">std::colony&lt;int&gt; int_colony_1(50,
-    5, 512, 512); // Fill-construct a colony with min and max block sizes set
-    at 512 elements. Fill with 50 instances of int == 5.<br>
-    std::colony&lt;int&gt; int_colony_2(std::move(int_colony_1)); // Move all
-    data to int_colony_2. All of the above characteristics are now applied to
-    int_colony2.</code> </p>
-  </li>
-</ul>
+
 
 
 <h3><a id="benchmarks"></a>Appendix B - Reference implementation benchmarks</h3>
@@ -1159,8 +1112,7 @@ commentary for the MSVC results.</p>
 
 <h3><a id="faq"></a>Appendix C - Frequently Asked Questions</h3>
 <ol>
-  <li><h4>Where is it worth using a colony in place of other std::
-    containers?</h4>
+  <li><h4>Where is it worth using a colony in place of other std:: containers?</h4>
     <p>As mentioned, it is worthwhile for performance reasons in situations
     where the order of container elements is not important and:</p>
     <ol type="a">
@@ -1334,7 +1286,7 @@ commentary for the MSVC results.</p>
   <li><h4>What is colony's Abstract Data Type (ADT)?</h4>
     <p>Though I am happy to be proven wrong I suspect colonies/bucket arrays
     are their own abstract data type. Some have suggested it's ADT is of type
-    bag, I would somewhat dispute this as it does not have typical bag
+    bag, I would somewhat dispute this as it does not have typical yhhyt5tyyyttyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyybag
     functionality such as <a
     href="http://www.austincc.edu/akochis/cosc1320/bag.htm">searching based on
     value</a> (you can use std::find but it's o(n)) and adding this
@@ -1489,7 +1441,7 @@ previous committee feedback</h3>
     using unsigned char for the skipfield type if the number of elements is
     under 1000, and not in all scenarios. So whether or not this constitutes a
     performance gain is largely scenario-dependent, certainly it always
-    constitutes a memory usage reduction but the relative effect of this
+    constitutes a memory use reduction but the relative effect of this
     depends on the size of your stored type.</p>
   </li>
   <li><h4>"Prove this is not an allocator"</h4>
@@ -1598,16 +1550,16 @@ likely the following or derivatives:</p>
 <ol>
   <li>Using a boolean flag or similar to indicate the inactivity of an object
     (as opposed to actually erasing from the vector). Elements flagged as
-    inactive are skipped during iteration. <br>
-    <br>
+    inactive are skipped during iteration.<br>
+   <br>
     Advantages: Fast "deactivation". Easy to manage in multi-access
     environments.<br>
     Disadvantages: Can be slower to iterate due to branching.</li>
   <li>Using a vector of data and a secondary vector of indexes. When erasing,
     the erasure occurs only in the vector of indexes, not the vector of data.
     When iterating it iterates over the vector of indexes and accesses the data
-    from the vector of data via the remaining indexes. <br>
-    <br>
+    from the vector of data via the remaining indexes.<br>
+   <br>
     Advantages: Fast iteration.<br>
     Disadvantages: Erasure still incurs some reallocation cost which can
     increase jitter.</li>
@@ -1615,7 +1567,7 @@ likely the following or derivatives:</p>
     dereferenced lookup system to enable contiguous element iteration
     (sometimes called a 'packed array': <a
     href="http://bitsquid.blogspot.ca/2011/09/managing-decoupling-part-4-id-lookup.html">http://bitsquid.blogspot.ca/2011/09/managing-decoupling-part-4-id-lookup.html</a>).
-    <br>
+   <br>
     Advantages: Iteration is at standard vector speed.<br>
     Disadvantages: Erasure will be slow if objects are large and/or
     non-trivially copyable, thereby making swap costs large. All link-based
@@ -1666,7 +1618,13 @@ communication.</p>
 	<p>Since the traversal depends in part of the skipfield, and on what metadata is stored about the memory blocks, implementation can affect the assumptions above. This analysis is based upon the reference implementation, which allows for these possible O(1) sub-operations.</p>
 
 
-<h3><a id="revisions"></a>Appendix G - Paper revision history</h3>
+<h3><a id="questions"></a>Appendix G - Questions for the Committee</h3>
+<ol>
+  <li>It is desirable to supply direct access to memory blocks and skipfields, so programmers can use SIMD on groups of elements, ala vector's .data() member? The return variable would be a pointer to a dynamically-allocated struct of arrays containing pointers to each block and each block's skipfield and capacity. See reference implementation for more info. My concern with supplying this function is that it could, potentially, obviate better implementations in future, if a much better way of indicating skipped/unskipped element status was found.</li>
+  <li>Current iterator-invalidation rules state that whether reserve causes reallocation and so invalidates elements is implementation-defined. Should we make this specific and non-implementation-defined - and if so, which approach should be taken? The choices are between creating larger block(s) when necessary and reallocating existing elements to the first block (which increases iteration performance due to greater cache locality), and simply creating additional smaller block(s) without reallocating elements (reducing cache locality but ensuring iterator validity after reserve). See <a href="#iteratorinvalidation">iterator invalidation rules</a> for more info.</li>
+</ol>
+
+<h3><a id="revisions"></a>Appendix H - Paper revision history</h3>
 <ul>
   <li>R11: Overhaul of technical specification to be more 'wording-like'. Minor alterations &amp; clarifications. Additional alternative approach added to Design Decisions under skipfield information.</li>
   <li>R10: Additional information about time complexity requirements added to appendix, some minor corrections to time complexity info. The 'bentley pattern' (this was always a temporary name) is renamed to the more astute 'low-complexity jump-counting pattern'. Likewise the 'advanced jump-counting skipfield' is renamed to the 'high-complexity jump-counting pattern' - for reasoning behind this go <a href="https://plflib.org/blog.htm#whatsinaname">here</a>. Both refer to time complexity of operations, as opposed to algorithmic complexity. Some other corrections.</li>
