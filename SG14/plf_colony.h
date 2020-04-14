@@ -2251,7 +2251,10 @@ public:
 		#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT) && defined(PLF_COLONY_CONSTEXPR_SUPPORT) // Constexpr must be present for the following statement to work:
 			if PLF_COLONY_CONSTEXPR (std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value)
 			{
-				reserve(total_number_of_elements + static_cast<size_type>(last - first));
+				if (total_number_of_elements == 0) // Otherwise reserve could automatically consolidate existing elements to a larger group, reallocating them and breaking the 'no iterator invalidation on insert' promise
+				{
+					reserve(static_cast<size_type>(last - first));
+				}
 			}
 		#endif
 
@@ -2999,7 +3002,12 @@ public:
 	inline void reinitialize(const skipfield_type min_allocation_amount, const skipfield_type max_allocation_amount) PLF_COLONY_NOEXCEPT
 	{
 		assert((min_allocation_amount > 2) & (min_allocation_amount <= max_allocation_amount));
-		clear();
+
+		if (end_iterator.group_pointer != NULL)
+		{
+			clear();
+		}
+
 		pointer_allocator_pair.min_elements_per_group = min_allocation_amount;
 		group_allocator_pair.max_elements_per_group = max_allocation_amount;
 	}
