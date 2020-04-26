@@ -350,7 +350,7 @@ private:
 
 		#ifdef PLF_COLONY_VARIADICS_SUPPORT
 			group(const skipfield_type elements_per_group, group_pointer_type const previous = NULL):
-				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + ((elements_per_group + 1u) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is only initialised to element's base value initially, then incremented by one below */
+				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + ((static_cast<size_type>(elements_per_group) + 1u) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is only initialised to element's base value initially, then incremented by one below */
 				next_group(NULL),
 				elements(last_endpoint++),
 				skipfield(reinterpret_cast<skipfield_pointer_type>(elements + elements_per_group)),
@@ -362,7 +362,7 @@ private:
 				group_number((previous == NULL) ? 0 : previous->group_number + 1u)
 			{
 				// Static casts to unsigned int from short not necessary as C++ automatically promotes lesser types for arithmetic purposes.
-				std::memset(&*skipfield, 0, sizeof(skipfield_type) * (elements_per_group + 1u)); // &* to avoid problems with non-trivial pointers
+				std::memset(&*skipfield, 0, sizeof(skipfield_type) * (static_cast<size_type>(elements_per_group) + 1u)); // &* to avoid problems with non-trivial pointers
 			}
 
 		#else
@@ -400,7 +400,7 @@ private:
 		~group() PLF_COLONY_NOEXCEPT
 		{
 			// Null check not necessary (for copied group as above) as delete will also perform a null check.
-			PLF_COLONY_DEALLOCATE(uchar_allocator_type, (*this), reinterpret_cast<uchar_pointer_type>(elements), (capacity * sizeof(aligned_element_type)) + ((capacity + 1u) * sizeof(skipfield_type)));
+			PLF_COLONY_DEALLOCATE(uchar_allocator_type, (*this), reinterpret_cast<uchar_pointer_type>(elements), (capacity * sizeof(aligned_element_type)) + ((static_cast<size_type>(capacity) + 1u) * sizeof(skipfield_type)));
 		}
 	};
 
@@ -542,7 +542,7 @@ public:
 
 			skipfield_type skip = *(++skipfield_pointer);
 
-			if ((element_pointer += skip + 1) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
+			if ((element_pointer += static_cast<size_type>(skip) + 1u) == group_pointer->last_endpoint && group_pointer->next_group != NULL) // ie. beyond end of available data
 			{
 				group_pointer = group_pointer->next_group;
 				const aligned_pointer_type elements = group_pointer->elements;
@@ -595,7 +595,7 @@ public:
 				const skipfield_type skip = *(--skipfield_pointer);
 				skipfield_pointer -= skip;
 
-				if ((element_pointer -= skip + 1) != group_pointer->elements - 1) // ie. iterator was not already at beginning of colony (with some previous consecutive deleted elements), and skipfield does not takes us into the previous group)
+				if ((element_pointer -= static_cast<size_type>(skip) + 1u) != group_pointer->elements - 1) // ie. iterator was not already at beginning of colony (with some previous consecutive deleted elements), and skipfield does not takes us into the previous group)
 				{
 					return *this;
 				}
@@ -680,13 +680,13 @@ public:
 		#ifdef PLF_COLONY_CPP20_SUPPORT
 	 		inline int operator <=> (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
 	 		{
-	 			return (element_pointer == rh.element_pointer) ? 0 : ((rh > *this) ? 1 : -1);
+	 			return (element_pointer == rh.element_pointer) ? 0 : ((*this > rh) ? 1 : -1);
 	 		}
 
 
 	 		inline int operator <=> (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
 	 		{
-	 			return (element_pointer == rh.element_pointer) ? 0 : ((rh > *this) ? 1 : -1);
+	 			return (element_pointer == rh.element_pointer) ? 0 : ((*this > rh) ? 1 : -1);
 	 		}
 	 	#endif
 
@@ -859,7 +859,7 @@ public:
 
 			if (element_pointer != group_pointer->elements) // ie. not already at beginning of group
 			{
-				element_pointer -= *(--skipfield_pointer) + 1;
+				element_pointer -= static_cast<size_type>(*(--skipfield_pointer)) + 1u;
 				skipfield_pointer -= *skipfield_pointer;
 
 				if (!(element_pointer == group_pointer->elements - 1 && group_pointer->previous_group == NULL)) // ie. iterator is not == rend()
@@ -1409,8 +1409,8 @@ private:
 					{
 						PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(begin_iterator.element_pointer));
 						++begin_iterator.skipfield_pointer;
-						begin_iterator.element_pointer += *begin_iterator.skipfield_pointer + 1;
-						begin_iterator.skipfield_pointer += *begin_iterator.skipfield_pointer;
+						begin_iterator.element_pointer += static_cast<size_type>(*begin_iterator.skipfield_pointer) + 1u;
+						begin_iterator.skipfield_pointer += static_cast<size_type>(*begin_iterator.skipfield_pointer);
 					} while(begin_iterator.element_pointer != end_pointer); // ie. beyond end of available data
 
 					const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
@@ -1469,7 +1469,7 @@ private:
 
 
 
-	inline void update_skipblock(const iterator &new_location, const skipfield_type prev_free_list_index)
+	void update_skipblock(const iterator &new_location, const skipfield_type prev_free_list_index)
 	{
 		const skipfield_type new_value = static_cast<skipfield_type>(*(new_location.skipfield_pointer) - 1);
 
@@ -1991,7 +1991,7 @@ private:
 				#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
 					if PLF_COLONY_CONSTEXPR (sizeof(aligned_element_type) != sizeof(element_type))
 					{
-						alignas (alignof(aligned_element_type)) const element_type aligned_copy = element; // to avoid potentially violating memory boundaries in line below, create an initial copy object of same (but aligned) type
+						alignas (alignof(aligned_element_type)) element_type aligned_copy = element; // to avoid potentially violating memory boundaries in line below, create an initial copy object of same (but aligned) type
 						std::fill_n(location, number_of_elements, *(reinterpret_cast<aligned_pointer_type>(&aligned_copy)));
 					}
 					else
@@ -2653,7 +2653,7 @@ public:
 					{
 						PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(current.element_pointer)); // Destruct element
 						const skipfield_type skip = *(++current.skipfield_pointer);
-						current.element_pointer += skip + 1;
+						current.element_pointer += static_cast<size_type>(skip) + 1u;
 						current.skipfield_pointer += skip;
 					} while (current.element_pointer != end);
 				}
@@ -2823,7 +2823,7 @@ public:
 				{
 					PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(current.element_pointer));
 					++current.skipfield_pointer;
-					current.element_pointer += 1 + *current.skipfield_pointer;
+					current.element_pointer += static_cast<size_type>(*current.skipfield_pointer) + 1u;
 					current.skipfield_pointer += *current.skipfield_pointer;
 				}
 			}
