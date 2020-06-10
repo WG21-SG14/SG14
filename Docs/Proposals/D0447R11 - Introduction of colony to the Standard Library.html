@@ -103,13 +103,13 @@
          margin-bottom: 0em;
       }
       ul {
-         margin: 0pt 0pt 22pt 15.7pt;
+         margin: 12pt 0pt 22pt 18pt;
          padding: 0pt 0pt 0pt 0pt;
          list-style-type: square;
          font-size: 98%;
       }
       ol {
-         margin: 12pt 0pt 8pt 15.7pt;
+         margin: 12pt 0pt 22pt 17pt;
          padding: 0pt 0pt 0pt 0pt;
          font-size: 98%;
       }
@@ -176,7 +176,7 @@ code {
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R11<br>
-Date: 2020-04-27<br>
+Date: 2020-06-09<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -195,7 +195,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
     <ol type="A">
       <li><a href="#technical2">Further technical details</a></li>
       <li><a href="#benchmarks">Reference implementation benchmarks</a></li>
-      <li><a href="#faq">Frequently Asked Questions</a></li>
+      <li><a href="#faq">Frequently Asked Questions</a></li>
       <li><a href="#responses">Specific responses to previous committee
         feedback</a></li>
       <li><a href="#sg14gameengine">Typical game engine requirements</a></li>
@@ -206,7 +206,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
 <h2><a id="revisions"></a>Revision history</h2>
 <ul>
-  <li>R11: Overhaul of technical specification to be more 'wording-like'. Minor alterations &amp; clarifications. Additional alternative approach added to Design Decisions under skipfield information. Overall rewording. Reordering based on feedback.</li>
+  <li>R11: Overhaul of technical specification to be more 'wording-like'. Minor alterations &amp; clarifications. Additional alternative approach added to Design Decisions under skipfield information. Overall rewording. Reordering based on feedback. Removal of some easily-replicated 'helper' functions. Change to noexcept guarantees. Sort moved into external library. Addition of block-limits default constructors.</li>
   <li>R10: Additional information about time complexity requirements added to appendix, some minor corrections to time complexity info. The 'bentley pattern' (this was always a temporary name) is renamed to the more astute 'low-complexity jump-counting pattern'. Likewise the 'advanced jump-counting skipfield' is renamed to the 'high-complexity jump-counting pattern' - for reasoning behind this go <a href="https://plflib.org/blog.htm#whatsinaname">here</a>. Both refer to time complexity of operations, as opposed to algorithmic complexity. Some other corrections.</li>
   <li>R9: Link to Bentley pattern paper added, and is spellchecked now.</li>
   <li>R8: Correction to SIMD info. Correction to structure (missing appendices title, member functions and technical specification were conjoined, acknowledgments section had mysteriously gone missing since an earlier version, now restored and updated). Update intro. HTML corrections.</li>
@@ -215,10 +215,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
   specification.</li>
   <li>R5: Additional note for reserve, re-write of introduction.</li>
   <li>R4: Addition of revision history and review feedback appendices. General
-    rewording. Update of benchmarks to v4 of colony, using max 1000000 N for
-    most benchmarks, and using GCC 7.1 as compiler on a Haswell-core machine.
-    Previous benchmarks also still available at external links. Expansion of
-    initial metaphorical explanation. Cutting of some dead wood. Addition of
+    rewording. Cutting of some dead wood. Addition of
     some more dead wood. Reversion to HTML, benchmarks moved to external URL,
     based on feedback. Change of font to Times New Roman based on looking at
     what other papers were using, though I did briefly consider Comic Sans.
@@ -232,9 +229,11 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
   <li>R2: Rewording.</li>
 </ul>
 
+
+
 <h2><a id="introduction"></a>I. Introduction</h2>
 
-<p>The purpose of a container in the standard library cannot be to provide the optimal solution for all scenarios. Inevitably in fields such as high-performance trading or gaming, the optimal solution within critical loops will be a custom-made one that fits that scenario perfectly. However, outside of the most critical of hot paths, there is a wide range of application for more generalised solutions.</p>
+<p>The purpose of a container in the standard library cannot be to provide the optimal solution for all scenarios. Inevitably in fields such as high-performance trading or gaming, the optimal solution within critical loops will be a custom-made one that fits that scenario perfectly. However, outside of the most critical of hot paths, there is a wide range of application for more generalized solutions.</p>
 
 <p>Colony is a formalisation, extension and optimization of what is typically
 known as a 'bucket array' container in game programming circles; similar
@@ -262,15 +261,14 @@ different containers which need to reference each other during gameplay and elem
 fixed memory block size, do not re-use memory locations from erased elements,
 and utilize a boolean skipfield. The fixed block size (as opposed to block
 sizes with a growth factor) and lack of erased-element re-use leads to far more
-allocations/deallocations than is necessary. Given that allocation is a costly operation in most operating systems, this becomes important in performance-critical
-environments. The boolean skipfield makes iteration time complexity undefined,
+allocations/deallocations than is necessary. Given that allocation is a costly operation in most operating systems, this becomes important in performance-critical environments. The boolean skipfield makes iteration time complexity undefined,
 as there is no way of knowing ahead of time how many erased elements occur
 between any two erased elements. This can create variable latency during iteration. It also requires branching code, which may
 cause issues on processors with deep pipelines and poor branch-prediction
 failure performance.</p>
 
 <p>A colony uses a non-boolean, non-branching method for skipping
-<i>runs</i> of erased elements, which allows for O(1) amortised iteration time
+<i>runs</i> of erased elements, which allows for O(1) amortized iteration time
 complexity and more-predictable iteration performance than a bucket array. It
 also utilizes a growth factor for memory blocks and reuses erased element
 locations upon insertion, which leads to fewer allocations/reallocations.
@@ -293,7 +291,7 @@ way. To better understand how insertion and erasure work in a colony, see the fo
 
 <h3>Insertion to back</h2>
 
-<p>The following images demonstrate how insertion works in a colony compared to a vector.</p>
+<p>The following images demonstrate how insertion works in a colony compared to a vector when size == capacity.</p>
 
 <img src="https://plflib.org/vector_addition.gif" alt="Visual demonstration of inserting to a full vector" style="max-width: 100%; height: auto;" >
 <img src="https://plflib.org/colony_addition.gif" alt="Visual demonstration of inserting to a full colony" style="max-width: 100%; height: auto;" >
@@ -307,12 +305,12 @@ way. To better understand how insertion and erasure work in a colony, see the fo
 <img src="https://plflib.org/colony_erasure.gif" alt="Visual demonstration of randomly erasing from a colony" style="max-width: 100%; height: auto;" >
 
 
+
 <h2><a id="questions"></a>II. Questions for the Committee</h2>
 <ol>
-  <li>It is desirable to supply direct access to memory blocks and skipfields, so programmers can use SIMD on groups of elements, ala vector's .data() member? The return variable would be a pointer to a dynamically-allocated struct of arrays containing pointers to each block and each block's skipfield and capacity. See reference implementation for more info. My concern with supplying this function is that it could, potentially, obviate better implementations in future, if a much better way of indicating skipped/unskipped element status was found.</li>
-  <li>Current iterator-invalidation rules in this paper state that whether reserve causes reallocation and so invalidates elements is implementation-defined. Should we make this specific and non-implementation-defined? And if so, which approach should be taken? The choice is between reallocating existing elements in smaller blocks to larger blocks (which increases iteration performance due to greater cache locality), or simply creating any additional blocks that are necessary, without reallocating elements (reducing cache locality but ensures iterator validity post-reserve). See <a href="#iteratorinvalidation">iterator invalidation rules</a> for more info.</li>
-  <li>Is the sort strategy used by the reference implementation desirable, or should this be implementation-defined? The implementation's current strategy allocates an array of pointers equal to the size() of the colony, sorts the pointers by the value of the elements they point to, creates a new colony with space reserved, then reallocates the elements to the new colony in their newly-sorted order. This is the fastest strategy as it allows for sort methods which rely on random-access, and also requires minimal movement which is <a href="#benchmarks">important when dealing with larger-than-scalar elements</a>, but uses more memory.</li>
-  <li>Is there a more appropriate name for the reinitialize function?</li>
+  <li>When changing minimum/maximum block capacities (via set_block_capacity_limits()) for a non-movable &amp; non-copyable type, it is not possible to reallocate elements to different blocks if the blocks they are in are smaller/larger than the minimum/maximum block sizes supplied. Current behavior is to throw() if the type is non-movable &amp; non-copyable, set_block_capacity_limits is called, and the container is not already empty. The function would also throw if the type is copyable/movable but it is unable to allocate the new memory required to reallocate the elements. Is this behavior desirable? Would you prefer something else?</li>
+  <li>The options for correcting min/max block capacities to make them fit within the boundaries determined by the implementation (bounds are implementation-defined and may/may not be constrained by the skipfield type parameter) are as follows: (a) do not correct but assert that they are within bounds (b) assert in debug mode, silently correct in release mode (to allow for runtime-determined min/max values that cannot be predicted in advance) or (c) silently correct in all modes or (d) throw() if out of bounds. Which is preferred and why?</li>
+  <li>What, if any, of the information contained within Appendix A should be moved into the technical spec, and if so, be specific about what form this should take and where it should be.</li>
 </ol>
 
 
@@ -320,7 +318,7 @@ way. To better understand how insertion and erasure work in a colony, see the fo
 
 <p><i>Note: Throughout this document I will use the term 'link' to denote any
 form of referencing between elements whether it be via
-iterators/pointers/indexes/references/ids/etc.</i></p>
+ids/iterators/pointers/indexes/references/etc.</i></p>
 
 <p>There are situations where data is heavily interlinked, iterated over
 frequently, and changing often. An example is the typical video game engine.
@@ -408,7 +406,7 @@ separate structure). This metadata should include at a minimum, the number of
 erased elements within each block and the block's capacity - which allows
 the container to know when the block is empty and needs to be removed from the iterative chain, and also allows iterators to judge when the end of one block has been reached. A non-boolean skipfield is
 required in order to skip over erased elements during iteration while
-maintaining O(1) amortised iteration time complexity (amortised due to block traversal, which requires a few more operations). Finally, a mechanism for
+maintaining O(1) amortized iteration time complexity (amortized due to block traversal, which requires a few more operations). Finally, a mechanism for
 keeping track of elements which have been erased must be present, so that those
 memory locations can be reused upon subsequent element insertions.</p>
 
@@ -563,6 +561,48 @@ beginning of the memory block. If so it traverses to the back of the previous
 group, and subtracts the value of the back skipfield node from the element pointer and skipfield pointer.</p>
 
 
+
+<h3>Additional notes on specific functions</h3>
+<ul>
+<li><code style="font-weight:bold">iterator get_iterator_from_pointer(pointer p) const noexcept;</code><br>
+<p>Because colony iterators are likely to be large, storing three pieces of data - current memory block, current element within memory block and potentially, current skipfield node - a program storing many links to elements within a colony may opt to dereference iterators to get pointers and store those instead of iterators, to save memory. This function reverses the process, giving an iterator which can then be used for operations such as erase.</p>
+<li><code style="font-weight:bold">void splice(colony &amp;x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);</code>
+<p>Whether <code>x</code>'s blocks are transferred to the beginning or end of *this's iterative sequence is implementation-defined. Better performance may be gained in some cases by allowing the source blocks to go to the front rather than the back, depending on how full the final block in <code>x</code>'s iterative sequence is. This is because unused elements that are not at the back of colony's iterative sequence will need to be marked as skipped, and skipping over large numbers of elements will incur a small performance disadvantage during iteration compared to skipping over a small number of elements, due to memory locality.</p></li>
+
+<li>
+<code style="font-weight:bold">void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator&amp; it, difference_type distance);<br>
+void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator&amp; it, difference_type distance);<br>
+void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator&amp; it, difference_type distance);<br>
+void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator&amp; it, difference_type distance);<br>
+<br>
+colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);<br>
+<br>
+colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);<br>
+colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);</code><br>
+<p>For advance, prev and next, complexity is dependent on state of colony, position of iterator and amount of distance, but in many cases will be less than linear. It is necessary in a colony to store metadata both about the capacity of each block (for the purpose of iteration) and how many non-erased elements are present within the block (for the purpose of removing blocks from the iterative chain once they become empty). For this reason, intermediary blocks between the iterator's initial block and its final destination block (if these are not the same block, and if the initial block and final block are not immediately adjacent) can be skipped rather than iterated linearly across, by using the "number of non-erased elements" metadata.</p>
+<p>This means that the only linear time operations are any iterations within the initial block and the final block. However if either the initial or final block have no erased elements (as determined by comparing whether the block's capacity metadata and the block's "number of non-erased elements" metadata are equal), linear iteration can be skipped for that block and pointer/index math used instead to determine distances, reducing complexity to constant time. Hence the best case for this operation is constant time, the worst is linear to the distance.</p>
+</li>
+<li>
+<code style="font-weight:bold">
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);<br>
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);</code><br>
+<p>The same considerations which apply to advance, prev and next also apply to difference - intermediary blocks between first and last's blocks can be skipped in constant time, first's block and last's block (if not the same block) must be linearly iterated across unless either block has no erased elements, in which case the operation becomes pointer/index math and is reduced to constant time for that block. In addition, if first's block is not the same as last's block, and last is equal to end() or --end(), or is the last element in that block, the final block's elements can also counted from the metadata rather than iteration.</p>
+</li>
+</ul>
+
+
+
+
+
+
+
 <h3>Results of implementation</h3>
 
 <p>In practical application the reference implementation is generally faster
@@ -571,169 +611,228 @@ and generally faster for iteration than any container except vector and deque.
 For full details, see <a href="#benchmarks">benchmarks</a>.</p>
 
 
+
+
+
+
 <h2><a id="technical"></a>VI. Technical Specification</h2>
 
-<p>Note: This specification may not entirely match the reference implementation - this is because the reference implementation also has to work in C++03/11/14/17 modes.</p>
+<p>Note: This specification may not entirely match the reference implementation - this is because the reference implementation also has to work in C++03/11/14/17 modes, and on some older compilers like MSVC2013. Also the reference implementation has been around for a while, and changing some features may upset user's codebases.</p>
 
-<h3>Class template colony</h3>
-<h4>Class template colony overview</h4>
+<p>Suggested location of colony in the standard is 26.3, Sequence Containers.</p>
+
+<h3>26.3.7 Header <code>&lt;colony&gt;</code> synopsis [colony.syn]</h3>
+
+<div style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%">
+#include &lt;initializer_list&gt;
+namespace std {
+   // 26.3.14, class template colony
+   template &lt;class T, class Allocator = allocator&lt;T&gt;&gt; class colony;
+
+   template &lt;class T, class Allocator&gt;
+   bool operator==(const colony&lt;T, Allocator&gt;&amp; x, const colony&lt;T, Allocator&gt;&amp; y);
+   template &lt;class T, class Allocator&gt;
+   bool operator!=(const colony&lt;T, Allocator&gt;&amp; x, const colony&lt;T, Allocator&gt;&amp; y);
+
+   template &lt;class T, class Allocator&gt;
+   void swap(colony&lt;T, Allocator&gt;&amp; x, colony&lt;T, Allocator&gt;&amp; y) noexcept(noexcept(x.swap(y)));
+
+   namespace pmr {
+      template &lt;class T&gt;
+      using colony = std::colony&lt;T, polymorphic_allocator&lt;T&gt;&gt;;
+   }
+}
+</pre>
+</div>
+
+<h4><a id="#iteratorinvalidation"></a>Iterator Invalidation</h4>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <td>All read-only operations, swap, std::swap, splice, free_unused_memory, operator= && (source), reserve</td>
+      <td>Never</td>
+    </tr>
+    <tr>
+      <td>clear, reinitialize, operator= &, operator= && (destination)</td>
+      <td>Always</td>
+    </tr>
+    <tr>
+      <td>set_block_capacity_limits</td>
+      <td>Only if blocks exist whose capacities do not fit within the supplied limits.</td>
+    </tr>
+    <tr>
+      <td>erase</td>
+      <td>Only for the erased element. If an iterator is == end() it may be
+        invalidated if the back element of the colony is erased in some cases
+        (similar to deque (26.3.8)). Likewise if a reverse_iterator is == rend() it may be
+        invalidated if the first element in the colony is erased, in some cases.</td>
+    </tr>
+    <tr>
+      <td>insert, emplace</td>
+      <td>If an iterator is == end() it may be invalidated by a subsequent
+        insert/emplace in some cases. Likewise if a reverse_iterator is == rend() it may be invalidated by a subsequent insert/emplace in some cases.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h3>26.3.14 Class template <code>colony</code> [colony]</h3>
+<h4>26.3.14.1 Class template <code>colony</code> overview [colony.overview]</h4>
 <ol>
-<li>A colony is a sequence container with unordered insertion which supports amortised constant time insert and erase operations. Storage management is handled automatically and is specifically organised in multiple blocks of sequential elements, including block metadata.</li>
-<li>A colony satisfies all of the requirements of a container and of a reversible container, of a sequence container, of an allocator-aware container.</li>
-</ol>
+<li>A colony is a sequence container that allows constant-time insert and erase operations. Insertion location is the back of the container when no erasures have occured, when erasures have occured it will re-use existing erased element memory spaces where possible, and insert to those locations. Storage management is handled automatically and is specifically organized in multiple blocks of sequential elements. Unlike vectors (26.3.11) and deques (26.3.8), fast random access to colony elements is not supported, but specializations of advance/next/prev give access which is generally better than linear time in the number of elements traversed.</li>
 
-<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #008800; font-weight: bold">namespace</span> std {
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> T, <span style="color: #008800; font-weight: bold">class</span> Allocator <span style="color: #333333">=</span> allocator<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>,
-<span style="color: #008800; font-weight: bold">typename</span> Skipfield <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined<span style="color: #333333">&gt;</span>
-<span style="color: #008800; font-weight: bold">class</span> <span style="color: #BB0066; font-weight: bold">colony</span> {
-<span style="color: #997700; font-weight: bold">public:</span>
-<div style="padding:.2em 1.6em;">
-<span style="color: #888888">// types:</span>
-<span style="color: #008800; font-weight: bold">using</span> value_type <span style="color: #333333">=</span> T;
-<span style="color: #008800; font-weight: bold">using</span> allocator_type <span style="color: #333333">=</span> Allocator;
-<span style="color: #008800; font-weight: bold">using</span> skipfield_type <span style="color: #333333">=</span> Skipfield;
-<span style="color: #008800; font-weight: bold">using</span> pointer <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">typename</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>pointer;
-<span style="color: #008800; font-weight: bold">using</span> const_pointer <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">typename</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>const_pointer;
-<span style="color: #008800; font-weight: bold">using</span> reference <span style="color: #333333">=</span> value_type<span style="color: #333333">&amp;</span>;
-<span style="color: #008800; font-weight: bold">using</span> const_reference <span style="color: #333333">=</span> <span style="color: #008800; font-weight: bold">const</span> value_type<span style="color: #333333">&amp;</span>;
-<span style="color: #008800; font-weight: bold">using</span> size_type <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-<span style="color: #008800; font-weight: bold">using</span> difference_type <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-<span style="color: #008800; font-weight: bold">using</span> iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-<span style="color: #008800; font-weight: bold">using</span> const_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-<span style="color: #008800; font-weight: bold">using</span> reverse_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
-<span style="color: #008800; font-weight: bold">using</span> const_reverse_iterator <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined;
+<li>A colony satisfies all of the requirements of a container, of a reversible container (given in two tables in 26.2),
+of a sequence container, including most of the optional sequence container requirements (26.2.3), and of an
+allocator-aware container (Table 86). The exceptions are the <code>operator[]</code> and <code>at</code> member functions, which are not provided.</li>
+
+<li>Colony iterators satisfy bidirectional requirements but also provide relational operators &lt;, &lt;=, &gt;, &gt;= and &lt;=&gt;.</li>
+<ol>
 
 
-
-<span style="color: #0066BB; font-weight: bold">colony</span>() noexcept(noexcept(Allocator())) <span style="color: #333333">:</span> colony(Allocator()) {};
-<span style="color: #008800; font-weight: bold">explicit</span> <span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>) noexcept;
-<span style="color: #008800; font-weight: bold">explicit</span> <span style="color: #0066BB; font-weight: bold">colony</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-<span style="color: #0066BB; font-weight: bold">colony</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> value, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> InputIterator<span style="color: #333333">&gt;</span>
-<span style="color: #0066BB; font-weight: bold">colony</span>(InputIterator first, InputIterator last, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-<span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span> x);
-<span style="color: #0066BB; font-weight: bold">colony</span>(colony<span style="color: #333333">&amp;&amp;</span>) noexcept;
-<span style="color: #0066BB; font-weight: bold">colony</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span>, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>);
-<span style="color: #0066BB; font-weight: bold">colony</span>(colony<span style="color: #333333">&amp;&amp;</span>, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span>);
-<span style="color: #0066BB; font-weight: bold">colony</span>(initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>, <span style="color: #008800; font-weight: bold">const</span> size_type min_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> size_type max_block_capacity <span style="color: #333333">=</span> implementation<span style="color: #333333">-</span>defined, <span style="color: #008800; font-weight: bold">const</span> Allocator<span style="color: #333333">&amp;</span> <span style="color: #333333">=</span> Allocator());
-<span style="color: #0066BB; font-weight: bold">~colony</span>() noexcept;
-colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&amp;</span> x);
-colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (colony<span style="color: #333333">&amp;&amp;</span> x) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_move_assignment<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
-colony<span style="color: #333333">&amp;</span> <span style="color: #008800; font-weight: bold">operator</span> <span style="color: #0066BB">=</span> (initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span>);
-allocator_type <span style="color: #0066BB; font-weight: bold">get_allocator</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+<div style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%">
+namespace std {
+struct limits
+{
+   size_t min, max;
+   limits(size_t _min, size_t _max);
+}
 
 
-<span style="color: #888888">// iterators:</span>
-iterator <span style="color: #0066BB; font-weight: bold">begin</span>() noexcept;
-const_iterator <span style="color: #0066BB; font-weight: bold">begin</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-iterator <span style="color: #0066BB; font-weight: bold">end</span>() noexcept;
-const_iterator <span style="color: #0066BB; font-weight: bold">end</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-reverse_iterator <span style="color: #0066BB; font-weight: bold">rbegin</span>(); <span style="color: #888888">// Since this could be derived from --end() depending on implementation, and that could result in undefined behaviour in a colony with no insertions and unbounded iterators, whether this is noexcept is implementation-defined</span>
-const_reverse_iterator <span style="color: #0066BB; font-weight: bold">rbegin</span>() <span style="color: #008800; font-weight: bold">const</span>;
-reverse_iterator <span style="color: #0066BB; font-weight: bold">rend</span>() noexcept;
-const_reverse_iterator <span style="color: #0066BB; font-weight: bold">rend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-const_iterator <span style="color: #0066BB; font-weight: bold">cbegin</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-const_iterator <span style="color: #0066BB; font-weight: bold">cend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-const_reverse_iterator <span style="color: #0066BB; font-weight: bold">crbegin</span>() <span style="color: #008800; font-weight: bold">const</span>;
-const_reverse_iterator <span style="color: #0066BB; font-weight: bold">crend</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
+template &lt;class T, class Allocator = allocator&lt;T&gt;, typename Skipfield = unsigned short&gt;
+class colony {
+public:
+
+// types
+using value_type = T;
+using allocator_type = Allocator;
+using skipfield_type = Skipfield;
+using pointer = typename allocator_traits&lt;Allocator&gt;::pointer;
+using const_pointer = typename allocator_traits&lt;Allocator&gt;::const_pointer;
+using reference = value_type&;
+using const_reference = const value_type&;
+using size_type = implementation-defined; // see 26.2
+using difference_type = implementation-defined; // see 26.2
+using iterator = implementation-defined; // see 26.2
+using const_iterator = implementation-defined; // see 26.2
+using reverse_iterator = implementation-defined; // see 26.2
+using const_reverse_iterator = implementation-defined; // see 26.2
 
 
-<span style="color: #888888">// capacity</span>
-[[nodiscard]] <span style="color: #333399; font-weight: bold">bool</span> <span style="color: #0066BB; font-weight: bold">empty</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-size_type <span style="color: #0066BB; font-weight: bold">size</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-size_type <span style="color: #0066BB; font-weight: bold">max_size</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-size_type <span style="color: #0066BB; font-weight: bold">capacity</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept;
-size_type <span style="color: #0066BB; font-weight: bold">approximate_memory_use</span>() <span style="color: #008800; font-weight: bold">const</span> noexcept; <span style="color: #888888">// Approximate so as to allow for platform-based constraints and alignment</span>
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">reserve</span>(size_type n);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">shrink_to_fit</span>();
+
+colony() noexcept(noexcept(Allocator())) : colony(Allocator()) {};
+colony(std::limits block_capacity_limits) noexcept(noexcept(Allocator())) : colony(Allocator()) {};
+explicit colony(const Allocator&) noexcept;
+explicit colony(std::limits block_capacity_limits, const Allocator&) noexcept;
+explicit colony(size_type n, std::limits block_capacity_limits = std::limits(implementation-defined, implementation-defined), const Allocator& = Allocator());
+colony(size_type n, const T& value, std::limits block_capacity_limits = std::limits(implementation-defined, implementation-defined), const Allocator& = Allocator());
+template &lt;class InputIterator&gt;
+colony(InputIterator first, InputIterator last, std::limits block_capacity_limits = std::limits(implementation-defined, implementation-defined), const Allocator& = Allocator());
+colony(const colony& x);
+colony(colony&&) noexcept;
+colony(const colony&, const Allocator&);
+colony(colony&&, const Allocator&);
+colony(initializer_list&lt;T&gt;, std::limits block_capacity_limits = std::limits(implementation-defined, implementation-defined), const Allocator& = Allocator());
+~colony() noexcept;
+colony& operator= (const colony& x);
+colony& operator= (colony&& x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_move_assignment::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);
+colony& operator= (initializer_list&lt;T&gt;);
+allocator_type get_allocator() const noexcept;
+template&lt;class InputIterator&gt;
+void assign(InputIterator first, InputIterator last);
+void assign(size_type n, const T& t);
+void assign(initializer_list&lt;T&gt;);
+allocator_type get_allocator() const noexcept;
 
 
-<span style="color: #888888">// modifiers</span>
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span>class... Args<span style="color: #333333">&gt;</span>
-iterator <span style="color: #0066BB; font-weight: bold">emplace</span>(Args<span style="color: #333333">&amp;&amp;</span>... args);
-iterator <span style="color: #0066BB; font-weight: bold">insert</span>(<span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> x);
-iterator <span style="color: #0066BB; font-weight: bold">insert</span>(T<span style="color: #333333">&amp;&amp;</span> x);
-iterator <span style="color: #0066BB; font-weight: bold">insert</span>(size_type n, <span style="color: #008800; font-weight: bold">const</span> T<span style="color: #333333">&amp;</span> x);
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> InputIterator<span style="color: #333333">&gt;</span>
-iterator <span style="color: #0066BB; font-weight: bold">insert</span>(InputIterator first, InputIterator last);
-iterator <span style="color: #0066BB; font-weight: bold">insert</span>(initializer_list<span style="color: #333333">&lt;</span>T<span style="color: #333333">&gt;</span> il);
-iterator <span style="color: #0066BB; font-weight: bold">erase</span>(const_iterator position);
-iterator <span style="color: #0066BB; font-weight: bold">erase</span>(const_iterator first, const_iterator last);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">swap</span>(colony<span style="color: #333333">&amp;</span>) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_swap<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">clear</span>() noexcept;
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">sort</span>();
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> Compare<span style="color: #333333">&gt;</span>
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">sort</span>(Compare comp);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">splice</span>(colony <span style="color: #333333">&amp;</span>x) noexcept(allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>propagate_on_container_swap<span style="color: #333333">::</span>value <span style="color: #333333">||</span> allocator_traits<span style="color: #333333">&lt;</span>Allocator<span style="color: #333333">&gt;::</span>is_always_equal<span style="color: #333333">::</span>value);
+// iterators
+iterator begin() noexcept;
+const_iterator begin() const noexcept;
+iterator end() noexcept;
+const_iterator end() const noexcept;
+reverse_iterator rbegin() noexcept;
+const_reverse_iterator rbegin() const noexcept;
+reverse_iterator rend() noexcept;
+const_reverse_iterator rend() const noexcept;
+const_iterator cbegin() const noexcept;
+const_iterator cend() const noexcept;
+const_reverse_iterator crbegin() const noexcept;
+const_reverse_iterator crend() const noexcept;
 
 
-<span style="color: #888888">// Element memory block capacity limit functions:</span>
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">get_block_capacity_limits</span>(Skipfield <span style="color: #333333">&amp;</span>minimum, Skipfield <span style="color: #333333">&amp;</span>maximum) <span style="color: #008800; font-weight: bold">const</span> noexcept;
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_block_capacity_limits</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum, <span style="color: #008800; font-weight: bold">const</span> Skipfield maximum);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_minimum_block_capacity</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">set_maximum_block_capacity</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield maximum);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">reinitialize</span>(<span style="color: #008800; font-weight: bold">const</span> Skipfield minimum, <span style="color: #008800; font-weight: bold">const</span> Skipfield maximum) noexcept;
+// capacity
+[[nodiscard]] bool empty() const noexcept;
+size_type size() const noexcept;
+size_type max_size() const noexcept;
+size_type capacity() const noexcept;
+size_type approximate_memory_use() const noexcept;
+void reserve(size_type n);
+void shrink_to_fit();
 
 
-<span style="color: #888888">// Type-changing functions:</span>
-iterator <span style="color: #0066BB; font-weight: bold">get_iterator_from_pointer</span>(<span style="color: #008800; font-weight: bold">const</span> pointer element_pointer) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// Cannot be noexcept as colony could be empty or pointer invalid</span>
-reverse_iterator <span style="color: #0066BB; font-weight: bold">get_reverse_iterator_from_pointer</span>(<span style="color: #008800; font-weight: bold">const</span> pointer element_pointer) <span style="color: #008800; font-weight: bold">const</span>;
+// modifiers
+template &lt;class... Args&gt;
+iterator emplace(Args&&... args);
+iterator insert(const T& x);
+iterator insert(T&& x);
+iterator insert(size_type n, const T& x);
+template &lt;class InputIterator&gt;
+iterator insert(InputIterator first, InputIterator last);
+iterator insert(initializer_list&lt;T&gt; il);
+iterator erase(const_iterator position);
+iterator erase(const_iterator first, const_iterator last);
+void swap(colony&) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);
+void clear() noexcept;
+void splice(colony &x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);
 
-size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// may throw exception if iterator is invalid/uninitialized</span>
-size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> const_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
-size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> reverse_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
-size_type <span style="color: #0066BB; font-weight: bold">get_index_from_iterator</span>(<span style="color: #008800; font-weight: bold">const</span> const_reverse_iterator <span style="color: #333333">&amp;</span>it) <span style="color: #008800; font-weight: bold">const</span>;
 
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">typename</span> index_type<span style="color: #333333">&gt;</span>
-iterator <span style="color: #0066BB; font-weight: bold">get_iterator_from_index</span>(<span style="color: #008800; font-weight: bold">const</span> index_type index) <span style="color: #008800; font-weight: bold">const</span>; <span style="color: #888888">// Cannot be noexcept as colony could be empty</span>
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">typename</span> index_type<span style="color: #333333">&gt;</span>
-reverse_iterator <span style="color: #0066BB; font-weight: bold">get_reverse_iterator_from_index</span>(<span style="color: #008800; font-weight: bold">const</span> index_type index) <span style="color: #008800; font-weight: bold">const</span>;</div>
-};
+// element memory block capacity limits
+std::limits get_block_capacity_limits() const noexcept;
+void set_block_capacity_limits(std::limits block_capacities);
 
 
-<span style="color: #888888">// specialized algorithms</span>
-<span style="color: #008800; font-weight: bold">template</span> <span style="color: #333333">&lt;</span><span style="color: #008800; font-weight: bold">class</span> T, <span style="color: #008800; font-weight: bold">class</span> Allocator<span style="color: #333333">&gt;</span>
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">swap</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;&amp;</span> x, colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;&amp;</span> y) noexcept(noexcept(x.swap(y)));
+// type-changing
+iterator get_iterator_from_pointer(pointer p) const noexcept;
 
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">advance</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #333333">&amp;</span>it, difference_type distance); <span style="color: #888888">// Noexcept status is implementation-defined and dependent on whether iterator operations are bounded. </span>
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">advance</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #333333">&amp;</span>it, difference_type distance);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">advance</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance);
-<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">advance</span>(colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #333333">&amp;</span>it, difference_type distance);
 
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #0066BB; font-weight: bold">next</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+// specialized algorithms
+template &lt;class T, class Allocator&gt;
+void swap(colony&lt;T, Allocator, Skipfield&gt;& x, colony&lt;T, Allocator, Skipfield&gt;& y) noexcept(noexcept(x.swap(y)));
+Effects: As if by x.swap(y).
 
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
-colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator <span style="color: #0066BB; font-weight: bold">prev</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_reverse_iterator it, difference_type distance <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &it, difference_type distance);
+void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator &it, difference_type distance);
+void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator &it, difference_type distance);
+void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator &it, difference_type distance);
 
-difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator last); <span style="color: #888888">// May throw exception if iterators are invalid.</span>
-difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator last);
-difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>iterator last);
-difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(<span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator first, <span style="color: #008800; font-weight: bold">const</span> colony<span style="color: #333333">&lt;</span>T, Allocator, Skipfield<span style="color: #333333">&gt;::</span>const_iterator last);
+colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);
+colony&lt;T, Allocator, Skipfield&gt;::const_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);
+colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);
+colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);
+
+colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);
+colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);
+colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);
+colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);
+
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
+difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
 }
 </pre></div>
 
 
-<h4>Colony constructors and copy</h4>
+
+<h4>26.3.14.2 colony constructors, copy, and assignment [colony.cons]</h4>
+
 <code style="font-weight:bold">explicit colony(const Allocator&amp;);</code><br>
 <ol>
 <li>Effects: Constructs an empty colony, using the specified allocator.</li>
 <li>Complexity: Constant.</li>
 </ol>
 <br>
-<code style="font-weight:bold">explicit colony(size_type n, const size_type min_block_capacity = implementation-defined, const size_type max_block_capacity = implementation-defined, const Allocator&amp; = Allocator());<br></code>
-<ol start="3">
-<li>Effects: Constructs a colony with n default-inserted elements using the specified allocator.</li>
-<li>Requires: T shall be DefaultInsertable into *this.</li>
-<li>Complexity: Linear in n.</li>
-<li>Remarks: If <code>n</code> is larger than <code>min_block_capacity</code>, the capacity of the first block created will be the smaller of <code>n</code> or <code>max_block_capacity</code>.</li>
-</ol>
-<br>
-<code style="font-weight:bold">colony(size_type n, const T&amp; value, const size_type min_block_capacity = implementation-defined, const size_type max_block_capacity = implementation-defined, const Allocator&amp; = Allocator());<br></code>
+<code style="font-weight:bold">colony(size_type n, const T&amp; value, std::limits block_capacities = std::limits(implementation-defined, implementation-defined), const Allocator&amp; = Allocator());<br></code>
 <ol start="5">
 <li>Effects: Constructs a colony with n copies of value, using the specified allocator.</li>
 <li>Requires: T shall be CopyInsertable into *this.</li>
@@ -742,15 +841,16 @@ difference_type <span style="color: #0066BB; font-weight: bold">distance</span>(
 </ol>
 <br>
 <code style="font-weight:bold">template &lt;class InputIterator&gt;<br>
-colony(InputIterator first, InputIterator last, const size_type min_block_capacity = implementation-defined, const size_type max_block_capacity = implementation-defined, const Allocator&amp; = Allocator());<br></code>
+colony(InputIterator first, InputIterator last, std::limits block_capacities = std::limits(implementation-defined, implementation-defined), const Allocator&amp; = Allocator());<br></code>
 <ol start="9">
 <li>Effects: Constructs a colony equal to the range [first, last], using the specified allocator.</li>
-<li>Complexity: Linear in n.</li>
-<li>Remarks: If iterators are random-access and total number of elements <code>n</code> is calculable from (last - first), if <code>n</code> is larger than <code>min_block_capacity</code>, the capacity of the first block created will be the smaller of <code>n</code> or <code>max_block_capacity</code>.</li>
+<li>Complexity: Linear in the number of elements inserted.</li>
+<li>Remarks: If iterators are random-access, let <code>n</code> be last-first; if <code>n</code> is larger than <code>min_block_capacity</code>, the capacity of the first block created will be the smaller of <code>n</code> or <code>max_block_capacity</code>.</li>
 </ol>
 
 
-<h4>Colony capacity</h4>
+
+<h4>26.3.14.3 colony capacity [colony.capacity]</h4>
 
 <code style="font-weight:bold">size_type capacity() const noexcept;</code><br>
 <ol>
@@ -759,7 +859,7 @@ colony(InputIterator first, InputIterator last, const size_type min_block_capaci
 <br>
 <code style="font-weight:bold">void reserve(size_type n);<br></code>
 <ol start="2">
-<li>Requires: If colony is not empty, T must be either MoveInsertable or CopyInsertable.</li>
+<li>Requires: If colony is not empty, T is either MoveInsertable or CopyInsertable.</li>
 <li>Effects: A directive that informs a colony of a planned change in size, so that it can manage the storage
 allocation accordingly. Depending on implementation there may be a limit to the number of empty memory blocks which can be allocated, which may limit the ability to reserve up to n.
 Therefore after reserve(), capacity() is not guaranteed to be greater or equal to the argument of reserve, though ideally this would be the case.</li>
@@ -770,16 +870,19 @@ Therefore after reserve(), capacity() is not guaranteed to be greater or equal t
 <br>
 <code style="font-weight:bold">void shrink_to_fit();<br></code>
 <ol start="7">
-<li>Requires: T shall be MoveInsertable or CopyInsertable into *this.</li>
+<li>Requires: T shall be Cpp17MoveInsertable into *this.</li>
 <li>Effects: shrink_to_fit is a non-binding request to reduce capacity() to be closer to size(). [ Note: The request
 is non-binding to allow latitude for implementation-specific optimizations. — end note ] It does not
-increase capacity(), but may reduce capacity() by causing reallocation. It may take elements from multiple memory blocks and consolidate them into a singular memory block.<br>
-If an exception is thrown other than by the move constructor of a non-CopyInsertable T there are no effects.</li>
+increase capacity(), but may reduce capacity() by causing reallocation. It may take elements from multiple memory blocks and consolidate them into a single memory block.<br>
+If an exception is thrown other than by the move constructor of a non-CopyInsertable T, there are no effects.</li>
 <li>Complexity: Implementation-defined.</li>
 <li>Remarks: Depending on implementation, current state of colony and size of n, shrink_to_fit may invalidate all references, pointers, and iterators referring to the elements in the sequence, though it is not guaranteed to do so.</li>
 </ol>
 
-<h4>Colony modifiers</h4>
+
+
+<h4>26.3.14.4 colony modifiers [colony.modifiers]</h4>
+
 <code style="font-weight:bold">iterator insert(const T&amp; x);<br>
 iterator insert(T&amp;&amp; x);<br>
 iterator insert(size_type n, const T&amp; x);<br>
@@ -789,22 +892,25 @@ iterator insert(initializer_list&lt;T&gt;);<br>
 template &lt;class... Args&gt;<br>
 iterator emplace(Args&amp;&amp;... args);<br></code>
 <ol>
-<li>Complexity: The complexity is amortised linear in the number of elements inserted (amortised constant for single insertions). Insertion may trigger allocation of a new memory block, but because colony (by default) has a growth pattern for new memory blocks, the number of insertions before a new memory block is required increases as more insertions take place. Hence the insertion time complexity is amortised.</li>
-<li>Remarks: Insertion re-uses previously-erased element memory locations when available, so position of insertion is effectively random unless no previous erasures have occurred, in which case all elements will be inserted linearly to the back of the container, with new memory blocks allocated when necessary.</li>
+<li>Remarks: Does not affect the validity of iterators and references, unless an iterator points to end(), in which case it may be invalidated. Likewise if a reverse_iterator points to rend() it may be invalidated. If an exception is thrown there are no effects. Insertion re-uses previously-erased element memory locations when available, so position of insertion is effectively random unless no previous erasures have occurred, in which case all elements will be inserted linearly to the back of the container.</li>
+<li>Complexity: Insertion of a single element into a colony takes constant time and exactly one call to a
+constructor of T. Insertion of multiple elements into a colony is linear in the number of elements inserted,
+and the number of calls to the copy constructor or move constructor of T is exactly equal to the number
+of elements inserted.</li>
 </ol>
 <br>
 <code style="font-weight:bold">iterator erase(const_iterator position);</code>
 <ol start="3">
-<li>Effects: Destructs element at position and removes position from iteration sequence. Invalidates pointers, iterators and references to the element being erased.</li>
-<li>Complexity: Constant amortised. When a memory block becomes empty of non-erased elements it must be removed from the colony's sequence of memory blocks (and either deallocated or stored for future insertions, depending on implementation). Since a memory block becoming empty is infrequent the time complexity is amortised. See <a href="#timecomplexityexplanations">time requirement explanations in appendix</a>. Skipfield modification time complexity is not factored into this; it's implementation-defined and may be constant, linear or otherwise defined.</li>
-<li>Remarks: If iterator supplied is invalid, behaviour is undefined, may throw.</li>
+<li>Effects: Invalidates only the iterators and references to the erased elements.</li>
+<li>Complexity: Constant. Skipfield modification is not factored into this; it is implementation-defined and may be constant, linear or otherwise defined.</li>
+<li>Remarks: If iterator supplied is invalid, behavior is undefined, may throw.</li>
 </ol>
 <br>
 <code style="font-weight:bold">iterator erase(const_iterator first, const_iterator last);</code>
 <ol start="6">
-<li>Effects: Destructs element(s) at position(s). Invalidates pointers, iterators and references to the element(s) being erased.</li>
-<li>Complexity: Linear amortised in the number of elements erased for non-trivially-destructible types, for trivially-destructible types constant amortised in best case and linear amortised in worst case, approximating logarithmic in the number of elements erased on average. See <a href="#timecomplexityexplanations">time requirement explanations in appendix</a>.</li>
-<li>Throws: If iterator supplied is invalid, behaviour is undefined, may throw.</li>
+<li>Effects: Invalidates only the iterators and references to the erased elements. In some cases if an iterator is == end() and the back element of the colony is erased, that iterator may be invalidated. Likewise if a reverse_iterator is == rend() and the front element of the colony is erased, that reverse_iterator may be invalidated.</li>
+<li>Complexity: Linear in the number of elements erased for non-trivially-destructible types, for trivially-destructible types constant in best case and linear in worst case, approximating logarithmic in the number of elements erased on average. See <a href="#timecomplexityexplanations">time requirement explanations in appendix</a>.</li>
+<li>Throws: If iterator supplied is invalid, behavior is undefined, may throw.</li>
 </ol>
 <br>
 <code style="font-weight:bold">void swap(colony&amp; x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);<br></code>
@@ -813,85 +919,54 @@ iterator emplace(Args&amp;&amp;... args);<br></code>
 <li>Complexity: Constant time.</li>
 </ol>
 <br>
-<code style="font-weight:bold">void sort();<br>
-template &lt;class Compare&gt;<br>
-void sort(Compare comp);</code>
-<ol start="11">
-<li>Requires: T shall be MoveInsertable or CopyInsertable into *this.<br>
-<li>Effects: Sorts elements of the colony according to supplied comparison function, or by less-than operator if no comparison function is supplied. All references, pointers and iterators to existing elements are invalidated.</li>
-<li>Complexity: Implementation-defined. One strong strategy involves using the standard library's sort function to sort an array of pointers to colony elements by the value of the elements they point to, and would have std::sort()'s complexity.</li>
-<li>Throws: If it fails to allocate any memory necessary in the sorting process.</li>
-</ol>
-<br>
 <code style="font-weight:bold">void splice(colony &amp;x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);</code>
 <ol start="15">
-<li>Effects: Takes the element memory blocks owned by <code>x</code> and transfers ownership of them to *this. Then adds those memory blocks to the iterative sequence of blocks. No reallocation occurs.</li>
+<li>Requires: &x != this.</li>
+<li>Effects: Inserts the contents of x into *this and x becomes empty. Pointers and references to the
+moved elements of x now refer to those same elements but as members of *this. Iterators referring
+to the moved elements will continue to refer to their elements, but they now behave as iterators into
+*this, not into x.</li>
 <li>Complexity: Constant time.</li>
-<li>Remarks: Whether <code>x</code>'s blocks are transferred to the beginning or end of *this's iterative sequence is implementation-defined. Better performance may be gained in some cases by allowing the source blocks to go to the front rather than the back, depending on how full the final block in <code>x</code>'s iterative sequence is. This is because unused elements that are not at the back of colony's iterative sequence will need to be marked as skipped, and skipping over large numbers of elements will incur a small performance disadvantage during iteration compared to skipping over a small number of elements, due to memory locality.</li>
+<li>Remarks: Position of x's content within *this is implementation-defined.</li>
 </ol>
 <code style="font-weight:bold">size_type approximate_memory_use() const noexcept;</code>
 <ol start="18">
-<li>Effects: Returns the approximate memory use, in bytes, of the container as a whole, minus whatever dynamic allocation is created incurred by elements themselves (for example, if the elements are vectors of indeterminate size). Since a colony uses both skipfields and metadata, and much of that is implementation-defined, it is not possible for the user to estimate memory use from size() or capacity().</li>
-<li>Complexity: Implementation-defined. Should typically be constant.</li>
+<li>Effects: Returns the approximate memory use, in bytes, of the container as a whole, including elements but ignoring any dynamic allocation incurred by elements (eg. if the elements are vectors of indeterminate size). A colony uses skipfields and metadata, both which are implementation-defined, so it is not possible for a user to estimate internal memory use from size() or capacity().</li>
+<li>Complexity: Constant time.</li>
 </ol>
 
 
 
 
-<h4>Colony element memory block capacity limit functions:</h4>
-<code style="font-weight:bold">void get_block_capacity_limits(Skipfield &amp;minimum, Skipfield &amp;maximum) const noexcept;<br></code>
+<h4>26.3.14.5 colony element memory block capacity [colony.limits]</h4>
+
+<code style="font-weight:bold">std::limits get_block_capacity_limits() const noexcept;<br></code>
 <ol>
 <li>Effects: Copies minimum and maximum element memory block capacity values to the supplied variables. Default minimum and maximum memory block capacities are implementation-defined.</li>
 <li>Complexity: Constant time.</li>
 </ol>
 <br>
-<code style="font-weight:bold">void set_block_capacity_limits(const Skipfield minimum, const Skipfield maximum);<br>
-void set_minimum_block_capacity(const Skipfield minimum);<br>
-void set_maximum_block_capacity(const Skipfield maximum);</code>
+<code style="font-weight:bold">void set_block_capacity_limits(std::limits block_capacities);</code><br>
 <ol start="3">
-<li>Requires: T shall be MoveInsertable or CopyInsertable into *this.<br>
-<li>Effects: Sets minimum and maximum element memory block sizes to those of the supplied variables. If colony is not empty, adjusts existing memory block sizes (if necessary) to conform to the new minimum and maximum block sizes. If existing memory blocks are within new allowed ranges, no reallocation of elements takes place. If they are not within allowed ranges, elements are reallocated to new memory blocks which fit the existing ranges and their previous memory blocks are deallocated.</li>
+<li>Requires: If container is not empty, T shall be MoveInsertable or CopyInsertable into *this.<br>
+<li>Effects: Sets minimum and maximum element memory block sizes to those of the supplied variables (contained within std::limits struct). If colony is not empty, adjusts existing memory block sizes (if necessary) to conform to the new minimum and maximum block sizes. If existing memory blocks are within new allowed ranges, no reallocation of elements takes place. If they are not within allowed ranges, elements are reallocated to new memory blocks which fit the existing ranges and their previous memory blocks are deallocated. Order of elements is not guaranteed to be stable.</li>
 <li>Complexity: If no reallocation occurs, constant time. If reallocation occurs, complexity is linear in the number of elements reallocated.</li>
 </ol>
-<br>
-<code style="font-weight:bold">void reinitialize(const Skipfield minimum, const Skipfield maximum) noexcept;</code>
-<ol start="6">
-<li>Effects: Sets minimum and maximum element memory block sizes to those of the supplied variables. If colony is not empty, clear() is called. This allows the user to set the colony's block size limits while using a non-copyable/movable type <code>T</code> - something which is not possible with the set_block_capacity_limits function due to the reallocation code.</li>
-<li>Complexity: Constant time.</li>
-</ol>
 
 
-<h4>Colony type-changing functions:</h4>
-<code style="font-weight:bold">iterator get_iterator_from_pointer(const pointer element_pointer) const;<br>
-reverse_iterator get_reverse_iterator_from_pointer(const pointer element_pointer) const;</code>
+
+<h4>26.3.14.6 colony type-changing functions [colony.typechange]</h4>
+
+<code style="font-weight:bold">iterator get_iterator_from_pointer(const pointer p) const noexcept;</code>
 <ol>
-<li>Effects: If pointer is not invalid, returns an iterator pointing to the same element as the pointer.</li>
+<li>Effects: Returns an iterator pointing to the same element as the pointer. If <code>p</code> does not point to an element in *this, end() is returned.</li>
 <li>Complexity: Implementation-defined.</li>
-<li>Remarks: Because colony iterators are likely to be large, storing three pieces of data - current memory block, current element within memory block, and potentially current skipfield node - a program storing many links to elements within a colony may opt to dereference pointers from iterators and store those instead of iterators, to save memory. This function reverses the process, giving an iterator which can then be used for operations such as erase.</li>
 </ol>
 <br>
-<code style="font-weight:bold">size_type get_index_from_iterator(const iterator&amp; it) const;<br>
-size_type get_index_from_iterator(const const_iterator&amp; it) const;<br>
-size_type get_index_from_iterator(const reverse_iterator&amp; it) const;<br>
-size_type get_index_from_iterator(const const_reverse_iterator&amp; it) const;</code>
-<ol start="3">
-<li>Effects: Returns the index of a given element pointed to by an iterator, in terms of the linear iterative sequence of the colony.</li>
-<li>Complexity: Same as distance specialized algorithm, see below.</li>
-<li>Remarks: Indexes are not constant and change as erasures and insertions are made to the colony. These functions were added to aid developers who wish to write program state to storage media, knowing that both pointers and iterators would be invalid if stored then loaded at a later point when another instance of the same program was running.</li>
-</ol>
-<br>
-<br>
-<code style="font-weight:bold">template &lt;typename index_type&gt;<br>
-iterator get_iterator_from_index(const index_type index) const<br>
-template &lt;typename index_type&gt;<br>
-reverse_iterator get_reverse_iterator_from_index(const index_type index) const</code>
-<ol start="5">
-<li>Effects: Returns an iterator pointing to the element at the index indicated, within the colony.</li>
-<li>Complexity: Same as advance specialized algorithm, see below.</li>
-<li>Remarks: This can merely be a call to advance using the begin iterator, but can also be slightly optimized for the context.</li>
-</ol>
 
-<h4>Colony specialized algorithms:</h4>
+
+<h4>26.3.14.7 colony specialized algorithms [colony.special]</h4>
+
 <code style="font-weight:bold">template &lt;class T, class Allocator&gt;<br>
 void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator, Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));</code>
 <ol>
@@ -913,9 +988,8 @@ colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const colony&lt;T, Al
 colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance = 1);<br>
 colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, difference_type distance = 1);</code>
 <ol start="2">
-<li>Complexity: For advance, prev and next, complexity is dependent on state of colony, position of iterator and amount of distance, but in many cases will be less than linear. It is necessary in a colony to store metadata both about the capacity of each block (for the purpose of iteration) and how many non-erased elements are present within the block (for the purpose of removing blocks from the iterative chain once they become empty). For this reason, intermediary blocks between the iterator's initial block and it's final destination block (if these are not the same block, and if the initial block and final block are not immediately adjacent) can be skipped rather than iterated linearly across, by using the "number of non-erased elements" metadata.<br>
-This means that the only linear time operations are any iterations within the initial block and the final block. However if either the initial or final block have no erased elements (as determined by comparing whether the block's capacity metadata and the block's "number of non-erased elements" metadata are equal), linear iteration can be skipped for that block and pointer/index math used instead to determine distances, reducing complexity to constant time. Hence the best case for this operation is constant time, the worst is linear to the distance.</li>
-<li>Remarks: If iterator supplied is invalid, behaviour is undefined, may throw.</li>
+<li>Complexity: Between constant and linear in <code>distance</code>, dependent on state of colony, position of iterator and length of <code>distance</code>. Approximating logarithmic in <code>distance</code> on average. See <a href="#timecomplexityexplanations">time requirement explanations in appendix</a>.</li>
+<li>Remarks: If iterator supplied is invalid, behavior is undefined, may throw.</li>
 </ol>
 <br>
 <code style="font-weight:bold">
@@ -924,8 +998,8 @@ difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iter
 difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
 difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);</code>
 <ol start="4">
-<li>Complexity: The same considerations which apply to advance, prev and next also apply to difference - intermediary blocks between first and last's blocks can be skipped in constant time time, first's block and last's block (if not the same block) must be linearly iterated across unless either block has no erased elements, in which case the operation becomes pointer/index math and is reduced to constant time for that block.</li>
-<li>Remarks: If iterator supplied is invalid, behaviour is undefined, may throw.</li>
+<li>Complexity: Between constant and linear in <code>last - first</code>, dependent on state of colony and position of iterators. Approximating logarithmic in <code>last - first</code> on average. See <a href="#timecomplexityexplanations">time requirement explanations in appendix</a>.</li>
+<li>Remarks: If iterator supplied is invalid, behavior is undefined, may throw.</li>
 </ol>
 
 
@@ -934,10 +1008,10 @@ difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iter
 <p>Matt would like to thank: Glen Fernandes and Ion Gaztanaga for restructuring
 advice, Robert Ramey for documentation advice, various Boost and SG14 members
 for support, Baptiste Wicht for teaching me how to construct decent benchmarks,
-Jonathan Wakely, Sean Middleditch, Patrice Roy and Guy Davidson for standards-compliance advice and critiques, support, representation at meetings and bug reports,
+Jonathan Wakely, Sean Middleditch, Jens Maurer, Patrice Roy and Guy Davidson for standards-compliance advice and critiques, support, representation at meetings and bug reports,
 that ex-Lionhead guy for annoying me enough to force me to implement the original skipfield
 pattern, Jon Blow for some initial advice and Mike Acton for some influence, the community at large for giving me feedback and bug reports on the reference implementation.<br>
-Also Nico Josuttis for doing such an excellent job in terms of explaining the general format of the structure to the committee.
+Also Nico Josuttis for doing such a great job in terms of explaining the general format of the structure to the committee.
 </p>
 
 
@@ -945,127 +1019,57 @@ Also Nico Josuttis for doing such an excellent job in terms of explaining the ge
 
 <h2>VIII. Appendices</h2>
 
-<h3><a id="technical2"></a>Appendix A - Further technical details</h3>
+<h3><a id="technical2"></a>Appendix A - Additional Technical information</h3>
 
 
-
-<h4>General specification</h4>
-
-<p>Colony meets the requirements of the C++ <a
-href="https://en.cppreference.com/w/cpp/named_req/Container">Container</a>, <a
-href="https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer">AllocatorAwareContainer</a>,
-and <a href="https://en.cppreference.com/w/cpp/named_req/ReversibleContainer">ReversibleContainer</a>
-concepts.</p>
-
-<p>For the most part the syntax and semantics of colony functions are very
-similar to all std:: c++ libraries. Formal description is as follows:</p>
-<code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename
-Skipfield_Type = implementation-defined&gt; class colony</code>
+<code>template &lt;class T, class Allocator = std::allocator&lt;T&gt;, typename Skipfield = unsigned short&gt; class colony</code>
 
 <p><code><b>T</b></code> - the element type. In general T must meet the
-requirements of <a
-href="https://en.cppreference.com/w/cpp/named_req/Erasable">Erasable</a>, <a
+requirements of <a href="https://en.cppreference.com/w/cpp/named_req/Erasable">Erasable</a>, <a
 href="https://en.cppreference.com/w/cpp/named_req/CopyAssignable">CopyAssignable</a>
 and <a
 href="https://en.cppreference.com/w/cpp/named_req/CopyConstructible">CopyConstructible</a>.<br>
 However, if emplace is utilized to insert elements into the colony, and no
 functions which involve copying or moving are utilized, T is only required to
-meet the requirements of <a
-href="https://en.cppreference.com/w/cpp/named_req/Erasable">Erasable</a>.<br>
+meet the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/Erasable">Erasable</a>.<br>
 If move-insert is utilized instead of emplace, T must also meet the
-requirements of <a
-href="https://en.cppreference.com/w/cpp/named_req/MoveConstructible">MoveConstructible</a>.<br>
+requirements of <a href="https://en.cppreference.com/w/cpp/named_req/MoveConstructible">MoveConstructible</a>.<br>
 <br>
 <code><b>Allocator</b></code> - an allocator that is used to acquire memory to
 store the elements. The type must meet the requirements of <a
 href="https://en.cppreference.com/w/cpp/named_req/Allocator">Allocator</a>. The
-behaviour is undefined if <code>Allocator::value_type</code> is not the same as
+behavior is undefined if <code>Allocator::value_type</code> is not the same as
 T.<br>
 <br>
-<code><b>Skipfield_Type</b></code> - an unsigned integer type. This type is
-used to form the skipfield which skips over erased T elements. In terms of the
-reference implementation, this also acts as a limiting factor to the maximum
-size of memory blocks, due to the way that the skipfield pattern works
-(<code>e.g. unsigned short</code> is 16-bit on most platforms which constrains
-the size of individual memory blocks to a maximum of 65535 elements).
-<code>unsigned short</code> has been found to be the optimal type for the
-reference implementation in general. However in the case of small collections (i.e.
-&lt; 1000 elements) in a memory-constrained environment, it may be useful to
-reduce the memory use of the skipfield by reducing the skipfield bit depth to
-a Uint8 type. The reduced skipfield size may also reduce cache saturation in
-this case without impacting iteration speed due to the low number of elements.
-However whether or not this constitutes a performance advantage is <a
-href="https://plflib.org/blog.htm#shortandchardifferences">largely
-situational</a>, so it is best to leave control in the end user's hands.<br>
-This attribute can always be ignored for an implementation which does not use it</p>
+<code><b>Skipfield</b></code> - an unsigned integer type. This type is
+used to form the skipfield which skips over erased elements and it's maximum value limits the size of memory blocks. In the case of small collections or memory-constrained environments, it may be profitable to reduce the memory usage of the skipfield by reducing the skipfield bit depth to a Uint8 type. This also reduces cache saturation. This attribute can safely be ignored for an implementation which does not use it.</p>
 
 
 
 <h4>Iterators</h4>
 
-<p>Iterators are bidirectional but also provide constant amortised time complexity &gt;,
+<p>Iterators are bidirectional but also provide constant amortized time complexity &gt;,
 &lt;, &gt;=, &lt;= and &lt;=&gt; operators for convenience (for example, for use in
-<code>for</code> loops when skipping over multiple elements per loop). This is achieved by keeping a record of the order of memory blocks in some way. In the reference implementation this is done by
+<code>for</code> loops when skipping over multiple elements per loop). This is achieved by keeping a record of the order of memory blocks. In the reference implementation this is done by
 assigning a number to each memory block in its metadata. In an implementation using a vector of blocks instead of a linked list, one could simply use the position of the block within the vector to determine this.
 Comparing relative order of the two iterators' memory blocks via this number, then
 comparing the memory locations of the elements themselves, if they happen to be
 in the same memory block, is enough to implement all greater/lesser comparisons.
 The full list of operators for iterator, reverse_iterator, const_iterator and const_reverse_iterator follows:</p>
 
-<p><code>operator *<br>
-operator -&gt;<br>
-operator ++<br>
-operator --<br>
-operator =<br>
-operator ==<br>
-operator !=<br>
-operator &lt;<br>
-operator &gt;<br>
-operator &lt;=<br>
-operator &gt;=<br>
-operator &lt;=&gt;<br>
+<p><code>*<br>
+-&gt;<br>
+++<br>
+--<br>
+=<br>
+==<br>
+!=<br>
+&lt;<br>
+&gt;<br>
+&lt;=<br>
+&gt;=<br>
+&lt;=&gt;<br>
 base() (reverse_iterator and const_reverse_iterator only)</code> </p>
-
-
-<h4><a id="#iteratorinvalidation"></a>Iterator Invalidation</h4>
-
-<table border="1">
-  <tbody>
-    <tr>
-      <td>All read-only operations, swap, std::swap, splice, free_unused_memory, operator = && (source)</td>
-      <td>Never</td>
-    </tr>
-    <tr>
-      <td>clear, sort, reinitialize, operator = &, operator = && (destination)</td>
-      <td>Always</td>
-    </tr>
-    <tr>
-      <td>set_block_capacity_limits, set_minimum_block_capacity, set_maximum_block_capacity</td>
-      <td>Only if supplied minimum block size is larger than smallest block in
-        colony, or supplied maximum block size is smaller than largest block in
-        colony.</td>
-    </tr>
-    <tr>
-      <td>erase</td>
-      <td>Only for the erased element. If an iterator is == end() it may be
-        invalidated if the last element in the colony is erased in some cases
-        (similar to std::deque). Similarly if a reverse_iterator is == rend() it may be
-        invalidated if the first element in the colony is erased, in some
-      cases.</td>
-    </tr>
-    <tr>
-      <td>insert, emplace</td>
-      <td>If an iterator is == end() it may be invalidated by a subsequent
-        insert/emplace, in some cases.</td>
-    </tr>
-    <tr>
-    	<td>reserve</td>
-    	<td>Implementation-defined. If the colony isn't empty, and the reserve amount is larger than the existing block capacity(s), but smaller or equal to the maximum block capacity,
-		 an implementation is allowed to create a larger block and transfer all elements to the larger block, so that subsequent iteration is faster (due to greater linearity of elements in memory).
-		 However an implementation can also choose to simply create an additional block(s) rather than reallocating existing elements to a larger one.</td>
-  </tbody>
-</table>
-
 
 
 <h4>Basic example of usage (using <a href="https://plflib.org/colony.htm">reference implementation</a>)</h4>
@@ -1204,12 +1208,12 @@ commentary for the MSVC results.</p>
     <p>A deque is reasonably dissimilar to a colony - being a double-ended
     queue, it requires a different internal framework. In addition, being a
     random-access container, having a growth factor for memory blocks in a
-    deque is problematic (not impossible though). A deque and colony have no
+    deque is problematic (but not impossible). A deque and colony have no
     comparable performance characteristics except for insertion (assuming a
     good deque implementation). Deque erasure performance varies wildly
     depending on the implementation, but is generally similar to vector erasure
     performance. A deque invalidates pointers to subsequent container elements
-    when erasing elements, which a colony does not, and is ordered.</p>
+    when erasing elements, which a colony does not, and guarantees ordered insertion.</p>
   </li>
   <li><h4>What are the thread-safe guarantees?</h4>
     <p>Unlike a std::vector, a colony can be read from and inserted into at the
@@ -1332,7 +1336,7 @@ commentary for the MSVC results.</p>
     that it is slightly slower to obtain an erased-element location from the
     list of groups-with-erasures (subsequently utilising that group's free list
     of erased locations) and to reuse that space than to insert a new element
-    to the back of the colony (the default behaviour when there are no
+    to the back of the colony (the default behavior when there are no
     previously-erased elements). If there are any erased elements in the
     colony, the colony will recycle those memory locations, unless the entire
     block is empty, at which point it is freed to memory.</p>
@@ -1364,7 +1368,7 @@ commentary for the MSVC results.</p>
       <li>Standards compliance: if blocks aren't removed then <code>++</code>
         and <code>--</code> iterator operations become undefined in terms of
         time complexity, making them non-compliant with the C++ standard. At
-        the moment they are O(1) amortised, typically one update for both
+        the moment they are O(1) amortized, typically one update for both
         skipfield and element pointers, but two if a skipfield jump takes the
         iterator beyond the bounds of the current block and into the next
         block. But if empty blocks are allowed, there could be anywhere between
@@ -1380,7 +1384,7 @@ commentary for the MSVC results.</p>
         blocks while iterating, then you have to include a while loop in every
         iteration operation, which increases cache misses and code size. The
         strategy of removing blocks when they become empty also statistically
-        removes (assuming randomised erasure patterns) smaller blocks from the
+        removes (assuming randomized erasure patterns) smaller blocks from the
         colony before larger blocks, which has a net result of improving
         iteration, because with a larger block, more iterations within the
         block can occur before the end-of-block condition is reached and a jump
@@ -1400,10 +1404,10 @@ commentary for the MSVC results.</p>
     <p>The default scenario, for reasons of predictability, should be to free
     the memory block rather than making this undefined. If a scenario calls for
     retaining memory blocks instead of deallocating them, this should be left
-    to an allocator to manage. Otherwise you get unpredictable memory behaviour
+    to an allocator to manage. Otherwise you get unpredictable memory behavior
     across implementations, and this is one of the things that SG14 members
     have complained about time-and-time again, the lack of predictable
-    behaviour across standard library implementations. Ameliorating this
+    behavior across standard library implementations. Ameliorating this
     unpredictability is best in my view.</p>
   </li>
   <li><h4>Memory block sizes - what are they based on, how do they expand,
@@ -1482,7 +1486,7 @@ previous committee feedback</h3>
     collections (where the type of the skipfield can be reduced to 8 bits
     without having a negative effect on maximum block sizes and subsequent
     iteration speed). See more explanation in V. Technical Specifications.
-    Unfortunately this parameter also means <code>operator =</code> and some
+    Unfortunately this parameter also means <code>operator=</code> and some
     other functions won't work between colonies of the same type but differing
     skipfield types. Further, the template argument is chiefly relevant to the
     use of the skipfield patterns utilized in the reference implementations,
@@ -1494,7 +1498,7 @@ previous committee feedback</h3>
     skipfield patterns which have been used in the references implementations,
     both of which benefit from having this optional parameter. Please note,
     that is not the same as saying there are no alternatives, just ones never
-    thought of yet. This is something I am flexible on, as a singular skipfield
+    thought of yet. This is something I am flexible on, as a single skipfield
     type will cover the majority of scenarios.</p>
     <p><a href="https://plflib.org/blog.htm#shortandchardifferences">Research
     into this area</a> has determined that there is only really an advantage to
@@ -1524,7 +1528,7 @@ previous committee feedback</h3>
     many fields</a>, not just game dev. So the target audience is probably
     everyone other than AAA gaming, but even then, it facilitates communication
     across fields and companies as to this type of container, giving it a
-    standardised name and understanding.</p>
+    standardized name and understanding.</p>
   </li>
   <li><h4>"Is there active research in this problem space? Is it likely to
     change in future?"</h4>
@@ -1554,7 +1558,7 @@ previous committee feedback</h3>
     <p>Skipfield update time complexity should, I think, be left
     implementation-defined, as defining time complexity may obviate better
     solutions which are faster but are not necessarily O(1). Skipfield updates
-    occur during erasure, insertion, splicing, sorting and container copying. I
+    occur during erasure, insertion, splicing and container copying. I
     have looked into alternatives to a 1-node-per-element skipfield, such as a
     compressed skipfield (a series of numbers denoting alternating lengths of
     non-erased/erased elements), but all the possible implementations I can
@@ -1597,7 +1601,7 @@ verified by game developers within SG14:</p>
 <p>std::vector in its default state does not meet these requirements due to:
 </p>
 <ol>
-  <li>Poor (non-fill) singular insertion performance (regardless of insertion
+  <li>Poor (non-fill) single insertion performance (regardless of insertion
     position) due to the need for reallocation upon reaching capacity</li>
   <li>Insert invalidates pointers/iterators to all elements </li>
   <li>Erase invalidates pointers/iterators/indexes to all elements after the
@@ -1645,38 +1649,41 @@ communication.</p>
 
 <h3><a id="timecomplexityexplanations"></a>Appendix F - Time complexity requirement explanations</h3>
 
-	<h5>Insert (single): O(1) amortised</h5>
-	<p>One of the requirements of colony is that pointers to non-erased elements stay valid regardless of insertion/erasure within the container. For this reason the container must use multiple memory blocks. If a single memory block were used, like in a std::vector, reallocation of elements would occur when the container expanded (and the elements were copied to a larger memory block). Hence, colony will insert into existing memory blocks when able, and create a new memory block when all existing memory blocks are full. Because colony (by default) has a growth pattern for new memory blocks, the number of insertions before a new memory block is required increases as more insertions take place. Hence the insertion time complexity is O(1) amortised.</p>
+	<h5>Insert (single): O(1)</h5>
+	<p>One of the requirements of colony is that pointers to non-erased elements stay valid regardless of insertion/erasure within the container. For this reason the container must use multiple memory blocks. If a single memory block were used, like in a std::vector, reallocation of elements would occur when the container expanded (and the elements were copied to a larger memory block). Instead, colony will insert into existing memory blocks when able, and create a new memory block when all existing memory blocks are full. This keeps insertion at O(1).</p>
 
-	<h5>Insert (multiple): O(N) amortised</h5>
-	<p>This follows the same principle - there will occasionally be a need to create a new memory block, but since this is infrequent it is O(N) amortised.</p>
+  	<h5>Insert (multiple): O(N)</h5>
+  	<p>Multiple insertions may allow an implementation to reserve suitably-sized memory blocks in advance, reducing the number of allocations necessary (whereas singular insertion would generally follow the implementation's block growth pattern, possibly allocating more than necessary). However when it comes to time complexity it has no advantages over singlular insertion, is linear to the number elements inserted.</p>
 
-	<h5>Erase (single): O(1) amortised</h5>
-	<p>Generally speaking erasure is a simple matter of destructing the element in question and updating the skipfield. When using the Low-complexity jump-counting pattern this skipfield update is always O(1). However, when a memory block becomes empty of non-erased elements it must be freed to the OS (or stored for future insertions, depending on implementation) and removed from the colony's sequence of memory blocks. It it was not, we would end up with non-O(1) amortised iteration, since there would be no way to predict how many empty memory blocks there would be between the current memory block being iterated over, and the next memory block with non-erased (active) elements in it. Since removal of memory blocks is infrequent the time complexity becomes O(1) amortised.</p>
+	<h5>Erase (single): O(1)</h5>
+	<p>Erasure is a simple matter of destructing the element in question and updating the skipfield. Since we use a skipfield to indicate erasures to the iterator, no reallocation of subsequent elements is necessary and the process is O(1). Additionally, when using the Low-complexity jump-counting pattern the skipfield update is also always O(1).</p>
+	<p>Note: When a memory block becomes empty of non-erased elements it must be freed to the OS (or stored for future insertions, depending on implementation) and removed from the colony's sequence of memory blocks. It it was not, we would end up with non-O(1) iteration, since there would be no way to predict how many empty memory blocks there would be between the current memory block being iterated over, and the next memory block with non-erased (active) elements in it.</p>
 
-	<h5>Erase (multiple): O(N) amortised for non-trivially-destructible types, for trivially-destructible types between O(1) and O(N) amortised depending on range start/end (approximating O(log n) average)</h5>
-	<p>In this case, where the element is non-trivially destructible, the time complexity is O(N) amortised, with infrequent deallocation necessary from the removal of an empty memory block as noted above. However where the elements are trivially-destructible, if the range spans an entire memory block at any point, that block and it's skipfield can simply be removed without doing any individual writes to it's skipfield or individual destruction of elements, potentially making this a O(1) operation.</p>
-	<p>In addition (when dealing with trivially-destructible types) for those memory blocks where only a portion of elements are erased by the range, if no prior erasures have occurred in that memory block you can erase that range in O(1) time, as there will be no need to check within the range for previously erased elements, and the Low-complexity jump-counting pattern only requires two skipfield writes to indicate a range of skipped nodes. The reason you would need to check for previously erased elements within that portion's range is so you can update the metadata for that memory block to accurately reflect how many non-erased elements remain within the block. If that metadata is not present, there is no way to ascertain when a memory block is empty of non-erased elements and hence needs to be removed from the colony. The reasoning for why empty memory blocks must be removed is included in the Erase(single) section, above.</p>
-	<p>However in most cases the erase range will not perfectly match the size of all memory blocks, and with typical usage of a colony there is usually some prior erasures in most memory blocks. So for example when dealing with a colony of a trivially-destructible type, you might end up with a tail portion of the first memory block in the erasure range being erased in O(N) time, the second and intermediary memory block being completely erased and freed in O(1) time, and only a small front portion of the third and final memory block in the range being erased in O(N) time. Hence the time complexity for trivially-destructible elements approximates O(log n) on average, being between O(1) and O(N) depending on the start and end of the erasure range.</p>
+	<h5>Erase (multiple): O(N) for non-trivially-destructible types, for trivially-destructible types between O(1) and O(N) depending on range start/end, approximating O(log n) average</h5>
+	<p>In this case, where the element is non-trivially destructible, the time complexity is O(N), with infrequent deallocation necessary from the removal of an empty memory block as noted above. However where the elements are trivially-destructible, if the range spans an entire memory block at any point, that block and it's skipfield can simply be removed without doing any individual writes to it's skipfield or individual destruction of elements, potentially making this a O(1) operation.</p>
+	<p>In addition (when dealing with trivially-destructible types) for those memory blocks where only a portion of elements are erased by the range, if no prior erasures have occurred in that memory block you can erase that range in O(1) time, as there will be no need to check the skipfield within the range for previously erased elements. The reason you would need to check for previously erased elements within that portion's range is so you can update the metadata for that memory block to accurately reflect how many non-erased elements remain within the block. The non-erased element-count metadata is necessary because there is no other way to ascertain when a memory block is empty of non-erased elements, and hence needs to be removed from the colony's iteration sequence. The reasoning for why empty memory blocks must be removed is included in the Erase(single) section, above.</p>
+	<p>However in most cases the erase range will not perfectly match the size of all memory blocks, and with typical usage of a colony there is usually some prior erasures in most memory blocks. So, for example, when dealing with a colony of a trivially-destructible type, you might end up with a tail portion of the first memory block in the erasure range being erased in O(N) time, the second and intermediary memory block being completely erased and freed in O(1) time, and only a small front portion of the third and final memory block in the range being erased in O(N) time. Hence the time complexity for trivially-destructible elements approximates O(log n) on average, being between O(1) and O(N) depending on the start and end of the erasure range.</p>
 
-	<h5>std::find: O(n)</h5>
+	<h5>std::find: O(N)</h5>
 	<p>This relies on basic iteration so is O(N).</p>
 
 	<h5>splice: O(1)</h5>
-	<p>Colony only does full-container splicing, not partial-container splicing (use range-insert with std::move to achieve the latter, albiet with the loss of pointer validity to the moved range). When splicing the memory blocks from the source colony are transferred to the destination colony without processing the individual elements or skipfields, inserted after the destination's final block. If there are unused element memory spaces at the back of the destination container (ie. the final memory block is not full), the skipfield nodes corresponding to those empty spaces must be altered to indicate that these are skipped elements. Again when using the Low-complexity jump-counting pattern for the skipfield this is also a O(1) operation, hence the overall operation is O(1).</p>
+	<p>Colony only does full-container splicing, not partial-container splicing (use range-insert with std::move to achieve the latter, albiet with the loss of pointer validity to the moved range). When splicing, the memory blocks from the source colony are transferred to the destination colony without processing the individual elements. These blocks may either be placed at the front of the colony or the end, depending on how full the source back block is compared to the destination back block. If the destination back block is more full ie. there is less unused space in it, it is better to put it at the beginning of the source block - as otherwise this creates a larger gap to skip during iteration which in turn affects cache locality. If there are unused element memory spaces at the back of the destination container (ie. the final memory block is not full), the skipfield nodes corresponding to those empty spaces must be altered to indicate that these are skipped elements. Again when using the Low-complexity jump-counting pattern for the skipfield this is also a O(1) operation, hence the overall operation is O(1).</p>
 
-	<h5>Iterator operators ++ and --: O(1) amortised</h5>
-	<p>Generally the time complexity is O(1), as the skipfield pattern used must allow for skipping of multiple erased elements. However every so often iteration will involve a transistion to the next/previous memory block in the colony's sequence of blocks, depending on whether we are doing ++ or --. At this point a read of the next/previous memory block's corresponding skipfield is necessary, in case the first/last element(s) in that memory block are erased and hence skipped. So for every block transition, 2 reads of the skipfield are necessary instead of 1. Hence the time complexity is O(1) amortised.</p>
-	<p>Skipfields must be per-block and independent between memory blocks, as otherwise you would end up with a vector for a skipfield, which would need a range erased every time a memory block was removed from the colony (see notes under Erase above), and reallocation to larger skipfield memory block when the colony expanded. Both of these procedures carry reallocation costs, meaning you could have thousands of skipfield nodes needing to be reallocated based on a single erasure (from within a memory block which only had one non-erased element left and hence would need to be removed from the colony). This is unacceptable latency for any field involving high timing sensitivity (all of <a href="https://lists.isocpp.org/mailman/listinfo.cgi/sg14/">SG14</a>).</p>
+	<h5>Iterator operators ++ and --: O(1) amortized</h5>
+	<p>Generally the time complexity is O(1), and any skipfield pattern used must allow for skipping of multiple erased elements. However every so often iteration will involve a transistion to the next/previous memory block in the colony's sequence of blocks, depending on whether we are doing ++ or --. At this point a read of the next/previous memory block's corresponding skipfield is necessary, in case the front/back element(s) in that memory block are erased and hence skipped. So for every block transition, 2 reads of the skipfield are necessary instead of 1. Hence the time complexity is O(1) amortized.</p>
+	<p>Skipfields must be per-block and independent between memory blocks, as otherwise you would end up with a vector for a skipfield, which would need a range erased every time a memory block was removed from the colony (see notes under Erase above), and reallocation to a larger skipfield memory block when a colony expanded. Both of these procedures carry reallocation costs, meaning you could have thousands of skipfield nodes needing to be reallocated based on a single erasure (from within a memory block which only had one non-erased element left and hence would need to be removed from the colony). This is unacceptable latency for any field involving high timing sensitivity (all of <a href="https://lists.isocpp.org/mailman/listinfo.cgi/sg14/">SG14</a>).</p>
 
 	<h5>begin()/end(): O(1)</h5>
 	<p>For any implementation these should generally be stored as member variables and so returning them is O(1).</p>
 
 	<h5>advance/next/prev: between O(1) and O(n), depending on current iterator location, distance and implementation. Average for reference implementation approximates O(log N).</h5>
-	<p>The reasoning for this is similar to that of Erase(multiple), above. Memory blocks which are completely traversed by the increment/decrement distance can be skipped in O(1) time by reading the metadata for the block which details the number of non-erased elements in the block. If the current iterator location is not at the very beginning of a memory block, then the distance within that block will need to be processed in O(N) time, unless no erasures have occurred within that block, in which case the skipfield does not need to be checked and traversal is simply a matter of pointer arithmetic and checking the distance between the current iterator position and the end of the memory block, which is an O(1) operation.</p>
-	<p>Similarly for the final block involved in the traversal (if the traversal spans multiple memory blocks, and the traversals remaining do not exactly match the number of elements in the final block, in which case it is also skipped!), if no erasures have occurred in that memory block then pointer arithmetic can be used and the procedure becomes O(1). Otherwise it is O(N) (++ iterating over the skipfield). We can therefore say that the overall time complexity for these operations might approximate O(log N), while being between O(1) and O(N) amortised respectively.</p>
-	<p>Since the traversal depends in part of the skipfield, and on what metadata is stored about the memory blocks, implementation can affect the assumptions above. This analysis is based upon the reference implementation, which allows for these possible O(1) sub-operations.</p>
+	<p>The reasoning for this is similar to that of Erase(multiple), above. Complexity is dependent on state of colony, position of iterator and length of <code>distance</code>, but in many cases will be less than linear. It is necessary in a colony to store metadata both about the capacity of each block (for the purpose of iteration) and how many non-erased elements are present within the block (for the purpose of removing blocks from the iterative chain once they become empty). For this reason, intermediary blocks between the iterator's initial block and its final destination block (if these are not the same block, and if the initial block and final block are not immediately adjacent) can be skipped rather than iterated linearly across, by subtracting the "number of non-erased elements" metadata from <code>distance</code> for those blocks.</p>
+<p>This means that the only linear time operations are any iterations within the initial block and the final block. However if either the initial or final block have no erased elements (as determined by comparing whether the block's capacity metadata and the block's "number of non-erased elements" metadata are equal), linear iteration can be skipped for that block and pointer/index math used instead to determine distances, reducing complexity to constant time. Hence the best case for this operation is constant time, the worst is linear to the distance.</p>
 
+	<h5>distance: between O(1) and O(n), depending on current iterator location, distance and implementation. Average for reference implementation approximates O(log N).</h5>
+<p>The same considerations which apply to advance, prev and next also apply to difference - intermediary blocks between iterator1 and iterator2's blocks can be skipped in constant time, if they exist. iterator1's block and iterator2's block (if these are not the same block) must be linearly iterated across using ++ unless either block has no erased elements, in which case the operation becomes pointer/index math and is reduced to constant time for that block. In addition, if iterator1's block is not the same as iterator2's block, and iterator2 is equal to end() or (end() - 1), or is the last element in that block, iterator2's block's elements can also counted from the metadata rather than iteration.</p>
 
 </body>
 </html>
+
