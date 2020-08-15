@@ -29,40 +29,25 @@
 		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) throw()
 		#define PLF_INITIALIZER_LIST_SUPPORT
 	#elif _MSC_VER >= 1900
-		#define PLF_ALIGNMENT_SUPPORT
 		#define PLF_TYPE_TRAITS_SUPPORT
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
 		#define PLF_NOEXCEPT noexcept
-		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_move_assignment::value || std::allocator_traits<the_allocator>::is_always_equal::value)
+		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
 		#define PLF_INITIALIZER_LIST_SUPPORT
 	#endif
-
-	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
-		#define PLF_CONSTEXPR constexpr
-		#define PLF_CONSTEXPR_SUPPORT
-	#else
-		#define PLF_CONSTEXPR
-	#endif
-
-	#if defined(_MSVC_LANG) && (_MSVC_LANG > 201703L)
-		#define PLF_CPP20_SUPPORT
-	#endif
-
-#elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
+#elif defined(__cplusplus) && __cplusplus >= 201103L
 	#define PLF_FORCE_INLINE // note: GCC creates faster code without forcing inline
 
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.2 and below do not support variadic templates
 			#define PLF_VARIADICS_SUPPORT
 		#endif
-
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) || __GNUC__ > 4 // 4.3 and below do not support initializer lists
 			#define PLF_INITIALIZER_LIST_SUPPORT
 		#endif
-
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ < 6) || __GNUC__ < 4
 			#define PLF_NOEXCEPT throw()
 			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
@@ -73,19 +58,16 @@
 			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
 		#else // C++17 support
 			#define PLF_NOEXCEPT noexcept
-			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_move_assignment::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value || std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
 		#endif
-
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
 			#define PLF_ALLOCATOR_TRAITS_SUPPORT
-		#endif
-		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ > 4
-			#define PLF_ALIGNMENT_SUPPORT
 		#endif
 		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
+
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
 			#define PLF_VARIADICS_SUPPORT
@@ -96,8 +78,8 @@
 		#if __GLIBCXX__ >= 20160111
 			#define PLF_ALLOCATOR_TRAITS_SUPPORT
 			#define PLF_NOEXCEPT noexcept
-			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_move_assignment::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value || std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal::value)
+			#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value)
 		#elif __GLIBCXX__ >= 20120322
 			#define PLF_ALLOCATOR_TRAITS_SUPPORT
 			#define PLF_NOEXCEPT noexcept
@@ -108,60 +90,24 @@
 			#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
 			#define PLF_NOEXCEPT_SWAP(the_allocator)
 		#endif
-		#if __GLIBCXX__ >= 20130322
-			#define PLF_ALIGNMENT_SUPPORT
-		#endif
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
-	#elif defined(_LIBCPP_VERSION)
+	#elif defined(_LIBCPP_VERSION) // No type trait support in libc++ to date
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_INITIALIZER_LIST_SUPPORT
-		#define PLF_ALIGNMENT_SUPPORT
 		#define PLF_NOEXCEPT noexcept
-		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_move_assignment::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-
-		#if !(defined(_LIBCPP_CXX03_LANG) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES))
-			#define PLF_TYPE_TRAITS_SUPPORT
-		#endif
-	#else // Assume type traits and initializer support for other compilers and standard libraries
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal:value)
+		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
+	#else // Assume type traits and initializer support for non-GCC compilers and standard libraries
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_ALIGNMENT_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_INITIALIZER_LIST_SUPPORT
 		#define PLF_TYPE_TRAITS_SUPPORT
 		#define PLF_NOEXCEPT noexcept
-		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_move_assignment::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept(std::allocator_traits<the_allocator>::propagate_on_container_swap::value || std::allocator_traits<the_allocator>::is_always_equal::value)
-	#endif
-
-	#if __cplusplus >= 201703L
-		#if defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3)
-			#define PLF_CONSTEXPR constexpr
-			#define PLF_CONSTEXPR_SUPPORT
-		#elif defined(__GNUC__) && __GNUC__ >= 7
-			#define PLF_CONSTEXPR constexpr
-			#define PLF_CONSTEXPR_SUPPORT
-		#elif !defined(__clang__) && !defined(__GNUC__)
-			#define PLF_CONSTEXPR constexpr // assume correct C++17 implementation for other compilers
-			#define PLF_CONSTEXPR_SUPPORT
-		#else
-			#define PLF_CONSTEXPR
-		#endif
-	#else
-		#define PLF_CONSTEXPR
-	#endif
-
-	#if __cplusplus > 201703L // C++20
-		#if defined(__clang__) && (__clang_major__ >= 10)
-			#define PLF_CPP20_SUPPORT
-		#elif defined(__GNUC__) && __GNUC__ >= 10
-			#define PLF_CPP20_SUPPORT
-		#elif !defined(__clang__) && !defined(__GNUC__) // assume correct C++20 implementation for other compilers
-			#define PLF_CPP20_SUPPORT
-		#endif
+		#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator) noexcept(std::allocator_traits<the_allocator>::is_always_equal:value)
+		#define PLF_NOEXCEPT_SWAP(the_allocator) noexcept
 	#endif
 
 	#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -170,15 +116,14 @@
 	#define PLF_NOEXCEPT throw()
 	#define PLF_NOEXCEPT_SWAP(the_allocator)
 	#define PLF_NOEXCEPT_MOVE_ASSIGNMENT(the_allocator)
-	#define PLF_CONSTEXPR
 #endif
 
 
-#include <functional> // std::greater
-#include <vector> // range-insert testing
 #include <algorithm> // std::find
 #include <cstdio> // log redirection, printf
 #include <cstdlib> // abort
+#include <functional> // std::greater
+#include <vector> // range-insert testing
 
 #ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
@@ -766,16 +711,16 @@ void plf_colony_test()
 			failpass("Non-beginning increment + erase test", i_colony.size() == 300001);
 
 			colony<int>::iterator temp_iterator = i_colony.begin();
-			i_colony.advance(temp_iterator, 2); // Advance test 1
+			i_colony.advance(temp_iterator, 20); // Advance test 1
 
-			unsigned int index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
-			failpass("Advance + iterator-to-index test", index == 2);
+			unsigned int index = static_cast<unsigned int>(i_colony.distance(i_colony.begin(), temp_iterator));
+			failpass("Advance + iterator-to-index test", index == 20);
 
 			i_colony.erase(temp_iterator);
 			temp_iterator = i_colony.begin(); // Check edge-case with advance when erasures present in initial group
 			i_colony.advance(temp_iterator, 500);
 
-			index = static_cast<unsigned int>(i_colony.get_index_from_iterator(temp_iterator));
+			index = static_cast<unsigned int>(i_colony.distance(i_colony.begin(), temp_iterator));
 
 			failpass("Advance + iterator-to-index test", index == 500);
 
@@ -783,7 +728,8 @@ void plf_colony_test()
 
 			failpass("Pointer-to-iterator test", temp2 != i_colony.end());
 
-			temp2 = i_colony.get_iterator_from_index(500);
+			temp2 = i_colony.begin();
+			i_colony.advance(temp2, 500);
 
 			failpass("Index-to-iterator test", temp2 == temp_iterator);
 
@@ -800,11 +746,17 @@ void plf_colony_test()
 			i_colony.set_minimum_block_capacity(3);
 
 			const unsigned int temp_capacity2 = static_cast<unsigned int>(i_colony.capacity());
-			i_colony.reserve(1000);
+			i_colony.reserve(100000);
 			failpass("Colony reserve test", temp_capacity2 != i_colony.capacity());
-			failpass("Colony reserve test2", i_colony.capacity() == 1000);
 
-			unsigned int count = 0;
+			for (unsigned int counter = 0; counter != 110000; ++counter)
+			{
+				i_colony.insert(1);
+			}
+
+			failpass("Post-reserve insert test", i_colony.size() == 110000);
+
+			unsigned int count = 110000;
 
 			for (unsigned int loop1 = 0; loop1 != 50000; ++loop1)
 			{
@@ -1306,54 +1258,6 @@ void plf_colony_test()
 		}
 
 
-		{
-			title2("Sort tests");
-
-			colony<int> i_colony;
-
-			i_colony.reserve(50000);
-
-			for (unsigned int temp = 0; temp != 50000; ++temp)
-			{
-				i_colony.insert(xor_rand() & 65535);
-			}
-
-			i_colony.sort();
-
-			bool sorted = true;
-			int previous = 0;
-
-			for (colony<int>::iterator current = i_colony.begin(); current != i_colony.end(); ++current)
-			{
-				if (previous > *current)
-				{
-					sorted = false;
-					break;
-				}
-
-				previous = *current;
-			}
-
-			failpass("Less-than sort test", sorted);
-
-			i_colony.sort(std::greater<int>());
-
-			previous = 65536;
-
-			for (colony<int>::iterator current = i_colony.begin(); current != i_colony.end(); ++current)
-			{
-				if (previous < *current)
-				{
-					sorted = false;
-					break;
-				}
-
-				previous = *current;
-			}
-
-			failpass("Greater-than sort test", sorted);
-		}
-
 
 
 		{
@@ -1371,7 +1275,7 @@ void plf_colony_test()
 
 			failpass("Range constructor test", i_colony2.size() == 3);
 
-			colony<int> i_colony3(5000, 2, 100, 1000);
+			colony<int> i_colony3(5000, 2, plf::limits(100, 1000));
 
 			failpass("Fill construction test", i_colony3.size() == 5000);
 
@@ -1436,8 +1340,11 @@ void plf_colony_test()
 
 			failpass("Reserve + fill + fill + reserve + fill test", i_colony2.size() == 12060 && total == 12060);
 
-
-		}
+			i_colony2.clear();
+			i_colony2.insert(6000, 2);
+			
+			failpass("Clear + fill test", i_colony2.size() == 6000 && *(i_colony2.begin()) == 2);
+	}
 
 
 		#ifdef PLF_VARIADICS_SUPPORT
@@ -1497,7 +1404,7 @@ void plf_colony_test()
 			title2("Misc function tests");
 
 			colony<int> colony1;
-			colony1.set_block_capacity_limits(50, 100);
+			colony1.set_block_capacity_limits(plf::limits(50, 100));
 
 			colony1.insert(27);
 
@@ -1510,11 +1417,16 @@ void plf_colony_test()
 
 			failpass("Change_group_sizes max-size test", colony1.capacity() == 200);
 
-			colony1.reinitialize(200, 2000);
+			colony1.clear();
+			colony1.set_block_capacity_limits(plf::limits(200, 2000));
 
 			colony1.insert(27);
 
 			failpass("Reinitialize min-size test", colony1.capacity() == 200);
+
+			plf::limits temp_limits = colony1.get_block_capacity_limits();
+
+			failpass("get_block_capacity_limits test", temp_limits.min == 200 && temp_limits.max == 2000);
 
 			for (int counter = 0; counter != 3300; ++counter)
 			{
@@ -1523,7 +1435,7 @@ void plf_colony_test()
 
 			failpass("Reinitialize max-size test", colony1.capacity() == 5200);
 
-			colony1.set_block_capacity_limits(500, 500);
+			colony1.set_block_capacity_limits(plf::limits(500, 500));
 
 			failpass("Change_group_sizes resize test", colony1.capacity() == 3500);
 
@@ -1718,8 +1630,8 @@ void plf_colony_test()
 			{
 				colony<int> colony1, colony2;
 
-				colony1.set_block_capacity_limits(200, 200);
-				colony2.set_block_capacity_limits(200, 200);
+				colony1.set_block_capacity_limits(plf::limits(200, 200));
+				colony2.set_block_capacity_limits(plf::limits(200, 200));
 
 				for(int number = 0; number != 100; ++number)
 				{
@@ -1754,10 +1666,7 @@ void plf_colony_test()
 
 
 			{
-				colony<int> colony1, colony2;
-
-				colony1.reinitialize(200, 200);
-				colony2.reinitialize(200, 200);
+				colony<int> colony1(plf::limits(200, 200)), colony2(plf::limits(200, 200));
 
 				for(int number = 0; number != 100; ++number)
 				{
