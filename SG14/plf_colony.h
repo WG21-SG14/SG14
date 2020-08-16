@@ -181,7 +181,7 @@
 
 
 
-#include <algorithm> // std::fill_n
+#include <algorithm> // std::fill_n, std::sort
 
 #include <cstring>	// memset, memcpy
 #include <cassert>	// assert
@@ -2183,7 +2183,7 @@ public:
 	#if defined(PLF_COLONY_TYPE_TRAITS_SUPPORT)
 		inline void insert (typename plf_enable_if_c<(!std::numeric_limits<iterator_type>::is_integer) && (!std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last)
 	#else
-		inline void insert (typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer), iterator_type>::type first, const iterator_type last)
+		inline void insert (typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, iterator_type>::type first, const iterator_type last)
 	#endif
 	{
 		while (first != last)
@@ -3946,6 +3946,172 @@ public:
 		data->block_capacities[group_number] = static_cast<skipfield_type>(end_iterator.group_pointer->last_endpoint - end_iterator.group_pointer->elements);
 
 		return data;
+	}
+
+
+
+private:
+
+	struct less
+	{
+		bool operator() (const element_type &a, const element_type &b) const PLF_COLONY_NOEXCEPT
+		{
+			return a < b;
+		}
+	};
+
+
+
+	struct item_index_tuple
+	{
+		pointer original_location;
+		size_type original_index;
+
+		item_index_tuple(const pointer _item, const size_type _index) PLF_COLONY_NOEXCEPT:
+			original_location(_item),
+			original_index(_index)
+		{}
+	};
+
+
+
+	template <class comparison_function>
+	struct sort_dereferencer
+	{
+		comparison_function stored_instance;
+
+		explicit sort_dereferencer(const comparison_function &function_instance):
+			stored_instance(function_instance)
+		{}
+
+		sort_dereferencer() PLF_COLONY_NOEXCEPT
+		{}
+
+		bool operator() (const item_index_tuple first, const item_index_tuple second)
+		{
+			return stored_instance(*(first.original_location), *(second.original_location));
+		}
+	};
+
+
+
+public:
+
+
+	template <class comparison_function>
+	void sort(comparison_function compare)
+	{
+		if (total_number_of_elements < 2)
+		{
+			return;
+		}
+
+		#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
+			typedef typename std::allocator_traits<element_allocator_type>::template rebind_alloc<item_index_tuple>	tuple_allocator_type;
+		#else
+			typedef typename element_allocator_type::template rebind<item_index_tuple>::other	tuple_allocator_type;
+		#endif
+
+		tuple_allocator_type tuple_allocator;
+
+		item_index_tuple * const sort_array = PLF_COLONY_ALLOCATE(tuple_allocator_type, tuple_allocator, total_number_of_elements, NULL);
+		item_index_tuple *tuple_pointer = sort_array;
+
+		// Construct pointers to all elements in the sequence:
+		size_type index = 0;
+
+		for (iterator current_element = begin_iterator; current_element != end_iterator; ++current_element, ++tuple_pointer, ++index)
+		{
+			#ifdef PLF_COLONY_VARIADICS_SUPPORT
+				PLF_COLONY_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, &*current_element, index);
+			#else
+				PLF_COLONY_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, item_index_tuple(&*current_element, index));
+			#endif
+		}
+
+
+		// Now, sort the pointers by the values they point to (std::sort is default sort function if the macro below is not defined):
+		#ifndef PLF_COLONY_SORT_FUNCTION
+			std::sort(sort_array, sort_array + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
+		#else
+			PLF_COLONY_SORT_FUNCTION(sort_array, sort_array + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
+		#endif
+
+		// This special value indicates that the element being pointed to in that tuple has been sorted already:
+		PLF_COLONY_CONSTEXPR const size_type sorted = std::numeric_limits<size_type>::max(); // Also improves performance for pre-constexpr compilers
+
+		// Sort the actual elements via the tuple array:
+		index = 0;
+
+		for (item_index_tuple *current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
+		{
+			if (current_tuple->original_index != index && current_tuple->original_index != sorted)
+			{
+				#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+					element_type end_value = std::move(*(current_tuple->original_location));
+
+					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+						{
+							(*(current_tuple->original_location)).~element_type();
+						}
+					#endif
+				#else
+					element_type end_value = *(current_tuple->original_location);
+					(*(current_tuple->original_location)).~element_type();
+				#endif
+
+				size_type destination_index = index;
+				size_type source_index = current_tuple->original_index;
+
+				do
+				{
+					#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
+
+						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+							if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+							{
+								(*(sort_array[source_index].original_location)).~element_type();
+							}
+						#endif
+					#else
+						{
+							element_type * const source = sort_array[source_index].original_location;
+							*(sort_array[destination_index].original_location) = *source;
+							source->~element_type();
+						}
+					#endif
+
+					destination_index = source_index;
+					source_index = sort_array[destination_index].original_index;
+					sort_array[destination_index].original_index = sorted;
+				} while (source_index != index);
+
+				#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
+					*(sort_array[destination_index].original_location) = std::move(end_value);
+
+					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+						{
+							end_value.~element_type();
+						}
+					#endif
+				#else
+					*(sort_array[destination_index].original_location) = end_value;
+					end_value.~element_type();
+				#endif
+			}
+		}
+
+		PLF_COLONY_DEALLOCATE(tuple_allocator_type, tuple_allocator, sort_array, total_number_of_elements);
+	}
+
+
+
+	inline void sort()
+	{
+		sort(less());
 	}
 
 
