@@ -181,7 +181,7 @@
 
 
 
-#include <algorithm> // std::fill_n, std::sort
+#include <algorithm> // std::fill_n
 
 #include <cstring>	// memset, memcpy
 #include <cassert>	// assert
@@ -3898,6 +3898,7 @@ public:
 		source.begin_iterator.group_pointer->previous_group = end_iterator.group_pointer;
 		end_iterator = source.end_iterator;
 		total_number_of_elements += source.total_number_of_elements;
+		total_capacity += source.total_capacity;
 		source.blank();
 	}
 
@@ -4037,28 +4038,18 @@ public:
 			PLF_COLONY_SORT_FUNCTION(sort_array, sort_array + total_number_of_elements, sort_dereferencer<comparison_function>(compare));
 		#endif
 
-		// This special value indicates that the element being pointed to in that tuple has been sorted already:
-		PLF_COLONY_CONSTEXPR const size_type sorted = std::numeric_limits<size_type>::max(); // Also improves performance for pre-constexpr compilers
 
 		// Sort the actual elements via the tuple array:
 		index = 0;
 
 		for (item_index_tuple *current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
 		{
-			if (current_tuple->original_index != index && current_tuple->original_index != sorted)
+			if (current_tuple->original_index != index)
 			{
 				#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(current_tuple->original_location));
-
-					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-						{
-							(*(current_tuple->original_location)).~element_type();
-						}
-					#endif
 				#else
 					element_type end_value = *(current_tuple->original_location);
-					(*(current_tuple->original_location)).~element_type();
 				#endif
 
 				size_type destination_index = index;
@@ -4068,38 +4059,19 @@ public:
 				{
 					#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
-
-						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-							{
-								(*(sort_array[source_index].original_location)).~element_type();
-							}
-						#endif
 					#else
-						{
-							element_type * const source = sort_array[source_index].original_location;
-							*(sort_array[destination_index].original_location) = *source;
-							source->~element_type();
-						}
+						*(sort_array[destination_index].original_location) = *(sort_array[source_index].original_location);
 					#endif
 
 					destination_index = source_index;
 					source_index = sort_array[destination_index].original_index;
-					sort_array[destination_index].original_index = sorted;
+					sort_array[destination_index].original_index = destination_index;
 				} while (source_index != index);
 
 				#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 					*(sort_array[destination_index].original_location) = std::move(end_value);
-
-					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-						{
-							end_value.~element_type();
-						}
-					#endif
 				#else
 					*(sort_array[destination_index].original_location) = end_value;
-					end_value.~element_type();
 				#endif
 			}
 		}
