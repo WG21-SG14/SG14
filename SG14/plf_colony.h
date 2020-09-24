@@ -2815,8 +2815,7 @@ public:
 				while(current.element_pointer != iterator2.element_pointer)
 				{
 					PLF_COLONY_DESTROY(element_allocator_type, (*this), reinterpret_cast<pointer>(current.element_pointer));
-					++current.skipfield_pointer;
-					current.element_pointer += static_cast<size_type>(*current.skipfield_pointer) + 1u;
+					current.element_pointer += static_cast<size_type>(*(++current.skipfield_pointer)) + 1u;
 					current.skipfield_pointer += *current.skipfield_pointer;
 				}
 			}
@@ -3650,7 +3649,6 @@ public:
 
 
 	// distance implementation:
-   // The iterator::difference_type stuff is for when I eventually move distance outside of colony
 
 	template <bool is_const>
 	typename colony_iterator<is_const>::difference_type distance(const colony_iterator<is_const> &first, const colony_iterator<is_const> &last) const
@@ -3700,7 +3698,8 @@ public:
 
 				while (iterator1.skipfield_pointer != endpoint)
 				{
-					iterator1.skipfield_pointer += *(++iterator1.skipfield_pointer);
+					++iterator1.skipfield_pointer;
+					iterator1.skipfield_pointer += *(iterator1.skipfield_pointer);
 					++distance;
 				}
 			}
@@ -3730,7 +3729,8 @@ public:
 		{
 			while (iterator1.skipfield_pointer != iterator2.skipfield_pointer)
 			{
-				iterator1.skipfield_pointer += *(++iterator1.skipfield_pointer);
+				++iterator1.skipfield_pointer;
+				iterator1.skipfield_pointer += *(iterator1.skipfield_pointer);
 				++distance;
 			}
 		}
