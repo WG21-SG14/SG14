@@ -182,7 +182,7 @@
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R11<br>
-Date: 2020-06-20<br>
+Date: 2020-10-14<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -682,7 +682,7 @@ enough to implement all greater/lesser comparisons.</p>
     operations such as erase.</p>
   </li>
 	<li><code style="font-weight:bold">void shrink_to_fit();</code>
-	<p>A decision had to be made as to whether this function should, in the context of colony, be allowed to reallocate elements (as std::vector does) or simply trim off unused memory blocks (as std::deque does). Due to the fact that a large colony memory block could have as few as one remaining element after a series of erasures, it makes little sense to only trim unused blocks, and instead a shrink_to_fit is expected to reallocate all non-erased elements to as few memory blocks as possible in order to increase cache locality during iteration and reduce memory use. The trim() command is also introduced as a way to free unused memory blocks which have been previously reserved, without reallocating elements and invalidating iterators.</p>
+	<p>A decision had to be made as to whether this function should, in the context of colony, be allowed to reallocate elements (as std::vector does) or simply trim off unused memory blocks (as std::deque does). Due to the fact that a large colony memory block could have as few as one remaining element after a series of erasures, it makes little sense to only trim unused blocks, and instead a shrink_to_fit is expected to reallocate all non-erased elements to as few memory blocks as possible in order to increase cache locality during iteration and reduce memory use. As with reshape(), the order of elements post-reshape is not guaranteed to be stable, to allow for potential optimizations. The trim() command is also introduced as a way to free unused memory blocks which have been previously reserved, without reallocating elements and invalidating iterators.</p>
   <li><code style="font-weight:bold">void splice(colony &amp;x)
     noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value
     || allocator_traits&lt;Allocator&gt;::is_always_equal::value);</code>
@@ -1131,7 +1131,8 @@ Since minimum and maximum memory block sizes can be specified by users, after re
   <li>Remarks: Depending on implementation, current state of colony and size of
     n, shrink_to_fit may invalidate all references, pointers, and iterators
     referring to the elements in the sequence, though it is not guaranteed to
-    do so.</li>
+    do so. The order of elements post-operation is not guaranteed to be stable, to allow for potential optimizations.
+</li>
 </ol>
 <code style="font-weight:bold">void trim();<br></code>
 <ol start="7">
@@ -1266,6 +1267,7 @@ noexcept;</code>
     block capacity limits. Or if memory allocation fails.</li>
   <li>Complexity: If no reallocation occurs, constant time. If reallocation
     occurs, complexity is linear in the number of elements reallocated.</li>
+    <li>Remarks: The order of elements post-operation is not guaranteed to be stable, to allow for potential optimizations.</li>
 </ol>
 
 
@@ -1316,7 +1318,7 @@ Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance =
 1);<br>
 colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const
 colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it,
-difference_type distance = 1);</code> 
+difference_type distance = 1);</code>
 <ol start="2">
   <li>Complexity: Between constant and linear in <code>distance</code>,
     dependent on state of colony, position of iterator and length of
@@ -1337,7 +1339,7 @@ difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator
 first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
 difference_type distance(const colony&lt;T, Allocator,
 Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator,
-Skipfield&gt;::const_iterator last);</code> 
+Skipfield&gt;::const_iterator last);</code>
 <ol start="4">
   <li>Complexity: Between constant and linear in <code>last - first</code>,
     dependent on state of colony and position of iterators. Approximating
