@@ -747,22 +747,20 @@ implement all greater/lesser comparisons.</p>
         allocation of each element is included in this functions byte
       count.</li>
       <li><code style="font-weight:bold">template &lt;class T, class Allocator,
-        typename Skipfield&gt;<br>
+        typename Skipfield, class Distance&gt;<br>
         void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator&amp; it,
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
+        colony&lt;T, Allocator, Distance n);<br>
+        template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;<br>
         void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator&amp;
-        it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
+        it, colony&lt;T, Allocator, Distance n);<br>
+        template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;<br>
         void advance(colony&lt;T, Allocator,
         Skipfield&gt;::reverse_iterator&amp; it, colony&lt;T, Allocator,
-        Skipfield&gt;::iterator::difference_type distance);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
+        Distance n);<br>
+        template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;<br>
         void advance(colony&lt;T, Allocator,
         Skipfield&gt;::const_reverse_iterator&amp; it, colony&lt;T, Allocator,
-        Skipfield&gt;::iterator::difference_type distance);<br>
+        Distance n);<br>
         <br>
         template &lt;class T, class Allocator, typename Skipfield&gt;<br>
         colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T,
@@ -875,8 +873,7 @@ implement all greater/lesser comparisons.</p>
 
   <h3>26.3.7 Header <code>&lt;colony&gt;</code> synopsis [colony.syn]</h3>
 
-  <div
-  style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
+  <div style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
   <pre style="margin: 0; line-height: 125%">#include &lt;initializer_list&gt;
 namespace std {
    // 26.3.14, class template colony
@@ -1112,14 +1109,14 @@ public:
 template &lt;class T, class Allocator, typename Skipfield&gt;
 void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator, Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));
 
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance);
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator &amp;it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance);
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator &amp;it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance);
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator &amp;it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, colony&lt;T, Allocator, Distance n);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
 
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
@@ -1357,7 +1354,7 @@ noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value
 
 <h4>26.3.14.5 colony element memory block capacity [colony.limits]</h4>
 <code style="font-weight:bold">std::limits block_limits() const noexcept;<br>
-</code> 
+</code>
 <ol>
   <li>Effects: Returns a plf::limits struct with the <code>min</code> and
     <code>max</code> members set to the current minimum and maximum element
@@ -1407,72 +1404,59 @@ pointer p) const noexcept;</code>
 <code style="font-weight:bold">template &lt;class T, class Allocator, typename
 Skipfield&gt;<br>
   void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator,
-Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));</code> 
+Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));</code>
 <ol>
   <li>Effects: As if by <code>x.swap(y)</code>.</li>
 </ol>
 <br>
-<code style="font-weight:bold">template &lt;class T, class Allocator, typename
-Skipfield&gt;<br>
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator&amp; it,
-colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator&amp; it,
-difference_type distance);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator&amp; it,
-difference_type distance);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator&amp;
-it, difference_type distance);<br>
-<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T,
-Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::const_iterator next(const colony&lt;T,
-Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator next(const colony&lt;T,
-Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance =
-1);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator next(const
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it,
-difference_type distance = 1);<br>
-<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T,
-Allocator, Skipfield&gt;::iterator it, difference_type distance = 1);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const colony&lt;T,
-Allocator, Skipfield&gt;::const_iterator it, difference_type distance = 1);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T,
-Allocator, Skipfield&gt;::reverse_iterator it, difference_type distance =
-1);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it,
-difference_type distance = 1);</code>
+
+<pre style="margin: 0;">
+<code style="font-weight:bold">
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, colony&lt;T, Allocator, Distance n);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
+  void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::const_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
+</code>
+</pre>
 <ol start="2">
   <li>Remarks: If iterator supplied is invalid, behavior is undefined, may
     throw.</li>
 </ol>
-<br>
-<code style="font-weight:bold">template &lt;class T, class Allocator, typename
-Skipfield&gt;<br>
-  difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator,
-Skipfield&gt;::const_iterator last);<br>
-template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-  difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
-  difference_type distance(const colony&lt;T, Allocator, template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);</code>
-<ol start="4">
+
+<pre style="margin: 0;">
+<code style="font-weight:bold">template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
+</code>
+</pre>
+<ol start="3">
   <li>Remarks: If iterator supplied is invalid, behavior is undefined, may
     throw.</li>
 </ol>
