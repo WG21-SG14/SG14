@@ -8,11 +8,11 @@
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>Introduction of std::colony to the standard library</title>
   <style type="text/css">
-         pre {
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-         }
+    	pre {
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
       body {
          font-size: 12pt;
          font-weight: normal;
@@ -34,18 +34,18 @@
          text-align: left;
       }
 
-                table  {
-                    margin-top: 3.8em;
-                    margin-bottom: 2em;
-                    text-align: left;
-                    table-layout:fixed;
-                    width:100%;
-                }
-                td {
-                    overflow:auto;
-                    word-wrap:break-word;
-                }
-                
+      table  {
+         margin-top: 3.8em;
+         margin-bottom: 2em;
+         text-align: left;
+         table-layout:fixed;
+         width:100%;
+      }
+      td {
+      	overflow:auto;
+        word-wrap:break-word;
+      }
+
       /* headings */
 
       h1 {
@@ -181,7 +181,7 @@
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R11<br>
-Date: 2020-10-26<br>
+Date: 2020-11-04<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -197,16 +197,14 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
   <li><a href="#design">Design Decisions</a></li>
   <li><a href="#technical">Technical Specification</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
-  <li>Appendixes: 
+  <li>Appendixes:
     <ol type="A">
-      <li><a href="#technical2">Further technical details</a></li>
+      <li><a href="#basicusage">Basic usage examples</a></li>
       <li><a href="#benchmarks">Reference implementation benchmarks</a></li>
       <li><a href="#faq">Frequently Asked Questions</a></li>
-      <li><a href="#responses">Specific responses to previous committee
-        feedback</a></li>
+      <li><a href="#responses">Specific responses to previous committee feedback</a></li>
       <li><a href="#sg14gameengine">Typical game engine requirements</a></li>
-      <li><a href="#timecomplexityexplanations">Time complexity requirement
-        explanations</a></li>
+      <li><a href="#timecomplexityexplanations">Time complexity requirement explanations</a></li>
     </ol>
   </li>
 </ol>
@@ -220,7 +218,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
     Change to noexcept guarantees. Assign added. get_block_capacity_limits and
     set_block_capacity_limits functions renamed to block_limits and reshape.
     Addition of block-limits default constructors. Reserve() and
-    shrink_to_fit() reintroduced. Trim() added.</li>
+    shrink_to_fit() reintroduced. Trim(), erase and erase_if overloads added.</li>
   <li>R10: Additional information about time complexity requirements added to
     appendix, some minor corrections to time complexity info. The 'bentley
     pattern' (this was always a temporary name) is renamed to the more astute
@@ -266,9 +264,8 @@ more generalized solutions.</p>
 <p>Colony is a formalisation, extension and optimization of what is typically
 known as a 'bucket array' container in game programming circles; similar
 structures exist in various incarnations across the high-performance computing,
-high performance trading, physics simulation, robotics, server/client
-application and particle simulation fields (see: <a
-href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ</a>).</p>
+high performance trading, 3D simulation, physics simulation, robotics, server/client
+application and particle simulation fields (see: <a href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ</a> and <a href=""></a>).</p>
 
 <p>The concept of a bucket array is: you have multiple memory blocks of
 elements, and a boolean token for each element which denotes whether or not
@@ -326,12 +323,11 @@ the following images.</p>
 
 <p>The following images demonstrate how insertion works in a colony compared to
 a vector when size == capacity.</p>
-<img src="https://plflib.org/vector_addition.gif"
-alt="Visual demonstration of inserting to a full vector"
-style="max-width: 100%; height: auto;"> <img
-src="https://plflib.org/colony_addition.gif"
+<img src="https://plflib.org/vector_addition.gif" alt="Visual demonstration of inserting to a full vector"
+style="max-width: 100%; height: auto;">
+<img src="https://plflib.org/colony_addition.gif"
 alt="Visual demonstration of inserting to a full colony"
-style="max-width: 100%; height: auto;"> 
+style="max-width: 100%; height: auto;">
 
 <h3>Non-back erasure</h3>
 
@@ -339,16 +335,16 @@ style="max-width: 100%; height: auto;">
 compared to a vector.</p>
 <img src="https://plflib.org/vector_erasure.gif"
 alt="Visual demonstration of randomly erasing from a vector"
-style="max-width: 100%; height: auto;"> <img
-src="https://plflib.org/colony_erasure.gif"
+style="max-width: 100%; height: auto;">
+<img src="https://plflib.org/colony_erasure.gif"
 alt="Visual demonstration of randomly erasing from a colony"
-style="max-width: 100%; height: auto;"> 
+style="max-width: 100%; height: auto;">
 
 <h2><a id="questions"></a>II. Questions for the Committee</h2>
 <ol>
-  <li>What, if any, of the information contained within Appendix A should be
-    moved into the technical spec, and if so, be specific about what form this
-    should take and where it should be.</li>
+	<li>It is possible to make the memory() function constant time at a cost (see details in it's entry in the design decisions section of the paper) but since this is expected to be a seldom-used function I've decided not to do so and leave the time complexity as implementation-defined. If there are any objections, please state them.</li>
+	<li>The conditions under which memory blocks are retained by the erase() functions and added to the "reserved" pile instead of deallocated, is presently implementation-defined. Are there any objections to this? Should we define this? See the notes on erase() in Design Decisions, and the item in the FAQ. One option is to specify that only the current back block may be retained, however I feel like this should be implementation-defined.</li>
+	<li>Given that this is a largely unordered container, should resize() be included? Currently it is not.</li>
 </ol>
 
 <h2><a id="motivation"></a>III. Motivation and Scope</h2>
@@ -405,11 +401,10 @@ erasure and insertion. No current standard library container has both strong
 insertion and non-back erasure speed, so again this is a good match for
 colony.</p>
 
-<p><a
-href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">Reports
+<p><a href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">Reports
 from other fields</a> suggest that, because most developers aren't aware of
 containers such as this, they often end up using solutions which are sub-par
-for iteration such as std::map and std::list in order to preserve pointer
+for iterative performance such as std::map and std::list in order to preserve pointer
 validity, when most of their processing work is actually iteration-based. So,
 introducing this container would both create a convenient solution to these
 situations, as well as increasing awareness of better-performing approaches in
@@ -439,7 +434,7 @@ different name for it.</p>
 <p>Each memory block houses multiple elements. The metadata about each block
 may or may not be allocated with the blocks themselves (could be contained in a
 separate structure). This metadata should include at a minimum, the number of
-erased elements within each block and the block's capacity - which allows the
+non-erased elements within each block and the block's capacity - which allows the
 container to know when the block is empty and needs to be removed from the
 iterative chain, and also allows iterators to judge when the end of one block
 has been reached. A non-boolean skipfield is required in order to skip over
@@ -617,6 +612,9 @@ jump-counting data and free list data in any given erased element's memory
 space, provided of course that elements are aligned to be wide enough to fit
 both.</p>
 
+
+
+
 <h3>Implementation of iterator class</h3>
 
 <p>The reference implementation's iterator stores a pointer to the current
@@ -670,7 +668,7 @@ implement all greater/lesser comparisons.</p>
 
 <h3>Additional notes on specific functions</h3>
 <ul>
-  <li><code style="font-weight:bold">iterator insert (all variants);</code><br>
+  <li><code style="font-weight:bold">iterator insert</code> (all variants)<br>
 
     <p>Insertion re-uses previously-erased element memory locations when
     available, so position of insertion is effectively random unless no
@@ -681,6 +679,12 @@ implement all greater/lesser comparisons.</p>
     it is expected that a colony will always reuse erased memory locations, it
     is impossible to predict optimal strategies for unknown future hardware.</p>
 </li>
+
+  <li><code style="font-weight:bold">iterator erase</code> (all variants)<br>
+  <p>Firstly it should be noted that erase may retain memory blocks which become completely empty of elements due to erasures, adding them to the set of unused memory blocks which are normally created by reserve(). Under what circumstances these memory blocks are retained rather than deallocated is implementation-defined - however given that small memory blocks have low cache locality compared to larger ones, from a performance perspective it is best to only retain the larger of the blocks currently allocated in the colony. In most cases this would mean the back block would almost always be retained. There is a lot of nuance to this, and it's also a matter of trading off complexity of implementation vs actual benchmarked speed vs latency. In my tests retaining both back blocks and 2nd-to-back blocks while ignoring actual capacity of blocks seems to have the best overall performance characteristics.</p>
+  <p>There are three major performance advantages to retaining back blocks as opposed to any block - the first is that these will be, under most circumstances, the largest blocks in the colony (given the built-in growth factor) - the only exception to this is when splice is used, which may result in a smaller block following a larger block (implementation-dependent). Larger blocks == more cache locality during iteration. The second advantage is that in situations where elements are being inserted to and erased from the back of the colony (this assumes no erased element locations in other memory blocks, which would otherwise be used for insertions) continuously and in quick succession, retaining the back block avoids large numbers of deallocations/reallocations. The third advantage is that deallocations of larger blocks can, in part, be moved to non-critical code regions via trim(). Though ultimately if the user wants total control of when allocations and deallocations occur they would want to use a custom allocator.</p>
+<p>Lastly, specifying a return iterator for range-erase may seem pointless, as no reallocation of elements occurs in erase so the return iterator will almost always be the <code>last</code> iterator of the <code>const_iterator first, const_iterator last</code> pair. However if <code>last</code> was <code>end()</code>, the new value of <code>end()</code> (if it has changed due to empty block removal) will be returned. In this case either the user submitted <code>end()</code> as <code>last</code>, or they incremented an iterator pointing to the final element in the colony and submitted that as <code>last</code>. The latter is the only valid reason to return an iterator from the function, as it may occur as part of a loop which is erasing elements and ends when <code>end()</code> is reached. If <code>end()</code> is changed by the erasure of an entire memory block, but the iterator being used in the loop does not accurately reflect <code>end()</code>'s new value, that iterator could iterate past <code>end()</code> and the loop would never finish.</li>
+
       <li><code style="font-weight:bold">void reshape(std::limits
         block_capacities);</code><br>
 
@@ -698,8 +702,7 @@ implement all greater/lesser comparisons.</p>
         spaces within existing memory blocks. However whether they are used is
         implementation-dependent.</p>
       </li>
-      <li><code style="font-weight:bold">const_iterator
-        get_iterator_from_pointer(pointer p) const noexcept;</code><br>
+      <li><code style="font-weight:bold">const_iterator get_iterator_from_pointer(pointer p) const noexcept;</code><br>
 
         <p>Because colony iterators are likely to be large, storing three
         pieces of data - current memory block, current element within memory
@@ -709,7 +712,7 @@ implement all greater/lesser comparisons.</p>
         function reverses the process, giving an iterator which can then be
         used for operations such as erase.</p>
       </li>
-      <li><code style="font-weight:bold">void shrink_to_fit();</code> 
+      <li><code style="font-weight:bold">void shrink_to_fit();</code>
         <p>A decision had to be made as to whether this function should, in the
         context of colony, be allowed to reallocate elements (as std::vector
         does) or simply trim off unused memory blocks (as std::deque does). Due
@@ -724,11 +727,9 @@ implement all greater/lesser comparisons.</p>
         which have been previously reserved, without reallocating elements and
         invalidating iterators.</p>
       </li>
-      <li><code style="font-weight:bold">void splice(colony &amp;x)
-        noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value
-        || allocator_traits&lt;Allocator&gt;::is_always_equal::value);</code> 
+      <li><code style="font-weight:bold">void splice(colony &amp;x);</code>
         <p>Whether <code>x</code>'s blocks are transferred to the beginning or
-        end of *this's iterative sequence is implementation-defined. Better
+        end of <code>*this</code>'s iterative sequence, or interlaced in some way (for example, to preserve relative capacity growth-factor ordering of subsequent blocks) is implementation-defined. Better
         performance may be gained in some cases by allowing the source blocks
         to go to the front rather than the back, depending on how full the
         final block in <code>x</code>'s iterative sequence is. This is because
@@ -737,71 +738,22 @@ implement all greater/lesser comparisons.</p>
         elements will incur a small performance disadvantage during iteration
         compared to skipping over a small number of elements, due to memory
         locality.</p>
+        <p>In addition, whether this function is <code>noexcept</code> is implementation-defined - in the case of an implementation using a linked list of groups (like the reference implementation) this function can be <code>noexcept(allocator_traits&lt;Allocator&gt;::is_always_equal::value)</code>. However, in the case of an implementation using a vector of pointers to groups, an additional allocation may have to be made if the group pointer vector isn't of sufficient capacity to accomodate the spliced groups from source <code>x</code> - which could potentially trigger an exception.</p>
       </li>
       <li><code style="font-weight:bold">size_type memory() const
-        noexcept;</code> A colony uses skipfields and metadata, both which are
+        noexcept;</code>
+		  <p>A colony uses skipfields and metadata, both which are
         implementation-defined, so it is not possible for a user to estimate
         internal memory usage from size() or capacity(). This function fulfills
         that role. Because some types of elements may allocate their own memory
         dynamically (eg. std::colony&lt;std::vector&gt;) only the static
         allocation of each element is included in this functions byte
-      count.</li>
-      <li><code style="font-weight:bold">template &lt;class T, class Allocator,
-        typename Skipfield, class Distance&gt;<br>
-        void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator&amp; it,
-        colony&lt;T, Allocator, Distance n);<br>
-        template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;<br>
-        void advance(colony&lt;T, Allocator, Skipfield&gt;::const_iterator&amp;
-        it, colony&lt;T, Allocator, Distance n);<br>
-        template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;<br>
-        void advance(colony&lt;T, Allocator,
-        Skipfield&gt;::reverse_iterator&amp; it, colony&lt;T, Allocator,
-        Distance n);<br>
-        template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;<br>
-        void advance(colony&lt;T, Allocator,
-        Skipfield&gt;::const_reverse_iterator&amp; it, colony&lt;T, Allocator,
-        Distance n);<br>
-        <br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T,
-        Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator,
-        Skipfield&gt;::iterator::difference_type distance = 1);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::const_iterator next(const
-        colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, colony&lt;T,
-        Allocator, Skipfield&gt;::iterator::difference_type distance = 1);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator next(const
-        colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it,
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance = 1);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator
-        next(const colony&lt;T, Allocator,
-        Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator,
-        Skipfield&gt;::iterator::difference_type distance = 1);<br>
-        <br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T,
-        Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator,
-        Skipfield&gt;::iterator::difference_type distance = 1);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::const_iterator prev(const
-        colony&lt;T, Allocator, Skipfield&gt;::const_iterator it, colony&lt;T,
-        Allocator, Skipfield&gt;::iterator::difference_type distance = 1);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const
-        colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it,
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance = 1);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator
-        prev(const colony&lt;T, Allocator,
-        Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator,
-        Skipfield&gt;::iterator::difference_type distance = 1);</code><br>
+      count.</p>
+      <p>This function can be made constant time by adding a counter to the colony that keeps track of the number of reserved memory blocks available, or by having a vector of pointers to memory blocks instead an intrusive linked list of memory blocks. However in the case of the reference implementation which uses linked lists, the counter metadata would only be used by this function and since this function is not expected to be in heavy use, the time complexity of this function is left as implementation-defined to enable best performance.</p>
+		</li>
+      <li>Non-member function overloads for <code style="font-weight:bold">advance, prev and next</code> (all variants)<br>
 
-        <p>For the non-member function overloads of advance, prev and next,
-        complexity is dependent on state of colony, position of iterator and
+        <p>For these functions, complexity is dependent on state of colony, position of iterator and
         amount of distance, but in many cases will be less than linear, and may
         be constant. To explain: it is necessary in a colony to store metadata
         both about the capacity of each block (for the purpose of iteration)
@@ -822,30 +774,12 @@ implement all greater/lesser comparisons.</p>
         for this operation is constant time, the worst is linear to the
         distance.</p>
       </li>
-      <li><code style="font-weight:bold">template &lt;class T, class Allocator,
-        typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first,
-        const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator
-        first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator
-        last);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first,
-        const colony&lt;T, Allocator, Skipfield&gt;::iterator last);<br>
-        template &lt;class T, class Allocator, typename Skipfield&gt;<br>
-        colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type
-        distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator
-        first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator
-        last);</code><br>
+      <li>Non-member function overloads for <code style="font-weight:bold">distance</code> (all variants)<br>
 
         <p>The same considerations which apply to advance, prev and next also
         apply to distance - intermediary blocks between first and last's blocks
         can be skipped in constant time and their "number of non-erased
-        elements" metadata added to the cummulative distance count, while
+        elements" metadata added to the cumulative distance count, while
         first's block and last's block (if they are not the same block) must be
         linearly iterated across unless either block has no erased elements, in
         which case the operation becomes pointer/index math and is reduced to
@@ -858,13 +792,15 @@ implement all greater/lesser comparisons.</p>
     </ul>
   </li>
 
-  <h3>Results of implementation</h3>
+
+	<h3>Results of implementation</h3>
 
   <p>In practical application the reference implementation is generally faster
   for insertion and (non-back) erasure than current standard library
   containers, and generally faster for iteration than any container except
   vector and deque. For full details, see <a
   href="#benchmarks">benchmarks</a>.</p>
+
 
   <h2><a id="technical"></a>VI. Technical Specification</h2>
 
@@ -930,6 +866,7 @@ namespace std {
       </tr>
     </tbody>
   </table>
+
 
   <h3>26.3.14 Class template <code>colony</code> [colony]</h3>
 
@@ -1054,16 +991,17 @@ public:
 
 
   // iterators
-  iterator begin() noexcept;
-  const_iterator begin() const noexcept;
-  iterator end() noexcept;
-  const_iterator end() const noexcept;
-  reverse_iterator rbegin() noexcept;
+  iterator               begin() noexcept;
+  const_iterator         begin() const noexcept;
+  iterator               end() noexcept;
+  const_iterator         end() const noexcept;
+  reverse_iterator       rbegin() noexcept;
   const_reverse_iterator rbegin() const noexcept;
-  reverse_iterator rend() noexcept;
+  reverse_iterator       rend() noexcept;
   const_reverse_iterator rend() const noexcept;
-  const_iterator cbegin() const noexcept;
-  const_iterator cend() const noexcept;
+
+  const_iterator         cbegin() const noexcept;
+  const_iterator         cend() const noexcept;
   const_reverse_iterator crbegin() const noexcept;
   const_reverse_iterator crend() const noexcept;
 
@@ -1090,25 +1028,31 @@ public:
   iterator erase(const_iterator first, const_iterator last);
   void swap(colony&amp;) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);
   void clear() noexcept;
-  void sort();
-  template &lt;class Compare&gt; void sort(Compare comp);
-  void splice(colony &amp;x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);
 
 
-  // element memory block capacity limits
+  // colony operations
+  void splice(colony &amp;x);
+
   std::limits block_limits() const noexcept;
   void reshape(std::limits block_capacities);
 
-
-  // type-changing
   const_iterator get_iterator_from_pointer(pointer p) const noexcept;
+
+  void sort();
+  template &lt;class Compare&gt; void sort(Compare comp);
 }
 
 
-// specialized algorithms
-template &lt;class T, class Allocator, typename Skipfield&gt;
-void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator, Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));
+template&lt;class InputIterator, class Allocator = allocator&lt;iter-value-type &lt;InputIterator&gt;&gt;&gt;
+  colony(InputIterator, InputIterator, Allocator = Allocator())
+    -> list&lt;iter-value-type &lt;InputIterator&gt;, Allocator&gt;;
 
+// swap
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator, Skipfield&gt;&amp; y)
+    noexcept(noexcept(x.swap(y)));
+
+// advance
 template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
   void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, colony&lt;T, Allocator, Distance n);
 template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
@@ -1118,6 +1062,7 @@ template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
 template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
   void advance(colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
 
+// next
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::iterator next(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
 template &lt;class T, class Allocator, typename Skipfield&gt;
@@ -1127,6 +1072,7 @@ template &lt;class T, class Allocator, typename Skipfield&gt;
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
 
+// prev
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
 template &lt;class T, class Allocator, typename Skipfield&gt;
@@ -1136,6 +1082,7 @@ template &lt;class T, class Allocator, typename Skipfield&gt;
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
 
+// distance
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
 template &lt;class T, class Allocator, typename Skipfield&gt;
@@ -1145,44 +1092,43 @@ template &lt;class T, class Allocator, typename Skipfield&gt;
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
 
+// erase
 template &lt;class T, class Allocator, class Skipfield, class Predicate&gt;
-  void erase_if(colony&lt;T, Allocator, Skipfield&gt;&amp; c, Predicate pred);
+  colony&lt;T, Allocator, Skipfield&gt;::size_type erase_if(colony&lt;T, Allocator, Skipfield&gt;&amp; c, Predicate pred);
 template &lt;class T, class Allocator, class Skipfield, class U&gt;
-  void erase(colony&lt;T, Allocator, Skipfield&gt;&amp; c, const U&amp; value);</pre>
+  colony&lt;T, Allocator, Skipfield&gt;::size_type erase(colony&lt;T, Allocator, Skipfield&gt;&amp; c, const U&amp; value);
+</pre>
 </div>
 
-<h4>26.3.14.2 colony constructors, copy, and assignment [colony.cons]</h4>
-<code style="font-weight:bold">explicit colony(const Allocator&amp;);</code><br>
 
+<h4>26.3.14.2 colony constructors, copy, and assignment [colony.cons]</h4>
+<code style="font-weight:bold">explicit colony(const Allocator&amp;);</code>
 <ol>
   <li>Effects: Constructs an empty colony, using the specified allocator.</li>
   <li>Complexity: Constant.</li>
 </ol>
 <br>
-<code style="font-weight:bold">explicit colony(size_type n, const T&amp; value, std::limits block_capacities = implementation-defined, const Allocator&amp; =Allocator());<br>
-</code>
-<ol start="5">
-  <li>Effects: Constructs a colony with n copies of <code>value</code>, using
-    the specified allocator.</li>
+
+<code style="font-weight:bold">explicit colony(size_type n, const T&amp; value, std::limits block_capacities = implementation-defined, const Allocator&amp; =Allocator());</code>
+<ol start="3">
   <li>Preconditions: <code>T</code> shall be <i>Cpp17MoveInsertable</i> into
     <code>*this</code>.</li>
+  <li>Effects: Constructs a colony with n copies of <code>value</code>, using
+    the specified allocator.</li>
   <li>Complexity: Linear in n.</li>
   <li>Throws: <code>length_error</code> if <code>block_capacities.min</code> or
     <code>block_capacities.max</code> are outside the implementation's minimum
     and maximum element memory block capacity limits, or if
     <code>block_capacities.min &gt; block_capacities.max</code>.
-    <code>bad_alloc</code> if memory allocation fails.</li>
   <li>Remarks: If <code>n</code> is larger than
     <code>block_capacities.min</code>, the capacity of the first block created
-    will be the smaller of <code>n</code> or
-  <code>block_capacities.max</code>.</li>
+    will be the smaller of <code>n</code> or <code>block_capacities.max</code>.</li>
 </ol>
 <br>
-<code style="font-weight:bold">template &lt;class InputIterator&gt;<br>
-  colony(InputIterator first, InputIterator last, std::limits block_capacities =
-implementation-defined, const Allocator&amp; = Allocator());<br>
-</code>
-<ol start="9">
+
+<pre><code style="font-weight:bold">template &lt;class InputIterator&gt;
+  colony(InputIterator first, InputIterator last, std::limits block_capacities = implementation-defined, const Allocator&amp; = Allocator());</code></pre>
+<ol start="8">
   <li>Effects: Constructs a colony equal to the range [first, last), using the
     specified allocator.</li>
   <li>Complexity: Linear in distance(first, last).</li>
@@ -1190,24 +1136,32 @@ implementation-defined, const Allocator&amp; = Allocator());<br>
     <code>block_capacities.max</code> are outside the implementation's minimum
     and maximum element memory block capacity limits, or if
     <code>block_capacities.min &gt; block_capacities.max</code>. Or
-    <code>bad_alloc</code> if memory allocation fails.</li>
   <li>Remarks: If iterators are random-access, let <code>n</code> be last -
     first; if <code>n</code> is larger than <code>block_capacities.min</code>,
     the capacity of the first block created will be the smaller of
     <code>n</code> or <code>block_capacities.max</code>.</li>
 </ol>
 
-<h4>26.3.14.3 colony capacity [colony.capacity]</h4>
-<code style="font-weight:bold">size_type capacity() const noexcept;</code><br>
 
+<h4>26.3.14.3 colony capacity [colony.capacity]</h4>
+
+<code style="font-weight:bold">size_type capacity() const noexcept;</code>
 <ol>
   <li>Returns: The total number of elements that the colony can currently
     contain without needing to allocate more memory blocks.</li>
 </ol>
 <br>
-<code style="font-weight:bold">void reserve(size_type n);<br>
-</code>
+
+<code style="font-weight:bold">size_type memory() const noexcept;</code>
 <ol start="2">
+  <li>Returns: The memory use, in bytes, of the container as a whole,
+    including elements but not including any dynamic allocation incurred by
+    those elements.</li>
+</ol>
+<br>
+
+<code style="font-weight:bold">void reserve(size_type n);</code>
+<ol start="3">
   <li>Effects: A directive that informs a colony of a planned change in size,
     so that it can manage the storage allocation accordingly. Since minimum and
     maximum memory block sizes can be specified by users, after
@@ -1216,13 +1170,13 @@ implementation-defined, const Allocator&amp; = Allocator());<br>
     cause reallocation of elements.</li>
   <li>Complexity: It does not change the size of the sequence and creates at
     most <code>n / block_capacity_limits().max</code> allocations.</li>
-  <li>Throws: <code>bad_alloc</code> if allocation of new memory block(s)
-    fails, or <code>length_error</code> if <code>n &gt; max_size()</code>.</li>
+  <li>Throws: <code>length_error</code> if <code>n &gt; max_size()</code><sup><a href="#227">227</a></sup>.</li>
 </ol>
+<p style="font-size: 90%"><a id="227"></a>227) reserve() uses Allocator::allocate() which may throw an appropriate exception.</p>
 <br>
-<code style="font-weight:bold">void shrink_to_fit();<br>
-</code> 
-<ol start="7">
+
+<code style="font-weight:bold">void shrink_to_fit();</code>
+<ol start="6">
   <li>Preconditions: <code>T</code> is <i>Cpp17MoveInsertable</i> into
     <code>*this</code>.</li>
   <li>Effects: shrink_to_fit is a non-binding request to reduce
@@ -1242,54 +1196,55 @@ implementation-defined, const Allocator&amp; = Allocator());<br>
     note] The order of elements post-operation is not guaranteed to be stable.
   </li>
 </ol>
-<code style="font-weight:bold">void trim();<br>
-</code>
-<ol start="11">
+<br>
+
+<code style="font-weight:bold">void trim();</code>
+<ol start="10">
   <li>Effects: Removes and deallocates empty memory blocks created by prior
     calls to <code>reserve()</code> or <code>erase()</code>. If such memory
     blocks are present, <code>capacity()</code> will be reduced.</li>
-  <li>Complexity: Constant.</li>
+  <li>Complexity: Linear in the number of reserved blocks to deallocate.</li>
   <li>Remarks: Does not reallocate elements and no references, pointers or
     iterators referring to elements in the sequence will be invalidated.</li>
 </ol>
+<br>
+
+
 
 <h4>26.3.14.4 colony modifiers [colony.modifiers]</h4>
-<code style="font-weight:bold">iterator insert(const T&amp; x);<br>
-iterator insert(T&amp;&amp; x);<br>
-iterator insert(size_type n, const T&amp; x);<br>
-template &lt;class InputIterator&gt;<br>
-  iterator insert(InputIterator first, InputIterator last);<br>
-iterator insert(initializer_list&lt;T&gt;);<br>
-template &lt;class... Args&gt;<br>
-  iterator emplace(Args&amp;&amp;... args);<br>
-</code> 
+<pre><code style="font-weight:bold">iterator insert(const T&amp; x);
+iterator insert(T&amp;&amp; x);
+iterator insert(size_type n, const T&amp; x);
+template &lt;class InputIterator&gt;
+  iterator insert(InputIterator first, InputIterator last);
+iterator insert(initializer_list&lt;T&gt;);
+template &lt;class... Args&gt;
+  iterator emplace(Args&amp;&amp;... args);</code></pre>
 <ol>
-  <li>Remarks: Does not affect the validity of iterators and references, unless
-    an iterator points to <code>end()</code>, in which case it may be
-    invalidated. Likewise if a reverse_iterator points to <code>rend()</code>
-    it may be invalidated. If an exception is thrown there are no effects.</li>
   <li>Complexity: Insertion of a single element into a colony takes constant
     time and exactly one call to a constructor of <code>T</code>. Insertion of
     multiple elements into a colony is linear in the number of elements
     inserted, and the number of calls to the copy constructor or move
     constructor of <code>T</code> is exactly equal to the number of elements
     inserted.</li>
+  <li>Remarks: Does not affect the validity of iterators and references, unless
+    an iterator points to <code>end()</code>, in which case it may be
+    invalidated. Likewise if a reverse_iterator points to <code>rend()</code>
+    it may be invalidated. If an exception is thrown there are no effects.</li>
 </ol>
 <br>
-<code style="font-weight:bold">iterator erase(const_iterator position);</code> 
+
+<code style="font-weight:bold">iterator erase(const_iterator position);</code>
 <ol start="3">
   <li>Effects: Invalidates only the iterators and references to the erased
-    elements.</li>
-  <li>Complexity: Constant. Skipfield modification is not factored into this;
-    it is implementation-defined and may be constant, linear or otherwise
-    defined.</li>
-  <li>Remarks: If iterator supplied is invalid, behavior is undefined, may
-    throw.</li>
+    element.</li>
+  <li>Complexity: Constant. [Note: Skipfield modification is not factored into this; it is implementation-defined and may be constant, linear or otherwise defined. &mdash;end
+    note]</li>
 </ol>
 <br>
-<code style="font-weight:bold">iterator erase(const_iterator first,
-const_iterator last);</code> 
-<ol start="6">
+
+<code style="font-weight:bold">iterator erase(const_iterator first, const_iterator last);</code>
+<ol start="5">
   <li>Effects: Invalidates only the iterators and references to the erased
     elements. In some cases if an iterator is equal to <code>end()</code> and
     the back element of the colony is erased, that iterator may be invalidated.
@@ -1300,41 +1255,22 @@ const_iterator last);</code>
     non-trivially-destructible types, for trivially-destructible types constant
     in best case and linear in worst case, approximating logarithmic in the
     number of elements erased on average.</li>
-  <li>Throws: If iterator supplied is invalid, behavior is undefined, may
-  throw.</li>
 </ol>
 <br>
-<code style="font-weight:bold">void swap(colony&amp; x)
-noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value
-|| allocator_traits&lt;Allocator&gt;::is_always_equal::value);<br>
-</code> 
-<ol start="9">
+
+<code style="font-weight:bold">void swap(colony&amp; x) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);<br>
+</code>
+<ol start="7">
   <li>Effects: Exchanges the contents and <code>capacity()</code> of
     <code>*this</code> with that of <code>x</code>.</li>
   <li>Complexity: Constant time.</li>
 </ol>
-<br>
-<code style="font-weight:bold">void sort();<br>
-template &lt;class Compare&gt;<br>
-  void sort(Compare comp);</code>
-<ol start="11">
-  <li>Preconditions: <code>T</code> is <i>Cpp17MoveInsertable</i> into
-    <code>*this</code>.</li>
-  <li>Effects: Sorts the colony according to the <code>operator &lt;</code> or
-    a <code>Compare</code> function object. If an exception is thrown, the
-    order of the elements in <code>*this</code> is unspecified. Iterators and
-    references may be invalidated.</li>
-  <li>Remarks: Not required to be stable (16.5.5.8).</li>
-  <li>Complexity: Approximately N log N comparisons, where <code>N ==
-    size()</code>.</li>
-  <li>Throws: <code>bad_alloc</code> if it fails to allocate memory necessary
-    for sort process.</li>
-</ol>
-<br>
-<code style="font-weight:bold">void splice(colony &amp;x)
-noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value
-|| allocator_traits&lt;Allocator&gt;::is_always_equal::value);</code> 
-<ol start="15">
+
+
+<h4>26.3.14.5 Operations [colony.operations]</h4>
+
+<code style="font-weight:bold">void splice(colony &amp;x);</code>
+<ol>
   <li>Preconditions: &amp;x != this.</li>
   <li>Effects: Inserts the contents of <code>x</code> into <code>*this</code>
     and <code>x</code> becomes empty. Pointers and references to the moved
@@ -1344,28 +1280,19 @@ noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value
     <code>*this</code>, not into <code>x</code>.</li>
   <li>Complexity: Constant time.</li>
 </ol>
-<code style="font-weight:bold">size_type memory() const noexcept;</code> 
-<ol start="18">
-  <li>Effects: Returns the memory use, in bytes, of the container as a whole,
-    including elements but not including any dynamic allocation incurred by
-    those elements.</li>
-  <li>Complexity: Constant time.</li>
-</ol>
+<br>
 
-<h4>26.3.14.5 colony element memory block capacity [colony.limits]</h4>
-<code style="font-weight:bold">std::limits block_limits() const noexcept;<br>
-</code>
-<ol>
+<code style="font-weight:bold">std::limits block_limits() const noexcept;</code>
+<ol start="4">
   <li>Effects: Returns a plf::limits struct with the <code>min</code> and
     <code>max</code> members set to the current minimum and maximum element
-    memory block capacity values.</li>
+    memory block capacity values of <code>*this</code>.</li>
   <li>Complexity: Constant time.</li>
 </ol>
 <br>
-<code style="font-weight:bold">void reshape(std::limits
-block_capacities);</code><br>
 
-<ol start="3">
+<code style="font-weight:bold">void reshape(std::limits block_capacities);</code><br>
+<ol start="6">
   <li>Preconditions: <code>T</code> shall be <i>Cpp17MoveInsertable</i> into
     <code>*this</code>.<br>
   </li>
@@ -1378,40 +1305,52 @@ block_capacities);</code><br>
     range, elements are reallocated to new memory blocks which fit within the
     supplied range and the old memory blocks are deallocated. Order of elements
     is not guaranteed to be stable.</li>
-  <li>Remarks: The order of elements post-operation is not guaranteed to be
-    stable (16.5.5.8).</li>
   <li>Complexity: If no reallocation occurs, constant time. If reallocation
     occurs, complexity is linear in the number of elements reallocated.</li>
   <li>Throws: <code>length_error</code> if <code>block_capacities.min</code> or
     <code>block_capacities.max</code> are outside the implementation's minimum
     and maximum element memory block capacity limits, or if
-    <code>block_capacities.min &gt; block_capacities.max</code>. Or
-    <code>bad_alloc</code> if memory allocation fails.</li>
+    <code>block_capacities.min &gt; block_capacities.max</code>.<sup><a href="#227">227</a></li>
+  <li>Remarks: The order of elements post-operation is not guaranteed to be
+    stable (16.5.5.8).</li>
 </ol>
+<br>
 
-<h4>26.3.14.6 colony type-changing functions [colony.typechange]</h4>
 <code style="font-weight:bold">const_iterator get_iterator_from_pointer(const
-pointer p) const noexcept;</code> 
-<ol>
+pointer p) const noexcept;</code>
+<ol start="11">
   <li>Effects: Returns a const_iterator pointing to the same element as the
     pointer. If <code>p</code> does not point to an element in
     <code>*this</code>, <code>cend()</code> is returned.</li>
 </ol>
 <br>
 
+<pre><code style="font-weight:bold">void sort();
+template &lt;class Compare&gt;
+  void sort(Compare comp);</code></pre>
+<ol start="12">
+  <li>Preconditions: <code>T</code> is <i>Cpp17MoveInsertable</i> into
+    <code>*this</code>.</li>
+  <li>Effects: Sorts the colony according to the <code>operator &lt;</code> or
+    a <code>Compare</code> function object. If an exception is thrown, the
+    order of the elements in <code>*this</code> is unspecified. Iterators and
+    references may be invalidated.</li>
+  <li>Complexity: Approximately N log N comparisons, where <code>N == size()</code>.</li>
+  <li>Throws: <code>bad_alloc</code> if it fails to allocate memory necessary for sort process.</li>
+  <li>Remarks: Not required to be stable (16.5.5.8). May allocate memory.</li>
+</ol>
 
-<h4>26.3.14.7 colony specialized algorithms [colony.special]</h4>
-<code style="font-weight:bold">template &lt;class T, class Allocator, typename
-Skipfield&gt;<br>
-  void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator,
-Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));</code>
+
+
+<h4>26.3.14.6 Specialized algorithms [colony.special]</h4>
+<pre><code style="font-weight:bold">template &lt;class T, class Allocator, typename Skipfield&gt;
+  void swap(colony&lt;T, Allocator, Skipfield&gt;&amp; x, colony&lt;T, Allocator, Skipfield&gt;&amp; y) noexcept(noexcept(x.swap(y)));</code></pre>
 <ol>
   <li>Effects: As if by <code>x.swap(y)</code>.</li>
 </ol>
 <br>
 
-<pre style="margin: 0;">
-<code style="font-weight:bold">
+<pre><code>
 template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
   void advance(colony&lt;T, Allocator, Skipfield&gt;::iterator &amp;it, colony&lt;T, Allocator, Distance n);
 template &lt;class T, class Allocator, typename Skipfield, class Distance&gt;
@@ -1438,50 +1377,50 @@ template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
 template &lt;class T, class Allocator, typename Skipfield&gt;
   colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Skipfield&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance = 1);
-</code>
-</pre>
+
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
+template &lt;class T, class Allocator, typename Skipfield&gt;
+  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
+</code></pre>
 <ol start="2">
-  <li>Remarks: If iterator supplied is invalid, behavior is undefined, may
-    throw.</li>
+<li>Complexity: Constant in best case and linear in the number of elements traversed in worst case, approximating logarithmic in the number of elements traversed on average.</li>
+</ol>
+<br>
+
+<h4>26.3.14.7 Erasure [colony.erasure]</h4>
+
+<pre><code style="font-weight:bold">template&lt;class T, class Allocator, typename Skipfield, class U&gt;
+  typename colony&lt;T, Allocator, Skipfield&gt;::size_type  erase(colony&lt;T, Allocator, Skipfield&gt;& c, const U& value);</code></pre>
+<ol>
+  <li>Effects: All elements in the container which are equal to <code>value</code> are erased. Invalidates all references and iterators to the erased elements.</li>
+</ol>
+<br>
+
+<pre><code style="font-weight:bold">template&lt;class T, class Allocator, typename Skipfield, class Predicate&gt;
+  typename colony&lt;T, Allocator, Skipfield&gt;::size_type erase_if(colony&lt;T, Allocator, Skipfield&gt;& c, Predicate pred);</code></pre>
+<ol start="2">
+  <li>Effects: All elements in the container which match predicate <code>pred</code> are erased. Invalidates all references and iterators to the erased elements.</li>
 </ol>
 
-<pre style="margin: 0;">
-<code style="font-weight:bold">template &lt;class T, class Allocator, typename Skipfield&gt;
-  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::iterator first, const colony&lt;T, Allocator, Skipfield&gt;::iterator last);
-template &lt;class T, class Allocator, typename Skipfield&gt;
-  colony&lt;T, Allocator, Skipfield&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Skipfield&gt;::const_iterator first, const colony&lt;T, Allocator, Skipfield&gt;::const_iterator last);
-</code>
-</pre>
-<ol start="3">
-  <li>Remarks: If iterator supplied is invalid, behavior is undefined, may
-    throw.</li>
-</ol>
 
 <h2><a id="acknowledgements"></a>VII. Acknowledgements</h2>
 
 <p>Matt would like to thank: Glen Fernandes and Ion Gaztanaga for restructuring
-advice, Robert Ramey for documentation advice, various Boost and SG14 members
-for support, critiques and corrections, Baptiste Wicht for teaching me how to
-construct decent benchmarks, Jonathan Wakely, Sean Middleditch, Jens Maurer,
-Patrice Roy and Guy Davidson for standards-compliance advice and critiques,
-support, representation at meetings and bug reports, that ex-Lionhead guy for
-annoying me enough to force me to implement the original skipfield pattern, Jon
-Blow for some initial advice and Mike Acton for some influence, the community
-at large for giving me feedback and bug reports on the reference
-implementation.<br>
-Also Nico Josuttis for doing such a great job in terms of explaining the
-general format of the structure to the committee. </p>
+advice, Robert Ramey for documentation advice, various Boost and SG14 members for support, critiques and corrections, Baptiste Wicht for teaching me how to construct decent benchmarks, Jonathan Wakely, Sean Middleditch, Jens Maurer (very nearly a co-author at this point really),
+Patrice Roy and Guy Davidson for standards-compliance advice and critiques, support, representation at meetings and bug reports, Henry Miller for getting me to clarify why the instrusive list/free list approach to memory location reuse is the most appropriate, that ex-Lionhead guy for annoying me enough to force me to implement the original skipfield pattern, Jon Blow for some initial advice and Mike Acton for some influence, the community at large for giving me feedback and bug reports on the reference implementation.<br>
+Also Nico Josuttis for doing such a great job in terms of explaining the general format of the structure to the committee.</p>
+
 
 <h2>VIII. Appendices</h2>
 
-<h3><a id="technical2"></a>Appendix A - Basic example of usage</h3>
+<h3><a id="basicusage"></a>Appendix A - Basic usage examples</h3>
 
-<p>Using <a href="https://plflib.org/colony.htm">reference
-implementation</a>.</p>
+<p>Using <a href="https://plflib.org/colony.htm">reference implementation</a>.</p>
 
 <div
 style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
@@ -1504,15 +1443,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
     it <span style="color: #333333">=</span> i_colony.erase(it);
   }
 
-  <span style="color: #888888">// Total the remaining ints:</span>
-  <span style="color: #333399; font-weight: bold">int</span> total <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>;
-
-  <span style="color: #008800; font-weight: bold">for</span> (plf<span style="color: #333333">::</span>colony<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;::</span>iterator it <span style="color: #333333">=</span> i_colony.begin(); it <span style="color: #333333">!=</span> i_colony.end(); <span style="color: #333333">++</span>it)
-  {
-    total <span style="color: #333333">+=</span> <span style="color: #333333">*</span>it;
-  }
-
-  std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">"Total: "</span> <span style="color: #333333">&lt;&lt;</span> total <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+  std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">"Total: "</span> <span style="color: #333333">&lt;&lt;</span> std::accumulate(i_colony.begin(), i_colony.end(), 0) <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
   std<span style="color: #333333">::</span>cin.get();
   <span style="color: #008800; font-weight: bold">return</span> <span style="color: #0000DD; font-weight: bold">0</span>;
 } </code></pre>
@@ -1808,17 +1739,17 @@ commentary for the MSVC results.</p>
         be pushed to the back of the colony.</li>
     </ol>
   </li>
-  <li><h4>Why not preserve empty memory blocks for future use, in a separate
-    list or vector instead of freeing them to the OS, or leave this decision
+  <li><h4>Why not preserve all empty memory blocks for future use during erasure, or None, rather than leaving this decision
     undefined by the specification?</h4>
     <p>The default scenario, for reasons of predictability, should be to free
-    the memory block rather than making this undefined. If a scenario calls for
+    the memory block in most cases. However for the reasons described in the design decisions section on erase(), retaining the back block at least has performance and latency benefits.
+    Therefore retaining no memory blocks is non-optimal in cases where the user is not using a custom allocator. Meanwhile, retaining All memory blocks is bad for performance as many small memory blocks will be retained, which decreases iterative performance due to lower cache locality.
+    However, one perspective is that if a scenario calls for
     retaining memory blocks instead of deallocating them, this should be left
     to an allocator to manage. Otherwise you get unpredictable memory behavior
     across implementations, and this is one of the things that SG14 members
     have complained about time-and-time again, the lack of predictable behavior
-    across standard library implementations. Ameliorating this unpredictability
-    is best in my view.</p>
+    across standard library implementations. This is currently an open discussion.</p>
   </li>
   <li><h4>Memory block sizes - what are they based on, how do they expand,
     etc</h4>
@@ -1997,6 +1928,8 @@ previous committee feedback</h3>
     think of either involve resizing of an array on-the-fly (which doesn't work
     well with low latency) and/or slowing down iteration time significantly.</p>
   </li>
+  <li><h4>Why not iterate across the memory blocks backwards to find the first block with erasures to reuse, during insert?</h4>
+  <p>While this would statistically ensure that smaller blocks get deallocated first due to becoming empty faster than later blocks, it introduces uncertain latency issues during insert, particularly when custom memory block sizes are used and the number of elements is large. With the current implementation there is an intrusive list of blocks with erasures, and within each block's metadata there's a free list of skipblocks. When reusing the current head of the intrusive list determines the block, and the current head of that block's free list determines the skipblock to be reused. This means that the most recently erased element will be the first to reused. This works out well for two reasons: currently-contiguous sequences of elements will tend to stay that way, helping cache coherence, and when elements are erased and inserted in sequence those erased memory locations will tend to be already in the cache when inserting. Lastly, this structure involves a minimum of branching and checks, resulting in minimal latency during insertion and erasure.</p>
 </ol>
 
 <h3><a id="sg14gameengine"></a>Appendix E - Typical game engine
