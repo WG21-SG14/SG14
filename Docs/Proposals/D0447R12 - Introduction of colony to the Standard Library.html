@@ -180,8 +180,8 @@
 
 <body>
 Audience: LEWG, SG14, WG21<br>
-Document number: D0447R11<br>
-Date: 2020-11-04<br>
+Document number: D0447R12<br>
+Date: 2020-11-24<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -211,6 +211,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
 <h2><a id="revisions"></a>Revision history</h2>
 <ul>
+  <li>R12: Fill, range and initializer_list insert changed to void return, since the insertions are not guaranteed to be sequential in terms of colony order and therefore returning an iterator to the first insertion is not useful. Minor corrections.</li>
   <li>R11: Overhaul of technical specification to be more 'wording-like'. Minor
     alterations &amp; clarifications. Additional alternative approach added to
     Design Decisions under skipfield information. Overall rewording. Reordering
@@ -265,7 +266,7 @@ more generalized solutions.</p>
 known as a 'bucket array' container in game programming circles; similar
 structures exist in various incarnations across the high-performance computing,
 high performance trading, 3D simulation, physics simulation, robotics, server/client
-application and particle simulation fields (see: <a href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ</a> and <a href=""></a>).</p>
+application and particle simulation fields (see: <a href="https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ">https://groups.google.com/a/isocpp.org/forum/#!topic/sg14/1iWHyVnsLBQ</a>).</p>
 
 <p>The concept of a bucket array is: you have multiple memory blocks of
 elements, and a boolean token for each element which denotes whether or not
@@ -507,10 +508,7 @@ non-erased element to the next</h4>
 
 <p>The reference implementation currently uses a skipfield pattern called the
 <i>Low complexity jump-counting pattern</i> (formerly under working title
-'bentley pattern', <a
-href="https://plflib.org/matt_bentley_-_the_low_complexity_jump-counting_pattern.pdf">current
-version of paper</a>). This effectively encodes the length of runs of
-consecutive erased elements, into a skipfield, which allows for O(1) time
+'bentley pattern', <a href="https://plflib.org/matt_bentley_-_the_low_complexity_jump-counting_pattern.pdf">current version of paper</a>). This effectively encodes the length of runs of consecutive erased elements, into a skipfield, which allows for O(1) time
 complexity during iteration. Since there is no branching involved in iterating
 over the skipfield aside from end-of-block checks, it can be less problematic
 computationally than a boolean skipfield (which has to branch for every
@@ -678,6 +676,10 @@ implement all greater/lesser comparisons.</p>
     to allow leeway for potentially-better implementations in future - though
     it is expected that a colony will always reuse erased memory locations, it
     is impossible to predict optimal strategies for unknown future hardware.</p>
+</li>
+  <li><code style="font-weight:bold">void insert</code> (all variants)<br>
+
+    <p>For range, fill and initializer_list insertion, it is not possible to guarantee that all the elements inserted will be sequential in the colony's iterative sequence, and therefore it is not considered useful to return an iterator to the first inserted element. There is a precedent for this in the various std:: map containers. Therefore these functions return void presently.</p>
 </li>
 
   <li><code style="font-weight:bold">iterator erase</code> (all variants)<br>
@@ -1021,9 +1023,9 @@ public:
   template &lt;class... Args&gt; iterator emplace(Args&amp;&amp;... args);
   iterator insert(const T&amp; x);
   iterator insert(T&amp;&amp; x);
-  iterator insert(size_type n, const T&amp; x);
-  template &lt;class InputIterator&gt; iterator insert(InputIterator first, InputIterator last);
-  iterator insert(initializer_list&lt;T&gt; il);
+  void insert(size_type n, const T&amp; x);
+  template &lt;class InputIterator&gt; void insert(InputIterator first, InputIterator last);
+  void insert(initializer_list&lt;T&gt; il);
   iterator erase(const_iterator position);
   iterator erase(const_iterator first, const_iterator last);
   void swap(colony&amp;) noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value || allocator_traits&lt;Allocator&gt;::is_always_equal::value);
@@ -1214,10 +1216,10 @@ template &lt;class T, class Allocator, class Skipfield, class U&gt;
 <h4>26.3.14.4 colony modifiers [colony.modifiers]</h4>
 <pre><code style="font-weight:bold">iterator insert(const T&amp; x);
 iterator insert(T&amp;&amp; x);
-iterator insert(size_type n, const T&amp; x);
+void insert(size_type n, const T&amp; x);
 template &lt;class InputIterator&gt;
-  iterator insert(InputIterator first, InputIterator last);
-iterator insert(initializer_list&lt;T&gt;);
+  void insert(InputIterator first, InputIterator last);
+void insert(initializer_list&lt;T&gt;);
 template &lt;class... Args&gt;
   iterator emplace(Args&amp;&amp;... args);</code></pre>
 <ol>
@@ -1336,7 +1338,7 @@ template &lt;class Compare&gt;
     order of the elements in <code>*this</code> is unspecified. Iterators and
     references may be invalidated.</li>
   <li>Complexity: Approximately N log N comparisons, where <code>N == size()</code>.</li>
-  <li>Throws: <code>bad_alloc</code> if it fails to allocate memory necessary for sort process.</li>
+  <li>Throws: <code>bad_alloc</code> if it fails to allocate any memory necessary for the sort process.</li>
   <li>Remarks: Not required to be stable (16.5.5.8). May allocate memory.</li>
 </ol>
 
@@ -1425,6 +1427,7 @@ Also Nico Josuttis for doing such a great job in terms of explaining the general
 <div
 style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
 <pre style="margin: 0; line-height: 125%"><code><span style="color: #557799">#include &lt;iostream&gt;</span>
+<span style="color: #557799">#include &lt;numeric&gt;</span>
 <span style="color: #557799">#include "plf_colony.h"</span>
 
 <span style="color: #333399; font-weight: bold">int</span> <span style="color: #0066BB; font-weight: bold">main</span>(<span style="color: #333399; font-weight: bold">int</span> argc, <span style="color: #333399; font-weight: bold">char</span> <span style="color: #333333">**</span>argv)
@@ -2031,7 +2034,7 @@ at O(1).</p>
 memory blocks in advance, reducing the number of allocations necessary (whereas
 singular insertion would generally follow the implementation's block growth
 pattern, possibly allocating more than necessary). However when it comes to
-time complexity it has no advantages over singlular insertion, is linear to the
+time complexity it has no advantages over singular insertion, is linear to the
 number elements inserted.</p>
 
 <h5>Erase (single): O(1)</h5>
