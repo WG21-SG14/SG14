@@ -327,7 +327,7 @@ private:
 		const skipfield_pointer_type		skipfield; 					// Skipfield storage. The element and skipfield arrays are allocated contiguously in this implementation, hence the skipfield pointer also functions as a 'one-past-end' pointer for the elements array. There will always be one additional skipfield node allocated compared to the number of elements. This is to ensure a faster ++ iterator operation (fewer checks are required when this is present). The extra node is unused and always zero, but checked, and not having it will result in out-of-bounds memory errors.
 		group_pointer_type					previous_group; 			// previous group in the linked list of all groups. NULL if no preceding group
 		skipfield_type							free_list_head; 			// The index of the last erased element in the group. The last erased element will, in turn, contain the number of the index of the next erased element, and so on. If this is == maximum skipfield_type value then free_list is empty ie. no erasures have occurred in the group (or if they have, the erased locations have subsequently been reused via insert()).
-		const skipfield_type					capacity; 					// The element capacity of this particular group
+		const skipfield_type					capacity; 					// The element capacity of this particular group - can also be calculated from reinterpret_cast<aligned_pointer_type>(group->skipfield) - group->elements, however this space is effectively free due to struct padding and the default sizeof skipfield_type, and calculating it once is cheaper
 		skipfield_type							size; 						// indicates total number of active elements in group - changes with insert and erase commands - used to check for empty group in erase function, as an indication to remove the group
 		group_pointer_type					erasures_list_next_group; // The next group in the singly-linked list of groups with erasures ie. with active erased-element free lists
 		size_type								group_number; 				// Used for comparison (> < >= <= <=>) iterator operators (used by distance function and user) and memory() function
@@ -1909,6 +1909,24 @@ public:
 
 
 
+	// Default-value fill constructor:
+
+	explicit colony(const size_type fill_number, const plf::limits capacities = plf::limits(PLF_COLONY_MIN_BLOCK_CAPACITY, std::numeric_limits<skipfield_type>::max()), const allocator_type &alloc = allocator_type()):
+		allocator_type(alloc),
+		groups_with_erasures_list_head(NULL),
+		unused_groups(NULL),
+		total_size(0),
+		total_capacity(0),
+		pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+		group_allocator_pair(static_cast<skipfield_type>(capacities.max))
+	{
+		check_skipfield_conformance();
+		check_capacities_conformance(capacities);
+		assign(fill_number, element_type());
+	}
+
+
+
 	// Range constructor:
 
 	template<typename iterator_type>
@@ -2993,7 +3011,6 @@ private:
 			return;
 		}
 
-
 		if (total_size == 0)
 		{
 			range_assign(it, size);
@@ -3112,6 +3129,7 @@ public:
 			range_insert(first, static_cast<size_type>(distance(first.base(),last.base())));
 		}
 	#endif
+
 
 
 	// Initializer-list insert
@@ -4158,6 +4176,7 @@ public:
 	}
 
 
+
 	void reserve(size_type new_capacity)
 	{
 		if (new_capacity == 0 || new_capacity <= total_capacity) // We already have enough space allocated
@@ -4165,13 +4184,9 @@ public:
 			return;
 		}
 
+		if (new_capacity > max_size())
 		{
-			const size_type max = max_size();
-
-			if (new_capacity > max)
-			{
-				new_capacity = max;
-			}
+			throw std::length_error("Capacity requested via reserve() greater than max_size()");
 		}
 
 		new_capacity -= total_capacity;
@@ -4192,7 +4207,6 @@ public:
 
 
 		group_pointer_type current_group, first_unused_group;
-
 
 		if (begin_iterator.group_pointer == NULL) // Most common scenario - empty colony
 		{
@@ -4343,7 +4357,7 @@ public:
 			return;
 		}
 
-		// If there's more unused element locations at end of destination than source, swap with source to reduce number of skipped elements and size of free-list:
+		// If there's more unused element locations in back memory block of destination than in back memory block of source, swap with source to reduce number of skipped elements during iteration, and reduce size of free-list:
 		if ((reinterpret_cast<aligned_pointer_type>(end_iterator.group_pointer->skipfield) - end_iterator.element_pointer) > (reinterpret_cast<aligned_pointer_type>(source.end_iterator.group_pointer->skipfield) - source.end_iterator.element_pointer))
 		{
 			swap(source);
