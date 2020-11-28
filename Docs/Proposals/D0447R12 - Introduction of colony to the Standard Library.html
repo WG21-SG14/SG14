@@ -211,7 +211,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
 <h2><a id="revisions"></a>Revision history</h2>
 <ul>
-  <li>R12: Fill, range and initializer_list insert changed to void return, since the insertions are not guaranteed to be sequential in terms of colony order and therefore returning an iterator to the first insertion is not useful. Minor corrections.</li>
+  <li>R12: Fill, range and initializer_list inserts changed to void return, since the insertions are not guaranteed to be sequential in terms of colony order and therefore returning an iterator to the first insertion is not useful. Non-default-value fill constructor changed to non-explicit to match other std:: containers. Minor corrections.</li>
   <li>R11: Overhaul of technical specification to be more 'wording-like'. Minor
     alterations &amp; clarifications. Additional alternative approach added to
     Design Decisions under skipfield information. Overall rewording. Reordering
@@ -225,8 +225,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
     pattern' (this was always a temporary name) is renamed to the more astute
     'low-complexity jump-counting pattern'. Likewise the 'advanced
     jump-counting skipfield' is renamed to the 'high-complexity jump-counting
-    pattern' - for reasoning behind this go <a
-    href="https://plflib.org/blog.htm#whatsinaname">here</a>. Both refer to
+    pattern' - for reasoning behind this go <a href="https://plflib.org/blog.htm#whatsinaname">here</a>. Both refer to
     time complexity of operations, as opposed to algorithmic complexity. Some
     other corrections.</li>
   <li>R9: Link to Bentley pattern paper added, and is spellchecked now.</li>
@@ -412,6 +411,8 @@ situations, as well as increasing awareness of better-performing approaches in
 general. It will also ease communication across fields, as opposed to the
 current scenario where each field uses a similar container but each has a
 different name for it.</p>
+
+
 
 <h2><a id="impact"></a>IV. Impact On the Standard</h2>
 
@@ -872,8 +873,7 @@ namespace std {
 
   <h3>26.3.14 Class template <code>colony</code> [colony]</h3>
 
-  <h4>26.3.14.1 Class template <code>colony</code> overview
-  [colony.overview]</h4>
+  <h4>26.3.14.1 Class template <code>colony</code> overview [colony.overview]</h4>
 </ul>
 <ol>
   <li>A colony is a sequence container that allows constant-time insert and
@@ -938,8 +938,7 @@ T.<br>
 form skipfields, which are used to indicate which elements are erased. Use of
 this type by an implementation is not guaranteed.</p>
 
-<div
-style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
+<div style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
 <pre style="margin: 0; line-height: 125%">namespace std {
 struct limits
 {
@@ -974,7 +973,7 @@ public:
   explicit colony(const Allocator&amp;) noexcept;
   explicit colony(std::limits block_capacity_limits, const Allocator&amp;) noexcept;
   explicit colony(size_type n, std::limits block_capacity_limits = implementation-defined, const Allocator&amp; = Allocator());
-  explicit colony(size_type n, const T&amp; value, std::limits block_capacity_limits = implementation-defined, const Allocator&amp; = Allocator());
+  colony(size_type n, const T&amp; value, std::limits block_capacity_limits = implementation-defined, const Allocator&amp; = Allocator());
   template &lt;class InputIterator&gt;
     colony(InputIterator first, InputIterator last, std::limits block_capacity_limits = implementation-defined, const Allocator&amp; = Allocator());
   colony(const colony&amp; x);
