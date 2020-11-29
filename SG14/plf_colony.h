@@ -656,7 +656,7 @@ public:
 		}
 
 
-		// C++20:
+
 		#ifdef PLF_COLONY_CPP20_SUPPORT
 	 		inline int operator <=> (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
 	 		{
@@ -1663,6 +1663,7 @@ public:
 private:
 
 	// Used to prevent fill-insert/constructor calls being mistakenly resolved to range-insert/constructor calls
+
 	template <bool condition, class T = void>
 	struct plf_enable_if_c
 	{
@@ -1672,6 +1673,7 @@ private:
 	template <class T>
 	struct plf_enable_if_c<false, T>
 	{};
+
 
 
 	// Colony Member variables:
@@ -1870,6 +1872,7 @@ public:
 		}
 
 
+
 		// Move constructor (allocator-extended):
 
 		colony(colony &&source, const allocator_type &alloc):
@@ -2049,65 +2052,53 @@ private:
 
 	void destroy_all_data() PLF_COLONY_NOEXCEPT
 	{
-		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-			if (!std::is_trivially_destructible<element_type>::value && total_size != 0)
-		#else // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise the 'destruct' loop out for POD types
-			if (total_size != 0)
-		#endif
+		if (begin_iterator.group_pointer != NULL)
 		{
-			total_size = 0; // to avoid double-destruction of elements
+			end_iterator.group_pointer->next_group = unused_groups;
 
-			while (true)
-			{
-				const aligned_pointer_type end_pointer = begin_iterator.group_pointer->last_endpoint;
-
-				do
+			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+				if PLF_COLONY_CONSTEXPR (!std::is_trivially_destructible<element_type>::value)
 				{
-					PLF_COLONY_DESTROY(allocator_type, (*this), reinterpret_cast<pointer>(begin_iterator.element_pointer));
-					++begin_iterator.skipfield_pointer;
-					begin_iterator.element_pointer += static_cast<size_type>(*begin_iterator.skipfield_pointer) + 1u;
-					begin_iterator.skipfield_pointer += static_cast<size_type>(*begin_iterator.skipfield_pointer);
-				} while(begin_iterator.element_pointer != end_pointer); // ie. beyond end of available data
+			#endif // If compiler doesn't support traits, iterate regardless - trivial destructors will not be called, hopefully compiler will optimise the 'destruct' loop out for POD types
+			if (total_size != 0)
+			{
+				while (true) // Erase elements without bothering to update skipfield - much faster:
+				{
+					const aligned_pointer_type end_pointer = begin_iterator.group_pointer->last_endpoint;
 
+					do
+					{
+						PLF_COLONY_DESTROY(allocator_type, (*this), reinterpret_cast<pointer>(begin_iterator.element_pointer));
+						begin_iterator.element_pointer += static_cast<size_type>(*++begin_iterator.skipfield_pointer) + 1u;
+						begin_iterator.skipfield_pointer += static_cast<size_type>(*begin_iterator.skipfield_pointer);
+					} while(begin_iterator.element_pointer != end_pointer); // ie. beyond end of available data
+
+					const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
+					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer);
+					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, 1);
+					begin_iterator.group_pointer = next_group;
+
+					if (next_group == unused_groups)
+					{
+						break;
+					}
+
+					begin_iterator.element_pointer = next_group->elements + *(next_group->skipfield);
+					begin_iterator.skipfield_pointer = next_group->skipfield + *(next_group->skipfield);
+				}
+			}
+			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+			}
+			#endif
+
+			while (begin_iterator.group_pointer != NULL)
+			{
 				const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
 				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer);
 				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, 1);
-
-				if (next_group == NULL)
-				{
-					if (unused_groups == NULL)
-					{
-						return;
-					}
-
-					// Hijack the section after this if block so that it only destroys the unused_groups without iterating over them:
-					begin_iterator.group_pointer = unused_groups;
-					break;
-				}
-
 				begin_iterator.group_pointer = next_group;
-				begin_iterator.element_pointer = next_group->elements + *(next_group->skipfield);
-				begin_iterator.skipfield_pointer = next_group->skipfield + *(next_group->skipfield);
 			}
 		}
-		else if (begin_iterator.group_pointer == NULL) // avoid double-destruction and segfaulting on dereference below
-		{
-			return;
-		}
-		else
-		{
-			// In case of if block above being false, join unused_groups to main group chain below before processing:
-			end_iterator.group_pointer->next_group = unused_groups;
-		}
-
-
-		do
-		{
-			const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
-			PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer);
-			PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, 1);
-			begin_iterator.group_pointer = next_group;
-		} while (begin_iterator.group_pointer != NULL);
 	}
 
 
@@ -3124,7 +3115,7 @@ public:
 
 	#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		template <class iterator_type>
-		inline void insert (const typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, std::move_iterator<iterator_type>>::type first, const std::move_iterator<iterator_type> last)
+		inline void insert (const std::move_iterator<iterator_type> first, const std::move_iterator<iterator_type> last)
 		{
 			range_insert(first, static_cast<size_type>(distance(first.base(),last.base())));
 		}
@@ -3918,7 +3909,7 @@ public:
 
 	#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 		template <class iterator_type>
-		inline void assign (const typename plf_enable_if_c<!std::numeric_limits<iterator_type>::is_integer, std::move_iterator<iterator_type>>::type first, const std::move_iterator<iterator_type> last)
+		inline void assign (const std::move_iterator<iterator_type> first, const std::move_iterator<iterator_type> last)
 		{
 			range_assign(first, static_cast<size_type>(distance(first.base(),last.base())));
 		}
