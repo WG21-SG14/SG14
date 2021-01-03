@@ -317,28 +317,46 @@ private:
 
 	struct group; // forward declaration for typedefs below
 
-	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_element_type>	aligned_allocator_type;
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<group>						group_allocator_type;
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<skipfield_type>			skipfield_allocator_type;
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<unsigned char>				uchar_allocator_type; // Using uchar as the generic allocator type, as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
+	#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
+		struct alignas(alignof(aligned_element_type)) aligned_allocation_struct
+		{
+		  char data[alignof(aligned_element_type)]; // Using char as sizeof is always guaranteed to be 1 byte regardless of the number of bits in a byte on given computer, whereas for example, uint8_t would fail on machines where there are more than 8 bits in a byte eg. Texas Instruments C54x DSPs.
+		};
 
-		typedef typename std::allocator_traits<aligned_allocator_type>::pointer				aligned_pointer_type; // pointer to the overaligned element type, not the original element type
+		#define PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE(elements_per_group) ((((elements_per_group * (((sizeof(aligned_element_type) >= alignof(aligned_element_type)) ? sizeof(aligned_element_type) : alignof(aligned_element_type)) + sizeof(skipfield_type))) + sizeof(skipfield_type)) + sizeof(aligned_allocation_struct) - 1) / sizeof(aligned_allocation_struct)) // The size of a groups' memory block when expressed in multiples of the value_type's alignment. We also check to see if alignment is larger than sizeof value_type and use alignment size if so.
+	#else
+		struct aligned_allocation_struct
+		{
+		  char data;
+		};
+
+		#define PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE(elements_per_group) ((elements_per_group * (sizeof(aligned_element_type) + sizeof(skipfield_type))) + sizeof(skipfield_type)) // The size of a groups' memory block when expressed in bytes, since no alignment available
+	#endif
+
+
+
+	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_element_type>			aligned_element_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<group>								group_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<skipfield_type>					skipfield_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_allocation_struct>		aligned_struct_allocator_type;
+
+		typedef typename std::allocator_traits<aligned_element_allocator_type>::pointer	aligned_pointer_type; // pointer to the overaligned element type, not the original element type
 		typedef typename std::allocator_traits<group_allocator_type>::pointer 				group_pointer_type;
 		typedef typename std::allocator_traits<skipfield_allocator_type>::pointer 			skipfield_pointer_type;
-		typedef typename std::allocator_traits<uchar_allocator_type>::pointer				uchar_pointer_type;
+		typedef typename std::allocator_traits<aligned_struct_allocator_type>::pointer	aligned_struct_pointer_type;
 
 		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<pointer>	pointer_allocator_type;
 	#else
-		typedef typename allocator_type::template rebind<aligned_element_type>::other	aligned_allocator_type;	// In case compiler supports alignment but not allocator_traits
-		typedef typename allocator_type::template rebind<group>::other						group_allocator_type;
-		typedef typename allocator_type::template rebind<skipfield_type>::other			skipfield_allocator_type;
-		typedef typename allocator_type::template rebind<unsigned char>::other			uchar_allocator_type;
+		typedef typename allocator_type::template rebind<aligned_element_type>::other			aligned_element_allocator_type;	// In case compiler supports alignment but not allocator_traits
+		typedef typename allocator_type::template rebind<group>::other								group_allocator_type;
+		typedef typename allocator_type::template rebind<skipfield_type>::other					skipfield_allocator_type;
+		typedef typename allocator_type::template rebind<aligned_allocation_struct>::other	aligned_struct_allocator_type;
 
-		typedef typename aligned_allocator_type::pointer			aligned_pointer_type;
+		typedef typename aligned_element_allocator_type::pointer	aligned_pointer_type;
 		typedef typename group_allocator_type::pointer 				group_pointer_type;
 		typedef typename skipfield_allocator_type::pointer 		skipfield_pointer_type;
-		typedef typename uchar_allocator_type::pointer				uchar_pointer_type;
+		typedef typename aligned_struct_allocator_type::pointer	aligned_struct_pointer_type;
 
 		typedef typename allocator_type::template rebind<pointer>::other pointer_allocator_type;
 	#endif
@@ -346,7 +364,7 @@ private:
 
 
 	// Colony groups:
-	struct group : private uchar_allocator_type	// ebco - inherit allocator functions
+	struct group : private aligned_struct_allocator_type	// ebco - inherit allocator functions
 	{
 		aligned_pointer_type					last_endpoint; 			// The address that is one past the highest cell number that's been used so far in this group - does not change with erase command but may change with insert (if no previously-erased locations are available) - is necessary because an iterator cannot access the colony's end_iterator. Most-used variable in colony use (operator ++, --) so first in struct. If the colony has been completely filled at some point, it will be == reinterpret_cast<aligned_pointer_type>(skipfield)
 		group_pointer_type					next_group; 				// Next group in the intrusive list of all groups. NULL if no next group
@@ -357,12 +375,12 @@ private:
 		const skipfield_type					capacity; 					// The element capacity of this particular group - can also be calculated from reinterpret_cast<aligned_pointer_type>(group->skipfield) - group->elements, however this space is effectively free due to struct padding and the default sizeof skipfield_type, and calculating it once is cheaper
 		skipfield_type							size; 						// indicates total number of active elements in group - changes with insert and erase commands - used to check for empty group in erase function, as an indication to remove the group
 		group_pointer_type					erasures_list_next_group; // The next group in the singly-linked list of groups with erasures ie. with active erased-element free lists
-		size_type								group_number; 				// Used for comparison (> < >= <= <=>) iterator operators (used by distance function and user) and memory() function
+		size_type								group_number; 				// Used for comparison (> < >= <= <=>) iterator operators (used by distance function and user)
 
 
 		#ifdef PLF_COLONY_VARIADICS_SUPPORT
 			group(const skipfield_type elements_per_group, group_pointer_type const previous = NULL):
-				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + ((static_cast<size_type>(elements_per_group) + 1u) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))), /* allocating to here purely because it is first in the struct sequence - actual pointer is elements, last_endpoint is only initialised to element's base value initially, then incremented by one below */
+				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(aligned_struct_allocator_type, PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE(elements_per_group), (previous == NULL) ? 0 : previous->elements))),
 				next_group(NULL),
 				elements(last_endpoint++),
 				skipfield(reinterpret_cast<skipfield_pointer_type>(elements + elements_per_group)),
@@ -380,7 +398,7 @@ private:
 		#else
 			// This is a hack around the fact that allocator_type::construct only supports copy construction in C++03 and copy elision does not occur on the vast majority of compilers in this circumstance. And to avoid running out of memory (and losing performance) from allocating the same block twice, we're allocating in this constructor and moving data in the copy constructor.
 			group(const skipfield_type elements_per_group, group_pointer_type const previous = NULL):
-				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(uchar_allocator_type, ((elements_per_group * (sizeof(aligned_element_type))) + (static_cast<size_type>(elements_per_group + 1) * sizeof(skipfield_type))), (previous == NULL) ? 0 : previous->elements))),
+				last_endpoint(reinterpret_cast<aligned_pointer_type>(PLF_COLONY_ALLOCATE_INITIALIZATION(aligned_struct_allocator_type, PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE(elements_per_group), (previous == NULL) ? 0 : previous->elements))),
 				elements(NULL),
 				skipfield(reinterpret_cast<skipfield_pointer_type>(last_endpoint + elements_per_group)),
 				previous_group(previous),
@@ -393,7 +411,7 @@ private:
 
 			// Not a real copy constructor ie. actually a move constructor. Only used for allocator.construct in C++03 for reasons stated above:
 			group(const group &source) PLF_COLONY_NOEXCEPT:
-				uchar_allocator_type(source),
+				aligned_struct_allocator_type(source),
 				last_endpoint(source.last_endpoint + 1),
 				next_group(NULL),
 				elements(source.last_endpoint),
@@ -427,7 +445,7 @@ private:
 		~group() PLF_COLONY_NOEXCEPT
 		{
 			// Null check not necessary (for copied group as above) as delete will also perform a null check.
-			PLF_COLONY_DEALLOCATE(uchar_allocator_type, (*this), reinterpret_cast<uchar_pointer_type>(elements), (capacity * sizeof(aligned_element_type)) + ((static_cast<size_type>(capacity) + 1u) * sizeof(skipfield_type)));
+			PLF_COLONY_DEALLOCATE(aligned_struct_allocator_type, (*this), reinterpret_cast<aligned_struct_pointer_type>(elements), PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE(capacity));
 		}
 	};
 
@@ -4008,15 +4026,16 @@ public:
 
 	inline size_type memory() const PLF_COLONY_NOEXCEPT
 	{
-		size_type mem = sizeof(*this) + // sizeof colony basic structure
-			(total_capacity * (sizeof(aligned_element_type) + sizeof(skipfield_type))) + // sizeof current colony data capacity + skipfields
-			((end_iterator.group_pointer == NULL) ? 0 : ((end_iterator.group_pointer->group_number + 1) * (sizeof(group) + sizeof(skipfield_type)))); // if colony not empty, add the memory use of the group structures themselves, adding the extra skipfield node per-group
+		size_type mem = sizeof(*this); // sizeof colony basic structure
 
-		for(group_pointer_type current = unused_groups; current != NULL; current = current->next_group)
+		end_iterator.group_pointer->next_group = unused_groups; // temporarily link the main groups and unused_groups (reserved groups) in order to only have one loop below instead of several
+
+		for(group_pointer_type current = begin_iterator.group_pointer; current != NULL; current = current->next_group)
 		{
-			mem += (sizeof(group) + sizeof(skipfield_type));
+			mem += sizeof(group) + (PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE(current->capacity) * sizeof(aligned_allocation_struct)); // add memory block sizes and the size of the group structs themselves. The original calculation, including divisor, is necessary in order to correctly round up the number of allocations
 		}
 
+		end_iterator.group_pointer->next_group = NULL; // unlink main groups and unused_groups
 		return mem;
 	}
 
@@ -4748,6 +4767,7 @@ namespace std
 
 
 #undef PLF_COLONY_MIN_BLOCK_CAPACITY
+#undef PLF_COLONY_GROUP_ALIGNED_BLOCK_SIZE
 
 #undef PLF_COLONY_FORCE_INLINE
 #undef PLF_COLONY_ALIGNMENT_SUPPORT
