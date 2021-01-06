@@ -314,9 +314,6 @@ public:
 
 private:
 
-
-	struct group; // forward declaration for typedefs below
-
 	#ifdef PLF_COLONY_ALIGNMENT_SUPPORT
 		struct alignas(alignof(aligned_element_type)) aligned_allocation_struct
 		{
@@ -335,30 +332,35 @@ private:
 
 
 
+   // forward declarations for typedefs below
+	struct group;
+	struct item_index_tuple; // for use in sort()
+
+
 	#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_element_type>			aligned_element_allocator_type;
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<group>								group_allocator_type;
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<skipfield_type>					skipfield_allocator_type;
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_allocation_struct>		aligned_struct_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_element_type>		aligned_element_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<group>							group_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<skipfield_type>				skipfield_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<aligned_allocation_struct>	aligned_struct_allocator_type;
+		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<item_index_tuple>				tuple_allocator_type;
 
 		typedef typename std::allocator_traits<aligned_element_allocator_type>::pointer	aligned_pointer_type; // pointer to the overaligned element type, not the original element type
 		typedef typename std::allocator_traits<group_allocator_type>::pointer 				group_pointer_type;
 		typedef typename std::allocator_traits<skipfield_allocator_type>::pointer 			skipfield_pointer_type;
 		typedef typename std::allocator_traits<aligned_struct_allocator_type>::pointer	aligned_struct_pointer_type;
-
-		typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<pointer>	pointer_allocator_type;
+		typedef typename std::allocator_traits<tuple_allocator_type>::pointer				tuple_pointer_type;
 	#else
-		typedef typename allocator_type::template rebind<aligned_element_type>::other			aligned_element_allocator_type;	// In case compiler supports alignment but not allocator_traits
-		typedef typename allocator_type::template rebind<group>::other								group_allocator_type;
-		typedef typename allocator_type::template rebind<skipfield_type>::other					skipfield_allocator_type;
-		typedef typename allocator_type::template rebind<aligned_allocation_struct>::other	aligned_struct_allocator_type;
+		typedef typename allocator_type::template rebind<aligned_element_type>::other		aligned_element_allocator_type;	// In case compiler supports alignment but not allocator_traits
+		typedef typename allocator_type::template rebind<group>::other							group_allocator_type;
+		typedef typename allocator_type::template rebind<skipfield_type>::other				skipfield_allocator_type;
+		typedef typename allocator_type::template rebind<char>::other							aligned_struct_allocator_type;
+		typedef typename allocator_type::template rebind<item_index_tuple>::other			tuple_allocator_type;
 
 		typedef typename aligned_element_allocator_type::pointer	aligned_pointer_type;
 		typedef typename group_allocator_type::pointer 				group_pointer_type;
 		typedef typename skipfield_allocator_type::pointer 		skipfield_pointer_type;
 		typedef typename aligned_struct_allocator_type::pointer	aligned_struct_pointer_type;
-
-		typedef typename allocator_type::template rebind<pointer>::other pointer_allocator_type;
+		typedef typename tuple_allocator_type::pointer				tuple_pointer_type;
 	#endif
 
 
@@ -511,7 +513,7 @@ public:
 
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
 			// Move assignment - only really necessary if the allocator uses non-standard ie. "smart" pointers
-			inline colony_iterator & operator = (colony_iterator &&source) PLF_COLONY_NOEXCEPT // Move is a copy in this scenario
+			inline colony_iterator & operator = (colony_iterator &&source) PLF_COLONY_NOEXCEPT
 			{
 				assert(&source != this);
 				group_pointer = std::move(source.group_pointer);
@@ -646,56 +648,32 @@ public:
 
 
 
-		inline bool operator > (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator > (const colony_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return ((group_pointer == rh.group_pointer) & (element_pointer > rh.element_pointer)) || (group_pointer != rh.group_pointer && group_pointer->group_number > rh.group_pointer->group_number);
 		}
 
 
 
-		inline bool operator < (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator < (const colony_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return rh > *this;
 		}
 
 
 
-		inline bool operator >= (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator >= (const colony_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return !(rh > *this);
 		}
 
 
 
-		inline bool operator <= (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return !(*this > rh);
-		}
-
-
-
-		inline bool operator > (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return ((group_pointer == rh.group_pointer) & (element_pointer > rh.element_pointer)) || (group_pointer != rh.group_pointer && group_pointer->group_number > rh.group_pointer->group_number);
-		}
-
-
-
-		inline bool operator < (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return rh > *this;
-		}
-
-
-
-		inline bool operator >= (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return !(rh > *this);
-		}
-
-
-
-		inline bool operator <= (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator <= (const colony_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return !(*this > rh);
 		}
@@ -703,13 +681,8 @@ public:
 
 
 		#ifdef PLF_COLONY_CPP20_SUPPORT
-	 		inline int operator <=> (const colony_iterator &rh) const PLF_COLONY_NOEXCEPT
-	 		{
-	 			return (element_pointer == rh.element_pointer) ? 0 : ((*this > rh) ? 1 : -1);
-	 		}
-
-
-	 		inline int operator <=> (const colony_iterator<!is_const> &rh) const PLF_COLONY_NOEXCEPT
+			template <bool is_const_it>
+			inline int operator <=> (const colony_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 	 		{
 	 			return (element_pointer == rh.element_pointer) ? 0 : ((*this > rh) ? 1 : -1);
 	 		}
@@ -1114,14 +1087,12 @@ public:
 
 
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
-			// move constructor
+			// move constructors
 			inline colony_iterator(colony_iterator &&source) PLF_COLONY_NOEXCEPT:
 				group_pointer(std::move(source.group_pointer)),
 				element_pointer(std::move(source.element_pointer)),
 				skipfield_pointer(std::move(source.skipfield_pointer))
-			{
-				assert(&source != this);
-			}
+			{}
 
 
 			inline colony_iterator(colony_iterator<!is_const> &&source) PLF_COLONY_NOEXCEPT:
@@ -1170,8 +1141,8 @@ public:
 
 
 
-		template<bool is_const>
-		inline colony_reverse_iterator& operator = (const colony_iterator<is_const> &source) PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline colony_reverse_iterator& operator = (const colony_iterator<is_const_it> &source) PLF_COLONY_NOEXCEPT
 		{
 			it = source;
 			return *this;
@@ -1311,56 +1282,32 @@ public:
 
 
 
-		inline bool operator > (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator > (const colony_reverse_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return (rh.it > it);
 		}
 
 
 
-		inline bool operator < (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator < (const colony_reverse_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return (it > rh.it);
 		}
 
 
 
-		inline bool operator >= (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator >= (const colony_reverse_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return !(it > rh.it);
 		}
 
 
 
-		inline bool operator <= (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return !(rh.it > it);
-		}
-
-
-
-		inline bool operator > (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return (rh.it > it);
-		}
-
-
-
-		inline bool operator < (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return (it > rh.it);
-		}
-
-
-
-		inline bool operator >= (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
-		{
-			return !(it > rh.it);
-		}
-
-
-
-		inline bool operator <= (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+		template <bool is_const_it>
+		inline bool operator <= (const colony_reverse_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 		{
 			return !(rh.it > it);
 		}
@@ -1369,13 +1316,8 @@ public:
 
 		// C++20:
 		#ifdef PLF_COLONY_CPP20_SUPPORT
-	 		inline int operator <=> (const colony_reverse_iterator &rh) const PLF_COLONY_NOEXCEPT
-	 		{
-	 			return (rh.it <=> it);
-	 		}
-
-
-	 		inline int operator <=> (const colony_reverse_iterator<!r_is_const> &rh) const PLF_COLONY_NOEXCEPT
+			template <bool is_const_it>
+	 		inline int operator <=> (const colony_reverse_iterator<is_const_it> &rh) const PLF_COLONY_NOEXCEPT
 	 		{
 	 			return (rh.it <=> it);
 	 		}
@@ -1691,9 +1633,7 @@ public:
 			// move constructors
 			colony_reverse_iterator (colony_reverse_iterator &&source) PLF_COLONY_NOEXCEPT:
 				it(std::move(source.it))
-			{
-				assert(&source != this);
-			}
+			{}
 
 			colony_reverse_iterator (colony_reverse_iterator<!r_is_const> &&source) PLF_COLONY_NOEXCEPT:
 				it(std::move(source.it))
@@ -1728,11 +1668,11 @@ private:
 								unused_groups;							// Groups retained by erase() or created by reserve()
 	size_type				total_size, total_capacity;
 
-	struct ebco_pair2 : pointer_allocator_type // Packaging the element pointer allocator with a lesser-used member variable, for empty-base-class optimisation
+	struct ebco_pair2 : tuple_allocator_type // Packaging the element pointer allocator with a lesser-used member variable, for empty-base-class optimisation
 	{
 		skipfield_type min_group_capacity;
 		explicit ebco_pair2(const skipfield_type min_elements) PLF_COLONY_NOEXCEPT: min_group_capacity(min_elements) {}
-	}							pointer_allocator_pair;
+	}							tuple_allocator_pair;
 
 	struct ebco_pair : group_allocator_type
 	{
@@ -1778,7 +1718,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(PLF_COLONY_MIN_BLOCK_CAPACITY),
+		tuple_allocator_pair(PLF_COLONY_MIN_BLOCK_CAPACITY),
 		group_allocator_pair(std::numeric_limits<skipfield_type>::max())
 	{
 		check_skipfield_conformance();
@@ -1792,7 +1732,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+		tuple_allocator_pair(static_cast<skipfield_type>(capacities.min)),
 		group_allocator_pair(static_cast<skipfield_type>(capacities.max))
 	{
 		check_skipfield_conformance();
@@ -1809,7 +1749,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(PLF_COLONY_MIN_BLOCK_CAPACITY),
+		tuple_allocator_pair(PLF_COLONY_MIN_BLOCK_CAPACITY),
 		group_allocator_pair(std::numeric_limits<skipfield_type>::max())
 	{
 		check_skipfield_conformance();
@@ -1823,7 +1763,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+		tuple_allocator_pair(static_cast<skipfield_type>(capacities.min)),
 		group_allocator_pair(static_cast<skipfield_type>(capacities.max))
 	{
 		check_skipfield_conformance();
@@ -1840,12 +1780,12 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>((source.pointer_allocator_pair.min_group_capacity > source.total_size) ? source.pointer_allocator_pair.min_group_capacity : ((source.total_size > source.group_allocator_pair.max_group_capacity) ? source.group_allocator_pair.max_group_capacity : source.total_size))), // min group size is set to value closest to total number of elements in source colony in order to not create unnecessary small groups in the range-insert below, then reverts to the original min group size afterwards. This effectively saves a call to reserve.
+		tuple_allocator_pair(static_cast<skipfield_type>((source.tuple_allocator_pair.min_group_capacity > source.total_size) ? source.tuple_allocator_pair.min_group_capacity : ((source.total_size > source.group_allocator_pair.max_group_capacity) ? source.group_allocator_pair.max_group_capacity : source.total_size))), // min group size is set to value closest to total number of elements in source colony in order to not create unnecessary small groups in the range-insert below, then reverts to the original min group size afterwards. This effectively saves a call to reserve.
 		group_allocator_pair(source.group_allocator_pair.max_group_capacity)
 	{
 		check_skipfield_conformance();
 		range_assign(source.begin_iterator, source.total_size);
-		pointer_allocator_pair.min_group_capacity = source.pointer_allocator_pair.min_group_capacity; // reset to correct value for future clear() or erasures
+		tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity; // reset to correct value for future clear() or erasures
 	}
 
 
@@ -1858,12 +1798,12 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>((source.pointer_allocator_pair.min_group_capacity > source.total_size) ? source.pointer_allocator_pair.min_group_capacity : ((source.total_size > source.group_allocator_pair.max_group_capacity) ? source.group_allocator_pair.max_group_capacity : source.total_size))),
+		tuple_allocator_pair(static_cast<skipfield_type>((source.tuple_allocator_pair.min_group_capacity > source.total_size) ? source.tuple_allocator_pair.min_group_capacity : ((source.total_size > source.group_allocator_pair.max_group_capacity) ? source.group_allocator_pair.max_group_capacity : source.total_size))),
 		group_allocator_pair(source.group_allocator_pair.max_group_capacity)
 	{
 		check_skipfield_conformance();
 		range_assign(source.begin_iterator, source.total_size);
-		pointer_allocator_pair.min_group_capacity = source.pointer_allocator_pair.min_group_capacity;
+		tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity;
 	}
 
 
@@ -1875,7 +1815,7 @@ private:
 		#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 			if PLF_COLONY_CONSTEXPR (std::is_trivial<group_pointer_type>::value && std::is_trivial<aligned_pointer_type>::value && std::is_trivial<skipfield_pointer_type>::value)	// if all pointer types are trivial, we can just nuke it from orbit with memset (NULL is always 0 in C++):
 			{
-				std::memset(static_cast<void *>(this), 0, offsetof(colony, pointer_allocator_pair));
+				std::memset(static_cast<void *>(this), 0, offsetof(colony, tuple_allocator_pair));
 			}
 			else
 		#endif
@@ -1908,7 +1848,7 @@ public:
 			unused_groups(std::move(source.unused_groups)),
 			total_size(source.total_size),
 			total_capacity(source.total_capacity),
-			pointer_allocator_pair(source.pointer_allocator_pair.min_group_capacity),
+			tuple_allocator_pair(source.tuple_allocator_pair.min_group_capacity),
 			group_allocator_pair(source.group_allocator_pair.max_group_capacity)
 		{
 			check_skipfield_conformance();
@@ -1928,7 +1868,7 @@ public:
 			unused_groups(std::move(source.unused_groups)),
 			total_size(source.total_size),
 			total_capacity(source.total_capacity),
-			pointer_allocator_pair(source.pointer_allocator_pair.min_group_capacity),
+			tuple_allocator_pair(source.tuple_allocator_pair.min_group_capacity),
 			group_allocator_pair(source.group_allocator_pair.max_group_capacity)
 		{
 			check_skipfield_conformance();
@@ -1947,7 +1887,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+		tuple_allocator_pair(static_cast<skipfield_type>(capacities.min)),
 		group_allocator_pair(static_cast<skipfield_type>(capacities.max))
 	{
 		check_skipfield_conformance();
@@ -1965,7 +1905,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+		tuple_allocator_pair(static_cast<skipfield_type>(capacities.min)),
 		group_allocator_pair(static_cast<skipfield_type>(capacities.max))
 	{
 		check_skipfield_conformance();
@@ -1984,7 +1924,7 @@ public:
 		unused_groups(NULL),
 		total_size(0),
 		total_capacity(0),
-		pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+		tuple_allocator_pair(static_cast<skipfield_type>(capacities.min)),
 		group_allocator_pair(static_cast<skipfield_type>(capacities.max))
 	{
 		check_skipfield_conformance();
@@ -2003,7 +1943,7 @@ public:
 			unused_groups(NULL),
 			total_size(0),
 			total_capacity(0),
-			pointer_allocator_pair(static_cast<skipfield_type>(capacities.min)),
+			tuple_allocator_pair(static_cast<skipfield_type>(capacities.min)),
 			group_allocator_pair(static_cast<skipfield_type>(capacities.max))
 		{
 			check_skipfield_conformance();
@@ -2095,6 +2035,37 @@ public:
 private:
 
 
+	group_pointer_type allocate_new_group(const skipfield_type elements_per_group, group_pointer_type const previous = NULL)
+	{
+		group_pointer_type const new_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, 0);
+
+		try
+		{
+			#ifdef PLF_COLONY_VARIADICS_SUPPORT
+				PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, new_group, elements_per_group, previous);
+			#else
+				PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, new_group, group(elements_per_group, previous));
+			#endif
+		}
+		catch (...)
+		{
+			PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, new_group, 1);
+			throw;
+		}
+
+		return new_group;
+	}
+
+
+
+	inline void deallocate_group(group_pointer_type const the_group) PLF_COLONY_NOEXCEPT
+	{
+		PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, the_group);
+		PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, the_group, 1);
+	}
+
+
+
 	void destroy_all_data() PLF_COLONY_NOEXCEPT
 	{
 		if (begin_iterator.group_pointer != NULL)
@@ -2119,8 +2090,7 @@ private:
 					} while(begin_iterator.element_pointer != end_pointer); // ie. beyond end of available data
 
 					const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, 1);
+					deallocate_group(begin_iterator.group_pointer);
 					begin_iterator.group_pointer = next_group;
 
 					if (next_group == unused_groups)
@@ -2139,8 +2109,7 @@ private:
 			while (begin_iterator.group_pointer != NULL)
 			{
 				const group_pointer_type next_group = begin_iterator.group_pointer->next_group;
-				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer);
-				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, 1);
+				deallocate_group(begin_iterator.group_pointer);
 				begin_iterator.group_pointer = next_group;
 			}
 		}
@@ -2150,24 +2119,7 @@ private:
 
 	void initialize(const skipfield_type first_group_size)
 	{
-		begin_iterator.group_pointer = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, 0);
-
-		try
-		{
-			#ifdef PLF_COLONY_VARIADICS_SUPPORT
-				PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, first_group_size);
-			#else
-				PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, group(first_group_size));
-			#endif
-		}
-		catch (...)
-		{
-			PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, begin_iterator.group_pointer, 1);
-			begin_iterator.group_pointer = NULL;
-			throw;
-		}
-
-		end_iterator.group_pointer = begin_iterator.group_pointer;
+		end_iterator.group_pointer = begin_iterator.group_pointer = allocate_new_group(first_group_size);
 		end_iterator.element_pointer = begin_iterator.element_pointer = begin_iterator.group_pointer->elements;
 		end_iterator.skipfield_pointer = begin_iterator.skipfield_pointer = begin_iterator.group_pointer->skipfield;
 		total_capacity = first_group_size;
@@ -2260,22 +2212,8 @@ public:
 
 					if (unused_groups == NULL)
 					{
-						next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 						const skipfield_type new_group_size = (total_size < static_cast<size_type>(group_allocator_pair.max_group_capacity)) ? static_cast<skipfield_type>(total_size) : group_allocator_pair.max_group_capacity;
-
-						try
-						{
-							#ifdef PLF_COLONY_VARIADICS_SUPPORT
-								PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, new_group_size, end_iterator.group_pointer);
-							#else
-								PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group(new_group_size, end_iterator.group_pointer));
-							#endif
-						}
-						catch (...)
-						{
-							PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
-							throw;
-						}
+						next_group = allocate_new_group(new_group_size, end_iterator.group_pointer);
 
 						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 							if PLF_COLONY_CONSTEXPR (std::is_nothrow_copy_constructible<element_type>::value)
@@ -2291,8 +2229,7 @@ public:
 							}
 							catch (...)
 							{
-								PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
-								PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
+								deallocate_group(next_group);
 								throw;
 							}
 						}
@@ -2330,7 +2267,7 @@ public:
 		}
 		else // ie. newly-constructed colony, no insertions yet and no groups
 		{
-			initialize(pointer_allocator_pair.min_group_capacity);
+			initialize(tuple_allocator_pair.min_group_capacity);
 
 			#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 				if PLF_COLONY_CONSTEXPR (std::is_nothrow_copy_constructible<element_type>::value)
@@ -2395,22 +2332,8 @@ public:
 
 						if (unused_groups == NULL)
 						{
-							next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 							const skipfield_type new_group_size = (total_size < static_cast<size_type>(group_allocator_pair.max_group_capacity)) ? static_cast<skipfield_type>(total_size) : group_allocator_pair.max_group_capacity;
-
-							try
-							{
-								#ifdef PLF_COLONY_VARIADICS_SUPPORT
-									PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, new_group_size, end_iterator.group_pointer);
-								#else
-									PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group(new_group_size, end_iterator.group_pointer));
-								#endif
-							}
-							catch (...)
-							{
-								PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
-								throw;
-							}
+							next_group = allocate_new_group(new_group_size, end_iterator.group_pointer);
 
 							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 								if PLF_COLONY_CONSTEXPR (std::is_nothrow_move_constructible<element_type>::value)
@@ -2426,8 +2349,7 @@ public:
 								}
 								catch (...)
 								{
-									PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
-									PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
+									deallocate_group(next_group);
 									throw;
 								}
 							}
@@ -2464,7 +2386,7 @@ public:
 			}
 			else
 			{
-				initialize(pointer_allocator_pair.min_group_capacity);
+				initialize(tuple_allocator_pair.min_group_capacity);
 
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 					if PLF_COLONY_CONSTEXPR (std::is_nothrow_move_constructible<element_type>::value)
@@ -2532,22 +2454,8 @@ public:
 
 						if (unused_groups == NULL)
 						{
-							next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
 							const skipfield_type new_group_size = (total_size < static_cast<size_type>(group_allocator_pair.max_group_capacity)) ? static_cast<skipfield_type>(total_size) : group_allocator_pair.max_group_capacity;
-
-							try
-							{
-								#ifdef PLF_COLONY_VARIADICS_SUPPORT
-									PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, new_group_size, end_iterator.group_pointer);
-								#else
-									PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, next_group, group(new_group_size, end_iterator.group_pointer));
-								#endif
-							}
-							catch (...)
-							{
-								PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
-								throw;
-							}
+							next_group = allocate_new_group(new_group_size, end_iterator.group_pointer);
 
 							#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 								if PLF_COLONY_CONSTEXPR (std::is_nothrow_constructible<element_type>::value)
@@ -2563,8 +2471,7 @@ public:
 								}
 								catch (...)
 								{
-									PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, next_group);
-									PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, next_group, 1);
+									deallocate_group(next_group);
 									throw;
 								}
 							}
@@ -2601,7 +2508,7 @@ public:
 			}
 			else
 			{
-				initialize(pointer_allocator_pair.min_group_capacity);
+				initialize(tuple_allocator_pair.min_group_capacity);
 
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
 					if PLF_COLONY_CONSTEXPR (std::is_nothrow_constructible<element_type, arguments ...>::value)
@@ -3397,8 +3304,7 @@ public:
 				}
 
 				total_capacity -= it.group_pointer->capacity;
-				PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, it.group_pointer);
-				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, it.group_pointer, 1);
+				deallocate_group(it.group_pointer);
 
 				// note: end iterator only needs to be changed if the deleted group was the final group in the chain ie. not in this case
 				begin_iterator.element_pointer = begin_iterator.group_pointer->elements + *(begin_iterator.group_pointer->skipfield); // If the beginning index has been erased (ie. skipfield != 0), skip to next non-erased element
@@ -3421,8 +3327,7 @@ public:
 				if (it.group_pointer->next_group != end_iterator.group_pointer)
 				{
 					total_capacity -= it.group_pointer->capacity;
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, it.group_pointer);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, it.group_pointer, 1);
+					deallocate_group(it.group_pointer);
 				}
 				else
 				{
@@ -3611,8 +3516,7 @@ public:
 				if (current_group != end_iterator.group_pointer && current_group->next_group != end_iterator.group_pointer)
 				{
 					total_capacity -= current_group->capacity;
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, current_group);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
+					deallocate_group(current_group);
 				}
 				else
 				{
@@ -3817,8 +3721,7 @@ public:
 				return end_iterator;
 			}
 
-			PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, current.group_pointer);
-			PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current.group_pointer, 1);
+			deallocate_group(current.group_pointer);
 		}
 
 		return iterator2;
@@ -3841,7 +3744,7 @@ private:
 			}
 		}
 
-		if (size < total_capacity && (total_capacity - size) >= pointer_allocator_pair.min_group_capacity)
+		if (size < total_capacity && (total_capacity - size) >= tuple_allocator_pair.min_group_capacity)
 		{
 			size_type difference = total_capacity - size;
 			end_iterator.group_pointer->next_group = unused_groups;
@@ -3857,9 +3760,7 @@ private:
 				{ // Remove group:
 					difference -= current_group->capacity;
 					total_capacity -= current_group->capacity;
-
-					PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, current_group);
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
+					deallocate_group(current_group);
 
 					if (current_group == begin_iterator.group_pointer)
 					{
@@ -4047,7 +3948,7 @@ private:
 	void consolidate()
 	{
 		#ifdef PLF_COLONY_MOVE_SEMANTICS_SUPPORT
-			colony temp(plf::limits(pointer_allocator_pair.min_group_capacity, group_allocator_pair.max_group_capacity));
+			colony temp(plf::limits(tuple_allocator_pair.min_group_capacity, group_allocator_pair.max_group_capacity));
 			temp.range_assign(std::make_move_iterator(begin_iterator), total_size);
 			*this = std::move(temp); // Avoid generating 2nd temporary
 		#else
@@ -4064,13 +3965,13 @@ public:
 	void reshape(const plf::limits capacities)
 	{
 		check_capacities_conformance(capacities);
-		pointer_allocator_pair.min_group_capacity = static_cast<skipfield_type>(capacities.min);
+		tuple_allocator_pair.min_group_capacity = static_cast<skipfield_type>(capacities.min);
 		group_allocator_pair.max_group_capacity = static_cast<skipfield_type>(capacities.max);
 
 		// Need to check all group sizes here, because splice might append smaller blocks to the end of a larger block:
 		for (group_pointer_type current = begin_iterator.group_pointer; current != end_iterator.group_pointer; current = current->next_group)
 		{
-			if (current->capacity < pointer_allocator_pair.min_group_capacity || current->capacity > group_allocator_pair.max_group_capacity)
+			if (current->capacity < tuple_allocator_pair.min_group_capacity || current->capacity > group_allocator_pair.max_group_capacity)
 			{
 				#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT // If type is non-copyable/movable, cannot be consolidated, throw exception:
 					if PLF_COLONY_CONSTEXPR (!((std::is_copy_constructible<element_type>::value && std::is_copy_assignable<element_type>::value) || (std::is_move_constructible<element_type>::value && std::is_move_assignable<element_type>::value)))
@@ -4092,7 +3993,7 @@ public:
 
 	inline plf::limits block_limits() const PLF_COLONY_NOEXCEPT
 	{
-		return plf::limits(static_cast<size_t>(pointer_allocator_pair.min_group_capacity), static_cast<size_t>(group_allocator_pair.max_group_capacity));
+		return plf::limits(static_cast<size_t>(tuple_allocator_pair.min_group_capacity), static_cast<size_t>(group_allocator_pair.max_group_capacity));
 	}
 
 
@@ -4135,7 +4036,7 @@ public:
 				unused_groups =  std::move(source.unused_groups);
 				total_size = source.total_size;
 				total_capacity = source.total_capacity;
-				pointer_allocator_pair.min_group_capacity = source.pointer_allocator_pair.min_group_capacity;
+				tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity;
 				group_allocator_pair.max_group_capacity = source.group_allocator_pair.max_group_capacity;
 			}
 
@@ -4206,8 +4107,7 @@ public:
 		{
 			total_capacity -= unused_groups->capacity;
 			const group_pointer_type next_group = unused_groups->next_group;
-			PLF_COLONY_DESTROY(group_allocator_type, group_allocator_pair, unused_groups);
-			PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, unused_groups, 1);
+			deallocate_group(unused_groups);
 			unused_groups = next_group;
 		}
 	}
@@ -4237,9 +4137,9 @@ public:
 			remainder = group_allocator_pair.max_group_capacity;
 			--number_of_max_groups;
 		}
-		else if (remainder < pointer_allocator_pair.min_group_capacity)
+		else if (remainder < tuple_allocator_pair.min_group_capacity)
 		{
-			remainder = pointer_allocator_pair.min_group_capacity;
+			remainder = tuple_allocator_pair.min_group_capacity;
 		}
 
 
@@ -4257,46 +4157,14 @@ public:
 			}
 			else
 			{
-				first_unused_group = current_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, begin_iterator.group_pointer);
-
-				try
-				{
-					#ifdef PLF_COLONY_VARIADICS_SUPPORT
-						PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group_allocator_pair.max_group_capacity);
-					#else
-						PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group(group_allocator_pair.max_group_capacity));
-					#endif
-				}
-				catch (...)
-				{
-					current_group = NULL;
-					PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
-					throw;
-				}
-
+            first_unused_group = current_group = allocate_new_group(group_allocator_pair.max_group_capacity, begin_iterator.group_pointer);
 				total_capacity += group_allocator_pair.max_group_capacity;
 				--number_of_max_groups;
 			}
 		}
 		else // Non-empty colony, add first group:
 		{
-			first_unused_group = current_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, end_iterator.group_pointer);
-
-			try
-			{
-				#ifdef PLF_COLONY_VARIADICS_SUPPORT
-					PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, remainder, end_iterator.group_pointer);
-				#else
-					PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group, group(remainder, end_iterator.group_pointer));
-				#endif
-			}
-			catch (...)
-			{
-				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group, 1);
-				current_group = NULL;
-				throw;
-			}
-
+         first_unused_group = current_group = allocate_new_group(remainder, end_iterator.group_pointer);
 			total_capacity += remainder;
 		}
 
@@ -4305,27 +4173,11 @@ public:
 		{
 			try
 			{
-				current_group->next_group = PLF_COLONY_ALLOCATE(group_allocator_type, group_allocator_pair, 1, current_group);
+	         current_group->next_group = allocate_new_group(group_allocator_pair.max_group_capacity, current_group);
 			}
 			catch (...)
 			{
-				current_group->next_group = unused_groups;
-				unused_groups = first_unused_group;
-				throw;
-			}
-
-
-			try
-			{
-				#ifdef PLF_COLONY_VARIADICS_SUPPORT
-					PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group_allocator_pair.max_group_capacity, current_group);
-				#else
-					PLF_COLONY_CONSTRUCT(group_allocator_type, group_allocator_pair, current_group->next_group, group(group_allocator_pair.max_group_capacity, current_group));
-				#endif
-			}
-			catch (...)
-			{
-				PLF_COLONY_DEALLOCATE(group_allocator_type, group_allocator_pair, current_group->next_group, 1);
+				deallocate_group(current_group->next_group);
 				current_group->next_group = unused_groups;
 				unused_groups = first_unused_group;
 				throw;
@@ -4402,9 +4254,9 @@ public:
 
 
 		// Correct group sizes if necessary:
-		if (source.pointer_allocator_pair.min_group_capacity < pointer_allocator_pair.min_group_capacity)
+		if (source.tuple_allocator_pair.min_group_capacity < tuple_allocator_pair.min_group_capacity)
 		{
-			pointer_allocator_pair.min_group_capacity = source.pointer_allocator_pair.min_group_capacity;
+			tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity;
 		}
 
 		if (source.group_allocator_pair.max_group_capacity > group_allocator_pair.max_group_capacity)
@@ -4551,16 +4403,8 @@ public:
 			return;
 		}
 
-		#ifdef PLF_COLONY_ALLOCATOR_TRAITS_SUPPORT
-			typedef typename std::allocator_traits<allocator_type>::template rebind_alloc<item_index_tuple>	tuple_allocator_type;
-		#else
-			typedef typename allocator_type::template rebind<item_index_tuple>::other	tuple_allocator_type;
-		#endif
-
-		tuple_allocator_type tuple_allocator;
-
-		item_index_tuple * const sort_array = PLF_COLONY_ALLOCATE(tuple_allocator_type, tuple_allocator, total_size, NULL);
-		item_index_tuple *tuple_pointer = sort_array;
+		tuple_pointer_type const sort_array = PLF_COLONY_ALLOCATE(tuple_allocator_type, tuple_allocator_pair, total_size, NULL);
+		tuple_pointer_type tuple_pointer = sort_array;
 
 		// Construct pointers to all elements in the sequence:
 		size_type index = 0;
@@ -4568,9 +4412,9 @@ public:
 		for (iterator current_element = begin_iterator; current_element != end_iterator; ++current_element, ++tuple_pointer, ++index)
 		{
 			#ifdef PLF_COLONY_VARIADICS_SUPPORT
-				PLF_COLONY_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, &*current_element, index);
+				PLF_COLONY_CONSTRUCT(tuple_allocator_type, tuple_allocator_pair, tuple_pointer, &*current_element, index);
 			#else
-				PLF_COLONY_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, item_index_tuple(&*current_element, index));
+				PLF_COLONY_CONSTRUCT(tuple_allocator_type, tuple_allocator_pair, tuple_pointer, item_index_tuple(&*current_element, index));
 			#endif
 		}
 
@@ -4584,7 +4428,7 @@ public:
 		// Sort the actual elements via the tuple array:
 		index = 0;
 
-		for (item_index_tuple *current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
+		for (tuple_pointer_type current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
 		{
 			if (current_tuple->original_index != index)
 			{
@@ -4618,7 +4462,7 @@ public:
 			}
 		}
 
-		PLF_COLONY_DEALLOCATE(tuple_allocator_type, tuple_allocator, sort_array, total_size);
+		PLF_COLONY_DEALLOCATE(tuple_allocator_type, tuple_allocator_pair, sort_array, total_size);
 	}
 
 
@@ -4656,7 +4500,7 @@ public:
 			const iterator						swap_end_iterator = end_iterator, swap_begin_iterator = begin_iterator;
 			const group_pointer_type		swap_groups_with_erasures_list_head = groups_with_erasures_list_head, swap_unused_groups = unused_groups;
 			const size_type					swap_total_size = total_size, swap_total_capacity = total_capacity;
-			const skipfield_type 			swap_min_group_capacity = pointer_allocator_pair.min_group_capacity, swap_max_group_capacity = group_allocator_pair.max_group_capacity;
+			const skipfield_type 			swap_min_group_capacity = tuple_allocator_pair.min_group_capacity, swap_max_group_capacity = group_allocator_pair.max_group_capacity;
 
 			end_iterator = source.end_iterator;
 			begin_iterator = source.begin_iterator;
@@ -4664,7 +4508,7 @@ public:
 			unused_groups = source.unused_groups;
 			total_size = source.total_size;
 			total_capacity = source.total_capacity;
-			pointer_allocator_pair.min_group_capacity = source.pointer_allocator_pair.min_group_capacity;
+			tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity;
 			group_allocator_pair.max_group_capacity = source.group_allocator_pair.max_group_capacity;
 
 			source.end_iterator = swap_end_iterator;
@@ -4673,7 +4517,7 @@ public:
 			source.unused_groups = swap_unused_groups;
 			source.total_size = swap_total_size;
 			source.total_capacity = swap_total_capacity;
-			source.pointer_allocator_pair.min_group_capacity = swap_min_group_capacity;
+			source.tuple_allocator_pair.min_group_capacity = swap_min_group_capacity;
 			source.group_allocator_pair.max_group_capacity = swap_max_group_capacity;
 		}
 	}
