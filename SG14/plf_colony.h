@@ -1024,7 +1024,8 @@ public:
 
 					while (iterator1.skipfield_pointer != endpoint)
 					{
-						iterator1.skipfield_pointer += *(++iterator1.skipfield_pointer);
+						++iterator1.skipfield_pointer;
+						iterator1.skipfield_pointer += *iterator1.skipfield_pointer;
 						++distance;
 					}
 				}
@@ -1054,7 +1055,8 @@ public:
 			{
 				while (iterator1.skipfield_pointer != iterator2.skipfield_pointer)
 				{
-					iterator1.skipfield_pointer += *(++iterator1.skipfield_pointer);
+					++iterator1.skipfield_pointer;
+					iterator1.skipfield_pointer += *iterator1.skipfield_pointer;
 					++distance;
 				}
 			}
@@ -1343,7 +1345,7 @@ public:
 
 
 		template<bool is_const>
-		colony_reverse_iterator (const colony_iterator<is_const> &source) PLF_COLONY_NOEXCEPT:
+		explicit colony_reverse_iterator (const colony_iterator<is_const> &source) PLF_COLONY_NOEXCEPT:
 			it(source)
 		{}
 
@@ -1712,7 +1714,7 @@ public:
 
 	// Default constuctor:
 
-	colony() PLF_COLONY_NOEXCEPT:
+	colony():
 		allocator_type(allocator_type()),
 		groups_with_erasures_list_head(NULL),
 		unused_groups(NULL),
@@ -1726,7 +1728,7 @@ public:
 
 
 
-	explicit colony(const plf::limits capacities) PLF_COLONY_NOEXCEPT:
+	explicit colony(const plf::limits capacities):
 		allocator_type(allocator_type()),
 		groups_with_erasures_list_head(NULL),
 		unused_groups(NULL),
@@ -1782,8 +1784,7 @@ public:
 		total_capacity(0),
 		tuple_allocator_pair(static_cast<skipfield_type>((source.tuple_allocator_pair.min_group_capacity > source.total_size) ? source.tuple_allocator_pair.min_group_capacity : ((source.total_size > source.group_allocator_pair.max_group_capacity) ? source.group_allocator_pair.max_group_capacity : source.total_size))), // min group size is set to value closest to total number of elements in source colony in order to not create unnecessary small groups in the range-insert below, then reverts to the original min group size afterwards. This effectively saves a call to reserve.
 		group_allocator_pair(source.group_allocator_pair.max_group_capacity)
-	{
-		check_skipfield_conformance();
+	{ // can skip checking for skipfield conformance here as the skipfields must be equal between the destination and source, and source will have already had theirs checked. Same applies for other copy and move constructors below
 		range_assign(source.begin_iterator, source.total_size);
 		tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity; // reset to correct value for future clear() or erasures
 	}
@@ -1800,8 +1801,7 @@ public:
 		total_capacity(0),
 		tuple_allocator_pair(static_cast<skipfield_type>((source.tuple_allocator_pair.min_group_capacity > source.total_size) ? source.tuple_allocator_pair.min_group_capacity : ((source.total_size > source.group_allocator_pair.max_group_capacity) ? source.group_allocator_pair.max_group_capacity : source.total_size))),
 		group_allocator_pair(source.group_allocator_pair.max_group_capacity)
-	{
-		check_skipfield_conformance();
+	{ 
 		range_assign(source.begin_iterator, source.total_size);
 		tuple_allocator_pair.min_group_capacity = source.tuple_allocator_pair.min_group_capacity;
 	}
@@ -1851,7 +1851,6 @@ public:
 			tuple_allocator_pair(source.tuple_allocator_pair.min_group_capacity),
 			group_allocator_pair(source.group_allocator_pair.max_group_capacity)
 		{
-			check_skipfield_conformance();
 			assert(&source != this);
 			source.blank();
 		}
@@ -1871,7 +1870,6 @@ public:
 			tuple_allocator_pair(source.tuple_allocator_pair.min_group_capacity),
 			group_allocator_pair(source.group_allocator_pair.max_group_capacity)
 		{
-			check_skipfield_conformance();
 			assert(&source != this);
 			source.blank();
 		}
@@ -3928,7 +3926,6 @@ public:
 	inline size_type memory() const PLF_COLONY_NOEXCEPT
 	{
 		size_type mem = sizeof(*this); // sizeof colony basic structure
-
 		end_iterator.group_pointer->next_group = unused_groups; // temporarily link the main groups and unused_groups (reserved groups) in order to only have one loop below instead of several
 
 		for(group_pointer_type current = begin_iterator.group_pointer; current != NULL; current = current->next_group)
