@@ -181,7 +181,7 @@
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R12<br>
-Date: 2020-11-24<br>
+Date: 2021-01-13<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -541,7 +541,7 @@ efficiency, is possible as follows:</p>
   <li>Instead of storing the data for the low complexity jump-counting pattern
     in it's own skipfield, have a boolean bitfield indicating which elements
     are erased. Store the jump-counting data in the erased element's memory
-    space instead.</li>
+    space instead (possibly alongside free list data).</li>
   <li>When iterating, check whether the element is erased or not using the
     boolean bitfield; if it is not erased, do nothing. If it is erased, read
     the jump value from the erased element's memory space and skip forward the
@@ -555,7 +555,7 @@ compared to a pure jump-counting approach introduces 3 additional costs per
 iteration via (1) a branch operation when checking the bitfield, (2) an
 additional read (of the erased element's memory space) and (3) a bitmasking
 operation + bitshift to read the bit. But it does reduce the memory overhead of
-the skipfield to 1 bit per-element.</p>
+the skipfield to 1 bit per-element, which reduces the cache load. An implementation and benchmarking would be required in order to establish whether this approach improves upon the current implementation's performance.</p>
 
 <h4>3. Erased-element location recording mechanism</h4>
 
