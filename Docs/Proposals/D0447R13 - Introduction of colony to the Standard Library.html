@@ -181,7 +181,7 @@
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R13<br>
-Date: 2021-02-06<br>
+Date: 2021-02-10<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -211,7 +211,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
 <h2><a id="revisions"></a>Revision history</h2>
 <ul>
-  <li>R13: Revisions based on committee feedback. Skipfield template parameter changed to priority enum in order to not over-specify container implementation. Other wording changes to reduce over-specifying implementation.</li>
+  <li>R13: Revisions based on committee feedback. Skipfield template parameter changed to priority enum in order to not over-specify container implementation. Other wording changes to reduce over-specifying implementation. Some non-member template functions moved to be friend functions.</li>
   <li>R12: Fill, range and initializer_list inserts changed to void return, since the insertions are not guaranteed to be sequential in terms of colony order and therefore returning an iterator to the first insertion is not useful. Non-default-value fill constructor changed to non-explicit to match other std:: containers. Correction to reserve() wording. Other minor corrections and clarity improvements.</li>
   <li>R11: Overhaul of technical specification to be more 'wording-like'. Minor
     alterations &amp; clarifications. Additional alternative approach added to
@@ -391,7 +391,7 @@ other than deque/vector, regardless of the ratio of erased to non-erased
 elements.</p>
 
 <p>Some more specific requirements for containers in the context of game
-development are listed in the <a href="#sg14gameengine">appendix</a>.</p>
+development are listed in the <a href="#sg14gameengine">appendix</a>. Of particular note is the requirement that latency be predictable, rather than necessarily better-on-average. This is again something which colony ensures.</p>
 
 <p>As another example, particle simulation (weather, physics etcetera) often
 involves large clusters of particles which interact with external objects and
@@ -440,7 +440,7 @@ container to know when the block is empty and needs to be removed from the
 iterative chain, and also allows iterators to judge when the end of one block
 has been reached. A non-boolean method of skipping over
 erased elements during iteration while maintaining O(1) amortized iteration
-time complexity is required (amortized due to block traversal, which requires a few more
+time complexity is required (amortized due to block traversal, which would typically require a few more
 operations). Finally, a mechanism for keeping track of elements which have been
 erased must be present, so that those memory locations can be reused upon
 subsequent element insertions.</p>
@@ -616,8 +616,7 @@ both.</p>
 
 <h3>Implementation of iterator class</h3>
 
-<p>The reference implementation's iterator stores a pointer to the current
-'group' struct mentioned above, plus a pointer to the current element and a
+<p>Any iterator implementation is going to be dependent on the erased-element-skipping mechanism used. The reference implementation's iterator stores a pointer to the current 'group' struct mentioned above, plus a pointer to the current element and a
 pointer to its corresponding skipfield node. An alternative approach is to
 store the group pointer + an index, since the index can indicate both the
 offset from the memory block for the element, as well as the offset from the
@@ -705,7 +704,6 @@ implement all greater/lesser comparisons.</p>
         implementation-dependent.</p>
       </li>
       <li><code style="font-weight:bold">iterator get_iterator_from_pointer(pointer p) const noexcept;</code><br>
-
         <p>Because colony iterators are likely to be large, storing three
         pieces of data - current memory block, current element within memory
         block and potentially, current skipfield node - a program storing many
@@ -746,8 +744,7 @@ implement all greater/lesser comparisons.</p>
         locality.</p>
         <p>In addition, whether this function is <code>noexcept</code> is implementation-defined - in the case of an implementation using a linked list of groups (like the reference implementation) this function can be <code>noexcept(allocator_traits&lt;Allocator&gt;::is_always_equal::value)</code>. However, in the case of an implementation using a vector of pointers to groups, an additional allocation may have to be made if the group pointer vector isn't of sufficient capacity to accomodate the spliced groups from source <code>x</code> - which could potentially trigger an exception.</p>
       </li>
-      <li><code style="font-weight:bold">size_type memory() const
-        noexcept;</code>
+      <li><code style="font-weight:bold">size_type memory() const noexcept;</code>
 		  <p>A colony uses memory block metadata and may use a skipfield, both which are
         implementation-defined, so it is not possible for a user to estimate
         internal memory usage from size(), sizeof() or capacity(). This function fulfills
@@ -1046,51 +1043,55 @@ public:
   template &lt;class Compare&gt; void sort(Compare comp);
 
 
-  // hidden friends
-  template &lt;class T, class Allocator&gt;
-    friend bool operator== (const colony &amp;x, const colony &amp;y);
-  template &lt;class T, class Allocator&gt;
-    friend synth-three-way-result&lt;T&gt; operator&lt;=&gt; (const colony &amp;x, const colony &amp;y);
-
-  template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-    friend void advance(colony&lt;T, Allocator, Priority&gt;::iterator &amp;it, colony&lt;T, Allocator, Distance n);
-  template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-    friend void advance(colony&lt;T, Allocator, Priority&gt;::const_iterator &amp;it, colony&lt;T, Allocator, Distance n);
-  template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-    friend void advance(colony&lt;T, Allocator, Priority&gt;::reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
-  template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-    friend void advance(colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+  friend bool operator== (const colony &amp;x, const colony &amp;y);
 
 
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::iterator next(const colony&lt;T, Allocator, Priority&gt;::iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::const_iterator next(const colony&lt;T, Allocator, Priority&gt;::const_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::reverse_iterator next(const colony&lt;T, Allocator, Priority&gt;::reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
+  class iterator
+  {
+    friend void advance(iterator &amp;it, Distance n);
+    friend iterator next(const iterator it, difference_type distance = 1);
+    friend iterator prev(const iterator it, difference_type distance = 1);
+    friend difference_type distance(const iterator first, const iterator last);
+  }
 
 
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::iterator prev(const colony&lt;T, Allocator, Priority&gt;::iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::const_iterator prev(const colony&lt;T, Allocator, Priority&gt;::const_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Priority&gt;::reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
+  class const_iterator
+  {
+    friend void advance(const_iterator &amp;it, Distance n);
+    friend const_iterator next(const const_iterator it, difference_type distance = 1);
+    friend const_iterator prev(const const_iterator it, difference_type distance = 1);
+    friend difference_type distance(const const_iterator first, const const_iterator last);
+  }
 
 
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::iterator first, const colony&lt;T, Allocator, Priority&gt;::iterator last);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::const_iterator first, const colony&lt;T, Allocator, Priority&gt;::const_iterator last);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::iterator first, const colony&lt;T, Allocator, Priority&gt;::iterator last);
-  template &lt;class T, class Allocator, priority Priority&gt;
-    friend colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::const_iterator first, const colony&lt;T, Allocator, Priority&gt;::const_iterator last);
+  class reverse_iterator
+  {
+    friend void advance(reverse_iterator &amp;it, Distance n);
+    friend reverse_iterator next(const reverse_iterator it, difference_type distance = 1);
+    friend reverse_iterator prev(const reverse_iterator it, difference_type distance = 1);
+    friend difference_type distance(const reverse_iterator first, const reverse_iterator last);
+  }
 
+
+  class const_reverse_iterator
+  {
+    friend void advance(const_reverse_iterator &amp;it, Distance n);
+    friend const_reverse_iterator next(const const_reverse_iterator it, difference_type distance = 1);
+    friend const_reverse_iterator prev(const const_reverse_iterator it, difference_type distance = 1);
+    friend difference_type distance(const const_reverse_iterator first, const const_reverse_iterator last);
+  }
+
+
+  // swap
+  friend void swap(colony&amp; x, colony&amp; y)
+    noexcept(noexcept(x.swap(y)));
+
+
+  // erase
+  template &lt;class Predicate&gt;
+    friend size_type erase_if(colony&amp; c, Predicate pred);
+  template &lt;class U&gt;
+    friend size_type erase(colony&amp; c, const U&amp; value);
 }
 
 
@@ -1098,16 +1099,6 @@ template&lt;class InputIterator, class Allocator = allocator&lt;iter-value-type 
   colony(InputIterator, InputIterator, Allocator = Allocator())
     -> colony&lt;iter-value-type &lt;InputIterator&gt;, Allocator&gt;;
 
-// swap
-template &lt;class T, class Allocator, priority Priority&gt;
-  void swap(colony&lt;T, Allocator, Priority&gt;&amp; x, colony&lt;T, Allocator, Priority&gt;&amp; y)
-    noexcept(noexcept(x.swap(y)));
-
-// erase
-template &lt;class T, class Allocator, class Skipfield, class Predicate&gt;
-  colony&lt;T, Allocator, Priority&gt;::size_type erase_if(colony&lt;T, Allocator, Priority&gt;&amp; c, Predicate pred);
-template &lt;class T, class Allocator, class Skipfield, class U&gt;
-  colony&lt;T, Allocator, Priority&gt;::size_type erase(colony&lt;T, Allocator, Priority&gt;&amp; c, const U&amp; value);
 </pre>
 </div>
 
@@ -1181,9 +1172,9 @@ template &lt;class T, class Allocator, class Skipfield, class U&gt;
     cause reallocation of elements.</li>
   <li>Complexity: It does not change the size of the sequence and creates at
     most <code>(n / block_capacity_limits().max) + 1</code> allocations.</li>
-  <li>Throws: <code>length_error</code> if <code>n &gt; max_size()</code><sup><a href="#227">227</a></sup>.</li>
+  <li>Throws: <code>length_error</code> if <code>n &gt; max_size()</code><sup><a href="#223">223</a></sup>.</li>
 </ol>
-<p style="font-size: 90%"><a id="227"></a>227) reserve() uses Allocator::allocate() which may throw an appropriate exception.</p>
+<p style="font-size: 90%"><a id="223"></a>223) reserve() uses Allocator::allocate() which may throw an appropriate exception.</p>
 <br>
 
 <code style="font-weight:bold">void shrink_to_fit();</code>
@@ -1320,7 +1311,7 @@ template &lt;class... Args&gt;
   <li>Throws: <code>length_error</code> if <code>block_capacities.min</code> or
     <code>block_capacities.max</code> are outside the implementation's minimum
     and maximum element memory block capacity limits, or if
-    <code>block_capacities.min &gt; block_capacities.max</code>.<sup><a href="#227">227</a></li>
+    <code>block_capacities.min &gt; block_capacities.max</code>.<sup><a href="#223">223</a></li>
   <li>Remarks: The order of elements post-operation is not guaranteed to be
     stable (16.5.5.8).</li>
 </ol>
@@ -1360,41 +1351,40 @@ template &lt;class Compare&gt;
 <br>
 
 <pre><code>
-template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-  void advance(colony&lt;T, Allocator, Priority&gt;::iterator &amp;it, colony&lt;T, Allocator, Distance n);
-template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-  void advance(colony&lt;T, Allocator, Priority&gt;::const_iterator &amp;it, colony&lt;T, Allocator, Distance n);
-template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-  void advance(colony&lt;T, Allocator, Priority&gt;::reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
-template &lt;class T, class Allocator, priority Priority, class Distance&gt;
-  void advance(colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator &amp;it, colony&lt;T, Allocator, Distance n);
+	class iterator
+	{
+		friend void advance(iterator &amp;it, Distance n);
+    friend iterator next(const iterator it, difference_type distance = 1);
+    friend iterator prev(const iterator it, difference_type distance = 1);
+    friend difference_type distance(const iterator first, const iterator last);
+	}
 
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::iterator next(const colony&lt;T, Allocator, Priority&gt;::iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::const_iterator next(const colony&lt;T, Allocator, Priority&gt;::const_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::reverse_iterator next(const colony&lt;T, Allocator, Priority&gt;::reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator next(const colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
 
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::iterator prev(const colony&lt;T, Allocator, Priority&gt;::iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::const_iterator prev(const colony&lt;T, Allocator, Priority&gt;::const_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::reverse_iterator prev(const colony&lt;T, Allocator, Priority&gt;::reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator prev(const colony&lt;T, Allocator, Priority&gt;::const_reverse_iterator it, colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance = 1);
+	class const_iterator
+	{
+		friend void advance(const_iterator &amp;it, Distance n);
+    friend const_iterator next(const const_iterator it, difference_type distance = 1);
+    friend const_iterator prev(const const_iterator it, difference_type distance = 1);
+    friend difference_type distance(const const_iterator first, const const_iterator last);
+	}
 
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::iterator first, const colony&lt;T, Allocator, Priority&gt;::iterator last);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::const_iterator first, const colony&lt;T, Allocator, Priority&gt;::const_iterator last);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::iterator first, const colony&lt;T, Allocator, Priority&gt;::iterator last);
-template &lt;class T, class Allocator, priority Priority&gt;
-  colony&lt;T, Allocator, Priority&gt;::iterator::difference_type distance(const colony&lt;T, Allocator, Priority&gt;::const_iterator first, const colony&lt;T, Allocator, Priority&gt;::const_iterator last);
+
+	class reverse_iterator
+	{
+		friend void advance(reverse_iterator &amp;it, Distance n);
+    friend reverse_iterator next(const reverse_iterator it, difference_type distance = 1);
+    friend reverse_iterator prev(const reverse_iterator it, difference_type distance = 1);
+    friend difference_type distance(const reverse_iterator first, const reverse_iterator last);
+	}
+
+
+	class const_reverse_iterator
+	{
+		friend void advance(const_reverse_iterator &amp;it, Distance n);
+    friend const_reverse_iterator next(const const_reverse_iterator it, difference_type distance = 1);
+    friend const_reverse_iterator prev(const const_reverse_iterator it, difference_type distance = 1);
+    friend difference_type distance(const const_reverse_iterator first, const const_reverse_iterator last);
+	}
 </code></pre>
 <ol start="2">
 <li>Complexity: Constant in best case and linear in the number of elements traversed in worst case, approximating logarithmic in the number of elements traversed on average.</li>
@@ -1403,15 +1393,15 @@ template &lt;class T, class Allocator, priority Priority&gt;
 
 <h4>22.3.14.7 Erasure [colony.erasure]</h4>
 
-<pre><code style="font-weight:bold">template&lt;class T, class Allocator, priority Priority, class U&gt;
-  typename colony&lt;T, Allocator, Priority&gt;::size_type  erase(colony&lt;T, Allocator, Priority&gt;& c, const U& value);</code></pre>
+<pre><code style="font-weight:bold">template &lt;class U&gt;
+    friend size_type erase(colony&amp; c, const U&amp; value);</code></pre>
 <ol>
   <li>Effects: All elements in the container which are equal to <code>value</code> are erased. Invalidates all references and iterators to the erased elements.</li>
 </ol>
 <br>
 
-<pre><code style="font-weight:bold">template&lt;class T, class Allocator, priority Priority, class Predicate&gt;
-  typename colony&lt;T, Allocator, Priority&gt;::size_type erase_if(colony&lt;T, Allocator, Priority&gt;& c, Predicate pred);</code></pre>
+<pre><code style="font-weight:bold">template &lt;class Predicate&gt;
+    friend size_type erase_if(colony&amp; c, Predicate pred);</code></pre>
 <ol start="2">
   <li>Effects: All elements in the container which match predicate <code>pred</code> are erased. Invalidates all references and iterators to the erased elements.</li>
 </ol>
@@ -1925,6 +1915,7 @@ verified by game developers within SG14:</p>
   <li>Order is unimportant for the most part. The majority of data is simply
     iterated over, transformed, referred to and utilized with no regard to
     order.</li>
+  <li>Generally-speaking, operations with predictable latency are generally favoured over those with slightly better average latency but more variability - this ensures that accurate calculations can be made as to how much time each operation is likely to take per-frame, which leads to better stability for things like physics interactions.</li>
   <li>Erasing or otherwise "deactivating" objects occurs frequently in
     performance-critical code. For this reason methods of erasure which create
     strong performance penalties are avoided.</li>
