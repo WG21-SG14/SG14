@@ -181,7 +181,7 @@
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R13<br>
-Date: 2021-02-10<br>
+Date: 2021-02-06<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -391,7 +391,7 @@ other than deque/vector, regardless of the ratio of erased to non-erased
 elements.</p>
 
 <p>Some more specific requirements for containers in the context of game
-development are listed in the <a href="#sg14gameengine">appendix</a>. Of particular note is the requirement that latency be predictable, rather than necessarily better-on-average. This is again something which colony ensures.</p>
+development are listed in the <a href="#sg14gameengine">appendix</a>.</p>
 
 <p>As another example, particle simulation (weather, physics etcetera) often
 involves large clusters of particles which interact with external objects and
@@ -728,8 +728,7 @@ implement all greater/lesser comparisons.</p>
         invalidating iterators.</p>
       </li>
       <li><code style="font-weight:bold">void sort();</code>
-		  <p>An allowance is made for sort to allocate memory if necessary. This means implementations can use techniques such as plf::indiesort, which the reference implementation uses. The advantage of these types of techniques is that they are faster than typical sort techniques for non-random-access containers.</p>
-      <p>This function can be made constant time by adding a counter to the colony that keeps track of the number of reserved memory blocks available, or by having a vector of pointers to memory blocks instead an intrusive linked list of memory blocks. However in the case of the reference implementation which uses linked lists, the counter metadata would only be used by this function and since this function is not expected to be in heavy use, the time complexity of this function is left as implementation-defined to enable best performance.</p>
+		  <p>An allowance is made for sort to allocate memory if necessary. This means implementations can use techniques such as plf::indiesort, which the reference implementation uses. The advantage of these types of techniques is that they are faster than typical sort techniques for non-random-access containers. Since colony uses bidirectional iterators, using std::sort or similar is not possible.</p>
 		</li>
       <li><code style="font-weight:bold">void splice(colony &amp;x);</code>
         <p>Whether <code>x</code>'s blocks are transferred to the beginning or
@@ -1915,7 +1914,6 @@ verified by game developers within SG14:</p>
   <li>Order is unimportant for the most part. The majority of data is simply
     iterated over, transformed, referred to and utilized with no regard to
     order.</li>
-  <li>Generally-speaking, operations with predictable latency are generally favoured over those with slightly better average latency but more variability - this ensures that accurate calculations can be made as to how much time each operation is likely to take per-frame, which leads to better stability for things like physics interactions.</li>
   <li>Erasing or otherwise "deactivating" objects occurs frequently in
     performance-critical code. For this reason methods of erasure which create
     strong performance penalties are avoided.</li>
