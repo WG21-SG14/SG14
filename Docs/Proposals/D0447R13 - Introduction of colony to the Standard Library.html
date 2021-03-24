@@ -181,7 +181,7 @@
 <body>
 Audience: LEWG, SG14, WG21<br>
 Document number: D0447R13<br>
-Date: 2021-03-24<br>
+Date: 2021-03-25<br>
 Project: Introduction of std::colony to the standard library<br>
 Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
 
@@ -205,7 +205,7 @@ Reply-to: Matthew Bentley &lt;mattreecebentley@gmail.com&gt;<br>
       <li><a href="#responses">Specific responses to previous committee feedback</a></li>
       <li><a href="#sg14gameengine">Typical game engine requirements</a></li>
       <li><a href="#timecomplexityexplanations">Time complexity requirement explanations</a></li>
-		<li><a href="#yunoconstexpr">Appendix F - Why not constexpr?</a></li>
+		<li><a href="#yunoconstexpr">Why not constexpr?</a></li>
     </ol>
   </li>
 </ol>
@@ -799,7 +799,6 @@ implement all greater/lesser comparisons.</p>
       </li>
 
     </ul>
-  </li>
 
 
 	<h3>Results of implementation</h3>
@@ -842,7 +841,7 @@ namespace std {
 }</pre>
   </div>
 
-  <h4><a id="#iteratorinvalidation"></a>Iterator Invalidation</h4>
+  <h4><a id="iteratorinvalidation"></a>Iterator Invalidation</h4>
 
   <table border="1">
     <tbody>
@@ -889,7 +888,6 @@ namespace std {
   <h3>22.3.14 Class template <code>colony</code> [colony]</h3>
 
   <h4>22.3.14.1 Class template <code>colony</code> overview [colony.overview]</h4>
-</ul>
 <ol>
   <li>A colony is a sequence container that allows constant-time insert and
     erase operations. Insertion location is the back of the container when no
@@ -949,7 +947,7 @@ href="https://en.cppreference.com/w/cpp/named_req/Allocator">Allocator</a>. The
 behavior is undefined if <code>Allocator::value_type</code> is not the same as
 T.<br>
 <br>
-<code><b>Priority</b></code> - if set to <code>priority::memory_use</code> this is a non-binding request to prioritize lowered memory usage over container performance. [ Note: The request is non-binding to allow latitude for implementation-specific optimizations. If this feature is implemented, it is <i>not</i> specified that the container shall have better performance when using priority::performance instead of priority::memory_usage in <i>all</i> scenarios, but that it shall have better performance in <i>most</i> scenarios. — end note ]</p>
+<code><b>Priority</b></code> - if set to <code>priority::memory_use</code> this is a non-binding request to prioritize lowered memory usage over container performance. [ Note: The request is non-binding to allow latitude for implementation-specific optimizations. If this feature is implemented, it is <i>not</i> specified that the container shall have better performance when using priority::performance instead of priority::memory_usage in <i>all</i> scenarios, but that it shall have better performance in <i>most</i> scenarios. - end note ]</p>
 
 <div style="background: #ffffff; overflow:auto; width:auto; border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;">
 <pre style="margin: 0; line-height: 125%">namespace std {
@@ -1148,7 +1146,7 @@ template&lt;class InputIterator, class Allocator = allocator&lt;iter-value-type 
 <pre><code style="font-weight:bold">template &lt;class InputIterator1, class InputIterator2&gt;
   colony(InputIterator1 first, InputIterator2 last, std::colony_limits block_capacities = implementation-defined, const Allocator&amp; = Allocator());</code></pre>
 <ol start="8">
-  <li>Preconditions: <code>InputIterator1</code> shall be <code>std::equality_comparable_with InputIterator2<code>.</li>
+  <li>Preconditions: <code>InputIterator1</code> shall be <code>std::equality_comparable_with InputIterator2</code>.</li>
   <li>Effects: Constructs a colony equal to the range [first, last), using the
     specified allocator.</li>
   <li>Complexity: Linear in distance(first, last).</li>
@@ -1190,9 +1188,9 @@ template&lt;class InputIterator, class Allocator = allocator&lt;iter-value-type 
     cause reallocation of elements.</li>
   <li>Complexity: It does not change the size of the sequence and creates at
     most <code>(n / block_capacity_limits().max) + 1</code> allocations.</li>
-  <li>Throws: <code>length_error</code> if <code>n &gt; max_size()</code><sup><a href="#223">223</a></sup>.</li>
+  <li>Throws: <code>length_error</code> if <code>n &gt; max_size()</code><sup><a href="#r223">223</a></sup>.</li>
 </ol>
-<p style="font-size: 90%"><a id="223"></a>223) reserve() uses Allocator::allocate() which may throw an appropriate exception.</p>
+<p style="font-size: 90%"><a id="r223"></a>223) reserve() uses Allocator::allocate() which may throw an appropriate exception.</p>
 <br>
 
 <code style="font-weight:bold">void shrink_to_fit();</code>
@@ -1202,7 +1200,7 @@ template&lt;class InputIterator, class Allocator = allocator&lt;iter-value-type 
   <li>Effects: shrink_to_fit is a non-binding request to reduce
     <code>capacity()</code> to be closer to <code>size()</code>. [ Note: The
     request is non-binding to allow latitude for implementation-specific
-    optimizations. — end note ] It does not increase <code>capacity()</code>,
+    optimizations. - end note ] It does not increase <code>capacity()</code>,
     but may reduce <code>capacity()</code> by causing reallocation. It may move
     elements from multiple memory blocks and consolidate them into a smaller
     number of memory blocks.<br>
@@ -1241,7 +1239,7 @@ void insert(initializer_list&lt;T&gt;);
 template &lt;class... Args&gt;
   iterator emplace(Args&amp;&amp;... args);</code></pre>
 <ol>
-  <li>Preconditions: For <code>template &lt;class InputIterator1, class InputIterator2&gt; void insert(InputIterator1 first, InputIterator2 last)</code>, <code>InputIterator1</code> shall be <code>std::equality_comparable_with InputIterator2<code>.</li>
+  <li>Preconditions: For <code>template &lt;class InputIterator1, class InputIterator2&gt; void insert(InputIterator1 first, InputIterator2 last)</code>, <code>InputIterator1</code> shall be <code>std::equality_comparable_with InputIterator2</code>.</li>
   <li>Complexity: Insertion of a single element into a colony takes constant
     time and exactly one call to a constructor of <code>T</code>. Insertion of
     multiple elements into a colony is linear in the number of elements
@@ -1330,7 +1328,7 @@ template &lt;class... Args&gt;
   <li>Throws: <code>length_error</code> if <code>block_capacities.min</code> or
     <code>block_capacities.max</code> are outside the implementation's minimum
     and maximum element memory block capacity limits, or if
-    <code>block_capacities.min &gt; block_capacities.max</code>.<sup><a href="#223">223</a></li>
+    <code>block_capacities.min &gt; block_capacities.max</code>.<sup><a href="#r223">223</a></sup></li>
   <li>Remarks: The order of elements post-operation is not guaranteed to be
     stable (16.5.5.8).</li>
 </ol>
@@ -1362,7 +1360,7 @@ template &lt;class Compare&gt;
 
 
 <h4>22.3.14.6 Specialized algorithms [colony.special]</h4>
-<pre><code style="font-weight:bold">friend void swap(colony &x, colony &y) noexcept(noexcept(x.swap(y)));</code></pre>
+<pre><code style="font-weight:bold">friend void swap(colony &amp;x, colony &amp;y) noexcept(noexcept(x.swap(y)));</code></pre>
 <ol>
   <li>Effects: As if by <code>x.swap(y)</code>.</li>
   <li>Remarks: This function is to be found via argument-dependent
@@ -1372,7 +1370,7 @@ lookup only.</li>
 
 <pre><code style="font-weight:bold">friend bool operator== (const colony &amp;x, const colony &amp;y);
 friend bool operator!= (const colony &amp;x, const colony &amp;y);</code></pre>
-<ol>
+<ol start="3">
   <li>Returns: For ==, returns <code>True</code> if both containers have the same elements in the same iterative sequence, otherwise <code>False</code>.
   For !=, returns <code>True</code> if both containers do not have the same elements in the same iterative sequence, otherwise <code>False</code>.</li>
   <li>Remarks: These functions are to be found via argument-dependent lookup only.</li>
@@ -1380,43 +1378,43 @@ friend bool operator!= (const colony &amp;x, const colony &amp;y);</code></pre>
 
 
 
-<pre><code>
-  class iterator
-  {
-    friend void advance(iterator &amp;it, Distance n);
-    friend iterator next(const iterator it, difference_type distance = 1);
-    friend iterator prev(const iterator it, difference_type distance = 1);
-    friend difference_type distance(const iterator first, const iterator last);
-  }
+<pre><code style="font-weight:bold">
+class iterator
+{
+  friend void advance(iterator &amp;it, Distance n);
+  friend iterator next(const iterator it, difference_type distance = 1);
+  friend iterator prev(const iterator it, difference_type distance = 1);
+  friend difference_type distance(const iterator first, const iterator last);
+}
 
 
-  class const_iterator
-  {
-    friend void advance(const_iterator &amp;it, Distance n);
-    friend const_iterator next(const const_iterator it, difference_type distance = 1);
-    friend const_iterator prev(const const_iterator it, difference_type distance = 1);
-    friend difference_type distance(const const_iterator first, const const_iterator last);
-  }
+class const_iterator
+{
+  friend void advance(const_iterator &amp;it, Distance n);
+  friend const_iterator next(const const_iterator it, difference_type distance = 1);
+  friend const_iterator prev(const const_iterator it, difference_type distance = 1);
+  friend difference_type distance(const const_iterator first, const const_iterator last);
+}
 
 
-  class reverse_iterator
-  {
-    friend void advance(reverse_iterator &amp;it, Distance n);
-    friend reverse_iterator next(const reverse_iterator it, difference_type distance = 1);
-    friend reverse_iterator prev(const reverse_iterator it, difference_type distance = 1);
-    friend difference_type distance(const reverse_iterator first, const reverse_iterator last);
-  }
+class reverse_iterator
+{
+  friend void advance(reverse_iterator &amp;it, Distance n);
+  friend reverse_iterator next(const reverse_iterator it, difference_type distance = 1);
+  friend reverse_iterator prev(const reverse_iterator it, difference_type distance = 1);
+  friend difference_type distance(const reverse_iterator first, const reverse_iterator last);
+}
 
 
-  class const_reverse_iterator
-  {
-    friend void advance(const_reverse_iterator &amp;it, Distance n);
-    friend const_reverse_iterator next(const const_reverse_iterator it, difference_type distance = 1);
-    friend const_reverse_iterator prev(const const_reverse_iterator it, difference_type distance = 1);
-    friend difference_type distance(const const_reverse_iterator first, const const_reverse_iterator last);
-  }
+class const_reverse_iterator
+{
+  friend void advance(const_reverse_iterator &amp;it, Distance n);
+  friend const_reverse_iterator next(const const_reverse_iterator it, difference_type distance = 1);
+  friend const_reverse_iterator prev(const const_reverse_iterator it, difference_type distance = 1);
+  friend difference_type distance(const const_reverse_iterator first, const const_reverse_iterator last);
+}
 </code></pre>
-<ol start="2">
+<ol start="5">
 <li>Complexity: Constant in best case and linear in the number of elements traversed in worst case, approximating logarithmic in the number of elements traversed on average.</li>
   <li>Remarks: These functions are to be found via argument-dependent lookup only.</li>
 </ol>
@@ -1435,7 +1433,7 @@ friend bool operator!= (const colony &amp;x, const colony &amp;y);</code></pre>
 
 <pre><code style="font-weight:bold">template &lt;class Predicate&gt;
     friend size_type erase_if(colony&amp; c, Predicate pred);</code></pre>
-<ol start="2">
+<ol start="3">
   <li>Effects: All elements in the container which match predicate <code>pred</code> are erased. Invalidates all references and iterators to the erased elements.</li>
   <li>Remarks: This function is to be found via argument-dependent lookup only.</li>
 </ol>
@@ -1538,8 +1536,7 @@ style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-wi
 
 <h3><a id="benchmarks"></a>Appendix B - Reference implementation benchmarks</h3>
 
-<p>Benchmark results for the colony v5 reference implementation under GCC 8.1
-x64 on an Intel Xeon E3-1241 (Haswell) are <a
+<p>Benchmark results for the colony reference implementation under GCC on an Intel Xeon E3-1241 (Haswell) are <a
 href="https://plflib.org/benchmarks_haswell_gcc.htm">here</a>.</p>
 
 <p>Old benchmark results for an earlier version of colony under MSVC 2015
@@ -1924,7 +1921,7 @@ previous committee feedback</h3>
     there's limited numbers of ways to do this also. Multiple consecutive
     erased elements have to be skipped in O(1) time, and again there's limits
     to how many ways you can do that. That covers the three core aspects upon
-    which this specification is based. See <a id="design"></a>IV. Design
+    which this specification is based. See <a href="#design"></a>IV. Design
     Decisions for the various ways these aspects can be designed.</p>
     <p>The time complexity of updates to whatever erased-element skipping mechanism is used should, I think, be left
     implementation-defined, as defining time complexity may obviate better
@@ -2176,8 +2173,8 @@ iterator2 is equal to end() or (end() - 1), or is the last element in that
 block, iterator2's block's elements can also counted from the metadata rather
 than iteration.</p>
 
-<h3><a id="yunoconstexpr"></a>Appendix F - Why not constexpr?</h3>
-<p>I am somewhat awkwardly forced into a position where I have to question and push back against the currently-unsubstantiated enthusiasm around constexpr containers and functions. At the time of writing there are no compilers which both support constexpr non-trivial destructors and also have a working implementation of a constexpr container. And until that is remedied, we won't really know what we're dealing with. My own testing in terms of making colony constexpr has not been encouraging. 2% performance decrease in un-altered benchmark code is common, and I suspect the common cause of this is caching values from compile-time when it is cheaper to calculate them on-the-fly than to return them from main memory - give the substantial increases in executable size in the constexpr versions.</p>
+<h3><a id="yunoconstexpr"></a>Appendix G - Why not constexpr?</h3>
+<p>I am somewhat awkwardly forced into a position where I have to question and push back against the currently-unsubstantiated enthusiasm around constexpr containers and functions. At the time of writing there are no compilers which both support constexpr non-trivial destructors and also have a working implementation of a constexpr container. And until that is remedied, we won't really know what we're dealing with. My own testing in terms of making colony constexpr has not been encouraging. 2% performance decrease in un-altered benchmark code is common, and I suspect the common cause of this is caching values from compile-time when it is cheaper to calculate them on-the-fly than to return them from main memory. This suspicion is based on the substantial increases in executable size in the constexpr versions.</p>
 
 <p>For an example of the latter, think about size() in std::vector. This can be calculated in most implementations by (vector.end_iterator.pointer - vector.memory_block), both of which will most likely be in cache at the time of calling size(). That's if size isn't a member variable.
 Calculating a minus operation on stuff that's already in cache is about 100x faster than making a call out to main memory for a compile-time-stored value of this function, if that is necessary.</p>
@@ -2193,7 +2190,7 @@ Calculating a minus operation on stuff that's already in cache is about 100x fas
 <li>create the potential for cache pollution when constexpr functions return large amounts of data, or when functions returning small amounts of data are called many times</li>
 </ol>
 
-<p>Given this, and the performance issues mentioned above, I am reluctant to make colony constexpr-by-default. Time may sort these issues out but I am happier for both std::array and std::vector to be the canaries in the coalmine here. Certainly I won't be giving the go-ahead on any change that produces, or can produce, on current compilers, a 2% performance decrease in runtime code. Though I acknowledge the functionality of constexpr code may be useful to many.</p>
+<p>Given this, and the performance issues mentioned above, I am reluctant to make colony constexpr-by-default. Time may sort these issues out, but I am personally happier for std::array and std::vector to be the "canaries in the coalmine" here. Certainly I won't be giving the go-ahead on any change that produces, or can produce, on current compilers, a 2% performance decrease in runtime code. Though I acknowledge the functionality of constexpr code may be useful to many.</p>
 
 </body>
 </html>
