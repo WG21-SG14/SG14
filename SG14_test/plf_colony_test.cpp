@@ -693,7 +693,7 @@ void plf_colony_test()
 
 			failpass("Advance + iterator-to-index test", index == 500);
 
-			colony<int>::iterator temp2 = i_colony.get_iterator_from_pointer(&(*temp_iterator));
+			colony<int>::iterator temp2 = i_colony.get_iterator(&(*temp_iterator));
 
 			failpass("Pointer-to-iterator test", temp2 != i_colony.end());
 
