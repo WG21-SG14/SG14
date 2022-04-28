@@ -105,9 +105,11 @@ template<class R, class... Args> struct vtable
 
     template<class C> explicit constexpr vtable(wrapper<C>) noexcept :
         invoke_ptr{ [](storage_ptr_t storage_ptr, Args&&... args) -> R
-            { return (*static_cast<C*>(storage_ptr))(
-                static_cast<Args&&>(args)...
-            ); }
+            {
+                return static_cast<R>((*static_cast<C*>(storage_ptr))(
+                    static_cast<Args&&>(args)...
+                ));
+            }
         },
         copy_ptr{ [](storage_ptr_t dst_ptr, storage_ptr_t src_ptr) -> void
             { ::new (dst_ptr) C{ (*static_cast<C*>(src_ptr)) }; }
@@ -151,20 +153,31 @@ struct is_valid_inplace_dst : std::true_type
 };
 
 // C++11 MSVC compatible implementation of std::is_invocable_r.
+// By default, our is_invocable_r<void, int()> is FALSE,
+// even though std::is_invocable_r<void, int()> is TRUE.
+// Set SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID if you want that behavior.
 
 template<class R> void accept(R);
 
 template<class, class R, class F, class... Args> struct is_invocable_r_impl : std::false_type {};
 
 template<class F, class... Args> struct is_invocable_r_impl<
+#if SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID
     decltype(std::declval<F>()(std::declval<Args>()...), void()),
+#else
+    decltype(std::declval<F>()(std::declval<Args>()...)),
+#endif
     void,
     F,
     Args...
 > : std::true_type {};
 
 template<class F, class... Args> struct is_invocable_r_impl<
+#if SG14_INPLACE_FUNCTION_INVOCABLE_AS_VOID
     decltype(std::declval<F>()(std::declval<Args>()...), void()),
+#else
+    decltype(std::declval<F>()(std::declval<Args>()...)),
+#endif
     const void,
     F,
     Args...
